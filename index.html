@@ -190,17 +190,28 @@
         .divider-icon { font-size: 1rem; color: var(--rose); }
 
         /* MUSIC */
-        .player-card { background: linear-gradient(135deg, #fff0f3, #fce4ec); border: 1px solid #ffb3c1; border-radius: 24px; padding: 2rem; display: flex; align-items: center; gap: 1.5rem; box-shadow: 0 8px 30px rgba(232,83,111,0.1); flex-wrap: wrap; }
-        .player-album { width: 80px; height: 80px; border-radius: 14px; background: linear-gradient(135deg, var(--rose), var(--velvet)); display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; animation: spin 8s linear infinite paused; }
-        .player-album.playing { animation-play-state: running; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .player-info { flex: 1; min-width: 160px; }
-        .player-song { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--velvet); }
-        .player-artist { font-size: 0.8rem; color: var(--rose-lt); margin-top: 0.2rem; }
-        .player-controls { display: flex; gap: 0.8rem; margin-top: 0.8rem; }
-        .btn-play { background: var(--rose); color: white; border: none; width: 42px; height: 42px; border-radius: 50%; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(232,83,111,0.4); transition: transform 0.2s; }
-        .btn-play:hover { transform: scale(1.1); }
-        .music-tip { font-size: 0.75rem; color: #b06070; font-style: italic; margin-top: 0.5rem; }
+        .music-playlist { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+        .playlist-item { display: flex; align-items: center; gap: 1rem; background: white; border: 1px solid #ffd6de; border-radius: 16px; padding: 0.9rem 1.2rem; cursor: pointer; transition: all 0.25s; }
+        .playlist-item:hover { transform: translateX(6px); box-shadow: 0 6px 20px rgba(232,83,111,0.12); border-color: var(--rose); }
+        .playlist-item.active { background: linear-gradient(135deg, #fff0f3, #fce4ec); border-color: var(--rose); }
+        .pl-icon { font-size: 1.4rem; flex-shrink: 0; }
+        .pl-info { flex: 1; }
+        .pl-name { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--velvet); }
+        .pl-artist { font-size: 0.75rem; color: var(--rose-lt); margin-top: 0.1rem; }
+        .pl-arrow { font-size: 0.9rem; color: var(--rose-lt); }
+        .playlist-item.active .pl-arrow { color: var(--rose); }
+
+        .spotify-embed { border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem; }
+        .spotify-embed iframe { display: block; border-radius: 12px; }
+
+        .music-custom { background: #fff8f9; border: 1px dashed #ffb3c1; border-radius: 20px; padding: 1.5rem; }
+        .music-custom-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--velvet); margin-bottom: 0.8rem; }
+        .music-custom-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .music-input { flex: 1; min-width: 200px; padding: 0.55rem 1rem; border: 1px solid #ffb3c1; border-radius: 50px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; outline: none; background: white; color: var(--velvet); }
+        .music-input:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(232,83,111,0.12); }
+        .music-btn { background: var(--rose); color: white; border: none; padding: 0.55rem 1.4rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; white-space: nowrap; }
+        .music-btn:hover { background: var(--velvet); }
+        .music-tip { font-size: 0.75rem; color: #b06070; font-style: italic; margin-top: 0.6rem; }
 
         /* FOOTER */
         footer { background: var(--velvet); color: rgba(255,255,255,0.6); text-align: center; padding: 3rem 1.5rem; font-size: 0.82rem; position: relative; z-index: 1; }
@@ -316,22 +327,24 @@
     <div class="divider"><span class="divider-icon">🎵</span></div>
     <div class="section-label">Nossa trilha sonora</div>
     <h2 class="section-title">Nossa <em>música</em></h2>
-    <div class="player-card">
-        <div class="player-album" id="album-art">🎵</div>
-        <div class="player-info">
-            <div class="player-song">Coloca o nome da música aqui</div>
-            <div class="player-artist">Nome do artista</div>
-            <div class="player-controls">
-                <button class="btn-play" id="btn-play" onclick="togglePlay()">▶</button>
-            </div>
-            <p class="music-tip">💡 Cole o embed do Spotify abaixo no HTML para tocar a música</p>
+
+    <!-- Player embed -->
+    <div class="spotify-embed" id="spotify-embed" style="display:none"></div>
+
+    <!-- Lista de músicas -->
+    <div class="music-playlist" id="music-playlist">
+        <!-- As músicas são geradas pelo JS abaixo -->
+    </div>
+
+    <!-- Campo personalizado -->
+    <div class="music-custom">
+        <div class="music-custom-title">🎶 Adicione sua música especial</div>
+        <div class="music-custom-row">
+            <input class="music-input" id="music-link-input" type="text" placeholder="Cole o link do Spotify aqui...">
+            <button class="music-btn" onclick="loadCustomMusic()">Tocar ▶</button>
         </div>
+        <p class="music-tip">💡 Ex: https://open.spotify.com/track/...</p>
     </div>
-    <!-- Cole o embed do Spotify aqui:
-    <div style="margin-top:1.5rem; border-radius:16px; overflow:hidden;">
-        <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/SEU_TRACK_ID" width="100%" height="152" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-    </div>
-    -->
 </section>
 
 <!-- ── FOOTER ── -->
@@ -427,11 +440,54 @@ function showToast(msg, ms=3000){
 }
 
 /* ── Music ── */
-let playing=false;
-function togglePlay(){
-    playing=!playing;
-    document.getElementById('btn-play').textContent=playing?'⏸':'▶';
-    document.getElementById('album-art').classList.toggle('playing',playing);
+const PLAYLIST = [
+    { name: "Deixa", artist: "Tiago Iorc", id: "4uLU6hMCjMI75M1A2tKUQC" },
+    { name: "Te Amo Mais", artist: "Hugo & Guilherme", id: "0pqnGHJpmpxLKifKRmU6WP" },
+    { name: "Skyfall", artist: "Adele", id: "2MNqhQT8UkbLVDtgTF1vjB" },
+    { name: "Daqui Pra Sempre", artist: "Luan Santana", id: "5sdQOyqq2IDhvmx2lHOpwe" },
+];
+
+const MUSIC_KEY = 'pe_music_v1';
+
+function getTrackId(link){
+    const m = link.match(/track\/([a-zA-Z0-9]+)/);
+    return m ? m[1] : null;
+}
+
+function loadEmbed(trackId){
+    const embed = document.getElementById('spotify-embed');
+    embed.style.display = 'block';
+    embed.innerHTML = `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${trackId}?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+    embed.scrollIntoView({behavior:'smooth', block:'center'});
+    localStorage.setItem(MUSIC_KEY, trackId);
+}
+
+function loadCustomMusic(){
+    const link = document.getElementById('music-link-input').value.trim();
+    const id = getTrackId(link);
+    if(!id){ showToast('⚠️ Link inválido! Cole o link completo do Spotify.', 3500); return; }
+    document.querySelectorAll('.playlist-item').forEach(el=>el.classList.remove('active'));
+    loadEmbed(id);
+    showToast('🎵 Música carregada!');
+}
+
+function renderPlaylist(){
+    const list = document.getElementById('music-playlist');
+    list.innerHTML = '';
+    const saved = localStorage.getItem(MUSIC_KEY);
+    PLAYLIST.forEach(track => {
+        const item = document.createElement('div');
+        item.className = 'playlist-item' + (saved === track.id ? ' active' : '');
+        item.innerHTML = `<div class="pl-icon">🎵</div><div class="pl-info"><div class="pl-name">${track.name}</div><div class="pl-artist">${track.artist}</div></div><div class="pl-arrow">▶</div>`;
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.playlist-item').forEach(el=>el.classList.remove('active'));
+            item.classList.add('active');
+            loadEmbed(track.id);
+            showToast(`🎵 ${track.name} — ${track.artist}`);
+        });
+        list.appendChild(item);
+    });
+    if(saved) loadEmbed(saved);
 }
 
 /* ──────────────────────────────────────────
@@ -545,6 +601,7 @@ document.getElementById('file-input').addEventListener('change', async function(
 });
 
 renderGallery();
+renderPlaylist();
 </script>
 </body>
 </html>
