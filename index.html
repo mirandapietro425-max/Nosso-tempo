@@ -355,7 +355,35 @@
     <p style="margin-top:0.5rem; font-size:0.75rem; opacity:0.45;">Feito com muito amor · Contagem ajustada para 11/10/2024</p>
 </footer>
 
-<script>
+<script type="module">
+/* ── Firebase ── */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyB-XzRDCilsgzGrVz8RDYvSsNvKgxQROUs",
+    authDomain: "nosso-tempo-71252.firebaseapp.com",
+    projectId: "nosso-tempo-71252",
+    storageBucket: "nosso-tempo-71252.firebasestorage.app",
+    messagingSenderId: "963553550690",
+    appId: "1:963553550690:web:5680d9317172289f988c3b"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const GALLERY_DOC = doc(db, "gallery", "shared");
+
+async function getPhotos(){
+    try {
+        const snap = await getDoc(GALLERY_DOC);
+        if(snap.exists()) return snap.data().photos || Array(6).fill(null);
+    } catch(e){}
+    return Array(6).fill(null);
+}
+async function setPhotos(p){
+    await setDoc(GALLERY_DOC, { photos: p });
+}
+
 /* ── Greeting ── */
 (function(){
     const h = new Date().getHours();
@@ -491,33 +519,18 @@ function renderPlaylist(){
 }
 
 /* ──────────────────────────────────────────
-   GALLERY — ImgBB upload + localStorage
+   GALLERY — ImgBB upload + Firebase
 ──────────────────────────────────────────*/
-const SLOTS       = 6;
-const GALLERY_KEY = 'pe_gallery_v1';
-const APIKEY_KEY  = 'pe_imgbb_key';
-let uploadSlot    = null;
+const SLOTS    = 6;
+const IMGBB_KEY = 'fd49cf34ebd541510c6f4b64abc3f4f8';
+let uploadSlot = null;
 
-function getPhotos(){ try{ return JSON.parse(localStorage.getItem(GALLERY_KEY)) || Array(SLOTS).fill(null); }catch(e){ return Array(SLOTS).fill(null); } }
-function setPhotos(p){ localStorage.setItem(GALLERY_KEY, JSON.stringify(p)); }
-function getKey(){ return localStorage.getItem(APIKEY_KEY)||'fd49cf34ebd541510c6f4b64abc3f4f8'; }
-
-function saveApiKey(){
-    const k = document.getElementById('api-key-input').value.trim();
-    if(!k){ showToast('⚠️ Cola a chave antes de salvar!'); return; }
-    localStorage.setItem(APIKEY_KEY, k);
-    document.getElementById('api-status').innerHTML='<span class="api-ok">✅ Chave salva! Clique nas fotos para adicionar.</span>';
-    showToast('✅ Chave salva com sucesso!');
-    renderGallery();
-}
-
-function renderGallery(){
+async function renderGallery(){
     const grid   = document.getElementById('gallery-grid');
-    const photos = getPhotos();
-    const hasKey = !!getKey();
+    grid.innerHTML = '<div style="text-align:center;padding:2rem;color:#b06070;">⏳ Carregando fotos...</div>';
+    const photos = await getPhotos();
     grid.innerHTML = '';
 
-    // Esconde banner — chave já está no código
     const banner = document.getElementById('setup-banner');
     if(banner) banner.style.display='none';
 
@@ -548,21 +561,21 @@ function renderGallery(){
 
 function startUpload(i, e){
     if(e) e.stopPropagation();
-    if(!getKey()){
-        showToast('⚠️ Salva sua chave ImgBB primeiro!', 4000);
-        document.getElementById('api-key-input').scrollIntoView({behavior:'smooth'});
-        return;
-    }
     uploadSlot = i;
     document.getElementById('file-input').click();
 }
 
-function deletePhoto(i, e){
+async function deletePhoto(i, e){
     if(e) e.stopPropagation();
     if(!confirm('Remover esta foto?')) return;
-    const p=getPhotos(); p[i]=null; setPhotos(p); renderGallery();
+    const p = await getPhotos();
+    p[i] = null;
+    await setPhotos(p);
+    renderGallery();
     showToast('🗑 Foto removida!');
 }
+window.deletePhoto = deletePhoto;
+window.startUpload = startUpload;
 
 document.getElementById('file-input').addEventListener('change', async function(){
     const file = this.files[0];
@@ -572,7 +585,6 @@ document.getElementById('file-input').addEventListener('change', async function(
     const slotEl = document.getElementById('gallery-grid').children[uploadSlot];
     if(!slotEl) return;
 
-    // spinner
     const sp = document.createElement('div');
     sp.className='upload-spinner'; sp.textContent='⏳';
     slotEl.appendChild(sp);
@@ -580,18 +592,18 @@ document.getElementById('file-input').addEventListener('change', async function(
     try {
         const form = new FormData();
         form.append('image', file);
-        const res  = await fetch(`https://api.imgbb.com/1/upload?key=${getKey()}`, {method:'POST', body:form});
+        const res  = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {method:'POST', body:form});
         const data = await res.json();
 
         if(data.success){
-            const photos = getPhotos();
+            const photos = await getPhotos();
             photos[uploadSlot] = data.data.url;
-            setPhotos(photos);
+            await setPhotos(photos);
             renderGallery();
             showToast('📸 Foto adicionada! 🥰');
         } else {
             sp.remove();
-            showToast('❌ Erro! Verifique sua chave ImgBB.', 4000);
+            showToast('❌ Erro ao fazer upload.', 4000);
         }
     } catch(err){
         sp.remove();
