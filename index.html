@@ -31,11 +31,12 @@
             overflow-x: hidden;
         }
 
-        #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; contain: strict; }
 
         /* ── HERO ── */
         .hero {
-            min-height: 100vh;
+            min-height: 100dvh;
+            min-height: -webkit-fill-available;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             position: relative;
@@ -541,8 +542,12 @@
             padding-bottom: calc(0.7rem + env(safe-area-inset-bottom, 0px));
             box-shadow: 0 -4px 30px rgba(89,13,34,0.35); gap: 1rem;
             will-change: transform;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
+            contain: layout style;
+            isolation: isolate;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
         .mini-bar-info { display: flex; align-items: center; gap: 0.8rem; flex: 1; min-width: 0; }
         /* Nota musical sem animação de scale — evita reflow da barra */
@@ -2785,7 +2790,9 @@ const ctx    = canvas.getContext('2d');
 let W, H;
 function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 resize();
-window.addEventListener('resize', resize);
+// Debounce resize para não travar no celular (barra de endereço aparecendo/sumindo)
+let _resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(resize, 200); });
 const HEARTS = Array.from({length:28}, mkHeart);
 function mkHeart(){ return { x:Math.random()*800, y:Math.random()*800+600, size:Math.random()*16+8, speed:Math.random()*0.6+0.3, opacity:Math.random()*0.4+0.08, drift:(Math.random()-0.5)*0.4, rot:Math.random()*Math.PI*2, rotSpeed:(Math.random()-0.5)*0.02 }; }
 function drawHeart(x,y,size,rot){
