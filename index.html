@@ -432,6 +432,85 @@
         .special-preview img { width: 100%; border-radius: 12px; max-height: 200px; object-fit: cover; }
         .special-preview audio { width: 100%; }
 
+        /* ── MURAL DE HUMOR ── */
+        .mood-card {
+            background: linear-gradient(135deg, #fff0f3, #fce4ec);
+            border: 1px solid #ffb3c1; border-radius: 28px;
+            padding: 2rem; box-shadow: 0 8px 30px rgba(232,83,111,0.1);
+        }
+        .mood-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; }
+        .mood-header-icon { font-size: 1.8rem; }
+        .mood-header-text { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--velvet); }
+
+        .mood-players { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        .mood-player-box {
+            background: white; border-radius: 20px; padding: 1.2rem;
+            border: 2px solid #ffd6de; text-align: center; position: relative;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .mood-player-box.active-mood { border-color: var(--rose); box-shadow: 0 6px 20px rgba(232,83,111,0.18); }
+        .mood-player-name { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 0.5rem; }
+        .mood-player-emoji { font-size: 2.8rem; line-height: 1; margin-bottom: 0.4rem; display: block; }
+        .mood-player-label { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-style: italic; color: var(--velvet); min-height: 1.3em; }
+        .mood-player-time { font-size: 0.65rem; color: #c9a9b0; margin-top: 0.3rem; }
+        .mood-btn {
+            margin-top: 0.8rem; background: var(--rose); color: white; border: none;
+            padding: 0.45rem 1rem; border-radius: 50px; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .mood-btn:hover { background: var(--velvet); transform: scale(1.04); }
+
+        /* Picker de emoji */
+        .mood-picker-overlay {
+            position: fixed; inset: 0; background: rgba(89,13,34,0.55);
+            backdrop-filter: blur(4px); z-index: 10003;
+            display: flex; align-items: flex-end; justify-content: center;
+            padding-bottom: 0; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .mood-picker-overlay.show { opacity: 1; pointer-events: all; }
+        .mood-picker-sheet {
+            background: #fff8f9; border-radius: 28px 28px 0 0;
+            padding: 1.5rem 1.5rem 2.5rem; width: 100%; max-width: 480px;
+            transform: translateY(100%); transition: transform 0.35s cubic-bezier(.32,1.2,.5,1);
+            box-shadow: 0 -8px 40px rgba(89,13,34,0.2);
+        }
+        .mood-picker-overlay.show .mood-picker-sheet { transform: translateY(0); }
+        .mood-picker-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--velvet); margin-bottom: 0.3rem; text-align: center; }
+        .mood-picker-sub { font-size: 0.75rem; color: #c9a9b0; font-style: italic; text-align: center; margin-bottom: 1.2rem; }
+        .mood-picker-close { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--rose); font-weight: 700; }
+        .mood-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem;
+        }
+        .mood-option {
+            display: flex; flex-direction: column; align-items: center;
+            background: white; border: 2px solid #ffeef1; border-radius: 16px;
+            padding: 0.7rem 0.3rem; cursor: pointer; transition: all 0.2s; gap: 0.25rem;
+        }
+        .mood-option:hover { border-color: var(--rose); transform: scale(1.06); box-shadow: 0 4px 14px rgba(232,83,111,0.15); }
+        .mood-option.selected { border-color: var(--rose); background: #fff0f3; }
+        .mood-option-emoji { font-size: 1.8rem; line-height: 1; }
+        .mood-option-label { font-size: 0.58rem; color: var(--velvet); text-align: center; line-height: 1.2; }
+        .mood-confirm-btn {
+            margin-top: 1.2rem; width: 100%; background: var(--rose); color: white; border: none;
+            padding: 0.85rem; border-radius: 50px; font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .mood-confirm-btn:hover { background: var(--velvet); }
+
+        /* Histórico de humor */
+        .mood-history-title { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; font-weight: 700; }
+        .mood-history-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .mood-history-item {
+            display: flex; align-items: center; gap: 0.8rem;
+            background: white; border-radius: 14px; padding: 0.7rem 1rem;
+            border: 1px solid #ffeef1;
+        }
+        .mood-history-date { font-size: 0.7rem; color: var(--gold); font-weight: 600; min-width: 60px; }
+        .mood-history-emojis { font-size: 1.2rem; flex: 1; display: flex; gap: 0.5rem; }
+        .mood-history-pair { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+        .mood-history-pair-name { font-size: 0.55rem; color: #c9a9b0; text-transform: uppercase; letter-spacing: 0.08em; }
+
         /* MINI PLAYER FLUTUANTE (botão + lista) */
         .mini-player { position: fixed; bottom: 5.5rem; left: 1.2rem; z-index: 9998; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
         .mini-player-toggle { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--velvet), #800020); color: white; border: none; font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 16px rgba(89,13,34,0.4); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
@@ -751,6 +830,17 @@
     </div>
 </section>
 
+<!-- ── MURAL DE HUMOR — OVERLAY PICKER ── -->
+<div class="mood-picker-overlay" id="mood-picker-overlay">
+    <div class="mood-picker-sheet" style="position:relative">
+        <button class="mood-picker-close" onclick="closeMoodPicker()">✕</button>
+        <div class="mood-picker-title" id="mood-picker-title">Como você está hoje?</div>
+        <div class="mood-picker-sub">Escolha a carinha que melhor descreve seu sentimento 💕</div>
+        <div class="mood-grid" id="mood-grid"></div>
+        <button class="mood-confirm-btn" onclick="confirmMood()">Confirmar 💕</button>
+    </div>
+</div>
+
 <!-- ── MURAL ── -->
 <section>
     <div class="divider"><span class="divider-icon">💬</span></div>
@@ -764,6 +854,42 @@
         </div>
         <textarea class="mural-textarea" id="mural-input" placeholder="Escreva seu recado com amor..."></textarea>
         <button class="mural-btn" onclick="addMural()">Enviar recado 💌</button>
+    </div>
+</section>
+
+<!-- ── MURAL DE HUMOR ── -->
+<section>
+    <div class="divider"><span class="divider-icon">😊</span></div>
+    <div class="section-label">Como estamos hoje</div>
+    <h2 class="section-title">Mural de <em>humor</em></h2>
+    <div class="mood-card">
+        <div class="mood-header">
+            <span class="mood-header-icon">💭</span>
+            <div class="mood-header-text">Como cada um está se sentindo hoje?</div>
+        </div>
+        <div class="mood-players">
+            <!-- Pietro -->
+            <div class="mood-player-box" id="mood-box-pietro">
+                <div class="mood-player-name">Pietro 💙</div>
+                <span class="mood-player-emoji" id="mood-emoji-pietro">❓</span>
+                <div class="mood-player-label" id="mood-label-pietro">Não registrado</div>
+                <div class="mood-player-time" id="mood-time-pietro"></div>
+                <button class="mood-btn" onclick="openMoodPicker('Pietro')">Atualizar humor</button>
+            </div>
+            <!-- Emilly -->
+            <div class="mood-player-box" id="mood-box-emilly">
+                <div class="mood-player-name">Emilly 💗</div>
+                <span class="mood-player-emoji" id="mood-emoji-emilly">❓</span>
+                <div class="mood-player-label" id="mood-label-emilly">Não registrado</div>
+                <div class="mood-player-time" id="mood-time-emilly"></div>
+                <button class="mood-btn" onclick="openMoodPicker('Emilly')">Atualizar humor</button>
+            </div>
+        </div>
+        <!-- Histórico -->
+        <div class="mood-history-title">📅 Últimos 7 dias</div>
+        <div class="mood-history-list" id="mood-history-list">
+            <p style="text-align:center;color:#c9a9b0;font-style:italic;font-size:0.85rem;">Nenhum histórico ainda 🌸</p>
+        </div>
     </div>
 </section>
 
@@ -1769,8 +1895,9 @@ let ytPlayer      = null;
 let ytReady       = false;
 let currentTrackIdx = -1;
 let isPlaying     = false;
+let pendingIdx    = null; // fila quando API ainda não pronta
 
-// Cria o player visível via YT IFrame API
+// Carrega a API do YouTube
 (function loadYTApi(){
     if(document.getElementById('yt-api-script')) return;
     const s = document.createElement('script');
@@ -1780,23 +1907,33 @@ let isPlaying     = false;
 })();
 
 window.onYouTubeIframeAPIReady = function(){
-    ytReady = true;
-    // Cria o player no div visível da seção de música
     ytPlayer = new YT.Player('yt-player-div', {
-        height: '200',
+        height: '220',
         width:  '100%',
-        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1, controls: 1 },
         events: {
-            onReady: function(){ },
+            onReady: function(){
+                ytReady = true;
+                if(pendingIdx !== null){
+                    const idx = pendingIdx; pendingIdx = null; doPlay(idx);
+                }
+            },
             onStateChange: function(e){
+                const playIcon = document.getElementById('mini-play-icon');
                 if(e.data === YT.PlayerState.PLAYING){
                     isPlaying = true;
-                    document.getElementById('mini-play-icon').textContent = '⏸';
-                } else if(e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED){
+                    if(playIcon) playIcon.textContent = '⏸';
+                } else if(e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED || e.data === YT.PlayerState.CUED){
                     isPlaying = false;
-                    document.getElementById('mini-play-icon').textContent = '▶';
+                    if(playIcon) playIcon.textContent = '▶';
                 }
                 if(e.data === YT.PlayerState.ENDED) playNext();
+            },
+            onError: function(){
+                showToast('⚠️ Não foi possível reproduzir. Tente outra música.');
+                isPlaying = false;
+                const playIcon = document.getElementById('mini-play-icon');
+                if(playIcon) playIcon.textContent = '▶';
             }
         }
     });
@@ -1807,26 +1944,19 @@ function doPlay(idx){
     const track = PLAYLIST[idx];
     if(!track) return;
 
-    // Scroll suave até o player
     const area = document.getElementById('yt-embed-area');
     if(area){
         area.style.display = 'block';
-        area.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        setTimeout(() => area.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
     }
 
-    // Carrega e toca via API
-    if(ytReady && ytPlayer && ytPlayer.loadVideoById){
-        ytPlayer.loadVideoById(track.ytId);
-        isPlaying = true;
-    }
+    ytPlayer.loadVideoById({ videoId: track.ytId });
 
-    // Barra inferior
     document.getElementById('mini-track-name').textContent   = track.name;
     document.getElementById('mini-track-artist').textContent = track.artist;
     document.getElementById('mini-player-bar').style.display = 'flex';
-    document.getElementById('mini-play-icon').textContent    = '⏸';
+    document.getElementById('mini-play-icon').textContent    = '▶';
 
-    // Destaque na lista
     document.querySelectorAll('.playlist-item').forEach((el,i) =>
         el.classList.toggle('active', i === idx));
     document.querySelectorAll('.mini-player-item').forEach((el,i) =>
@@ -1834,9 +1964,18 @@ function doPlay(idx){
 
     showToast('🎵 ' + track.name + ' — ' + track.artist);
 }
-
 function playTrack(idx){
-    if(!ytReady || !ytPlayer){ setTimeout(() => playTrack(idx), 300); return; }
+    if(!ytReady || !ytPlayer){
+        pendingIdx = idx;
+        const track = PLAYLIST[idx];
+        if(track){
+            document.getElementById('mini-track-name').textContent   = track.name;
+            document.getElementById('mini-track-artist').textContent = track.artist;
+            document.getElementById('mini-player-bar').style.display = 'flex';
+        }
+        showToast('⏳ Carregando player...');
+        return;
+    }
     doPlay(idx);
 }
 window.playTrack       = playTrack;
@@ -1847,23 +1986,28 @@ window.playCustomYT    = playCustomYT;
 
 function playNext(){
     if(PLAYLIST.length === 0) return;
-    doPlay((currentTrackIdx + 1) % PLAYLIST.length);
+    playTrack((currentTrackIdx + 1) % PLAYLIST.length);
 }
 function playPrev(){
     if(PLAYLIST.length === 0) return;
-    doPlay((currentTrackIdx - 1 + PLAYLIST.length) % PLAYLIST.length);
+    playTrack((currentTrackIdx - 1 + PLAYLIST.length) % PLAYLIST.length);
 }
 
 function togglePlayPause(){
-    if(!ytPlayer) return;
-    if(isPlaying){
-        ytPlayer.pauseVideo();
-        isPlaying = false;
-        document.getElementById('mini-play-icon').textContent = '▶';
-    } else {
-        ytPlayer.playVideo();
-        isPlaying = true;
-        document.getElementById('mini-play-icon').textContent = '⏸';
+    if(!ytPlayer || !ytReady) return;
+    try {
+        const state = ytPlayer.getPlayerState();
+        if(state === YT.PlayerState.PLAYING){
+            ytPlayer.pauseVideo();
+        } else if(state === YT.PlayerState.PAUSED || state === YT.PlayerState.CUED){
+            ytPlayer.playVideo();
+        } else if(currentTrackIdx >= 0){
+            doPlay(currentTrackIdx);
+        } else {
+            playTrack(0);
+        }
+    } catch(e){
+        if(currentTrackIdx >= 0) doPlay(currentTrackIdx); else playTrack(0);
     }
 }
 
@@ -1931,6 +2075,150 @@ document.addEventListener('click', e => {
     }
 });
 
+
+/* ── Mural de Humor ── */
+const MOOD_DOC = doc(db, "mood", "shared");
+
+const MOOD_OPTIONS = [
+    { emoji: '😍', label: 'Apaixonado' },
+    { emoji: '😊', label: 'Feliz' },
+    { emoji: '🥰', label: 'Carinhoso' },
+    { emoji: '😄', label: 'Animado' },
+    { emoji: '🤩', label: 'Radiante' },
+    { emoji: '😌', label: 'Tranquilo' },
+    { emoji: '🥺', label: 'Com saudade' },
+    { emoji: '😴', label: 'Sonolento' },
+    { emoji: '🤔', label: 'Pensativo' },
+    { emoji: '😎', label: 'Confiante' },
+    { emoji: '💪', label: 'Determinado' },
+    { emoji: '🤗', label: 'Acolhedor' },
+    { emoji: '😅', label: 'Aliviado' },
+    { emoji: '😢', label: 'Triste' },
+    { emoji: '😤', label: 'Frustrado' },
+    { emoji: '🥵', label: 'Estressado' },
+    { emoji: '🤒', label: 'Indisposto' },
+    { emoji: '😴', label: 'Cansado' },
+    { emoji: '😇', label: 'Gratitude' },
+    { emoji: '🌟', label: 'Inspirado' },
+];
+
+let moodPickerTarget = null;
+let moodPickerSelected = null;
+
+function openMoodPicker(person){
+    moodPickerTarget = person;
+    moodPickerSelected = null;
+    document.getElementById('mood-picker-title').textContent = `${person}, como você está hoje?`;
+    // Renderiza grid
+    const grid = document.getElementById('mood-grid');
+    grid.innerHTML = MOOD_OPTIONS.map((m, i) => `
+        <div class="mood-option" onclick="selectMoodOption(${i})" id="mood-opt-${i}">
+            <span class="mood-option-emoji">${m.emoji}</span>
+            <span class="mood-option-label">${m.label}</span>
+        </div>`).join('');
+    document.getElementById('mood-picker-overlay').classList.add('show');
+}
+window.openMoodPicker = openMoodPicker;
+
+function closeMoodPicker(){
+    document.getElementById('mood-picker-overlay').classList.remove('show');
+    moodPickerTarget = null;
+    moodPickerSelected = null;
+}
+window.closeMoodPicker = closeMoodPicker;
+
+function selectMoodOption(idx){
+    moodPickerSelected = MOOD_OPTIONS[idx];
+    document.querySelectorAll('.mood-option').forEach((el,i) =>
+        el.classList.toggle('selected', i === idx));
+}
+window.selectMoodOption = selectMoodOption;
+
+async function confirmMood(){
+    if(!moodPickerSelected){ showToast('❤️ Escolha uma carinha primeiro!'); return; }
+    if(!moodPickerTarget) return;
+
+    const key = moodPickerTarget === 'Pietro' ? 'pietro' : 'emilly';
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    try {
+        const snap = await getDoc(MOOD_DOC);
+        const data = snap.exists() ? snap.data() : {};
+
+        // Atualiza humor atual
+        data[key] = { emoji: moodPickerSelected.emoji, label: moodPickerSelected.label, time: timeStr, date: todayKey };
+
+        // Histórico — guarda por dia
+        if(!data.history) data.history = [];
+        const todayEntry = data.history.find(h => h.date === todayKey);
+        if(todayEntry){
+            todayEntry[key] = { emoji: moodPickerSelected.emoji, label: moodPickerSelected.label };
+        } else {
+            const entry = { date: todayKey };
+            entry[key] = { emoji: moodPickerSelected.emoji, label: moodPickerSelected.label };
+            data.history.unshift(entry);
+            if(data.history.length > 7) data.history = data.history.slice(0, 7);
+        }
+
+        await setDoc(MOOD_DOC, data);
+        closeMoodPicker();
+        renderMood();
+        showToast(`${moodPickerSelected.emoji} Humor atualizado!`);
+    } catch(e){
+        showToast('❌ Erro ao salvar.');
+    }
+}
+window.confirmMood = confirmMood;
+
+async function renderMood(){
+    try {
+        const snap = await getDoc(MOOD_DOC);
+        const data = snap.exists() ? snap.data() : {};
+
+        ['pietro','emilly'].forEach(key => {
+            const person = key === 'pietro' ? 'Pietro' : 'Emilly';
+            const emojiEl = document.getElementById(`mood-emoji-${key}`);
+            const labelEl = document.getElementById(`mood-label-${key}`);
+            const timeEl  = document.getElementById(`mood-time-${key}`);
+            const boxEl   = document.getElementById(`mood-box-${key}`);
+
+            if(data[key]){
+                emojiEl.textContent = data[key].emoji;
+                labelEl.textContent = data[key].label;
+                timeEl.textContent  = `Hoje às ${data[key].time}`;
+                boxEl.classList.add('active-mood');
+            } else {
+                emojiEl.textContent = '❓';
+                labelEl.textContent = 'Não registrado';
+                timeEl.textContent  = '';
+                boxEl.classList.remove('active-mood');
+            }
+        });
+
+        // Histórico
+        const histList = document.getElementById('mood-history-list');
+        const history = data.history || [];
+        if(history.length === 0){
+            histList.innerHTML = '<p style="text-align:center;color:#c9a9b0;font-style:italic;font-size:0.85rem;">Nenhum histórico ainda 🌸</p>';
+        } else {
+            histList.innerHTML = history.map(h => {
+                const dateStr = (() => {
+                    const [y,m,d] = h.date.split('-');
+                    return new Date(y, m-1, d).toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+                })();
+                const p = h.pietro ? `<div class="mood-history-pair"><span>${h.pietro.emoji}</span><span class="mood-history-pair-name">Pietro</span></div>` : '';
+                const e = h.emilly ? `<div class="mood-history-pair"><span>${h.emilly.emoji}</span><span class="mood-history-pair-name">Emilly</span></div>` : '';
+                return `<div class="mood-history-item">
+                    <span class="mood-history-date">${dateStr}</span>
+                    <div class="mood-history-emojis">${p}${e}</div>
+                </div>`;
+            }).join('');
+        }
+    } catch(e){}
+}
+renderMood();
 
 /* ── Modo Evento ── */
 (function(){
