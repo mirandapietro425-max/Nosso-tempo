@@ -276,6 +276,44 @@
         .dreams-btn { background: var(--rose); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; white-space: nowrap; }
         .dreams-btn:hover { background: var(--velvet); }
 
+        /* FILMES */
+        .movies-list { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1.5rem; }
+        .movie-item { display: flex; align-items: center; gap: 1rem; background: white; border: 1px solid #ffd6de; border-radius: 16px; padding: 1rem 1.2rem; transition: all 0.25s; }
+        .movie-item.watched { opacity: 0.55; background: #f9f9f9; }
+        .movie-item.watched .movie-name { text-decoration: line-through; }
+        .movie-icon { font-size: 1.4rem; flex-shrink: 0; }
+        .movie-name { flex: 1; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--velvet); font-style: italic; }
+        .movie-check { background: none; border: 2px solid var(--rose-lt); color: transparent; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 0.85rem; flex-shrink: 0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .movie-item.watched .movie-check { background: var(--rose); border-color: var(--rose); color: white; }
+        .movie-del { background: none; border: none; color: #e0b0b8; cursor: pointer; font-size: 1rem; transition: color 0.2s; }
+        .movie-del:hover { color: var(--rose); }
+        .movies-add { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .movies-input { flex: 1; min-width: 200px; padding: 0.7rem 1.2rem; border: 1px solid #ffd6de; border-radius: 50px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; background: white; color: var(--velvet); }
+        .movies-input:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(232,83,111,0.12); }
+        .movies-btn { background: var(--rose); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; white-space: nowrap; }
+        .movies-btn:hover { background: var(--velvet); }
+
+        /* MURAL */
+        .mural-list { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.8rem; }
+        .mural-msg { border-radius: 20px; padding: 1.4rem 1.6rem; position: relative; }
+        .mural-msg.pietro { background: linear-gradient(135deg, #e8f4ff, #ddeeff); border: 1px solid #b3d4f5; align-self: flex-start; }
+        .mural-msg.emilly { background: linear-gradient(135deg, #fff0f3, #fce4ec); border: 1px solid #ffb3c1; align-self: flex-end; text-align: right; }
+        .mural-msg-author { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 0.4rem; }
+        .mural-msg.pietro .mural-msg-author { color: #4a90d9; }
+        .mural-msg.emilly .mural-msg-author { color: var(--rose); }
+        .mural-msg-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; line-height: 1.7; color: #4a1020; }
+        .mural-msg-date { font-size: 0.68rem; color: #c9a9b0; margin-top: 0.5rem; }
+        .mural-msg-del { position: absolute; top: 0.6rem; right: 0.8rem; background: none; border: none; color: #e0b0b8; cursor: pointer; font-size: 0.85rem; transition: color 0.2s; }
+        .mural-msg-del:hover { color: var(--rose); }
+        .mural-add { display: flex; flex-direction: column; gap: 0.8rem; }
+        .mural-author-row { display: flex; gap: 0.6rem; }
+        .mural-author-btn { flex: 1; padding: 0.6rem 1rem; border-radius: 50px; border: 2px solid #ffd6de; background: white; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #b06070; transition: all 0.2s; }
+        .mural-author-btn.active { background: var(--rose); border-color: var(--rose); color: white; }
+        .mural-textarea { width: 100%; padding: 1rem 1.2rem; border: 1px solid #ffd6de; border-radius: 18px; font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; outline: none; background: white; color: var(--velvet); resize: none; min-height: 90px; line-height: 1.6; }
+        .mural-textarea:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(232,83,111,0.12); }
+        .mural-btn { background: var(--rose); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; align-self: flex-end; }
+        .mural-btn:hover { background: var(--velvet); }
+
         /* FOOTER */
         footer { background: var(--velvet); color: rgba(255,255,255,0.6); text-align: center; padding: 3rem 1.5rem; font-size: 0.82rem; position: relative; z-index: 1; }
         .footer-heart { font-size: 2.5rem; display: block; margin-bottom: 0.8rem; animation: heartbeat 1.4s ease infinite; }
@@ -476,6 +514,34 @@
     </div>
 </section>
 
+<!-- ── FILMES ── -->
+<section>
+    <div class="divider"><span class="divider-icon">🎬</span></div>
+    <div class="section-label">Para assistir juntos</div>
+    <h2 class="section-title">Nossa <em>watchlist</em></h2>
+    <div class="movies-list" id="movies-list"></div>
+    <div class="movies-add">
+        <input class="movies-input" id="movie-input" type="text" placeholder="Nome do filme ou série...">
+        <button class="movies-btn" onclick="addMovie()">Adicionar 🎬</button>
+    </div>
+</section>
+
+<!-- ── MURAL ── -->
+<section>
+    <div class="divider"><span class="divider-icon">💬</span></div>
+    <div class="section-label">Só pra nós dois</div>
+    <h2 class="section-title">Mural de <em>recados</em></h2>
+    <div class="mural-list" id="mural-list"></div>
+    <div class="mural-add">
+        <div class="mural-author-row">
+            <button class="mural-author-btn active" id="btn-pietro" onclick="selectAuthor('Pietro')">Pietro 💙</button>
+            <button class="mural-author-btn" id="btn-emilly" onclick="selectAuthor('Emilly')">Emilly 💗</button>
+        </div>
+        <textarea class="mural-textarea" id="mural-input" placeholder="Escreva seu recado com amor..."></textarea>
+        <button class="mural-btn" onclick="addMural()">Enviar recado 💌</button>
+    </div>
+</section>
+
 <!-- ── FOOTER ── -->
 <footer>
     <span class="footer-heart">❤</span>
@@ -512,6 +578,145 @@ async function getPhotos(){
 async function setPhotos(p){
     await setDoc(GALLERY_DOC, { photos: p });
 }
+
+/* ── Filmes ── */
+const MOVIES_DOC = doc(db, "movies", "shared");
+
+const INITIAL_MOVIES = [
+    { name: "La La Land", watched: false },
+    { name: "Diário de uma Paixão", watched: false },
+    { name: "Como Eu Era Antes de Você", watched: false },
+];
+
+async function getMovies(){
+    try {
+        const snap = await getDoc(MOVIES_DOC);
+        if(snap.exists()) return snap.data().movies || INITIAL_MOVIES;
+    } catch(e){}
+    return INITIAL_MOVIES;
+}
+async function saveMovies(m){ await setDoc(MOVIES_DOC, { movies: m }); }
+
+async function renderMovies(){
+    const list   = document.getElementById('movies-list');
+    const movies = await getMovies();
+    list.innerHTML = '';
+    if(movies.length === 0){
+        list.innerHTML = '<p style="text-align:center;color:#c9a9b0;font-style:italic;">Nenhum filme ainda... Adicione o primeiro! 🎬</p>';
+        return;
+    }
+    movies.forEach((m, i) => {
+        const item = document.createElement('div');
+        item.className = 'movie-item' + (m.watched ? ' watched' : '');
+        item.innerHTML = `
+            <div class="movie-icon">${m.watched ? '✅' : '🎬'}</div>
+            <div class="movie-name">${m.name}</div>
+            <button class="movie-check" onclick="toggleMovie(${i})">${m.watched ? '✓' : ''}</button>
+            <button class="movie-del" onclick="deleteMovie(${i})">✕</button>`;
+        list.appendChild(item);
+    });
+}
+
+async function addMovie(){
+    const input = document.getElementById('movie-input');
+    const name  = input.value.trim();
+    if(!name){ showToast('✏️ Escreve o nome do filme!'); return; }
+    const movies = await getMovies();
+    movies.push({ name, watched: false });
+    await saveMovies(movies);
+    input.value = '';
+    renderMovies();
+    showToast('🎬 Filme adicionado!');
+}
+
+async function toggleMovie(i){
+    const movies = await getMovies();
+    movies[i].watched = !movies[i].watched;
+    await saveMovies(movies);
+    renderMovies();
+    if(movies[i].watched) showToast('✅ Assistido! 🥰');
+}
+
+async function deleteMovie(i){
+    if(!confirm('Remover este filme?')) return;
+    const movies = await getMovies();
+    movies.splice(i, 1);
+    await saveMovies(movies);
+    renderMovies();
+}
+
+window.addMovie    = addMovie;
+window.toggleMovie = toggleMovie;
+window.deleteMovie = deleteMovie;
+renderMovies();
+
+/* ── Mural de Recados ── */
+const MURAL_DOC   = doc(db, "mural", "shared");
+let muralAuthor   = 'Pietro';
+
+function selectAuthor(name){
+    muralAuthor = name;
+    document.getElementById('btn-pietro').classList.toggle('active', name === 'Pietro');
+    document.getElementById('btn-emilly').classList.toggle('active', name === 'Emilly');
+}
+
+async function getMural(){
+    try {
+        const snap = await getDoc(MURAL_DOC);
+        if(snap.exists()) return snap.data().msgs || [];
+    } catch(e){}
+    return [];
+}
+async function saveMural(m){ await setDoc(MURAL_DOC, { msgs: m }); }
+
+async function renderMural(){
+    const list = document.getElementById('mural-list');
+    const msgs = await getMural();
+    list.innerHTML = '';
+    if(msgs.length === 0){
+        list.innerHTML = '<p style="text-align:center;color:#c9a9b0;font-style:italic;">Nenhum recado ainda... Escreva o primeiro! 💌</p>';
+        return;
+    }
+    msgs.forEach((m, i) => {
+        const div = document.createElement('div');
+        div.className = 'mural-msg ' + m.author.toLowerCase();
+        div.innerHTML = `
+            <button class="mural-msg-del" onclick="deleteMural(${i})">✕</button>
+            <div class="mural-msg-author">${m.author} ${m.author==='Pietro'?'💙':'💗'}</div>
+            <div class="mural-msg-text">${m.text}</div>
+            <div class="mural-msg-date">${m.date}</div>`;
+        list.appendChild(div);
+    });
+}
+
+async function addMural(){
+    const input = document.getElementById('mural-input');
+    const text  = input.value.trim();
+    if(!text){ showToast('✏️ Escreve seu recado!'); return; }
+    const msgs = await getMural();
+    msgs.push({
+        author: muralAuthor,
+        text,
+        date: new Date().toLocaleDateString('pt-BR', { day:'numeric', month:'long', year:'numeric' })
+    });
+    await saveMural(msgs);
+    input.value = '';
+    renderMural();
+    showToast('💌 Recado enviado!');
+}
+
+async function deleteMural(i){
+    if(!confirm('Remover este recado?')) return;
+    const msgs = await getMural();
+    msgs.splice(i, 1);
+    await saveMural(msgs);
+    renderMural();
+}
+
+window.addMural    = addMural;
+window.deleteMural = deleteMural;
+window.selectAuthor = selectAuthor;
+renderMural();
 
 /* ── Carta Surpresa ── */
 function initSurprise(){
