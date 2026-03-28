@@ -197,10 +197,11 @@ export function initParticles() {
   });
   window.addEventListener('orientationchange', () => setTimeout(resize, 400));
 
+  // mkHeart usa W e H que já foram definidos pelo resize() acima
   function mkHeart() {
     return {
-      x:        Math.random() * 800,
-      y:        Math.random() * 800 + 600,
+      x:        Math.random() * W,
+      y:        Math.random() * H + H,  // começa abaixo da tela, sobe gradualmente
       size:     Math.random() * 16 + 8,
       speed:    Math.random() * 0.6 + 0.3,
       opacity:  Math.random() * 0.4 + 0.08,
@@ -226,7 +227,17 @@ export function initParticles() {
     ctx.restore();
   }
 
-  const HEARTS = Array.from({ length: 28 }, mkHeart);
+  // Distribui os corações por toda a tela inicialmente
+  const HEARTS = Array.from({ length: 28 }, () => ({
+    x:        Math.random() * W,
+    y:        Math.random() * H,   // posições iniciais espalhadas pela tela inteira
+    size:     Math.random() * 16 + 8,
+    speed:    Math.random() * 0.6 + 0.3,
+    opacity:  Math.random() * 0.4 + 0.08,
+    drift:    (Math.random() - 0.5) * 0.4,
+    rot:      Math.random() * Math.PI * 2,
+    rotSpeed: (Math.random() - 0.5) * 0.02,
+  }));
 
   function animate() {
     ctx.clearRect(0, 0, W, H);
@@ -234,6 +245,7 @@ export function initParticles() {
       h.y   -= h.speed;
       h.x   += h.drift;
       h.rot += h.rotSpeed;
+      // Quando sair pelo topo, renasce na base com posição X aleatória
       if (h.y < -40) Object.assign(h, mkHeart(), { y: H + 40, x: Math.random() * W });
       ctx.fillStyle = `rgba(232,83,111,${h.opacity})`;
       drawHeart(h.x, h.y, h.size, h.rot);

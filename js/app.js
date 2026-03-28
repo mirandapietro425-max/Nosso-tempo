@@ -138,9 +138,15 @@ document.getElementById('file-input')?.addEventListener('change', async function
   if (!file || uploadSlot === null) return;
   this.value = '';
 
-  const slots  = document.querySelectorAll('.gallery-slot');
-  const slot   = slots[uploadSlot];
-  if (slot) slot.innerHTML = '<div class="upload-spinner">⏳</div>';
+  // Mostra spinner no slot correto
+  const grid   = document.getElementById('gallery-grid');
+  const slotEl = grid?.children[uploadSlot];
+  if (slotEl) {
+    const sp = document.createElement('div');
+    sp.className = 'upload-spinner';
+    sp.textContent = '⏳';
+    slotEl.appendChild(sp);
+  }
 
   try {
     const form = new FormData();
@@ -153,12 +159,14 @@ document.getElementById('file-input')?.addEventListener('change', async function
       const p = await getPhotos();
       p[uploadSlot] = data.data.url;
       await setPhotos(p);
-      showToast('📸 Foto salva!');
+      showToast('📸 Foto adicionada! 🥰');
     } else {
-      showToast('❌ Erro no upload da foto.', 4000);
+      if (slotEl) slotEl.querySelector('.upload-spinner')?.remove();
+      showToast('❌ Erro ao fazer upload.', 4000);
     }
   } catch (err) {
-    showToast('❌ Erro de rede.', 3000);
+    if (slotEl) slotEl.querySelector('.upload-spinner')?.remove();
+    showToast('❌ Erro de rede. Tente novamente.', 4000);
   }
 
   uploadSlot = null;
@@ -985,105 +993,190 @@ loadCalMonth();
 /* ════════════════════════════════════════════
    LOCALIZAÇÃO
    ════════════════════════════════════════════ */
-let locData = { pietro: null, emilly: null };
+const GMAPS_KEY = 'AIzaSyCrv59xEUDSGhSHng0jeOvKLWt3gW4WeOM';
+let locData  = { pietro: null, emilly: null };
+let gMap     = null;
+let gMarkers = { pietro: null, emilly: null };
 
-function haversineKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+// ── Carrega a API do Google Maps ──
+function loadGoogleMaps() {
+  if (document.getElementById('gmaps-script')) return;
+  const s   = document.createElement('script');
+  s.id      = 'gmaps-script';
+  s.src     = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=initLocationMap`;
+  s.async   = true;
+  s.defer   = true;
+  document.head.appendChild(s);
 }
 
-async function reverseGeocode(lat, lng) {
-  const storedKey = localStorage.getItem(LS_GMAPS_KEY);
-  if (storedKey) {
-    try {
-      const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${storedKey}&language=pt-BR`);
-      const d = await r.json();
-      const res = d.results?.[0];
-      if (res) {
-        const city = res.address_components?.find(c => c.types.includes('locality'))?.long_name || '';
-        const state = res.address_components?.find(c => c.types.includes('administrative_area_level_1'))?.short_name || '';
-        return city ? `${city}, ${state}` : res.formatted_address;
-      }
-    } catch (e) {}
-  }
-  // Fallback: Open-Meteo / nominatim
-  try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-    const d = await r.json();
-    return d.address?.city || d.address?.town || d.address?.county || 'Local desconhecido';
-  } catch (e) {
-    return `${lat.toFixed(3)}, ${lng.toFixed(3)}`;
-  }
+// Callback global chamado pela API do Google Maps
+window.initLocationMap = function () {
+  const mapDiv     = document.getElementById('location-map');
+  const placeholder = document.getElementById('location-map-placeholder');
+  if (!mapDiv) return;
+  mapDiv.style.display = 'block';
+  if (placeholder) placeholder.style.display = 'none';
+
+  gMap = new google.maps.Map(mapDiv, {
+    zoom: 5,
+    center: { lat: -15.77, lng: -47.92 }, // Brasil
+    mapTypeId: 'roadmap',
+    styles: [
+      { featureType: 'all',     elementType: 'geometry',         stylers: [{ color: '#fff0f3' }] },
+      { featureType: 'water',   elementType: 'geometry',         stylers: [{ color: '#ffd6de' }] },
+      { featureType: 'road',    elementType: 'geometry',         stylers: [{ color: '#ffffff' }] },
+      { featureType: 'road',    elementType: 'geometry.stroke',  stylers: [{ color: '#f4879c' }] },
+      { featureType: 'poi',     elementType: 'geometry',         stylers: [{ color: '#ffe0e8' }] },
+      { featureType: 'transit', elementType: 'geometry',         stylers: [{ color: '#ffe0e8' }] },
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
+      { elementType: 'labels.text.fill',   stylers: [{ color: '#590d22' }] },
+    ],
+    disableDefaultUI:   false,
+    zoomControl:        true,
+    streetViewControl:  false,
+    mapTypeControl:     false,
+  });
+
+  // Se já tiver dados quando o mapa carregar, plota os pins
+  renderMapPins();
+};
+
+// ── Pins com cores distintas por pessoa ──
+function getPinConfig(person) {
+  return person === 'pietro'
+    ? { label: 'P', color: '#4a90d9', title: 'Pietro 💙' }
+    : { label: 'E', color: '#e8536f', title: 'Emilly 💗' };
 }
 
 function renderMapPins() {
-  const { pietro, emilly } = locData;
-  const wrap = document.getElementById('location-map-wrap');
-  const ph   = document.getElementById('location-map-placeholder');
-  const map  = document.getElementById('location-map');
-  if (!wrap || !ph || !map) return;
+  if (!gMap) return;
+  const positions = [];
 
-  if (!pietro && !emilly) { ph.style.display = 'block'; map.style.display = 'none'; return; }
+  ['pietro', 'emilly'].forEach(person => {
+    const d = locData[person];
+    if (!d?.lat) return;
 
-  ph.style.display  = 'none';
-  map.style.display = 'block';
+    const cfg = getPinConfig(person);
+    const pos = { lat: d.lat, lng: d.lng };
+    positions.push(pos);
 
-  const lat = ((pietro?.lat || 0) + (emilly?.lat || 0)) / (pietro && emilly ? 2 : 1);
-  const lng = ((pietro?.lng || 0) + (emilly?.lng || 0)) / (pietro && emilly ? 2 : 1);
+    if (gMarkers[person]) {
+      // Atualiza posição do pin existente
+      gMarkers[person].setPosition(pos);
+    } else {
+      // Cria pin novo
+      gMarkers[person] = new google.maps.Marker({
+        position: pos,
+        map:      gMap,
+        title:    cfg.title,
+        icon: {
+          path:          google.maps.SymbolPath.CIRCLE,
+          scale:         14,
+          fillColor:     cfg.color,
+          fillOpacity:   1,
+          strokeColor:   '#ffffff',
+          strokeWeight:  3,
+        },
+        label: { text: cfg.label, color: '#fff', fontWeight: 'bold', fontSize: '12px' },
+      });
 
-  map.innerHTML = `
-    <iframe
-      width="100%" height="100%"
-      style="border:0;border-radius:20px;"
-      loading="lazy"
-      referrerpolicy="no-referrer-when-downgrade"
-      src="https://www.google.com/maps?q=${lat},${lng}&z=10&output=embed">
-    </iframe>`;
+      // Info window ao clicar no pin
+      const iw = new google.maps.InfoWindow({
+        content: `<div style="font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#590d22;padding:0.2rem 0.4rem">
+          <strong>${cfg.title}</strong><br>${d.city || ''}
+        </div>`
+      });
+      gMarkers[person].addListener('click', () => iw.open(gMap, gMarkers[person]));
+    }
+  });
+
+  // Ajusta o zoom para mostrar os dois pins
+  if (positions.length === 2) {
+    const bounds = new google.maps.LatLngBounds();
+    positions.forEach(p => bounds.extend(p));
+    gMap.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 });
+  } else if (positions.length === 1) {
+    gMap.setCenter(positions[0]);
+    gMap.setZoom(12);
+  }
 }
 
+// ── Distância entre os dois ──
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R    = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a    = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── Reverse geocode usando a chave já configurada ──
+async function reverseGeocode(lat, lng) {
+  try {
+    const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GMAPS_KEY}&language=pt-BR`);
+    const d = await r.json();
+    if (d.results?.[0]) {
+      const comps = d.results[0].address_components;
+      const city  = comps.find(c => c.types.includes('administrative_area_level_2'))?.long_name
+                 || comps.find(c => c.types.includes('locality'))?.long_name || '';
+      const state = comps.find(c => c.types.includes('administrative_area_level_1'))?.short_name || '';
+      return city && state
+        ? `${city}, ${state}`
+        : d.results[0].formatted_address.split(',').slice(0, 2).join(',');
+    }
+  } catch (e) {}
+  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+}
+
+// ── Atualiza os cards de localização ──
 function updateLocUI() {
-  const { pietro, emilly } = locData;
-  ['pietro', 'emilly'].forEach(p => {
-    const d       = locData[p];
-    const cityEl  = document.getElementById(`loc-city-${p}`);
-    const timeEl  = document.getElementById(`loc-time-${p}`);
-    const cardEl  = document.getElementById(`loc-card-${p}`);
-    const btnEl   = document.getElementById(`loc-btn-${p}`);
-    if (d) {
-      if (cityEl)  cityEl.textContent = d.city || 'Local desconhecido';
-      if (timeEl)  timeEl.textContent = d.updatedAt ? `Atualizado às ${d.updatedAt}` : '';
-      if (cardEl)  cardEl.classList.add('active-loc');
-      if (btnEl)   btnEl.textContent  = '📍 Atualizar localização';
+  ['pietro', 'emilly'].forEach(person => {
+    const d      = locData[person];
+    const cityEl = document.getElementById(`loc-city-${person}`);
+    const timeEl = document.getElementById(`loc-time-${person}`);
+    const cardEl = document.getElementById(`loc-card-${person}`);
+    const btnEl  = document.getElementById(`loc-btn-${person}`);
+
+    if (d?.lat) {
+      if (cityEl) cityEl.textContent = d.city || 'Localizando...';
+      if (timeEl) timeEl.textContent = d.updatedAt ? `Atualizado às ${d.updatedAt}` : '';
+      cardEl?.classList.add('active-loc');
+      if (btnEl) btnEl.textContent = '📍 Atualizar localização';
+    } else {
+      if (cityEl) cityEl.textContent = 'Sem localização ainda';
+      if (timeEl) timeEl.textContent = '';
+      cardEl?.classList.remove('active-loc');
     }
   });
 
   // Distância
+  const { pietro, emilly } = locData;
   const distDiv = document.getElementById('location-distance');
   const distNum = document.getElementById('loc-dist-num');
-  if (pietro && emilly) {
-    const km  = haversineKm(pietro.lat, pietro.lng, emilly.lat, emilly.lng);
-    const str = km < 1 ? `${Math.round(km * 1000)} metros` : `${km.toFixed(1)} km`;
+
+  if (pietro?.lat && emilly?.lat) {
+    const km  = calcDistance(pietro.lat, pietro.lng, emilly.lat, emilly.lng);
+    const str = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
     if (distNum) distNum.textContent = str;
     distDiv?.classList.add('show');
   } else {
     distDiv?.classList.remove('show');
   }
+
   renderMapPins();
 }
 
-// Escuta Firebase em tempo real
+// ── Escuta Firebase em tempo real ──
 onSnapshot(LOC_DOC, (snap) => {
   if (snap.exists()) {
-    const data   = snap.data();
+    const data     = snap.data();
     locData.pietro = data.pietro || null;
     locData.emilly = data.emilly || null;
     updateLocUI();
   }
 });
 
+// ── Compartilhar localização ──
 async function shareLocation(person) {
   const btn = document.getElementById(`loc-btn-${person}`);
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Obtendo localização...'; }
@@ -1118,34 +1211,9 @@ async function shareLocation(person) {
 
 window.shareLocation = shareLocation;
 
-function checkGmapsKeyTip() {
-  const key = localStorage.getItem(LS_GMAPS_KEY);
-  const tip = document.getElementById('location-key-tip');
-  if (!tip) return;
-  if (!key) {
-    tip.style.display = 'block';
-    tip.innerHTML = `
-      <div class="location-key-tip">
-        💡 <strong>Dica:</strong> Para ver o mapa com os pins de vocês,
-        adicione uma <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" rel="noopener">chave da API do Google Maps</a>:
-        <div class="location-key-row">
-          <input class="location-key-input" id="gmaps-key-input" placeholder="AIza..." type="text">
-          <button class="location-key-btn" onclick="saveGmapsKey()">Salvar</button>
-        </div>
-      </div>`;
-  }
-}
-
-window.saveGmapsKey = function () {
-  const k = document.getElementById('gmaps-key-input')?.value.trim();
-  if (k) {
-    localStorage.setItem(LS_GMAPS_KEY, k);
-    showToast('✅ Chave do mapa salva!');
-    checkGmapsKeyTip();
-  }
-};
-
-checkGmapsKeyTip();
+// Esconde o tip e carrega o mapa direto (chave já está no código)
+document.getElementById('location-key-tip').style.display = 'none';
+loadGoogleMaps();
 
 /* ════════════════════════════════════════════
    EVENTOS SAZONAIS
@@ -1154,11 +1222,14 @@ checkGmapsKeyTip();
   const now   = new Date();
   const day   = now.getDate();
   const month = now.getMonth();
+  const year  = now.getFullYear();
 
-  function getPascoa(y) {
+  // ── Funções para datas móveis ──
+  function calcPascoa(y) {
     const a = y % 19, b = Math.floor(y/100), c = y % 100;
-    const d = Math.floor(b/4), e = b % 4, f = Math.floor((b+8)/25);
-    const g = Math.floor((b-f+1)/3), h = (19*a+b-d-g+15) % 30;
+    const d2 = Math.floor(b/4), e = b % 4;
+    const f = Math.floor((b+8)/25), g = Math.floor((b-f+1)/3);
+    const h = (19*a + b - d2 - g + 15) % 30;
     const i2 = Math.floor(c/4), k = c % 4;
     const l = (32 + 2*e + 2*i2 - h - k) % 7;
     const m2 = Math.floor((a + 11*h + 22*l) / 451);
@@ -1167,15 +1238,50 @@ checkGmapsKeyTip();
     return new Date(y, mes, dia);
   }
 
-  function isCarnaval(date) {
-    const pascoa = getPascoa(date.getFullYear());
-    const carnaval = new Date(pascoa); carnaval.setDate(pascoa.getDate() - 47);
-    const seg = new Date(carnaval); seg.setDate(carnaval.getDate() - 1);
-    return (date.getMonth() === carnaval.getMonth() && date.getDate() === carnaval.getDate()) ||
-           (date.getMonth() === seg.getMonth() && date.getDate() === seg.getDate());
+  function isPascoa(date) {
+    const p = calcPascoa(date.getFullYear());
+    return date.getMonth() === p.getMonth() && date.getDate() === p.getDate();
   }
 
-  const evento = EVENTOS.find(e => e.check(day, month));
+  function isCarnaval(date) {
+    const pascoa = calcPascoa(date.getFullYear());
+    const terca  = new Date(pascoa); terca.setDate(pascoa.getDate() - 47);
+    const seg    = new Date(terca);  seg.setDate(terca.getDate() - 1);
+    return (date.getMonth() === terca.getMonth() && date.getDate() === terca.getDate()) ||
+           (date.getMonth() === seg.getMonth()   && date.getDate() === seg.getDate());
+  }
+
+  function nthWeekday(y, m, weekday, n) {
+    let d = new Date(y, m, 1), count = 0;
+    while (true) {
+      if (d.getDay() === weekday) { count++; if (count === n) return d; }
+      d.setDate(d.getDate() + 1);
+    }
+  }
+
+  function isDiaDasMaes(date) {
+    const seg = nthWeekday(date.getFullYear(), 4, 0, 2); // 2º domingo de maio
+    return date.getMonth() === seg.getMonth() && date.getDate() === seg.getDate();
+  }
+
+  function isDiaDossPais(date) {
+    const seg = nthWeekday(date.getFullYear(), 7, 0, 2); // 2º domingo de agosto
+    return date.getMonth() === seg.getMonth() && date.getDate() === seg.getDate();
+  }
+
+  // Resolve checks dinâmicos
+  const dynamicChecks = {
+    'pascoa':   () => isPascoa(now),
+    'carnaval': () => isCarnaval(now),
+    'dia-maes': () => isDiaDasMaes(now),
+    'dia-pais': () => isDiaDossPais(now),
+  };
+
+  const evento = EVENTOS.find(e => {
+    if (e.check) return e.check(day, month);
+    return dynamicChecks[e.id] ? dynamicChecks[e.id]() : false;
+  });
+
   if (!evento) return;
 
   document.body.classList.add('event-mode');
