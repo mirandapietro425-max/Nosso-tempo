@@ -3,7 +3,7 @@
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'pe-cache-v2';
+const CACHE_NAME    = 'pe-cache-v10';
 const CACHE_STATIC  = 'pe-static-v2';
 const CACHE_DYNAMIC = 'pe-dynamic-v2';
 
