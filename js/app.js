@@ -1003,10 +1003,34 @@ function loadGoogleMaps() {
   if (document.getElementById('gmaps-script')) return;
   const s   = document.createElement('script');
   s.id      = 'gmaps-script';
-  s.src     = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=initLocationMap`;
+  s.src     = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=initLocationMap&loading=async`;
   s.async   = true;
   s.defer   = true;
+  // Fallback: se a API falhar (ex: domínio bloqueado), usa iframe do Google Maps
+  s.onerror = () => {
+    console.warn('Google Maps API falhou, usando fallback de iframe');
+    useFallbackMap();
+  };
   document.head.appendChild(s);
+}
+
+function useFallbackMap() {
+  const { pietro, emilly } = locData;
+  const mapDiv = document.getElementById('location-map');
+  const ph     = document.getElementById('location-map-placeholder');
+  if (!mapDiv) return;
+  if (!pietro?.lat && !emilly?.lat) return;
+  const lat = pietro?.lat ?? emilly?.lat;
+  const lng = pietro?.lng ?? emilly?.lng;
+  mapDiv.style.display = 'block';
+  if (ph) ph.style.display = 'none';
+  mapDiv.innerHTML = `<iframe
+    width="100%" height="100%"
+    style="border:0;border-radius:20px;"
+    loading="lazy"
+    referrerpolicy="no-referrer-when-downgrade"
+    src="https://www.google.com/maps?q=${lat},${lng}&z=12&output=embed">
+  </iframe>`;
 }
 
 // Callback global chamado pela API do Google Maps
@@ -1049,7 +1073,10 @@ function getPinConfig(person) {
 }
 
 function renderMapPins() {
-  if (!gMap) return;
+  if (!gMap) {
+    useFallbackMap();
+    return;
+  }
   const positions = [];
 
   ['pietro', 'emilly'].forEach(person => {
@@ -1173,6 +1200,14 @@ onSnapshot(LOC_DOC, (snap) => {
     locData.pietro = data.pietro || null;
     locData.emilly = data.emilly || null;
     updateLocUI();
+    // Se o mapa ainda não inicializou mas já temos coords, prepara o div
+    // para que o callback initLocationMap já plote os pins ao carregar
+    if (!gMap && (locData.pietro?.lat || locData.emilly?.lat)) {
+      const mapDiv = document.getElementById('location-map');
+      const ph     = document.getElementById('location-map-placeholder');
+      if (mapDiv) mapDiv.style.display = 'block';
+      if (ph)     ph.style.display     = 'none';
+    }
   }
 });
 
