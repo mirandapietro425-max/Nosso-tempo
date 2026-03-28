@@ -1020,16 +1020,28 @@ function useFallbackMap() {
   const ph     = document.getElementById('location-map-placeholder');
   if (!mapDiv) return;
   if (!pietro?.lat && !emilly?.lat) return;
-  const lat = pietro?.lat ?? emilly?.lat;
-  const lng = pietro?.lng ?? emilly?.lng;
   mapDiv.style.display = 'block';
   if (ph) ph.style.display = 'none';
+
+  // Se tiver os dois, centraliza entre eles
+  let src;
+  if (pietro?.lat && emilly?.lat) {
+    const midLat = (pietro.lat + emilly.lat) / 2;
+    const midLng = (pietro.lng + emilly.lng) / 2;
+    // Mostra marcadores dos dois via embed com query de busca múltipla
+    src = `https://www.google.com/maps/embed/v1/directions?key=AIzaSyCrv59xEUDSGhSHng0jeOvKLWt3gW4WeOM&origin=${pietro.lat},${pietro.lng}&destination=${emilly.lat},${emilly.lng}&mode=driving`;
+  } else {
+    const lat = pietro?.lat ?? emilly?.lat;
+    const lng = pietro?.lng ?? emilly?.lng;
+    src = `https://www.google.com/maps/embed/v1/place?key=AIzaSyCrv59xEUDSGhSHng0jeOvKLWt3gW4WeOM&q=${lat},${lng}&zoom=12`;
+  }
+
   mapDiv.innerHTML = `<iframe
     width="100%" height="100%"
     style="border:0;border-radius:20px;"
     loading="lazy"
     referrerpolicy="no-referrer-when-downgrade"
-    src="https://www.google.com/maps?q=${lat},${lng}&z=12&output=embed">
+    src="${src}">
   </iframe>`;
 }
 

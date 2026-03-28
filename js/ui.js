@@ -253,6 +253,20 @@ export function initParticles() {
     requestAnimationFrame(animate);
   }
   animate();
+
+  // ── Pétalas sempre ativas ──
+  const PETALS = ['🌸', '💕', '🌺', '✨', '💗', '🌷'];
+  function spawnPetal() {
+    const el = document.createElement('div');
+    el.textContent = PETALS[Math.floor(Math.random() * PETALS.length)];
+    el.style.cssText = `position:fixed;left:${Math.random()*100}vw;top:-60px;font-size:${Math.random()*14+10}px;z-index:1;pointer-events:none;opacity:0.7;animation:petalFall ${Math.random()*7+5}s linear forwards;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 13000);
+  }
+  // Spawn inicial espalhado
+  for (let i = 0; i < 12; i++) setTimeout(spawnPetal, i * 400);
+  // Spawn contínuo
+  setInterval(spawnPetal, 800);
 }
 
 // ── TIMELINE OBSERVER ───────────────────────────

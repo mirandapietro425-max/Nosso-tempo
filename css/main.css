@@ -80,8 +80,8 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  contain: strict;
-  will-change: transform;
+  width: 100vw;
+  height: 100vh;
 }
 
 /* ── HERO ── */
