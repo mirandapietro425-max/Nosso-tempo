@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Pietro & Emilly 💕</title>
     <link rel="icon" type="image/png" id="favicon-link">
     <link rel="manifest" id="pwa-manifest">
@@ -512,7 +512,7 @@
         .mood-history-pair-name { font-size: 0.55rem; color: #c9a9b0; text-transform: uppercase; letter-spacing: 0.08em; }
 
         /* MINI PLAYER FLUTUANTE (botão + lista) */
-        .mini-player { position: fixed; bottom: 5.5rem; left: 1.2rem; z-index: 9998; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        .mini-player { position: fixed; bottom: 5.5rem; left: 1.2rem; z-index: 9999; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
         .mini-player-toggle { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--velvet), #800020); color: white; border: none; font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 16px rgba(89,13,34,0.4); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
         .mini-player-toggle:hover { transform: scale(1.1); }
         .mini-player-panel { background: white; border-radius: 16px; box-shadow: 0 12px 40px rgba(89,13,34,0.2); width: 240px; overflow: hidden; display: none; border: 1px solid #ffd6de; }
@@ -528,9 +528,20 @@
         .mini-player-item-artist { font-size: 0.68rem; color: var(--rose-lt); margin-top: 0.1rem; }
 
         /* BARRA DE PLAYER FIXA NO FUNDO */
-        .mini-player-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: linear-gradient(135deg, var(--velvet) 0%, #800020 100%); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1.4rem; box-shadow: 0 -4px 30px rgba(89,13,34,0.35); gap: 1rem; }
+        .mini-player-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 10000;
+            background: linear-gradient(135deg, var(--velvet) 0%, #800020 100%);
+            color: white; display: flex; align-items: center; justify-content: space-between;
+            padding: 0.7rem 1.4rem;
+            padding-bottom: calc(0.7rem + env(safe-area-inset-bottom, 0px));
+            box-shadow: 0 -4px 30px rgba(89,13,34,0.35); gap: 1rem;
+            will-change: transform;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+        }
         .mini-bar-info { display: flex; align-items: center; gap: 0.8rem; flex: 1; min-width: 0; }
-        .mini-bar-note { font-size: 1.4rem; animation: heartbeat 1.5s infinite; flex-shrink: 0; }
+        /* Nota musical sem animação de scale — evita reflow da barra */
+        .mini-bar-note { font-size: 1.4rem; flex-shrink: 0; }
         .mini-bar-text { min-width: 0; }
         .mini-bar-title { font-family: 'Playfair Display', serif; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .mini-bar-artist { font-size: 0.7rem; opacity: 0.7; margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -559,7 +570,7 @@
         .footer-names { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: white; margin-bottom: 0.5rem; }
 
         /* TOAST */
-        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(6rem); background: var(--velvet); color: white; padding: 0.8rem 1.8rem; border-radius: 50px; font-size: 0.88rem; z-index: 9999; transition: transform 0.4s ease, opacity 0.4s ease; opacity: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.25); white-space: nowrap; }
+        .toast { position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%) translateY(6rem); background: var(--velvet); color: white; padding: 0.8rem 1.8rem; border-radius: 50px; font-size: 0.88rem; z-index: 9998; transition: transform 0.4s ease, opacity 0.4s ease; opacity: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.25); white-space: nowrap; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
         /* ANIMATIONS */
