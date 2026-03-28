@@ -692,6 +692,9 @@
     <!-- Lista de músicas -->
     <div class="music-playlist" id="music-playlist"></div>
 
+    <!-- Player YouTube visível -->
+    <div id="yt-embed-area" style="display:none; margin-bottom:1.2rem; border-radius:14px; overflow:hidden; box-shadow:0 6px 24px rgba(89,13,34,0.12);"></div>
+
     <!-- Campo personalizado -->
     <div class="music-custom">
         <div class="music-custom-title">🎶 Adicione sua música especial</div>
@@ -1753,13 +1756,12 @@ initDaily();
 
 /* ── Music (YouTube IFrame API) ── */
 const PLAYLIST = [
-    { name: "Mania de Você",  artist: "Raça Negra",   q: "Raça Negra Mania de Você" },
-    { name: "Deixa",          artist: "Tiago Iorc",    q: "Tiago Iorc Deixa" },
-    { name: "Lança Perfume",  artist: "Rita Lee",      q: "Rita Lee Lança Perfume" },
-    { name: "Skyfall",        artist: "Adele",         q: "Adele Skyfall" },
-    { name: "Os Anjos Cantam",artist: "Zé Ramalho",   q: "Zé Ramalho Os Anjos Cantam" },
-    { name: "Home",           artist: "Michael Bublé", q: "Michael Bublé Home" },
-    { name: "Sailor Song",    artist: "Gigi Perez",    q: "Gigi Perez Sailor Song" },
+    { name: "Mania de Você",   artist: "Raça Negra",   ytId: "OKw0iTXb0ZI" },
+    { name: "Lança Perfume",   artist: "Rita Lee",     ytId: "zFIqVUrh3zw" },
+    { name: "Skyfall",         artist: "Adele",        ytId: "DeumyOzKqgI" },
+    { name: "Os Anjos Cantam", artist: "Zé Ramalho",  ytId: "ICS6uKC93w0" },
+    { name: "Home",            artist: "Michael Bublé",ytId: "MCFIEkz9nNQ" },
+    { name: "Sailor Song",     artist: "Gigi Perez",   ytId: "1lrFsXkT_rM" },
 ];
 
 let ytPlayer = null;
@@ -1798,6 +1800,16 @@ function doPlay(idx){
     const track = PLAYLIST[idx];
     if(!track) return;
 
+    // Mostra player visível com o vídeo certo
+    const embedArea = document.getElementById('yt-embed-area');
+    if(embedArea){
+        embedArea.style.display = 'block';
+        embedArea.innerHTML = `<iframe width="100%" height="200"
+            src="https://www.youtube-nocookie.com/embed/${track.ytId}?autoplay=1&rel=0&modestbranding=1"
+            frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
+            style="border-radius:14px;display:block;"></iframe>`;
+    }
+
     // Update mini player UI
     document.getElementById('mini-track-name').textContent = track.name;
     document.getElementById('mini-track-artist').textContent = track.artist;
@@ -1809,13 +1821,6 @@ function doPlay(idx){
         el.classList.toggle('active', i === idx));
     document.querySelectorAll('.mini-player-item').forEach((el,i) =>
         el.classList.toggle('active', i === idx));
-
-    // Update iframe src to search YouTube
-    const iframe = document.getElementById('yt-iframe');
-    if(!iframe) return;
-    // Use YouTube search embed - works by searching the query
-    const searchSrc = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(track.q)}&autoplay=1&rel=0`;
-    iframe.src = searchSrc;
 
     showToast('🎵 ' + track.name + ' — ' + track.artist);
     localStorage.setItem('pe_yt_v2', idx.toString());
@@ -1837,13 +1842,21 @@ function playPrev(){
 }
 
 function togglePlayPause(){
-    if(!ytPlayer) return;
+    const embedArea = document.getElementById('yt-embed-area');
     const icon = document.getElementById('mini-play-icon');
+    if(!embedArea) return;
     if(icon.textContent === '⏸'){
-        try { ytPlayer.pauseVideo(); } catch(e){}
+        // Pausa removendo autoplay do iframe
+        const track = PLAYLIST[currentTrackIdx];
+        if(track){
+            embedArea.innerHTML = `<iframe width="100%" height="200"
+                src="https://www.youtube-nocookie.com/embed/${track.ytId}?autoplay=0&rel=0&modestbranding=1"
+                frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
+                style="border-radius:14px;display:block;"></iframe>`;
+        }
         icon.textContent = '▶';
     } else {
-        try { ytPlayer.playVideo(); } catch(e){}
+        if(currentTrackIdx >= 0) doPlay(currentTrackIdx);
         icon.textContent = '⏸';
     }
 }
@@ -1861,15 +1874,20 @@ function playCustomYT(){
     const link = document.getElementById('music-link-input').value.trim();
     const id = getYtId(link);
     if(!id){ showToast('⚠️ Link inválido! Cole um link do YouTube.', 3500); return; }
-    // Play custom video directly by ID
-    const iframe = document.getElementById('yt-iframe');
-    if(!iframe) return;
-    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
+    const embedArea = document.getElementById('yt-embed-area');
+    if(embedArea){
+        embedArea.style.display = 'block';
+        embedArea.innerHTML = `<iframe width="100%" height="200"
+            src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1"
+            frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
+            style="border-radius:14px;display:block;"></iframe>`;
+    }
     document.getElementById('mini-track-name').textContent = 'Música personalizada';
     document.getElementById('mini-track-artist').textContent = '';
     document.getElementById('mini-player-bar').style.display = 'flex';
     document.getElementById('mini-play-icon').textContent = '⏸';
     document.querySelectorAll('.playlist-item').forEach(el=>el.classList.remove('active'));
+    currentTrackIdx = -1;
     showToast('🎵 Música carregada!');
 }
 
