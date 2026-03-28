@@ -98,6 +98,34 @@ body.period-madrugada .stat-card {
   transition: background 1.5s ease, border-color 1.5s ease;
 }
 
+body.period-madrugada .dream-text {
+  color: #e0c0ff !important;
+}
+
+body.period-madrugada .dream-check {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(200,160,255,0.4) !important;
+  color: #e0c0ff !important;
+}
+
+body.period-madrugada .dream-del {
+  color: rgba(200,160,255,0.45) !important;
+}
+
+body.period-madrugada .dream-del:hover {
+  color: #e0c0ff !important;
+}
+
+body.period-madrugada .dreams-input {
+  background: rgba(26,5,51,0.6) !important;
+  border-color: rgba(124,92,191,0.4) !important;
+  color: #e0c0ff !important;
+}
+
+body.period-madrugada .dreams-input::placeholder {
+  color: rgba(200,160,255,0.4) !important;
+}
+
 body.period-madrugada .section-title em {
   color: #c4a0ff;
 }
@@ -123,6 +151,34 @@ body.period-noite .stat-card {
   border-color: rgba(196,77,255,0.25) !important;
   color: #e8d5ff !important;
   transition: background 1.5s ease;
+}
+
+body.period-noite .dream-text {
+  color: #e8d5ff !important;
+}
+
+body.period-noite .dream-check {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(196,77,255,0.35) !important;
+  color: #e8d5ff !important;
+}
+
+body.period-noite .dream-del {
+  color: rgba(220,180,255,0.4) !important;
+}
+
+body.period-noite .dream-del:hover {
+  color: #e8d5ff !important;
+}
+
+body.period-noite .dreams-input {
+  background: rgba(26,5,51,0.6) !important;
+  border-color: rgba(196,77,255,0.3) !important;
+  color: #e8d5ff !important;
+}
+
+body.period-noite .dreams-input::placeholder {
+  color: rgba(220,180,255,0.38) !important;
 }
 
 body.period-noite .section-title em { color: #c44dff; }

@@ -404,7 +404,130 @@ function _buildSectionHTML() {
 }
 
 /* ════════════════════════════════════════════
-   INIT PRINCIPAL
+   MOOD STICKERS — integração com #sec-humor
+   ════════════════════════════════════════════ */
+
+const LS_MOOD_STICKER = 'pe_mood_sticker';
+
+const MOOD_MESSAGES = {
+  happy:  ['Hoje você tá radiante 💖', 'Que alegria contagiante! 🌟', 'Seu sorriso ilumina tudo ✨'],
+  sad:    ['Tô aqui com você sempre ❤️', 'Dias difíceis passam, o amor fica 🤍', 'Um abraço bem apertado pra você 🫂'],
+  angry:  ['Respira fundo, eu te entendo 💙', 'Vai passar — você é forte 💪', 'Estou aqui do seu lado sempre ❤️'],
+  scared: ['Não precisa ter medo, estou aqui 🌙', 'Juntos não tem nada que assuste 💫', 'Você é mais corajoso(a) do que imagina ⭐'],
+};
+
+function _getMoodMessage(emotion) {
+  const msgs = MOOD_MESSAGES[emotion] || MOOD_MESSAGES.happy;
+  return msgs[Math.floor(Math.random() * msgs.length)];
+}
+
+function _saveMoodSticker(sticker) {
+  localStorage.setItem(LS_MOOD_STICKER, JSON.stringify({
+    id: sticker.id, label: sticker.label,
+    file: sticker.file, emotion: sticker.emotion,
+    name: sticker.name, savedAt: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+  }));
+}
+
+function _loadMoodSticker() {
+  try { return JSON.parse(localStorage.getItem(LS_MOOD_STICKER) || 'null'); } catch { return null; }
+}
+
+function _renderMoodStickerMessage(container, sticker) {
+  const msgEl = container.querySelector('#mood-sticker-message');
+  if (!msgEl) return;
+  const msg = _getMoodMessage(sticker.emotion);
+  msgEl.innerHTML = `
+    <div class="mood-sticker-selected-wrap">
+      <img src="${sticker.file}" alt="${sticker.label}" class="mood-sticker-selected-img">
+      <div class="mood-sticker-selected-info">
+        <div class="mood-sticker-selected-name">${sticker.label}</div>
+        <div class="mood-sticker-selected-msg">${msg}</div>
+        <div class="mood-sticker-selected-time">às ${sticker.savedAt || '—'}</div>
+      </div>
+    </div>`;
+  msgEl.classList.add('show');
+}
+
+// Categorias visíveis no Mural de Humor (sem "todos" e "favoritos")
+const MOOD_CAT_ORDER = [
+  { id: 'princesas', label: 'Princesas',  icon: '👑' },
+  { id: 'princes',   label: 'Príncipes',  icon: '🤴' },
+  { id: 'marvel',    label: 'Marvel',     icon: '🕷️' },
+  { id: 'crepusculo',label: 'Crepúsculo', icon: '🌙' },
+];
+
+export function initMoodStickers(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  // Monta HTML: mensagem selecionada + categorias
+  let html = `<div class="mood-sticker-message" id="mood-sticker-message"></div>`;
+
+  MOOD_CAT_ORDER.forEach(cat => {
+    const stickers = STICKERS[cat.id] || [];
+    if (!stickers.length) return;
+    html += `
+      <div class="mood-sticker-category">
+        <div class="mood-sticker-cat-title">${cat.icon} ${cat.label}</div>
+        <div class="mood-sticker-grid">
+          ${stickers.map(s => `
+            <div class="mood-sticker-card" data-id="${s.id}" data-emotion="${s.emotion}" title="${s.label}">
+              <div class="mood-sticker-img-wrap">
+                <img src="${s.file}" alt="${s.label}" loading="lazy" draggable="false" class="mood-sticker-img">
+              </div>
+              <div class="mood-sticker-card-label">${s.name}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+
+  // Restaura seleção salva
+  const saved = _loadMoodSticker();
+  if (saved) {
+    const el = container.querySelector(`[data-id="${saved.id}"]`);
+    if (el) el.classList.add('selected');
+    _renderMoodStickerMessage(container, saved);
+  }
+
+  // Eventos de clique
+  container.querySelectorAll('.mood-sticker-card').forEach(card => {
+    card.addEventListener('click', () => {
+      // Remove seleção anterior
+      container.querySelectorAll('.mood-sticker-card.selected')
+        .forEach(c => c.classList.remove('selected'));
+
+      card.classList.add('selected');
+
+      // Animação bounce
+      card.classList.add('mood-sticker-bounce');
+      setTimeout(() => card.classList.remove('mood-sticker-bounce'), 400);
+
+      // Encontra sticker
+      const id = card.dataset.id;
+      const sticker = Object.values(STICKERS).flat().find(s => s.id === id);
+      if (!sticker) return;
+
+      sticker.savedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      _saveMoodSticker(sticker);
+      _renderMoodStickerMessage(container, sticker);
+
+      // Toast global
+      const toast = document.getElementById('toast');
+      if (toast) {
+        toast.textContent = `${getEmotionEmoji(sticker.emotion)} ${sticker.label} — humor salvo!`;
+        toast.classList.add('show');
+        clearTimeout(toast._mood_timer);
+        toast._mood_timer = setTimeout(() => toast.classList.remove('show'), 2500);
+      }
+    });
+  });
+}
+
+/* ════════════════════════════════════════════
+   INIT PRINCIPAL (seção figurinhas — galeria)
    ════════════════════════════════════════════ */
 export function initStickers() {
   const section = document.getElementById('sticker-container');

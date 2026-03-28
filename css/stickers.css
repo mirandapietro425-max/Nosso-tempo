@@ -3,9 +3,9 @@
    Seção de Figurinhas por Categoria
    ═══════════════════════════════════════════════ */
 
-/* ── SEÇÃO WRAPPER ── */
-#sec-figurinhas {
-  padding-bottom: 2rem;
+/* ── SEÇÃO WRAPPER (dentro do Mural de Humor) ── */
+.mood-sticker-panel {
+  padding-bottom: 0.5rem;
 }
 
 /* ── BUSCA ── */
@@ -338,3 +338,239 @@
   margin-top: 1.2rem;
   letter-spacing: 0.01em;
 }
+
+
+/* ═══════════════════════════════════════════════
+   MOOD STICKERS — Mural de Humor
+   ═══════════════════════════════════════════════ */
+
+/* ── Painel externo ── */
+.mood-sticker-panel {
+  margin-top: 1.8rem;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--rose-alpha-15);
+  padding: 1.4rem 1.2rem 1.6rem;
+  box-shadow: var(--shadow-rose-sm);
+}
+
+.mood-sticker-panel-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  color: var(--velvet);
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mood-sticker-panel-sub {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: #c9a9b0;
+  margin-bottom: 1.4rem;
+}
+
+/* ── Mensagem de humor selecionado ── */
+.mood-sticker-message {
+  display: none;
+  margin-bottom: 1.4rem;
+  animation: fadeSlideUp 0.35s ease both;
+}
+
+.mood-sticker-message.show { display: block; }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mood-sticker-selected-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #fff0f4, #fff8fb);
+  border: 1.5px solid var(--rose-alpha-20);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1.1rem;
+}
+
+.mood-sticker-selected-img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 8px rgba(232, 83, 111, 0.18));
+}
+
+.mood-sticker-selected-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mood-sticker-selected-name {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--velvet);
+  font-weight: 600;
+}
+
+.mood-sticker-selected-msg {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--rose);
+  line-height: 1.4;
+}
+
+.mood-sticker-selected-time {
+  font-size: 0.68rem;
+  color: #c9a9b0;
+  margin-top: 0.1rem;
+}
+
+/* ── Categoria ── */
+.mood-sticker-category {
+  margin-bottom: 1.4rem;
+}
+
+.mood-sticker-category:last-child { margin-bottom: 0; }
+
+.mood-sticker-cat-title {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.7rem;
+  padding-left: 0.1rem;
+}
+
+/* ── Grid de stickers de humor ── */
+.mood-sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 0.55rem;
+}
+
+@media (max-width: 400px) {
+  .mood-sticker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+    gap: 0.4rem;
+  }
+}
+
+/* ── Card de sticker de humor ── */
+.mood-sticker-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.3rem;
+  background: #fdf8f9;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    transform 0.2s cubic-bezier(.32,1.5,.5,1),
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mood-sticker-card:hover {
+  transform: translateY(-3px) scale(1.04);
+  border-color: var(--rose-alpha-25);
+  box-shadow: 0 4px 14px var(--rose-alpha-15);
+  background: white;
+}
+
+.mood-sticker-card:active {
+  transform: scale(0.93);
+}
+
+.mood-sticker-card.selected {
+  border-color: var(--rose);
+  background: linear-gradient(145deg, #fff0f4, white);
+  box-shadow: 0 4px 16px rgba(232, 83, 111, 0.25);
+}
+
+/* Animação bounce ao selecionar */
+@keyframes moodStickerBounce {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.2) rotate(-4deg); }
+  60%  { transform: scale(0.93) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.mood-sticker-card.mood-sticker-bounce {
+  animation: moodStickerBounce 0.4s cubic-bezier(.32,1.5,.5,1);
+}
+
+/* ── Imagem ── */
+.mood-sticker-img-wrap {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mood-sticker-img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.mood-sticker-card:hover .mood-sticker-img,
+.mood-sticker-card.selected .mood-sticker-img {
+  transform: scale(1.1);
+  filter: drop-shadow(0 3px 6px rgba(232, 83, 111, 0.2));
+}
+
+/* ── Label do card ── */
+.mood-sticker-card-label {
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  color: var(--velvet);
+  opacity: 0.7;
+  text-align: center;
+  max-width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.mood-sticker-card.selected .mood-sticker-card-label {
+  opacity: 1;
+  color: var(--rose);
+  font-weight: 600;
+}
+
+/* ── Hint na galeria ── */
+.sticker-gallery-hint {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 0.85rem;
+  color: #b06070;
+  text-align: center;
+  margin-bottom: 1.2rem;
+  opacity: 0.8;
+}
+
+.sticker-gallery-hint a {
+  color: var(--rose);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sticker-gallery-hint a:hover { text-decoration: underline; }

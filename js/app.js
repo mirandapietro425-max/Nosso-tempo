@@ -1391,6 +1391,7 @@ loadGoogleMaps();
 
   document.body.classList.add('event-mode');
   document.body.setAttribute('data-event', evento.id);
+  if (evento.dark) document.body.classList.add('dark-event');
 
   // ── Ativa playlist temática do evento ──
   if (evento.playlist) setEventPlaylist(evento.playlist);

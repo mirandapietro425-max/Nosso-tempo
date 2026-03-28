@@ -501,6 +501,57 @@
 .dreams-btn { background: var(--rose); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: var(--radius-pill); cursor: pointer; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600; transition: background var(--transition-fast); white-space: nowrap; }
 .dreams-btn:hover { background: var(--velvet); }
 
+/* ══════════════════════════════════════════
+   MODO NOTURNO — eventos escuros (Ano Novo,
+   Réveillon, Halloween e qualquer dark:true)
+   ══════════════════════════════════════════ */
+body.dark-event .dream-item {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+body.dark-event .dream-item.done {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+body.dark-event .dream-text {
+  color: #e8d8e0;
+}
+
+body.dark-event .dream-check {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: white;
+}
+
+body.dark-event .dream-item.done .dream-check {
+  background: var(--rose);
+  border-color: var(--rose);
+}
+
+body.dark-event .dream-del {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+body.dark-event .dream-del:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+body.dark-event .dreams-input {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #e8d8e0;
+}
+
+body.dark-event .dreams-input::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+body.dark-event .dreams-input:focus {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07);
+}
+
 /* ── MURAL BLOQUEADO ── */
 .mural-lock-card {
   background: linear-gradient(135deg, var(--velvet), #800020);
