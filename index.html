@@ -472,6 +472,42 @@
 
 
 
+
+        /* MURAL DE HUMOR */
+        .humor-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.8rem; }
+        @media(max-width:540px){ .humor-cards { grid-template-columns: 1fr; } }
+        .humor-person-card { border-radius: 24px; padding: 1.6rem 1.2rem 1.4rem; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+        .humor-person-card.pietro { background: linear-gradient(135deg,#e8f4ff,#ddeeff); border: 1.5px solid #b3d4f5; }
+        .humor-person-card.emilly { background: linear-gradient(135deg,#fff0f3,#fce4ec); border: 1.5px solid #ffb3c1; }
+        .humor-person-name { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; }
+        .humor-person-card.pietro .humor-person-name { color: #4a90d9; }
+        .humor-person-card.emilly .humor-person-name { color: var(--rose); }
+        .humor-selected-emoji { font-size: 3.5rem; line-height: 1; transition: transform 0.3s; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08)); }
+        .humor-selected-label { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: #4a1020; min-height: 1.4em; text-align: center; }
+        .humor-date { font-size: 0.68rem; color: #c9a9b0; }
+        .humor-edit-btn { background: var(--rose); color: white; border: none; border-radius: 50px; padding: 0.42rem 1.1rem; font-size: 0.78rem; font-weight: 600; font-family: 'DM Sans',sans-serif; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+        .humor-edit-btn:hover { background: var(--velvet); transform: scale(1.04); }
+        .humor-empty-hint { font-size: 0.8rem; color: #c9a9b0; font-style: italic; text-align: center; }
+        .humor-modal-overlay { position: fixed; inset: 0; background: rgba(89,13,34,0.55); backdrop-filter: blur(4px); z-index: 10003; display: flex; align-items: center; justify-content: center; padding: 1.5rem; opacity: 0; pointer-events: none; transition: opacity 0.35s; }
+        .humor-modal-overlay.show { opacity: 1; pointer-events: all; }
+        .humor-modal { background: #fff8f9; border-radius: 28px; padding: 2rem 1.8rem; max-width: 400px; width: 100%; box-shadow: 0 30px 80px rgba(89,13,34,0.3); transform: translateY(20px) scale(0.97); transition: transform 0.35s; position: relative; }
+        .humor-modal-overlay.show .humor-modal { transform: none; }
+        .humor-modal-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--velvet); text-align: center; margin-bottom: 0.3rem; }
+        .humor-modal-sub { font-size: 0.8rem; color: #b06070; text-align: center; margin-bottom: 1.4rem; font-style: italic; }
+        .humor-emoji-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem; margin-bottom: 1.4rem; }
+        .humor-emoji-btn { aspect-ratio: 1; border-radius: 16px; border: 2px solid transparent; background: white; font-size: 1.9rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; transition: all 0.18s; box-shadow: 0 2px 8px rgba(89,13,34,0.06); padding: 0.35rem; }
+        .humor-emoji-btn:hover { transform: scale(1.12); border-color: var(--rose-lt); }
+        .humor-emoji-btn.selected { border-color: var(--rose); background: #fff0f3; transform: scale(1.12); }
+        .humor-emoji-btn .elabel { font-size: 0.5rem; color: #b06070; text-align: center; line-height: 1.2; display: block; }
+        .humor-modal-confirm { width: 100%; background: var(--rose); color: white; border: none; padding: 0.85rem; border-radius: 50px; font-family: 'DM Sans',sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .humor-modal-confirm:hover { background: var(--velvet); }
+        .humor-modal-close { position: absolute; top: 1rem; right: 1rem; background: rgba(89,13,34,0.08); border: none; color: var(--velvet); width: 30px; height: 30px; border-radius: 50%; font-size: 0.9rem; cursor: pointer; font-weight: 700; }
+        .humor-history-label { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; text-align: center; }
+        .humor-history-row { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+        .humor-history-item { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; background: white; border: 1px solid #ffd6de; border-radius: 14px; padding: 0.5rem 0.7rem; min-width: 52px; }
+        .humor-history-emojis { display: flex; gap: 0.2rem; font-size: 1.05rem; }
+        .humor-history-date { font-size: 0.56rem; color: #c9a9b0; text-align: center; }
+
         /* FOOTER */
         footer { background: var(--velvet); color: rgba(255,255,255,0.6); text-align: center; padding: 3rem 1.5rem; font-size: 0.82rem; position: relative; z-index: 1; }
         .footer-heart { font-size: 2.5rem; display: block; margin-bottom: 0.8rem; animation: heartbeat 1.4s ease infinite; }
@@ -692,9 +728,6 @@
     <!-- Lista de músicas -->
     <div class="music-playlist" id="music-playlist"></div>
 
-    <!-- Player YouTube visível -->
-    <div id="yt-embed-area" style="display:none; margin-bottom:1.2rem; border-radius:14px; overflow:hidden; box-shadow:0 6px 24px rgba(89,13,34,0.12);"></div>
-
     <!-- Campo personalizado -->
     <div class="music-custom">
         <div class="music-custom-title">🎶 Adicione sua música especial</div>
@@ -765,6 +798,50 @@
         <button class="mural-btn" onclick="addMural()">Enviar recado 💌</button>
     </div>
 </section>
+
+
+<!-- ── MURAL DE HUMOR ── -->
+<section>
+    <div class="divider"><span class="divider-icon">😊</span></div>
+    <div class="section-label">Como estamos hoje</div>
+    <h2 class="section-title">Mural de <em>humor</em></h2>
+
+    <div class="humor-cards">
+        <!-- Pietro -->
+        <div class="humor-person-card pietro" id="humor-card-pietro">
+            <div class="humor-person-name">Pietro 💙</div>
+            <div class="humor-selected-emoji" id="humor-emoji-pietro">🤍</div>
+            <div class="humor-selected-label" id="humor-label-pietro">Como você está hoje?</div>
+            <div class="humor-date" id="humor-date-pietro"></div>
+            <button class="humor-edit-btn" onclick="openHumorModal('Pietro')">Atualizar humor 💙</button>
+        </div>
+        <!-- Emilly -->
+        <div class="humor-person-card emilly" id="humor-card-emilly">
+            <div class="humor-person-name">Emilly 💗</div>
+            <div class="humor-selected-emoji" id="humor-emoji-emilly">🤍</div>
+            <div class="humor-selected-label" id="humor-label-emilly">Como você está hoje?</div>
+            <div class="humor-date" id="humor-date-emilly"></div>
+            <button class="humor-edit-btn" onclick="openHumorModal('Emilly')">Atualizar humor 💗</button>
+        </div>
+    </div>
+
+    <!-- Histórico -->
+    <div id="humor-history-wrap" style="display:none">
+        <div class="humor-history-label">✨ Histórico recente</div>
+        <div class="humor-history-row" id="humor-history-row"></div>
+    </div>
+</section>
+
+<!-- Modal de humor -->
+<div class="humor-modal-overlay" id="humor-modal-overlay">
+    <div class="humor-modal">
+        <button class="humor-modal-close" onclick="closeHumorModal()">✕</button>
+        <div class="humor-modal-title" id="humor-modal-title">Como você está?</div>
+        <div class="humor-modal-sub">Escolha uma carinha que te representa hoje 💕</div>
+        <div class="humor-emoji-grid" id="humor-emoji-grid"></div>
+        <button class="humor-modal-confirm" onclick="confirmHumor()">Salvar 💕</button>
+    </div>
+</div>
 
 <!-- ── CALENDÁRIO ── -->
 <section style="max-width:900px">
@@ -1621,6 +1698,147 @@ window.toggleDream = toggleDream;
 window.deleteDream = deleteDream;
 renderDreams();
 
+
+/* ── Mural de Humor ── */
+const HUMOR_OPTIONS = [
+    { e: '😍', label: 'Apaixonado' },
+    { e: '🥰', label: 'Com amor' },
+    { e: '😊', label: 'Feliz' },
+    { e: '🤩', label: 'Animado' },
+    { e: '😆', label: 'Risonho' },
+    { e: '😌', label: 'Tranquilo' },
+    { e: '🥺', label: 'Com saudade' },
+    { e: '😴', label: 'Sonolento' },
+    { e: '🤔', label: 'Pensativo' },
+    { e: '😐', label: 'Neutro' },
+    { e: '😔', label: 'Tristinho' },
+    { e: '😤', label: 'Frustrado' },
+    { e: '🤒', label: 'Doentinho' },
+    { e: '💪', label: 'Determinado' },
+    { e: '🎉', label: 'Comemorando' },
+];
+
+const HUMOR_DOC = doc(db, "humor", "shared");
+let humorPerson = 'Pietro';
+let humorSelected = null;
+
+function humorTodayKey(){
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function getHumor(){
+    try {
+        const snap = await getDoc(HUMOR_DOC);
+        if(snap.exists()) return snap.data();
+    } catch(e){}
+    return { today: {}, history: [] };
+}
+async function saveHumor(data){ await setDoc(HUMOR_DOC, data); }
+
+async function renderHumor(){
+    const data = await getHumor();
+    const todayKey = humorTodayKey();
+    const todayData = (data.today && data.today[todayKey]) || {};
+
+    ['Pietro','Emilly'].forEach(person => {
+        const pk = person.toLowerCase();
+        const entry = todayData[pk];
+        const emojiEl = document.getElementById(`humor-emoji-${pk}`);
+        const labelEl = document.getElementById(`humor-label-${pk}`);
+        const dateEl  = document.getElementById(`humor-date-${pk}`);
+        if(entry){
+            emojiEl.textContent = entry.e;
+            labelEl.textContent = entry.label;
+            dateEl.textContent  = 'Hoje · ' + new Date().toLocaleDateString('pt-BR', {day:'numeric', month:'long'});
+        } else {
+            emojiEl.textContent = '🤍';
+            labelEl.textContent = 'Ainda não registrou hoje';
+            dateEl.textContent  = '';
+        }
+    });
+
+    // Histórico (últimos 7 dias com os dois)
+    const history = data.history || [];
+    const recent = history.slice(-7);
+    const wrap = document.getElementById('humor-history-wrap');
+    const row  = document.getElementById('humor-history-row');
+    if(recent.length > 0){
+        wrap.style.display = 'block';
+        row.innerHTML = recent.map(h => {
+            const d = h.date ? h.date.split('-') : [];
+            const label = d.length === 3 ? `${d[2]}/${d[1]}` : '';
+            const pe = h.pietro ? h.pietro.e : '—';
+            const em = h.emilly ? h.emilly.e : '—';
+            return `<div class="humor-history-item">
+                <div class="humor-history-emojis">${pe} ${em}</div>
+                <div class="humor-history-date">${label}</div>
+            </div>`;
+        }).join('');
+    } else {
+        wrap.style.display = 'none';
+    }
+}
+
+function renderHumorGrid(){
+    const grid = document.getElementById('humor-emoji-grid');
+    grid.innerHTML = HUMOR_OPTIONS.map((opt, i) =>
+        `<button class="humor-emoji-btn" data-i="${i}" onclick="selectHumorEmoji(${i})">
+            ${opt.e}<span class="elabel">${opt.label}</span>
+        </button>`
+    ).join('');
+}
+
+function selectHumorEmoji(i){
+    humorSelected = i;
+    document.querySelectorAll('.humor-emoji-btn').forEach((btn, idx) =>
+        btn.classList.toggle('selected', idx === i));
+}
+
+function openHumorModal(person){
+    humorPerson   = person;
+    humorSelected = null;
+    document.getElementById('humor-modal-title').textContent =
+        person === 'Pietro' ? 'Pietro, como você está? 💙' : 'Emilly, como você está? 💗';
+    renderHumorGrid();
+    document.getElementById('humor-modal-overlay').classList.add('show');
+}
+window.openHumorModal = openHumorModal;
+
+function closeHumorModal(){
+    document.getElementById('humor-modal-overlay').classList.remove('show');
+}
+window.closeHumorModal = closeHumorModal;
+
+async function confirmHumor(){
+    if(humorSelected === null){ showToast('Escolha uma carinha primeiro! 😊'); return; }
+    const opt = HUMOR_OPTIONS[humorSelected];
+    const todayKey = humorTodayKey();
+    const data = await getHumor();
+    if(!data.today) data.today = {};
+    if(!data.today[todayKey]) data.today[todayKey] = {};
+    data.today[todayKey][humorPerson.toLowerCase()] = { e: opt.e, label: opt.label };
+
+    // Salva no histórico
+    if(!data.history) data.history = [];
+    let histEntry = data.history.find(h => h.date === todayKey);
+    if(!histEntry){
+        histEntry = { date: todayKey };
+        data.history.push(histEntry);
+    }
+    histEntry[humorPerson.toLowerCase()] = { e: opt.e, label: opt.label };
+    // Mantém só os últimos 30 dias
+    if(data.history.length > 30) data.history = data.history.slice(-30);
+
+    await saveHumor(data);
+    closeHumorModal();
+    renderHumor();
+    showToast(`${opt.e} Humor salvo!`);
+}
+window.confirmHumor = confirmHumor;
+
+renderHumor();
+
 /* ── Greeting ── */
 (function(){
     const h = new Date().getHours();
@@ -1756,12 +1974,13 @@ initDaily();
 
 /* ── Music (YouTube IFrame API) ── */
 const PLAYLIST = [
-    { name: "Mania de Você",   artist: "Raça Negra",   ytId: "OKw0iTXb0ZI" },
-    { name: "Lança Perfume",   artist: "Rita Lee",     ytId: "zFIqVUrh3zw" },
-    { name: "Skyfall",         artist: "Adele",        ytId: "DeumyOzKqgI" },
-    { name: "Os Anjos Cantam", artist: "Zé Ramalho",  ytId: "ICS6uKC93w0" },
-    { name: "Home",            artist: "Michael Bublé",ytId: "MCFIEkz9nNQ" },
-    { name: "Sailor Song",     artist: "Gigi Perez",   ytId: "1lrFsXkT_rM" },
+    { name: "Mania de Você",  artist: "Raça Negra",   q: "Raça Negra Mania de Você" },
+    { name: "Deixa",          artist: "Tiago Iorc",    q: "Tiago Iorc Deixa" },
+    { name: "Lança Perfume",  artist: "Rita Lee",      q: "Rita Lee Lança Perfume" },
+    { name: "Skyfall",        artist: "Adele",         q: "Adele Skyfall" },
+    { name: "Os Anjos Cantam",artist: "Zé Ramalho",   q: "Zé Ramalho Os Anjos Cantam" },
+    { name: "Home",           artist: "Michael Bublé", q: "Michael Bublé Home" },
+    { name: "Sailor Song",    artist: "Gigi Perez",    q: "Gigi Perez Sailor Song" },
 ];
 
 let ytPlayer = null;
@@ -1800,16 +2019,6 @@ function doPlay(idx){
     const track = PLAYLIST[idx];
     if(!track) return;
 
-    // Mostra player visível com o vídeo certo
-    const embedArea = document.getElementById('yt-embed-area');
-    if(embedArea){
-        embedArea.style.display = 'block';
-        embedArea.innerHTML = `<iframe width="100%" height="200"
-            src="https://www.youtube-nocookie.com/embed/${track.ytId}?autoplay=1&rel=0&modestbranding=1"
-            frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
-            style="border-radius:14px;display:block;"></iframe>`;
-    }
-
     // Update mini player UI
     document.getElementById('mini-track-name').textContent = track.name;
     document.getElementById('mini-track-artist').textContent = track.artist;
@@ -1821,6 +2030,13 @@ function doPlay(idx){
         el.classList.toggle('active', i === idx));
     document.querySelectorAll('.mini-player-item').forEach((el,i) =>
         el.classList.toggle('active', i === idx));
+
+    // Update iframe src to search YouTube
+    const iframe = document.getElementById('yt-iframe');
+    if(!iframe) return;
+    // Use YouTube search embed - works by searching the query
+    const searchSrc = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(track.q)}&autoplay=1&rel=0`;
+    iframe.src = searchSrc;
 
     showToast('🎵 ' + track.name + ' — ' + track.artist);
     localStorage.setItem('pe_yt_v2', idx.toString());
@@ -1842,21 +2058,13 @@ function playPrev(){
 }
 
 function togglePlayPause(){
-    const embedArea = document.getElementById('yt-embed-area');
+    if(!ytPlayer) return;
     const icon = document.getElementById('mini-play-icon');
-    if(!embedArea) return;
     if(icon.textContent === '⏸'){
-        // Pausa removendo autoplay do iframe
-        const track = PLAYLIST[currentTrackIdx];
-        if(track){
-            embedArea.innerHTML = `<iframe width="100%" height="200"
-                src="https://www.youtube-nocookie.com/embed/${track.ytId}?autoplay=0&rel=0&modestbranding=1"
-                frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
-                style="border-radius:14px;display:block;"></iframe>`;
-        }
+        try { ytPlayer.pauseVideo(); } catch(e){}
         icon.textContent = '▶';
     } else {
-        if(currentTrackIdx >= 0) doPlay(currentTrackIdx);
+        try { ytPlayer.playVideo(); } catch(e){}
         icon.textContent = '⏸';
     }
 }
@@ -1874,20 +2082,15 @@ function playCustomYT(){
     const link = document.getElementById('music-link-input').value.trim();
     const id = getYtId(link);
     if(!id){ showToast('⚠️ Link inválido! Cole um link do YouTube.', 3500); return; }
-    const embedArea = document.getElementById('yt-embed-area');
-    if(embedArea){
-        embedArea.style.display = 'block';
-        embedArea.innerHTML = `<iframe width="100%" height="200"
-            src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1"
-            frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
-            style="border-radius:14px;display:block;"></iframe>`;
-    }
+    // Play custom video directly by ID
+    const iframe = document.getElementById('yt-iframe');
+    if(!iframe) return;
+    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
     document.getElementById('mini-track-name').textContent = 'Música personalizada';
     document.getElementById('mini-track-artist').textContent = '';
     document.getElementById('mini-player-bar').style.display = 'flex';
     document.getElementById('mini-play-icon').textContent = '⏸';
     document.querySelectorAll('.playlist-item').forEach(el=>el.classList.remove('active'));
-    currentTrackIdx = -1;
     showToast('🎵 Música carregada!');
 }
 
