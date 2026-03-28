@@ -22,20 +22,21 @@
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
-
+        html { scroll-behavior: smooth; overscroll-behavior-y: none; }
         body {
             font-family: 'DM Sans', sans-serif;
             background: var(--cream);
             color: var(--velvet);
             overflow-x: hidden;
+            overscroll-behavior-y: none;
         }
 
-        #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; contain: strict; will-change: transform; }
 
         /* ── HERO ── */
         .hero {
-            min-height: 100vh;
+            min-height: 100dvh;
+            min-height: -webkit-fill-available;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             position: relative;
@@ -605,12 +606,19 @@
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 10000;
             background: linear-gradient(135deg, var(--velvet) 0%, #800020 100%);
             color: white; display: flex; align-items: center; justify-content: space-between;
-            padding: 0.7rem 1.4rem;
-            padding-bottom: calc(0.7rem + env(safe-area-inset-bottom, 0px));
+            padding: 0 1.4rem;
+            height: 60px; /* altura fixa — evita resize quando safe-area muda */
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-sizing: content-box; /* safe-area adiciona altura, não comprime conteúdo */
             box-shadow: 0 -4px 30px rgba(89,13,34,0.35); gap: 1rem;
+            /* GPU layer completo — a barra não é afetada por nenhum reflow da página */
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
             will-change: transform;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
+            contain: layout style paint;
+            isolation: isolate;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
         .mini-bar-info { display: flex; align-items: center; gap: 0.8rem; flex: 1; min-width: 0; }
         /* Nota musical sem animação de scale — evita reflow da barra */
@@ -1463,7 +1471,7 @@ window.deleteMovie = deleteMovie;
 renderMovies();
 
 /* ── Senha Mural ── */
-const SENHA_MURAL = 'nossoamor@';
+const SENHA_MURAL = 'Sody6';
 let muralDesbloqueado = false;
 
 function abrirSenhaMural(){
@@ -2946,7 +2954,21 @@ const ctx    = canvas.getContext('2d');
 let W, H;
 function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 resize();
-window.addEventListener('resize', resize);
+// Só redimensiona no celular ao girar a tela, não quando a barra do browser aparece/some
+let _resizeTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => {
+        // Ignora mudanças pequenas de altura (< 120px) que são só a barra do browser
+        const newW = window.innerWidth;
+        const newH = window.innerHeight;
+        if(Math.abs(newW - W) > 50 || Math.abs(newH - H) > 120) {
+            resize();
+        }
+    }, 250);
+});
+// Redimensiona normalmente ao girar o celular
+window.addEventListener('orientationchange', () => { setTimeout(resize, 300); });
 const HEARTS = Array.from({length:28}, mkHeart);
 function mkHeart(){ return { x:Math.random()*800, y:Math.random()*800+600, size:Math.random()*16+8, speed:Math.random()*0.6+0.3, opacity:Math.random()*0.4+0.08, drift:(Math.random()-0.5)*0.4, rot:Math.random()*Math.PI*2, rotSpeed:(Math.random()-0.5)*0.02 }; }
 function drawHeart(x,y,size,rot){
