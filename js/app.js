@@ -1247,7 +1247,7 @@ async function shareLocation(person) {
 window.shareLocation = shareLocation;
 
 // Esconde o tip e carrega o mapa direto (chave já está no código)
-document.getElementById('location-key-tip').style.display = 'none';
+const _keyTip = document.getElementById('location-key-tip'); if (_keyTip) _keyTip.style.display = 'none';
 loadGoogleMaps();
 
 /* ════════════════════════════════════════════
