@@ -189,6 +189,21 @@
         .divider::after { background: linear-gradient(to left, transparent, var(--rose-lt)); }
         .divider-icon { font-size: 1rem; color: var(--rose); }
 
+        /* MUSIC FEATURED */
+        .music-featured {
+            background: linear-gradient(135deg, var(--velvet), #800020);
+            border-radius: 20px; padding: 1.5rem; margin-bottom: 1.2rem;
+            cursor: pointer; transition: transform 0.25s, box-shadow 0.25s;
+            box-shadow: 0 8px 30px rgba(89,13,34,0.3);
+        }
+        .music-featured:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(89,13,34,0.4); }
+        .music-featured-label { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; }
+        .music-featured-info { display: flex; align-items: center; gap: 1rem; }
+        .music-featured-icon { font-size: 2rem; background: rgba(255,255,255,0.1); width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .music-featured-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: white; }
+        .music-featured-artist { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 0.2rem; }
+        .music-featured-play { margin-left: auto; background: var(--rose); color: white; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; box-shadow: 0 4px 15px rgba(232,83,111,0.5); }
+
         /* MUSIC */
         .music-playlist { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
         .playlist-item { display: flex; align-items: center; gap: 1rem; background: white; border: 1px solid #ffd6de; border-radius: 16px; padding: 0.9rem 1.2rem; cursor: pointer; transition: all 0.25s; }
@@ -212,6 +227,54 @@
         .music-btn { background: var(--rose); color: white; border: none; padding: 0.55rem 1.4rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; white-space: nowrap; }
         .music-btn:hover { background: var(--velvet); }
         .music-tip { font-size: 0.75rem; color: #b06070; font-style: italic; margin-top: 0.6rem; }
+
+        /* RECADINHO DIÁRIO — POPUP */
+        .daily-overlay { position: fixed; inset: 0; background: rgba(89,13,34,0.55); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1.5rem; opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
+        .daily-overlay.show { opacity: 1; pointer-events: all; }
+        .daily-popup { background: #fff8f9; border-radius: 28px; padding: 2.5rem 2rem 2rem; max-width: 420px; width: 100%; text-align: center; position: relative; box-shadow: 0 30px 80px rgba(89,13,34,0.3); transform: translateY(30px) scale(0.96); transition: transform 0.4s ease; }
+        .daily-overlay.show .daily-popup { transform: none; }
+        .daily-popup-heart { font-size: 2.8rem; display: block; margin-bottom: 0.8rem; animation: heartbeat 1.4s ease infinite; }
+        .daily-popup-label { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
+        .daily-popup-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.25rem; line-height: 1.8; color: #4a1020; margin-bottom: 1.5rem; }
+        .daily-popup-close { background: var(--rose); color: white; border: none; padding: 0.7rem 2rem; border-radius: 50px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+        .daily-popup-close:hover { background: var(--velvet); transform: scale(1.04); }
+        .daily-popup-date { font-size: 0.72rem; color: #c9a9b0; margin-top: 1rem; }
+
+        /* RECADINHO DIÁRIO — SEÇÃO */
+        .daily-card { background: linear-gradient(135deg, #fff0f3, #fce4ec); border: 1px solid #ffb3c1; border-radius: 24px; padding: 2.5rem 2rem; text-align: center; position: relative; overflow: hidden; box-shadow: 0 8px 30px rgba(232,83,111,0.1); cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; }
+        .daily-card:hover { transform: translateY(-3px); box-shadow: 0 16px 45px rgba(232,83,111,0.18); }
+        .daily-card::before { content: '💌'; position: absolute; font-size: 10rem; opacity: 0.05; right: -1.5rem; top: -1.5rem; }
+        .daily-card-label { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; }
+        .daily-card-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.2rem; line-height: 1.85; color: #4a1020; }
+        .daily-card-hint { font-size: 0.75rem; color: #c9a9b0; margin-top: 1.2rem; font-style: italic; }
+
+        /* CARTA SURPRESA */
+        .surprise-card { border-radius: 24px; overflow: hidden; box-shadow: 0 8px 40px rgba(89,13,34,0.15); }
+        .surprise-locked { background: linear-gradient(135deg, var(--velvet), #800020); padding: 3rem 2rem; text-align: center; color: white; }
+        .surprise-lock-icon { font-size: 3.5rem; margin-bottom: 1rem; animation: heartbeat 2s ease infinite; }
+        .surprise-lock-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 0.6rem; }
+        .surprise-lock-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--gold); margin-bottom: 0.5rem; }
+        .surprise-lock-hint { font-size: 0.78rem; opacity: 0.55; letter-spacing: 0.08em; margin-top: 0.8rem; }
+        .surprise-open { background: #fff8f9; border: 1px solid #ffd6de; padding: 3rem 2.5rem; position: relative; }
+        .surprise-open-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.2rem; }
+        .surprise-open-text { font-family: 'Cormorant Garamond', serif; font-size: 1.18rem; line-height: 1.95; color: #4a1020; font-style: italic; }
+        .surprise-open-sig { margin-top: 1.5rem; text-align: right; color: var(--rose); font-style: italic; font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; }
+
+        /* SONHOS */
+        .dreams-list { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; }
+        .dream-item { display: flex; align-items: center; gap: 1rem; background: white; border: 1px solid #ffd6de; border-radius: 16px; padding: 1rem 1.2rem; transition: all 0.25s; }
+        .dream-item.done { opacity: 0.55; background: #f9f9f9; }
+        .dream-item.done .dream-text { text-decoration: line-through; }
+        .dream-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--rose-lt); background: white; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; transition: all 0.2s; }
+        .dream-item.done .dream-check { background: var(--rose); border-color: var(--rose); color: white; }
+        .dream-text { flex: 1; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--velvet); font-style: italic; }
+        .dream-del { background: none; border: none; color: #e0b0b8; cursor: pointer; font-size: 1rem; padding: 0.2rem; transition: color 0.2s; }
+        .dream-del:hover { color: var(--rose); }
+        .dreams-add { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .dreams-input { flex: 1; min-width: 200px; padding: 0.7rem 1.2rem; border: 1px solid #ffd6de; border-radius: 50px; font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; outline: none; background: white; color: var(--velvet); }
+        .dreams-input:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(232,83,111,0.12); }
+        .dreams-btn { background: var(--rose); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; white-space: nowrap; }
+        .dreams-btn:hover { background: var(--velvet); }
 
         /* FOOTER */
         footer { background: var(--velvet); color: rgba(255,255,255,0.6); text-align: center; padding: 3rem 1.5rem; font-size: 0.82rem; position: relative; z-index: 1; }
@@ -242,6 +305,17 @@
 <canvas id="particles"></canvas>
 <input type="file" id="file-input" accept="image/*" style="display:none">
 <div class="toast" id="toast"></div>
+
+<!-- ── POPUP RECADINHO ── -->
+<div class="daily-overlay" id="daily-overlay">
+    <div class="daily-popup">
+        <span class="daily-popup-heart">💕</span>
+        <div class="daily-popup-label">Recadinho de hoje</div>
+        <div class="daily-popup-text" id="daily-popup-text"></div>
+        <button class="daily-popup-close" onclick="closeDailyPopup()">Com amor 💕</button>
+        <div class="daily-popup-date" id="daily-popup-date"></div>
+    </div>
+</div>
 
 <!-- ── HERO ── -->
 <div class="hero">
@@ -288,6 +362,18 @@
 
 <!-- ── TIMELINE ── -->
 <section>
+    <div class="divider"><span class="divider-icon">💝</span></div>
+    <div class="section-label">Todo dia, pra você</div>
+    <h2 class="section-title">Recadinho <em>de hoje</em></h2>
+    <div class="daily-card" onclick="openDailyPopup()">
+        <div class="daily-card-label">✨ Mensagem do dia</div>
+        <div class="daily-card-text" id="daily-card-text"></div>
+        <div class="daily-card-hint">Toque para ver em destaque 💌</div>
+    </div>
+</section>
+
+<!-- ── TIMELINE ── -->
+<section>
     <div class="divider"><span class="divider-icon">📅</span></div>
     <div class="section-label">Nossa história</div>
     <h2 class="section-title">A <em>linha do tempo</em></h2>
@@ -328,13 +414,24 @@
     <div class="section-label">Nossa trilha sonora</div>
     <h2 class="section-title">Nossa <em>música</em></h2>
 
+    <!-- Destaque Rita Lee -->
+    <div class="music-featured" onclick="loadEmbed('3cijWAljXxxJDco4N2aLQl'); document.querySelectorAll('.playlist-item').forEach(el=>el.classList.remove('active')); showToast('🎵 Lança Perfume — Rita Lee')">
+        <div class="music-featured-label">⭐ Música em destaque</div>
+        <div class="music-featured-info">
+            <div class="music-featured-icon">🎵</div>
+            <div>
+                <div class="music-featured-name">Lança Perfume</div>
+                <div class="music-featured-artist">Rita Lee</div>
+            </div>
+            <div class="music-featured-play">▶</div>
+        </div>
+    </div>
+
     <!-- Player embed -->
     <div class="spotify-embed" id="spotify-embed" style="display:none"></div>
 
     <!-- Lista de músicas -->
-    <div class="music-playlist" id="music-playlist">
-        <!-- As músicas são geradas pelo JS abaixo -->
-    </div>
+    <div class="music-playlist" id="music-playlist"></div>
 
     <!-- Campo personalizado -->
     <div class="music-custom">
@@ -344,6 +441,38 @@
             <button class="music-btn" onclick="loadCustomMusic()">Tocar ▶</button>
         </div>
         <p class="music-tip">💡 Ex: https://open.spotify.com/track/...</p>
+    </div>
+</section>
+
+<!-- ── CARTA SURPRESA ── -->
+<section>
+    <div class="divider"><span class="divider-icon">🔒</span></div>
+    <div class="section-label">Uma surpresa especial</div>
+    <h2 class="section-title">Carta <em>surpresa</em></h2>
+    <div class="surprise-card" id="surprise-card">
+        <div class="surprise-locked" id="surprise-locked">
+            <div class="surprise-lock-icon">🔒</div>
+            <div class="surprise-lock-title">Esta carta está guardada com amor</div>
+            <div class="surprise-lock-sub" id="surprise-countdown"></div>
+            <div class="surprise-lock-hint">Ela abre no próximo dia 11 💕</div>
+        </div>
+        <div class="surprise-open" id="surprise-open" style="display:none">
+            <div class="surprise-open-label">💌 Aberta com amor</div>
+            <div class="surprise-open-text">Olá meu amor, estou escrevendo esta carta especial pois quero que saibas que tu és muito especial. És tão especial que não me canso de te olhar e te dizer o quão maravilhosa tu és. Quando sinto o teu amor, posso realmente ver que há algo muito além do que somente o meu e o teu amor — a vontade mais sincera de te querer comigo. Pois tu, mesmo que me entendas pouco, me amas. E mesmo sem se entender, me amas. E por que nos amamos? Bem, porque um dia fomos unidos e conversamos, e quando vi quem tu eras e como agias, tive o prazer de me apaixonar grandemente pelos teus pensamentos e ações. E agora estamos aqui — mais um mês de uma vida de felicidade, ao lado de quem foi escolhido, não apenas amado, mas aceito por inteiro.</div>
+            <div class="surprise-open-sig">Com todo o meu amor — Pietro 💕</div>
+        </div>
+    </div>
+</section>
+
+<!-- ── SONHOS JUNTOS ── -->
+<section>
+    <div class="divider"><span class="divider-icon">🌟</span></div>
+    <div class="section-label">O que nos espera</div>
+    <h2 class="section-title">Nossos <em>sonhos</em></h2>
+    <div class="dreams-list" id="dreams-list"></div>
+    <div class="dreams-add">
+        <input class="dreams-input" id="dream-input" type="text" placeholder="Escreva um sonho nosso...">
+        <button class="dreams-btn" onclick="addDream()">Adicionar 🌟</button>
     </div>
 </section>
 
@@ -383,6 +512,104 @@ async function getPhotos(){
 async function setPhotos(p){
     await setDoc(GALLERY_DOC, { photos: p });
 }
+
+/* ── Carta Surpresa ── */
+function initSurprise(){
+    const now   = new Date();
+    const day   = now.getDate();
+    const month = now.getMonth();
+    const year  = now.getFullYear();
+    let next11  = new Date(year, month, 11, 0, 0, 0);
+    if(day >= 11) next11 = new Date(year, month + 1, 11, 0, 0, 0);
+
+    const isOpen = day === 11;
+    document.getElementById('surprise-locked').style.display = isOpen ? 'none' : 'block';
+    document.getElementById('surprise-open').style.display   = isOpen ? 'block' : 'none';
+
+    if(!isOpen){
+        const diff = next11 - now;
+        const d    = Math.floor(diff / 86400000);
+        const h    = Math.floor((diff % 86400000) / 3600000);
+        const m    = Math.floor((diff % 3600000) / 60000);
+        document.getElementById('surprise-countdown').textContent =
+            `Faltam ${d} dia${d!==1?'s':''}, ${h}h e ${m}min`;
+        setTimeout(initSurprise, 60000);
+    }
+}
+initSurprise();
+
+/* ── Sonhos Juntos ── */
+const DREAMS_DOC = doc(db, "dreams", "shared");
+
+const INITIAL_DREAMS = [
+    { text: "Ter uma vida sem fingimentos, onde possamos nos amar de verdade", done: false },
+    { text: "Que Deus abençoe nosso namoro e nos dê uma união linda e verdadeira", done: false },
+    { text: "Ter uma felicidade genuína juntos, como a que sinto quando estou ao teu lado", done: false },
+];
+
+async function getDreams(){
+    try {
+        const snap = await getDoc(DREAMS_DOC);
+        if(snap.exists()) return snap.data().dreams || INITIAL_DREAMS;
+    } catch(e){}
+    return INITIAL_DREAMS;
+}
+
+async function saveDreams(dreams){
+    await setDoc(DREAMS_DOC, { dreams });
+}
+
+async function renderDreams(){
+    const list   = document.getElementById('dreams-list');
+    const dreams = await getDreams();
+    list.innerHTML = '';
+    if(dreams.length === 0){
+        list.innerHTML = '<p style="text-align:center;color:#c9a9b0;font-style:italic;">Nenhum sonho ainda... Adicione o primeiro! 🌟</p>';
+        return;
+    }
+    dreams.forEach((dream, i) => {
+        const item = document.createElement('div');
+        item.className = 'dream-item' + (dream.done ? ' done' : '');
+        item.innerHTML = `
+            <div class="dream-check" onclick="toggleDream(${i})">${dream.done ? '✓' : ''}</div>
+            <div class="dream-text">${dream.text}</div>
+            <button class="dream-del" onclick="deleteDream(${i})">✕</button>`;
+        list.appendChild(item);
+    });
+}
+
+async function addDream(){
+    const input = document.getElementById('dream-input');
+    const text  = input.value.trim();
+    if(!text){ showToast('✏️ Escreve um sonho primeiro!'); return; }
+    const dreams = await getDreams();
+    dreams.push({ text, done: false });
+    await saveDreams(dreams);
+    input.value = '';
+    renderDreams();
+    showToast('🌟 Sonho adicionado!');
+}
+
+async function toggleDream(i){
+    const dreams = await getDreams();
+    dreams[i].done = !dreams[i].done;
+    await saveDreams(dreams);
+    renderDreams();
+    if(dreams[i].done) showToast('✨ Sonho realizado! 🎉');
+}
+
+async function deleteDream(i){
+    if(!confirm('Remover este sonho?')) return;
+    const dreams = await getDreams();
+    dreams.splice(i, 1);
+    await saveDreams(dreams);
+    renderDreams();
+}
+
+window.addDream    = addDream;
+window.toggleDream = toggleDream;
+window.deleteDream = deleteDream;
+renderDreams();
 
 /* ── Greeting ── */
 (function(){
@@ -434,7 +661,80 @@ function updateCounter(){
 updateCounter();
 setInterval(updateCounter, 1000);
 
-/* ── Particles ── */
+/* ── Recadinho Diário ── */
+const RECADINHOS = [
+    "Meu amor, você é a menina mais inteligente que já vi. Fico sem palavras de tanta sorte que tenho em te ter.",
+    "Minha princesa, espero que os nossos dias sejam tão belos quanto os teus olhos e a sensação de estar ao teu lado.",
+    "Emilly, que o teu coração seja sempre tão sincero e lindo quanto é hoje. Você é uma mulher de valor, e eu sei disso com toda a certeza.",
+    "Que o amor que sentimos um pelo outro dure o tempo necessário para que possamos ser felizes o suficiente juntos.",
+    "Meu amor, parabéns por ser tão esforçada em tudo que faz. Teu modo de agir mostra que você é diferente e maravilhosa.",
+    "Minha Mozart, parabéns pela tua esperteza e por nunca te deixar abater. Que tu possas ser cada dia melhor.",
+    "Que nós andemos juntos, construindo algo novo e de coração puro, conhecendo a verdade e nela nos amando de verdade.",
+    "Você chegou sem avisar e ficou pra sempre no meu coração. Cada dia ao teu lado é um presente que eu não mereço, mas agradeço.",
+    "Tem dias que só de te ver sorrindo já faz tudo valer. Você transforma o comum em extraordinário só por existir.",
+    "Eu não sei escrever poesia, mas sei que quando penso em você, as palavras mais bonitas aparecem sozinhas.",
+    "Você é do tipo de pessoa que muda a vida de quem tem a sorte de te conhecer. E eu sou o mais sortudo de todos.",
+    "Minha Emilly, que hoje seja um dia digno de você — cheio de leveza, sorrisos e coisas bonitas, igual a você.",
+    "Tem algo nos teus olhos verdes que me faz querer ser uma versão melhor de mim. Obrigado por isso.",
+    "Você não precisa fazer nada de especial para ser especial. Você já é, só por ser você.",
+    "Cada risada tua é minha música favorita. Pode tocar sempre.",
+    "Às vezes fico pensando como seria minha vida sem ter te encontrado. Fico feliz que eu nunca vá descobrir.",
+    "Tu és aquela pessoa que aparece nas histórias bonitas. E essa é a nossa.",
+    "Que o teu dia seja tão gentil contigo quanto você é comigo.",
+    "Você tem aquele jeito raro de fazer as pessoas ao redor se sentirem bem. Isso é um dom, e você usa ele com tanta delicadeza.",
+    "Eu te escolho hoje, amanhã e em todos os dias que ainda vierem. Sempre.",
+    "Meu amor, você é minha calmaria favorita num mundo cheio de barulho.",
+    "Que a vida te devolva toda a ternura que você semeia por onde passa.",
+    "Você é meu lar. E não preciso de mais nenhum.",
+    "Obrigado por cada abraço que parece dizer tudo sem usar nenhuma palavra.",
+    "Você é o melhor capítulo da minha história, e ainda nem chegou na melhor parte.",
+    "Minha princesa, que o teu coração nunca perca essa pureza que te faz tão você.",
+    "Eu te amo do jeito que você é — com todas as suas espertezas, delicadezas e aqueles olhos que não me largam.",
+    "Que hoje você sinta, de algum jeito, o quanto é amada.",
+    "Você veio pra ficar. E eu fico feliz todo dia com isso.",
+    "Meu amor eterno, que o nosso amor seja sempre verdadeiro e livre — como você merece.",
+];
+
+const POPUP_KEY = 'pe_daily_seen';
+
+function getDailyMessage(){
+    const start = new Date('2024-10-11');
+    const today = new Date();
+    const diff  = Math.floor((today - start) / 86400000);
+    return RECADINHOS[diff % RECADINHOS.length];
+}
+
+function getDailyDate(){
+    return new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+}
+
+function openDailyPopup(){
+    document.getElementById('daily-popup-text').textContent = getDailyMessage();
+    document.getElementById('daily-popup-date').textContent = getDailyDate();
+    document.getElementById('daily-overlay').classList.add('show');
+}
+
+function closeDailyPopup(){
+    document.getElementById('daily-overlay').classList.remove('show');
+    localStorage.setItem(POPUP_KEY, new Date().toDateString());
+}
+
+function initDaily(){
+    const msg = getDailyMessage();
+    document.getElementById('daily-card-text').textContent = msg;
+    document.getElementById('daily-popup-text').textContent = msg;
+    document.getElementById('daily-popup-date').textContent = getDailyDate();
+
+    const seen = localStorage.getItem(POPUP_KEY);
+    if(seen !== new Date().toDateString()){
+        setTimeout(() => openDailyPopup(), 1800);
+    }
+}
+window.openDailyPopup  = openDailyPopup;
+window.closeDailyPopup = closeDailyPopup;
+initDaily();
+
+
 const canvas = document.getElementById('particles');
 const ctx    = canvas.getContext('2d');
 let W, H;
@@ -470,7 +770,7 @@ function showToast(msg, ms=3000){
 /* ── Music ── */
 const PLAYLIST = [
     { name: "Deixa", artist: "Tiago Iorc", id: "4uLU6hMCjMI75M1A2tKUQC" },
-    { name: "Te Amo Mais", artist: "Hugo & Guilherme", id: "0pqnGHJpmpxLKifKRmU6WP" },
+    { name: "Lança Perfume", artist: "Rita Lee", id: "3cijWAljXxxJDco4N2aLQl" },
     { name: "Skyfall", artist: "Adele", id: "6VObnIkLVruX4UVyxWhlqm" },
     { name: "Daqui Pra Sempre", artist: "Luan Santana", id: "5sdQOyqq2IDhvmx2lHOpwe" },
 ];
