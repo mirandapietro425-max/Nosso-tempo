@@ -314,6 +314,57 @@
         .mural-btn { background: var(--rose); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; align-self: flex-end; }
         .mural-btn:hover { background: var(--velvet); }
 
+        /* CALENDÁRIO */
+        .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+        .cal-nav-btn { background: white; border: 1px solid #ffd6de; color: var(--rose); width: 40px; height: 40px; border-radius: 50%; font-size: 1.4rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .cal-nav-btn:hover { background: var(--rose); color: white; }
+        .cal-month-label { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--velvet); text-transform: capitalize; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.4rem; }
+        .cal-day-name { text-align: center; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rose-lt); padding: 0.4rem 0; font-weight: 600; }
+        .cal-day { aspect-ratio: 1; border-radius: 12px; border: 1px solid #ffeef1; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; gap: 0.15rem; }
+        .cal-day:hover { border-color: var(--rose); transform: scale(1.06); box-shadow: 0 4px 15px rgba(232,83,111,0.15); }
+        .cal-day.empty { background: transparent; border-color: transparent; cursor: default; pointer-events: none; }
+        .cal-day.today { border-color: var(--rose); background: #fff0f3; }
+        .cal-day.has-data { background: linear-gradient(135deg, #fff0f3, #fce4ec); border-color: var(--rose-lt); }
+        .cal-day.birthday { background: linear-gradient(135deg, #fff3cd, #ffe69c); border-color: #ffc107 !important; }
+        .cal-day.birthday .cal-day-num { color: #856404; }
+        .cal-day-num { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--velvet); line-height: 1; }
+        .cal-day.today .cal-day-num { color: var(--rose); }
+        .cal-day-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--rose); }
+        .cal-day-bday { font-size: 0.7rem; }
+
+        /* MODAL */
+        .cal-overlay { position: fixed; inset: 0; background: rgba(89,13,34,0.55); backdrop-filter: blur(4px); z-index: 10001; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; overflow-y: auto; }
+        .cal-overlay.show { opacity: 1; pointer-events: all; }
+        .cal-modal { background: #fff8f9; border-radius: 28px; padding: 2rem; max-width: 580px; width: 100%; position: relative; box-shadow: 0 30px 80px rgba(89,13,34,0.3); max-height: 90vh; overflow-y: auto; }
+        .cal-modal-close { position: absolute; top: 1rem; right: 1rem; background: #ffeef1; border: none; color: var(--rose); width: 32px; height: 32px; border-radius: 50%; font-size: 1rem; cursor: pointer; font-weight: 700; }
+        .cal-modal-date { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--velvet); margin-bottom: 1.5rem; text-transform: capitalize; }
+        .cal-modal-section { margin-bottom: 1.4rem; }
+        .cal-modal-label { font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; font-weight: 600; }
+        .cal-modal-textarea { width: 100%; padding: 0.9rem 1.1rem; border: 1px solid #ffd6de; border-radius: 16px; font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; outline: none; resize: none; min-height: 80px; color: var(--velvet); background: white; line-height: 1.6; }
+        .cal-modal-textarea:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(232,83,111,0.1); }
+        .cal-media-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 0.8rem; }
+        .cal-media-item { aspect-ratio: 1; border-radius: 12px; overflow: hidden; position: relative; background: #ffeef1; }
+        .cal-media-item img { width: 100%; height: 100%; object-fit: cover; }
+        .cal-media-item video { width: 100%; height: 100%; object-fit: cover; }
+        .cal-media-del { position: absolute; top: 4px; right: 4px; background: rgba(89,13,34,0.7); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .cal-media-btn { background: white; border: 1px dashed #ffb3c1; color: var(--rose); padding: 0.55rem 1.2rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; transition: all 0.2s; }
+        .cal-media-btn:hover { background: #fff0f3; }
+        .cal-upload-status { font-size: 0.78rem; color: #b06070; font-style: italic; margin-top: 0.4rem; }
+        .cal-comments { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.8rem; }
+        .cal-comment { border-radius: 14px; padding: 0.8rem 1rem; position: relative; }
+        .cal-comment.pietro { background: #e8f4ff; border: 1px solid #b3d4f5; }
+        .cal-comment.emilly { background: #fff0f3; border: 1px solid #ffb3c1; }
+        .cal-comment-author { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 0.3rem; }
+        .cal-comment.pietro .cal-comment-author { color: #4a90d9; }
+        .cal-comment.emilly .cal-comment-author { color: var(--rose); }
+        .cal-comment-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: #4a1020; }
+        .cal-comment-del { position: absolute; top: 0.5rem; right: 0.6rem; background: none; border: none; color: #c9a9b0; cursor: pointer; font-size: 0.8rem; font-weight: 700; }
+        .cal-comment-del:hover { color: var(--rose); }
+        .cal-comment-add { margin-top: 0.4rem; }
+        .cal-save-btn { width: 100%; background: var(--rose); color: white; border: none; padding: 0.9rem; border-radius: 50px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
+        .cal-save-btn:hover { background: var(--velvet); }
+
         /* FOOTER */
         footer { background: var(--velvet); color: rgba(255,255,255,0.6); text-align: center; padding: 3rem 1.5rem; font-size: 0.82rem; position: relative; z-index: 1; }
         .footer-heart { font-size: 2.5rem; display: block; margin-bottom: 0.8rem; animation: heartbeat 1.4s ease infinite; }
@@ -542,6 +593,66 @@
     </div>
 </section>
 
+<!-- ── CALENDÁRIO ── -->
+<section style="max-width:900px">
+    <div class="divider"><span class="divider-icon">📅</span></div>
+    <div class="section-label">Nossa memória</div>
+    <h2 class="section-title">Calendário <em>do amor</em></h2>
+
+    <!-- Navegação -->
+    <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+        <div class="cal-month-label" id="cal-month-label"></div>
+        <button class="cal-nav-btn" onclick="calNext()">›</button>
+    </div>
+
+    <!-- Grade -->
+    <div class="cal-grid" id="cal-grid"></div>
+</section>
+
+<!-- ── MODAL DO DIA ── -->
+<div class="cal-overlay" id="cal-overlay">
+    <div class="cal-modal">
+        <button class="cal-modal-close" onclick="closeCalModal()">✕</button>
+        <div class="cal-modal-date" id="cal-modal-date"></div>
+
+        <!-- Texto -->
+        <div class="cal-modal-section">
+            <div class="cal-modal-label">📝 O que fizemos hoje</div>
+            <textarea class="cal-modal-textarea" id="cal-text" placeholder="Conte sobre esse dia especial..."></textarea>
+        </div>
+
+        <!-- Mídia -->
+        <div class="cal-modal-section">
+            <div class="cal-modal-label">📸 Fotos e vídeos</div>
+            <div class="cal-media-grid" id="cal-media-grid"></div>
+            <div class="cal-media-add">
+                <input type="file" id="cal-file-input" accept="image/*,video/*" multiple style="display:none">
+                <button class="cal-media-btn" onclick="document.getElementById('cal-file-input').click()">+ Adicionar foto ou vídeo</button>
+                <div class="cal-upload-status" id="cal-upload-status"></div>
+            </div>
+        </div>
+
+        <!-- Comentários -->
+        <div class="cal-modal-section">
+            <div class="cal-modal-label">💬 Comentários</div>
+            <div class="cal-comments" id="cal-comments"></div>
+            <div class="cal-comment-add">
+                <div class="mural-author-row">
+                    <button class="mural-author-btn active" id="cal-btn-pietro" onclick="selectCalAuthor('Pietro')">Pietro 💙</button>
+                    <button class="mural-author-btn" id="cal-btn-emilly" onclick="selectCalAuthor('Emilly')">Emilly 💗</button>
+                </div>
+                <div style="display:flex;gap:0.6rem;margin-top:0.6rem;flex-wrap:wrap">
+                    <input class="movies-input" id="cal-comment-input" type="text" placeholder="Deixe um comentário sobre esse dia...">
+                    <button class="movies-btn" onclick="addCalComment()">Enviar 💌</button>
+                </div>
+            </div>
+        </div>
+
+        <button class="cal-save-btn" onclick="saveCalDay()">Salvar dia 💕</button>
+    </div>
+</div>
+
 <!-- ── FOOTER ── -->
 <footer>
     <span class="footer-heart">❤</span>
@@ -718,7 +829,228 @@ window.deleteMural = deleteMural;
 window.selectAuthor = selectAuthor;
 renderMural();
 
-/* ── Carta Surpresa ── */
+/* ── Calendário ── */
+const CLOUDINARY_CLOUD = 'dqy0l7fh6';
+const CLOUDINARY_PRESET = 'nosso_tempo_cal'; // upload preset sem assinatura
+
+let calYear, calMonth, calCurrentKey, calAuthor = 'Pietro';
+let calDayData = {}; // cache local
+
+function calKey(y, m, d){ return `cal_${y}_${String(m+1).padStart(2,'0')}_${String(d).padStart(2,'0')}`; }
+
+function isBirthday(y, m, d){ return m === 3 && d === 24; } // abril = mês 3 (0-indexed)
+
+async function getCalDay(key){
+    try {
+        const ref  = doc(db, "calendar", key);
+        const snap = await getDoc(ref);
+        if(snap.exists()) return snap.data();
+    } catch(e){}
+    return { text: '', media: [], comments: [] };
+}
+
+async function saveCalDayData(key, data){
+    await setDoc(doc(db, "calendar", key), data);
+}
+
+async function renderCal(){
+    const now   = new Date();
+    const label = new Date(calYear, calMonth, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    document.getElementById('cal-month-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+
+    const grid     = document.getElementById('cal-grid');
+    const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    grid.innerHTML = dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+    // Buscar quais dias têm dados
+    for(let i = 0; i < firstDay; i++){
+        grid.innerHTML += `<div class="cal-day empty"></div>`;
+    }
+
+    for(let d = 1; d <= daysInMonth; d++){
+        const key     = calKey(calYear, calMonth, d);
+        const isToday = now.getDate() === d && now.getMonth() === calMonth && now.getFullYear() === calYear;
+        const bday    = isBirthday(calYear, calMonth, d);
+        const hasData = calDayData[key];
+
+        let cls = 'cal-day';
+        if(isToday) cls += ' today';
+        if(bday)    cls += ' birthday';
+        else if(hasData) cls += ' has-data';
+
+        const dot  = hasData ? '<div class="cal-day-dot"></div>' : '';
+        const bIcon = bday ? '<div class="cal-day-bday">🎂</div>' : '';
+
+        grid.innerHTML += `<div class="${cls}" onclick="openCalModal(${d})">
+            <div class="cal-day-num">${d}</div>
+            ${dot}${bIcon}
+        </div>`;
+    }
+}
+
+async function loadCalMonth(){
+    // Pré-carregar quais dias têm dados neste mês
+    calDayData = {};
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const promises = [];
+    for(let d = 1; d <= daysInMonth; d++){
+        const key = calKey(calYear, calMonth, d);
+        promises.push(
+            getDoc(doc(db, "calendar", key)).then(snap => {
+                if(snap.exists() && (snap.data().text || snap.data().media?.length || snap.data().comments?.length)){
+                    calDayData[key] = true;
+                }
+            }).catch(()=>{})
+        );
+    }
+    await Promise.all(promises);
+    renderCal();
+}
+
+function calPrev(){ calMonth--; if(calMonth < 0){ calMonth = 11; calYear--; } loadCalMonth(); }
+function calNext(){ calMonth++; if(calMonth > 11){ calMonth = 0; calYear++; } loadCalMonth(); }
+window.calPrev = calPrev;
+window.calNext = calNext;
+
+let calModalData = { text: '', media: [], comments: [] };
+
+async function openCalModal(d){
+    calCurrentKey = calKey(calYear, calMonth, d);
+    const dateStr = new Date(calYear, calMonth, d).toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('cal-modal-date').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+    const bday = isBirthday(calYear, calMonth, d);
+    if(bday){
+        document.getElementById('cal-modal-date').innerHTML += ' 🎂<br><span style="font-size:0.9rem;color:#856404;font-style:italic;">Feliz aniversário, Emilly! 💕</span>';
+    }
+
+    calModalData = await getCalDay(calCurrentKey);
+    document.getElementById('cal-text').value = calModalData.text || '';
+    renderCalMedia();
+    renderCalComments();
+    document.getElementById('cal-overlay').classList.add('show');
+}
+
+function closeCalModal(){
+    document.getElementById('cal-overlay').classList.remove('show');
+    calCurrentKey = null;
+}
+window.closeCalModal = closeCalModal;
+
+function renderCalMedia(){
+    const grid = document.getElementById('cal-media-grid');
+    grid.innerHTML = '';
+    (calModalData.media || []).forEach((m, i) => {
+        const div = document.createElement('div');
+        div.className = 'cal-media-item';
+        if(m.type === 'video'){
+            div.innerHTML = `<video src="${m.url}" controls></video>`;
+        } else {
+            div.innerHTML = `<img src="${m.url}" loading="lazy">`;
+        }
+        div.innerHTML += `<button class="cal-media-del" onclick="removeCalMedia(${i})">✕</button>`;
+        grid.appendChild(div);
+    });
+}
+
+function removeCalMedia(i){
+    calModalData.media.splice(i, 1);
+    renderCalMedia();
+}
+window.removeCalMedia = removeCalMedia;
+
+function renderCalComments(){
+    const list = document.getElementById('cal-comments');
+    list.innerHTML = '';
+    (calModalData.comments || []).forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'cal-comment ' + c.author.toLowerCase();
+        div.innerHTML = `
+            <button class="cal-comment-del" onclick="removeCalComment(${i})">✕</button>
+            <div class="cal-comment-author">${c.author} ${c.author==='Pietro'?'💙':'💗'}</div>
+            <div class="cal-comment-text">${c.text}</div>`;
+        list.appendChild(div);
+    });
+}
+
+function removeCalComment(i){
+    calModalData.comments.splice(i, 1);
+    renderCalComments();
+}
+window.removeCalComment = removeCalComment;
+
+function selectCalAuthor(name){
+    calAuthor = name;
+    document.getElementById('cal-btn-pietro').classList.toggle('active', name === 'Pietro');
+    document.getElementById('cal-btn-emilly').classList.toggle('active', name === 'Emilly');
+}
+window.selectCalAuthor = selectCalAuthor;
+
+function addCalComment(){
+    const input = document.getElementById('cal-comment-input');
+    const text  = input.value.trim();
+    if(!text){ showToast('✏️ Escreve um comentário!'); return; }
+    if(!calModalData.comments) calModalData.comments = [];
+    calModalData.comments.push({ author: calAuthor, text });
+    input.value = '';
+    renderCalComments();
+}
+window.addCalComment = addCalComment;
+
+document.getElementById('cal-file-input').addEventListener('change', async function(){
+    const files = Array.from(this.files);
+    if(!files.length) return;
+    this.value = '';
+    const status = document.getElementById('cal-upload-status');
+    status.textContent = '⏳ Enviando...';
+
+    for(const file of files){
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            form.append('upload_preset', CLOUDINARY_PRESET);
+            const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method: 'POST', body: form });
+            const data = await res.json();
+            if(data.secure_url){
+                if(!calModalData.media) calModalData.media = [];
+                calModalData.media.push({
+                    url: data.secure_url,
+                    type: file.type.startsWith('video') ? 'video' : 'image'
+                });
+                renderCalMedia();
+            } else {
+                showToast('❌ Erro no upload. Configure o preset no Cloudinary.', 4000);
+            }
+        } catch(e){
+            showToast('❌ Erro de rede.', 3000);
+        }
+    }
+    status.textContent = '✅ Enviado!';
+    setTimeout(() => status.textContent = '', 2500);
+});
+
+async function saveCalDay(){
+    if(!calCurrentKey) return;
+    calModalData.text = document.getElementById('cal-text').value.trim();
+    await saveCalDayData(calCurrentKey, calModalData);
+    calDayData[calCurrentKey] = !!(calModalData.text || calModalData.media?.length || calModalData.comments?.length);
+    renderCal();
+    closeCalModal();
+    showToast('💕 Dia salvo com carinho!');
+}
+window.saveCalDay = saveCalDay;
+window.openCalModal = openCalModal;
+
+// Init
+const _now = new Date();
+calYear  = _now.getFullYear();
+calMonth = _now.getMonth();
+loadCalMonth();
+
+
 function initSurprise(){
     const now   = new Date();
     const day   = now.getDate();
@@ -978,7 +1310,7 @@ const PLAYLIST = [
     { name: "Mania de Você", artist: "Raça Negra", id: "76v5KgPWIYYMgbIc82NvRR" },
     { name: "Lança Perfume", artist: "Rita Lee", id: "3cijWAljXxxJDco4N2aLQl" },
     { name: "Skyfall", artist: "Adele", id: "6VObnIkLVruX4UVyxWhlqm" },
-    { name: "Daqui Pra Sempre", artist: "Luan Santana", id: "5sdQOyqq2IDhvmx2lHOpwe" },
+    { name: "Os Anjos Cantam", artist: "Zé Ramalho", id: "6ccKu0LwJzOhLAxBwP2PTk" },
 ];
 
 const MUSIC_KEY = 'pe_music_v1';
