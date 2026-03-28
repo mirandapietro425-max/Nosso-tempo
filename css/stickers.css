@@ -1,0 +1,340 @@
+/* ═══════════════════════════════════════════════
+   PIETRO & EMILLY — stickers.css
+   Seção de Figurinhas por Categoria
+   ═══════════════════════════════════════════════ */
+
+/* ── SEÇÃO WRAPPER ── */
+#sec-figurinhas {
+  padding-bottom: 2rem;
+}
+
+/* ── BUSCA ── */
+.sticker-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.2rem;
+  background: white;
+  border: 1.5px solid var(--rose-alpha-20);
+  border-radius: var(--radius-pill);
+  padding: 0 1rem;
+  box-shadow: var(--shadow-rose-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sticker-search-wrap:focus-within {
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px var(--rose-alpha-10), var(--shadow-rose-sm);
+}
+
+.sticker-search-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  opacity: 0.5;
+  margin-right: 0.5rem;
+}
+
+.sticker-search {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--velvet);
+  padding: 0.75rem 0;
+}
+
+.sticker-search::placeholder {
+  color: #c9a9b0;
+}
+
+.sticker-search-clear {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  background: var(--rose-alpha-10);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: var(--rose);
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.sticker-search-clear:hover { background: var(--rose-alpha-20); }
+
+/* ── TABS ── */
+.sticker-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  margin-bottom: 1.2rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sticker-tabs::-webkit-scrollbar { display: none; }
+
+.sticker-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1.5px solid var(--rose-alpha-15);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: #b06070;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  position: relative;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-rose-sm);
+}
+
+.sticker-tab:hover {
+  border-color: var(--rose);
+  color: var(--rose);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-rose-md);
+}
+
+.sticker-tab.active {
+  background: linear-gradient(135deg, var(--rose), #c44dff);
+  border-color: transparent;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(232, 83, 111, 0.35);
+}
+
+.sticker-tab-icon { font-size: 1rem; }
+.sticker-tab-label { letter-spacing: 0.01em; }
+
+/* Badge de contagem de favoritos */
+.sticker-fav-badge {
+  position: absolute;
+  top: -6px; right: -6px;
+  min-width: 18px; height: 18px;
+  background: #ff4757;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 2px solid white;
+  line-height: 1;
+}
+
+/* ── TÍTULO DA CATEGORIA ATIVA ── */
+.sticker-cat-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  color: var(--velvet);
+  margin-bottom: 1rem;
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+}
+
+/* ── GRID ── */
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 0.8rem;
+  will-change: opacity, transform;
+}
+
+@media (max-width: 400px) {
+  .sticker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: 0.6rem;
+  }
+}
+
+/* ── CARD ── */
+.sticker-card {
+  position: relative;
+  background: white;
+  border: 1.5px solid var(--rose-alpha-15);
+  border-radius: var(--radius-lg);
+  padding: 0.6rem 0.4rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition:
+    transform 0.2s cubic-bezier(.32,1.5,.5,1),
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  box-shadow: var(--shadow-rose-sm);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sticker-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  border-color: var(--rose-alpha-25);
+  box-shadow: var(--shadow-rose-md);
+}
+
+.sticker-card:active {
+  transform: scale(0.95);
+}
+
+.sticker-card.favorited {
+  border-color: rgba(232, 83, 111, 0.4);
+  background: linear-gradient(145deg, #fff8f9, white);
+}
+
+/* Animação de bounce ao clicar */
+@keyframes stickerBounce {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.18) rotate(-3deg); }
+  60%  { transform: scale(0.95) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.sticker-card.sticker-bounce {
+  animation: stickerBounce 0.4s cubic-bezier(.32,1.5,.5,1);
+}
+
+/* ── IMAGEM ── */
+.sticker-img-wrap {
+  position: relative;
+  width: 64px; height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sticker-img {
+  width: 64px; height: 64px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.sticker-card:hover .sticker-img {
+  transform: scale(1.08);
+}
+
+/* ── FEEDBACK "COPIADO!" ── */
+.sticker-click-feedback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(232, 83, 111, 0.85);
+  backdrop-filter: blur(2px);
+  border-radius: 10px;
+  color: white;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.sticker-click-feedback.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── BOTÃO DE FAVORITO ── */
+.sticker-fav-btn {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  padding: 0;
+  z-index: 2;
+}
+
+.sticker-card:hover .sticker-fav-btn,
+.sticker-card.favorited .sticker-fav-btn {
+  opacity: 1;
+}
+
+.sticker-fav-btn:hover {
+  transform: scale(1.3);
+}
+
+/* ── TEXTO DO CARD ── */
+.sticker-label {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--velvet);
+  text-align: center;
+  line-height: 1.2;
+  opacity: 0.75;
+  max-width: 80px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sticker-emotion {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+/* ── EMPTY STATE ── */
+.sticker-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+}
+
+.sticker-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.6rem;
+  opacity: 0.4;
+}
+
+.sticker-empty-text {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  color: var(--velvet);
+  margin-bottom: 0.3rem;
+  opacity: 0.6;
+}
+
+.sticker-empty-sub {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #b06070;
+}
+
+/* ── DICA ── */
+.sticker-tip {
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: #b06070;
+  opacity: 0.7;
+  margin-top: 1.2rem;
+  letter-spacing: 0.01em;
+}

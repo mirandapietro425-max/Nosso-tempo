@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Pietro & Emilly 💕</title>
+
+  <!-- PWA -->
+  <link rel="icon" type="image/png" href="assets/favicon.png" id="favicon-link">
+  <link rel="manifest" id="pwa-manifest">
+  <link rel="apple-touch-icon" href="assets/icon-192.png" id="apple-touch-icon">
+  <meta name="theme-color" content="#590d22">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pietro & Emilly">
+
+  <!-- Fontes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+
+  <!-- CSS Modular -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/modals.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/stickers.css">
+</head>
+<body>
+
+<!-- ── MODAL FILME ── -->
+<div class="movie-modal-overlay" id="movie-modal-overlay">
+  <div class="movie-modal">
+    <button class="movie-modal-close" onclick="closeMovieModal()">✕</button>
+    <div id="movie-modal-poster-area"></div>
+    <div class="movie-modal-body">
+      <div class="movie-modal-title" id="movie-modal-title"></div>
+      <div class="movie-modal-trailer" id="movie-modal-trailer"></div>
+      <div class="movie-modal-comments-label">💬 O que achamos</div>
+      <div class="movie-modal-comments" id="movie-modal-comments"></div>
+      <div class="movie-modal-add">
+        <div class="movie-modal-author-row">
+          <button class="mural-author-btn active" id="movie-btn-pietro" onclick="selectMovieAuthor('Pietro')">Pietro 💙</button>
+          <button class="mural-author-btn"         id="movie-btn-emilly" onclick="selectMovieAuthor('Emilly')">Emilly 💗</button>
+        </div>
+        <div class="movie-modal-input-row">
+          <input class="movie-modal-input" id="movie-modal-comment-input" type="text" placeholder="O que achei desse filme...">
+          <button class="movie-modal-send" onclick="addMovieComment()">Enviar 💌</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BANNER EVENTO ── -->
+<div class="event-banner" id="event-banner">🌸 Dia especial 🌸</div>
+
+<!-- ── MINI PLAYER FLUTUANTE ── -->
+<div class="mini-player" id="mini-player">
+  <button class="mini-player-toggle" id="mini-player-toggle" onclick="toggleMiniPlayer()">🎵</button>
+  <div class="mini-player-panel" id="mini-player-panel">
+    <div class="mini-player-header">🎵 Músicas</div>
+    <div class="mini-player-list" id="mini-player-list"></div>
+  </div>
+</div>
+
+<!-- ── BARRA DE PLAYER FIXA ── -->
+<div class="mini-player-bar" id="mini-player-bar" style="display:none">
+  <div class="mini-bar-info">
+    <div class="mini-bar-note">♪</div>
+    <div class="mini-bar-text">
+      <div class="mini-bar-title"  id="mini-track-name">—</div>
+      <div class="mini-bar-artist" id="mini-track-artist"></div>
+    </div>
+  </div>
+  <div class="mini-bar-controls">
+    <button class="mini-bar-btn"      onclick="playPrev()">⏮</button>
+    <button class="mini-bar-btn main" id="mini-play-icon" onclick="togglePlayPause()">⏸</button>
+    <button class="mini-bar-btn"      onclick="playNext()">⏭</button>
+  </div>
+</div>
+
+<!-- ── BARRA MÚSICA EVENTO ── -->
+<div class="event-music-bar" id="event-music-bar" onclick="toggleEventMusic && toggleEventMusic()">
+  <div class="event-music-dot"></div>
+  <span id="event-music-toggle">⏸</span>
+</div>
+
+<!-- ── PARTICLES ── -->
+<canvas id="particles"></canvas>
+
+<!-- ── INPUT GALERIA (hidden) ── -->
+<input type="file" id="file-input" accept="image/*" style="display:none">
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── POPUP RECADINHO DIÁRIO ── -->
+<div class="daily-overlay" id="daily-overlay">
+  <div class="daily-popup">
+    <span class="daily-popup-heart">💕</span>
+    <div class="daily-popup-label">Recadinho de hoje</div>
+    <div class="daily-popup-text" id="daily-popup-text"></div>
+    <button class="daily-popup-close" onclick="closeDailyPopup()">Com amor 💕</button>
+    <div class="daily-popup-date" id="daily-popup-date"></div>
+  </div>
+</div>
+
+<!-- ── MODAL SENHA MURAL ── -->
+<div class="senha-overlay" id="senha-overlay" onclick="fecharSenhaMural(event)">
+  <div class="senha-modal" id="senha-modal">
+    <div class="senha-icon">🔐</div>
+    <div class="senha-title">Área privada</div>
+    <div class="senha-sub">Digite a senha para ler os recados</div>
+    <input class="senha-input" id="senha-input" type="password"
+           placeholder="••••••••••"
+           onkeydown="if(event.key==='Enter') verificarSenha()"
+           autocomplete="off">
+    <div class="senha-erro" id="senha-erro">Senha incorreta 😕</div>
+    <button class="senha-btn" onclick="verificarSenha()">Entrar 💕</button>
+  </div>
+</div>
+
+<!-- ── OVERLAY CALENDÁRIO ── -->
+<div class="cal-overlay" id="cal-overlay">
+  <div class="cal-modal">
+    <button class="cal-modal-close" onclick="closeCalModal()">✕</button>
+    <div class="cal-modal-date" id="cal-modal-date"></div>
+
+    <div class="cal-modal-section">
+      <div class="cal-modal-label">📝 Nota do dia</div>
+      <textarea class="cal-modal-textarea" id="cal-text" placeholder="O que aconteceu hoje?"></textarea>
+    </div>
+
+    <div class="cal-modal-section">
+      <div class="cal-modal-label">📸 Fotos e vídeos</div>
+      <div class="cal-media-grid" id="cal-media-grid"></div>
+      <input type="file" id="cal-file-input" accept="image/*,video/*" multiple style="display:none">
+      <button class="cal-media-btn" onclick="document.getElementById('cal-file-input').click()">📷 Adicionar mídia</button>
+      <div class="cal-upload-status" id="cal-upload-status"></div>
+    </div>
+
+    <div class="cal-modal-section">
+      <div class="cal-modal-label">💬 Comentários</div>
+      <div class="cal-comments" id="cal-comments"></div>
+      <div class="cal-comment-add">
+        <div class="mural-author-row">
+          <button class="mural-author-btn active" id="cal-btn-pietro" onclick="selectCalAuthor('Pietro')">Pietro 💙</button>
+          <button class="mural-author-btn"         id="cal-btn-emilly" onclick="selectCalAuthor('Emilly')">Emilly 💗</button>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+          <input class="movie-modal-input" id="cal-comment-input" placeholder="Deixe um comentário..." style="flex:1">
+          <button class="movie-modal-send" onclick="addCalComment()">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="cal-save-btn" onclick="saveCalDay()">Salvar dia 💕</button>
+  </div>
+</div>
+
+<!-- ── OVERLAY HUMOR ── -->
+<div class="mood-picker-overlay" id="mood-picker-overlay">
+  <div class="mood-picker-sheet" style="position:relative">
+    <button class="mood-picker-close" onclick="closeMoodPicker()">✕</button>
+    <div class="mood-picker-title" id="mood-picker-title">Como você está hoje?</div>
+    <div class="mood-picker-sub">Escolha a carinha que melhor descreve seu sentimento 💕</div>
+    <div class="mood-tabs" id="mood-tabs">
+      <button class="mood-tab active" id="mood-tab-emojis" onclick="switchMoodTab('emojis')">😊 Emojis</button>
+      <button class="mood-tab"        id="mood-tab-disney" onclick="switchMoodTab('disney')">✨ Disney</button>
+    </div>
+    <div class="mood-grid" id="mood-grid"></div>
+    <button class="mood-confirm-btn" onclick="confirmMood()">Confirmar 💕</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCROLL CONTAINER — só este rola
+     ════════════════════════════════════════ -->
+<div id="page-wrap">
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="greeting-pill" id="greeting">Carregando...</span>
+  <h1 class="hero-title">
+    <em>Pietro</em>
+    <span class="hero-ampersand">&amp;</span>
+    <em>Emilly</em>
+  </h1>
+  <p class="hero-subtitle">Uma história de amor que cresce a cada segundo ✨</p>
+
+  <div class="counter-hero">
+    <div class="counter-unit"><span class="counter-num" id="c-dias">0</span><span class="counter-label">Dias</span></div>
+    <div class="counter-unit"><span class="counter-num" id="c-horas">0</span><span class="counter-label">Horas</span></div>
+    <div class="counter-unit"><span class="counter-num" id="c-min">0</span><span class="counter-label">Minutos</span></div>
+    <div class="counter-unit"><span class="counter-num" id="c-seg">0</span><span class="counter-label">Segundos</span></div>
+  </div>
+
+  <nav class="hero-nav" aria-label="Seções do site">
+    <a class="hero-nav-btn" href="#sec-carta">      <span class="hero-nav-icon">💌</span><span class="hero-nav-label">Carta</span></a>
+    <a class="hero-nav-btn" href="#sec-galeria">    <span class="hero-nav-icon">📸</span><span class="hero-nav-label">Galeria</span></a>
+    <a class="hero-nav-btn" href="#sec-musica">     <span class="hero-nav-icon">🎵</span><span class="hero-nav-label">Música</span></a>
+    <a class="hero-nav-btn" href="#sec-filmes">     <span class="hero-nav-icon">🎬</span><span class="hero-nav-label">Filmes</span></a>
+    <a class="hero-nav-btn" href="#sec-calendario"> <span class="hero-nav-icon">📅</span><span class="hero-nav-label">Calendário</span></a>
+    <a class="hero-nav-btn" href="#sec-humor">      <span class="hero-nav-icon">😊</span><span class="hero-nav-label">Humor</span></a>
+    <a class="hero-nav-btn" href="#sec-figurinhas"><span class="hero-nav-icon">🎭</span><span class="hero-nav-label">Figurinhas</span></a>
+    <a class="hero-nav-btn" href="#sec-sonhos">     <span class="hero-nav-icon">🌟</span><span class="hero-nav-label">Sonhos</span></a>
+    <a class="hero-nav-btn" href="#sec-mural">      <span class="hero-nav-icon">💬</span><span class="hero-nav-label">Recados</span></a>
+    <a class="hero-nav-btn" href="#sec-localizacao"><span class="hero-nav-icon">📍</span><span class="hero-nav-label">Localização</span></a>
+  </nav>
+
+  <div class="scroll-hint" aria-hidden="true">↓</div>
+</div>
+
+<!-- ── PRÓXIMO MESVERSÁRIO ── -->
+<section aria-labelledby="sec-anniv-title">
+  <div class="section-label">Próxima Comemoração</div>
+  <h2 class="section-title" id="sec-anniv-title">Nosso <em>Mesversário</em></h2>
+  <div class="anniv-card">
+    <div class="anniv-days" id="days-next">–</div>
+    <div class="anniv-label" id="anniv-label">dias para o nosso dia especial 💕</div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <p style="margin-top:1rem;font-size:0.82rem;opacity:0.55;letter-spacing:0.08em;">TODO DIA 11 DE CADA MÊS</p>
+  </div>
+</section>
+
+<!-- ── CARTA ── -->
+<section id="sec-carta" aria-labelledby="sec-carta-title">
+  <div class="divider"><span class="divider-icon">💌</span></div>
+  <div class="section-label">Para você</div>
+  <h2 class="section-title" id="sec-carta-title">Uma <em>cartinha</em> de amor</h2>
+  <div class="letter-card">
+    <p>Você chegou na minha vida de um jeito que eu nem esperava. Os seus olhos verdes são mais lindos do que consigo expressar. Você é maravilhosa em tudo o que faz, e fico feliz só de te ver sorrir.</p>
+    <br>
+    <p>Cada momento contigo é guardado aqui dentro com muito cuidado. Obrigado por cada abraço, cada risada, cada momento incrível. Você é meu lar.</p>
+    <p class="letter-sig">Com todo o meu amor, sempre — Pietro 💕</p>
+  </div>
+</section>
+
+<!-- ── RECADINHO DIÁRIO ── -->
+<section aria-labelledby="sec-daily-title">
+  <div class="divider"><span class="divider-icon">💝</span></div>
+  <div class="section-label">Todo dia, pra você</div>
+  <h2 class="section-title" id="sec-daily-title">Recadinho <em>de hoje</em></h2>
+  <div class="daily-card" onclick="openDailyPopup()" role="button" tabindex="0"
+       onkeydown="if(event.key==='Enter') openDailyPopup()">
+    <div class="daily-card-label">✨ Mensagem do dia</div>
+    <div class="daily-card-text" id="daily-card-text"></div>
+    <div class="daily-card-hint">Toque para ver em destaque 💌</div>
+  </div>
+</section>
+
+<!-- ── TIMELINE ── -->
+<section aria-labelledby="sec-timeline-title">
+  <div class="divider"><span class="divider-icon">📅</span></div>
+  <div class="section-label">Nossa história</div>
+  <h2 class="section-title" id="sec-timeline-title">A <em>linha do tempo</em></h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-date">Agosto de 2024</div>
+      <div class="timeline-event">O começo de tudo 💫</div>
+      <div class="timeline-desc">O dia em que nos encontramos e tudo mudou — 06/08/2024.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-date">Outubro de 2024</div>
+      <div class="timeline-event">Um novo recomeço ❤️</div>
+      <div class="timeline-desc">Depois de uma pausa, voltamos mais fortes do que nunca — 11/10/2024.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-date">Todo dia 11</div>
+      <div class="timeline-event">Nosso dia especial 🥂</div>
+      <div class="timeline-desc">Todo mesversário é uma celebração do que construímos juntos.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-date">Em breve...</div>
+      <div class="timeline-event">Próximas memórias 🌟</div>
+      <div class="timeline-desc">Muitos momentos incríveis ainda estão por vir.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── STATS ── -->
+<section aria-labelledby="sec-stats-title">
+  <div class="divider"><span class="divider-icon">💝</span></div>
+  <div class="section-label">Em números</div>
+  <h2 class="section-title" id="sec-stats-title">Nossa <em>jornada</em></h2>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">☀️</div><div class="stat-num" id="stat-dias">0</div><div class="stat-label">Dias juntos</div></div>
+    <div class="stat-card"><div class="stat-icon">🌠</div><div class="stat-num" id="stat-noites">0</div><div class="stat-label">Sonhos juntos</div></div>
+    <div class="stat-card"><div class="stat-icon">🌹</div><div class="stat-num" id="stat-semanas">0</div><div class="stat-label">Semanas de amor</div></div>
+    <div class="stat-card"><div class="stat-icon">🥰</div><div class="stat-num">∞</div><div class="stat-label">Amor</div></div>
+  </div>
+</section>
+
+<!-- ── GALERIA ── -->
+<section id="sec-galeria" aria-labelledby="sec-galeria-title">
+  <div class="divider"><span class="divider-icon">📸</span></div>
+  <div class="section-label">Memórias</div>
+  <h2 class="section-title" id="sec-galeria-title">Nossa <em>galeria</em></h2>
+  <div class="gallery-grid" id="gallery-grid"></div>
+  <p class="gallery-tip">Clique em qualquer quadrado para adicionar uma memória 🥰</p>
+</section>
+
+<!-- ── MÚSICA ── -->
+<section id="sec-musica" aria-labelledby="sec-musica-title">
+  <div class="divider"><span class="divider-icon">🎵</span></div>
+  <div class="section-label">Nossa trilha sonora</div>
+  <h2 class="section-title" id="sec-musica-title">Nossa <em>música</em></h2>
+
+  <div class="music-featured" onclick="playTrack(0)" role="button" tabindex="0"
+       onkeydown="if(event.key==='Enter') playTrack(0)">
+    <div class="music-featured-label">⭐ Música em destaque</div>
+    <div class="music-featured-info">
+      <div class="music-featured-icon">🎵</div>
+      <div>
+        <div class="music-featured-name">Mania de Você</div>
+        <div class="music-featured-artist">Raça Negra</div>
+      </div>
+      <div class="music-featured-play">▶</div>
+    </div>
+  </div>
+
+  <div class="music-playlist" id="music-playlist"></div>
+
+  <div id="yt-embed-area" style="display:none;margin-bottom:1.2rem;border-radius:14px;overflow:hidden;box-shadow:0 6px 24px rgba(89,13,34,0.12);">
+    <div id="yt-player-div"></div>
+  </div>
+
+  <div class="music-custom">
+    <div class="music-custom-title">🎶 Adicione sua música especial</div>
+    <div class="music-custom-row">
+      <input class="music-input" id="music-link-input" type="text" placeholder="Cole o link do YouTube aqui...">
+      <button class="music-btn" onclick="playCustomYT()">Tocar ▶</button>
+    </div>
+    <p class="music-tip">💡 Ex: https://www.youtube.com/watch?v=...</p>
+  </div>
+</section>
+
+<!-- ── CARTA SURPRESA ── -->
+<section aria-labelledby="sec-surpresa-title">
+  <div class="divider"><span class="divider-icon">🔒</span></div>
+  <div class="section-label">Uma surpresa especial</div>
+  <h2 class="section-title" id="sec-surpresa-title">Carta <em>surpresa</em></h2>
+  <div class="surprise-card" id="surprise-card">
+    <div class="surprise-locked" id="surprise-locked">
+      <div class="surprise-lock-icon">🔒</div>
+      <div class="surprise-lock-title">Esta carta está guardada com amor</div>
+      <div class="surprise-lock-sub" id="surprise-countdown"></div>
+      <div class="surprise-lock-hint">Ela abre no próximo dia 11 💕</div>
+    </div>
+    <div class="surprise-open" id="surprise-open" style="display:none">
+      <div class="surprise-open-label">💌 Aberta com amor</div>
+      <div class="surprise-open-text">Olá meu amor, estou escrevendo esta carta especial pois quero que saibas que tu és muito especial. És tão especial que não me canso de te olhar e te dizer o quão maravilhosa tu és. Quando sinto o teu amor, posso realmente ver que há algo muito além do que somente o meu e o teu amor — a vontade mais sincera de te querer comigo. Pois tu, mesmo que me entendas pouco, me amas. E mesmo sem se entender, me amas. E por que nos amamos? Bem, porque um dia fomos unidos e conversamos, e quando vi quem tu eras e como agias, tive o prazer de me apaixonar grandemente pelos teus pensamentos e ações. E agora estamos aqui — mais um mês de uma vida de felicidade, ao lado de quem foi escolhido, não apenas amado, mas aceito por inteiro.</div>
+      <div class="surprise-open-sig">Com todo o meu amor — Pietro 💕</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FIGURINHAS ── -->
+<section id="sec-figurinhas" aria-labelledby="sec-figurinhas-title">
+  <div class="divider"><span class="divider-icon">🎭</span></div>
+  <div class="section-label">Personagens favoritos</div>
+  <h2 class="section-title" id="sec-figurinhas-title">Nossas <em>figurinhas</em></h2>
+  <div id="sticker-container"></div>
+</section>
+
+<!-- ── SONHOS ── -->
+<section id="sec-sonhos" aria-labelledby="sec-sonhos-title">
+  <div class="divider"><span class="divider-icon">🌟</span></div>
+  <div class="section-label">O que nos espera</div>
+  <h2 class="section-title" id="sec-sonhos-title">Nossos <em>sonhos</em></h2>
+  <div class="dreams-list" id="dreams-list"></div>
+  <div class="dreams-add">
+    <input class="dreams-input" id="dream-input" type="text" placeholder="Escreva um sonho nosso...">
+    <button class="dreams-btn" onclick="addDream()">Adicionar 🌟</button>
+  </div>
+</section>
+
+<!-- ── FILMES ── -->
+<section id="sec-filmes" aria-labelledby="sec-filmes-title">
+  <div class="divider"><span class="divider-icon">🎬</span></div>
+  <div class="section-label">Para assistir juntos</div>
+  <h2 class="section-title" id="sec-filmes-title">Nossa <em>watchlist</em></h2>
+  <div class="movies-list" id="movies-list"></div>
+  <div class="movies-add">
+    <input class="movies-input" id="movie-input" type="text" placeholder="Nome do filme ou série...">
+    <button class="movies-btn" onclick="addMovie()">Adicionar 🎬</button>
+  </div>
+</section>
+
+<!-- ── MURAL ── -->
+<section id="sec-mural" aria-labelledby="sec-mural-title">
+  <div class="divider"><span class="divider-icon">💬</span></div>
+  <div class="section-label">Só pra nós dois</div>
+  <h2 class="section-title" id="sec-mural-title">Mural de <em>recados</em></h2>
+
+  <div id="mural-locked">
+    <div class="mural-lock-card">
+      <div class="mural-lock-icon">🔒</div>
+      <div class="mural-lock-title">Conteúdo privado</div>
+      <div class="mural-lock-sub">Nossos recadinhos secretos ficam guardados aqui</div>
+      <button class="mural-lock-btn" onclick="abrirSenhaMural()">Ler recados 💌</button>
+    </div>
+  </div>
+
+  <div id="mural-conteudo" style="display:none">
+    <div class="mural-list" id="mural-list"></div>
+    <div class="mural-add">
+      <div class="mural-author-row">
+        <button class="mural-author-btn active" id="btn-pietro" onclick="selectAuthor('Pietro')">Pietro 💙</button>
+        <button class="mural-author-btn"         id="btn-emilly" onclick="selectAuthor('Emilly')">Emilly 💗</button>
+      </div>
+      <textarea class="mural-textarea" id="mural-input" placeholder="Escreva seu recado com amor..."></textarea>
+      <button class="mural-btn" onclick="addMural()">Enviar recado 💌</button>
+    </div>
+    <button class="mural-lock-again" onclick="bloquearMural()">🔒 Bloquear novamente</button>
+  </div>
+</section>
+
+<!-- ── HUMOR ── -->
+<section id="sec-humor" aria-labelledby="sec-humor-title">
+  <div class="divider"><span class="divider-icon">😊</span></div>
+  <div class="section-label">Como estamos hoje</div>
+  <h2 class="section-title" id="sec-humor-title">Mural de <em>humor</em></h2>
+  <div class="mood-card">
+    <div class="mood-header">
+      <span class="mood-header-icon">💭</span>
+      <div class="mood-header-text">Como cada um está se sentindo hoje?</div>
+    </div>
+    <div class="mood-players">
+      <div class="mood-player-box" id="mood-box-pietro">
+        <div class="mood-player-name">Pietro 💙</div>
+        <span class="mood-player-emoji" id="mood-emoji-pietro">❓</span>
+        <div class="mood-player-label" id="mood-label-pietro">Não registrado</div>
+        <div class="mood-player-time"  id="mood-time-pietro"></div>
+        <button class="mood-btn" onclick="openMoodPicker('Pietro')">Atualizar humor</button>
+      </div>
+      <div class="mood-player-box" id="mood-box-emilly">
+        <div class="mood-player-name">Emilly 💗</div>
+        <span class="mood-player-emoji" id="mood-emoji-emilly">❓</span>
+        <div class="mood-player-label" id="mood-label-emilly">Não registrado</div>
+        <div class="mood-player-time"  id="mood-time-emilly"></div>
+        <button class="mood-btn" onclick="openMoodPicker('Emilly')">Atualizar humor</button>
+      </div>
+    </div>
+    <div>
+      <div class="mood-history-title">Histórico de humor</div>
+      <div class="mood-history-list" id="mood-history-list">
+        <p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Nenhum registro ainda 💭</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MENSAGENS ESPECIAIS ── -->
+<section aria-labelledby="sec-especiais-title">
+  <div class="divider"><span class="divider-icon">💌</span></div>
+  <div class="section-label">Surpresas guardadas</div>
+  <h2 class="section-title" id="sec-especiais-title">Mensagens <em>especiais</em></h2>
+
+  <!-- Aniversário Pietro -->
+  <div class="special-card" id="special-bday">
+    <div class="special-locked" id="special-bday-locked">
+      <div class="special-lock-icon">🎂</div>
+      <div class="special-lock-title">Mensagem de aniversário</div>
+      <div class="special-lock-sub">da Emilly pra você 💙</div>
+      <div class="special-lock-hint">Abre no dia 9 de janeiro 🎁</div>
+    </div>
+    <div class="special-open" id="special-bday-open" style="display:none">
+      <div class="special-open-label">🎂 Feliz aniversário, Pietro!</div>
+      <div id="special-bday-content" class="special-content"></div>
+    </div>
+    <div class="special-send-collapsed" onclick="toggleSpecialSend('bday')">
+      <span>💗 Emilly — clique para deixar sua mensagem de aniversário</span>
+      <span class="special-arrow" id="special-bday-arrow">▼</span>
+    </div>
+    <div class="special-send" id="special-bday-send" style="display:none">
+      <textarea class="cal-modal-textarea" id="special-bday-text" placeholder="Escreva sua cartinha de aniversário pra ele..."></textarea>
+      <div class="special-send-media">
+        <input type="file" id="special-bday-photo" accept="image/*"  style="display:none">
+        <input type="file" id="special-bday-audio" accept="audio/*"  style="display:none">
+        <button class="cal-media-btn" onclick="document.getElementById('special-bday-photo').click()">📸 Adicionar foto</button>
+        <button class="cal-media-btn" onclick="document.getElementById('special-bday-audio').click()">🎙️ Adicionar áudio</button>
+      </div>
+      <div id="special-bday-preview" class="special-preview"></div>
+      <div id="special-bday-status" class="cal-upload-status"></div>
+      <button class="cal-save-btn" onclick="saveSpecial('bday')" style="margin-top:1rem">Guardar mensagem 💕</button>
+    </div>
+  </div>
+
+  <!-- Mesversário -->
+  <div class="special-card" style="margin-top:1.5rem" id="special-mesv">
+    <div class="special-locked" id="special-mesv-locked">
+      <div class="special-lock-icon">💕</div>
+      <div class="special-lock-title">Mensagem do mesversário</div>
+      <div class="special-lock-sub">da Emilly pra você 💙</div>
+      <div class="special-lock-hint">Abre todo dia 11 🥂</div>
+    </div>
+    <div class="special-open" id="special-mesv-open" style="display:none">
+      <div class="special-open-label">💕 Feliz mesversário, Pietro!</div>
+      <div id="special-mesv-content" class="special-content"></div>
+    </div>
+    <div class="special-send-collapsed" onclick="toggleSpecialSend('mesv')">
+      <span>💗 Emilly — clique para deixar sua mensagem do mesversário</span>
+      <span class="special-arrow" id="special-mesv-arrow">▼</span>
+    </div>
+    <div class="special-send" id="special-mesv-send" style="display:none">
+      <textarea class="cal-modal-textarea" id="special-mesv-text" placeholder="Escreva sua cartinha do mesversário pra ele..."></textarea>
+      <div class="special-send-media">
+        <input type="file" id="special-mesv-photo" accept="image/*"  style="display:none">
+        <input type="file" id="special-mesv-audio" accept="audio/*"  style="display:none">
+        <button class="cal-media-btn" onclick="document.getElementById('special-mesv-photo').click()">📸 Adicionar foto</button>
+        <button class="cal-media-btn" onclick="document.getElementById('special-mesv-audio').click()">🎙️ Adicionar áudio</button>
+      </div>
+      <div id="special-mesv-preview" class="special-preview"></div>
+      <div id="special-mesv-status" class="cal-upload-status"></div>
+      <button class="cal-save-btn" onclick="saveSpecial('mesv')" style="margin-top:1rem">Guardar mensagem 💕</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── CALENDÁRIO ── -->
+<section id="sec-calendario" aria-labelledby="sec-cal-title">
+  <div class="divider"><span class="divider-icon">📅</span></div>
+  <div class="section-label">Nossos dias</div>
+  <h2 class="section-title" id="sec-cal-title">Nosso <em>calendário</em></h2>
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="calPrev()" aria-label="Mês anterior">‹</button>
+    <div class="cal-month-label" id="cal-month-label"></div>
+    <button class="cal-nav-btn" onclick="calNext()" aria-label="Próximo mês">›</button>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+</section>
+
+<!-- ── LOCALIZAÇÃO ── -->
+<section id="sec-localizacao" aria-labelledby="sec-loc-title">
+  <div class="divider"><span class="divider-icon">📍</span></div>
+  <div class="section-label">Onde estamos</div>
+  <h2 class="section-title" id="sec-loc-title">Nossa <em>localização</em></h2>
+
+  <div id="location-key-tip"></div>
+
+  <div class="location-wrapper">
+    <div class="location-card" id="loc-card-pietro">
+      <div class="location-card-name">Pietro 💙</div>
+      <div class="location-card-avatar">👨</div>
+      <div class="location-card-city" id="loc-city-pietro">Sem localização ainda</div>
+      <div class="location-card-time" id="loc-time-pietro"></div>
+      <button class="location-share-btn" onclick="shareLocation('pietro')" id="loc-btn-pietro">📍 Compartilhar minha localização</button>
+    </div>
+    <div class="location-card" id="loc-card-emilly">
+      <div class="location-card-name">Emilly 💗</div>
+      <div class="location-card-avatar">👩</div>
+      <div class="location-card-city" id="loc-city-emilly">Sem localização ainda</div>
+      <div class="location-card-time" id="loc-time-emilly"></div>
+      <button class="location-share-btn" onclick="shareLocation('emilly')" id="loc-btn-emilly">📍 Compartilhar minha localização</button>
+    </div>
+  </div>
+
+  <div class="location-distance" id="location-distance">
+    <div class="location-distance-num" id="loc-dist-num">—</div>
+    <div class="location-distance-label">de distância entre vocês dois 💕</div>
+  </div>
+
+  <div class="location-map-wrap" id="location-map-wrap">
+    <div class="location-map-placeholder" id="location-map-placeholder">
+      📍 Quando um de vocês compartilhar a localização,<br>ela aparecerá aqui no mapa 🗺️
+    </div>
+    <div id="location-map" style="display:none"></div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <span class="footer-heart">❤</span>
+  <div class="footer-names">Pietro &amp; Emilly</div>
+  <p>Juntos desde <strong style="color:#f4879c;">11 de outubro de 2024</strong></p>
+  <p style="margin-top:0.5rem;font-size:0.75rem;opacity:0.45;">Feito com muito amor · Contagem ajustada para 11/10/2024</p>
+</footer>
+
+</div><!-- /#page-wrap -->
+
+<!-- ── SERVICE WORKER ── -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then(reg => console.log('[SW] Registrado:', reg.scope))
+        .catch(err => console.warn('[SW] Falha:', err));
+    });
+  }
+</script>
+
+<!-- ── APP (módulo ES) ── -->
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>
