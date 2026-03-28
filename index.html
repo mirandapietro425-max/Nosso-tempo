@@ -276,6 +276,38 @@
         .dreams-btn { background: var(--rose); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 50px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; white-space: nowrap; }
         .dreams-btn:hover { background: var(--velvet); }
 
+        /* MODAL FILME */
+        .movie-modal-overlay { position: fixed; inset: 0; background: rgba(89,13,34,0.6); backdrop-filter: blur(5px); z-index: 10002; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .movie-modal-overlay.show { opacity: 1; pointer-events: all; }
+        .movie-modal { background: #fff8f9; border-radius: 28px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 30px 80px rgba(89,13,34,0.35); position: relative; }
+        .movie-modal-close { position: absolute; top: 1rem; right: 1rem; background: rgba(89,13,34,0.12); border: none; color: var(--velvet); width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; font-weight: 700; z-index: 2; }
+        .movie-modal-poster { width: 100%; max-height: 220px; object-fit: cover; border-radius: 28px 28px 0 0; display: block; }
+        .movie-modal-poster-placeholder { width: 100%; height: 160px; background: linear-gradient(135deg, var(--velvet), #800020); border-radius: 28px 28px 0 0; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+        .movie-modal-body { padding: 1.5rem 1.8rem 2rem; }
+        .movie-modal-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--velvet); margin-bottom: 0.3rem; }
+        .movie-modal-trailer { margin: 1rem 0; border-radius: 16px; overflow: hidden; }
+        .movie-modal-trailer iframe { display: block; border-radius: 16px; }
+        .movie-modal-comments-label { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin: 1.2rem 0 0.7rem; font-weight: 600; }
+        .movie-modal-comments { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.8rem; }
+        .movie-modal-comment { border-radius: 14px; padding: 0.8rem 1rem; position: relative; }
+        .movie-modal-comment.pietro { background: #e8f4ff; border: 1px solid #b3d4f5; }
+        .movie-modal-comment.emilly { background: #fff0f3; border: 1px solid #ffb3c1; text-align: right; }
+        .movie-modal-comment-author { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 0.3rem; }
+        .movie-modal-comment.pietro .movie-modal-comment-author { color: #4a90d9; }
+        .movie-modal-comment.emilly .movie-modal-comment-author { color: var(--rose); }
+        .movie-modal-comment-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: #4a1020; }
+        .movie-modal-comment-del { position: absolute; top: 0.4rem; right: 0.6rem; background: none; border: none; color: #c9a9b0; cursor: pointer; font-size: 0.8rem; font-weight: 700; }
+        .movie-modal-comment-del:hover { color: var(--rose); }
+        .movie-modal-add { display: flex; flex-direction: column; gap: 0.6rem; }
+        .movie-modal-author-row { display: flex; gap: 0.5rem; }
+        .movie-modal-input-row { display: flex; gap: 0.5rem; }
+        .movie-modal-input { flex: 1; padding: 0.6rem 1rem; border: 1px solid #ffd6de; border-radius: 50px; font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-style: italic; outline: none; color: var(--velvet); }
+        .movie-modal-input:focus { border-color: var(--rose); }
+        .movie-modal-send { background: var(--rose); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 50px; cursor: pointer; font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+        .movie-modal-send:hover { background: var(--velvet); }
+        .movie-name { flex: 1; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--velvet); font-style: italic; cursor: pointer; }
+        .movie-name:hover { color: var(--rose); text-decoration: underline; }
+
         /* FILMES */
         .movies-list { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1.5rem; }
         .movie-item { display: flex; align-items: center; gap: 1rem; background: white; border: 1px solid #ffd6de; border-radius: 16px; padding: 1rem 1.2rem; transition: all 0.25s; }
@@ -415,7 +447,7 @@
         .event-banner { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9998; background: linear-gradient(90deg, var(--velvet), #c0003a, var(--velvet)); color: white; text-align: center; padding: 0.7rem 1rem; font-family: 'Playfair Display', serif; font-size: 1rem; letter-spacing: 0.05em; animation: fadeSlideDown 0.8s ease both; }
         body.event-mode .event-banner { display: block; }
         body.event-mode section { padding-top: 3rem; }
-        .event-music-bar { display: none; position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9997; background: linear-gradient(135deg, var(--velvet), #800020); color: white; border-radius: 50px; padding: 0.7rem 1.4rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 8px 25px rgba(89,13,34,0.4); cursor: pointer; transition: transform 0.2s; }
+        .event-music-bar { display: none; position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9997; background: linear-gradient(135deg, var(--velvet), #800020); color: white; border-radius: 50px; padding: 0.7rem 1.4rem; font-size: 0.8rem; align-items: center; gap: 0.6rem; box-shadow: 0 8px 25px rgba(89,13,34,0.4); cursor: pointer; transition: transform 0.2s; }
         body.event-mode .event-music-bar { display: flex; }
         .event-music-bar:hover { transform: scale(1.05); }
         .event-music-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: heartbeat 1s infinite; }
@@ -447,6 +479,30 @@
 </head>
 <body>
 
+<!-- ── MODAL FILME ── -->
+<div class="movie-modal-overlay" id="movie-modal-overlay">
+    <div class="movie-modal">
+        <button class="movie-modal-close" onclick="closeMovieModal()">✕</button>
+        <div id="movie-modal-poster-area"></div>
+        <div class="movie-modal-body">
+            <div class="movie-modal-title" id="movie-modal-title"></div>
+            <div class="movie-modal-trailer" id="movie-modal-trailer"></div>
+            <div class="movie-modal-comments-label">💬 O que achamos</div>
+            <div class="movie-modal-comments" id="movie-modal-comments"></div>
+            <div class="movie-modal-add">
+                <div class="movie-modal-author-row">
+                    <button class="mural-author-btn active" id="movie-btn-pietro" onclick="selectMovieAuthor('Pietro')">Pietro 💙</button>
+                    <button class="mural-author-btn" id="movie-btn-emilly" onclick="selectMovieAuthor('Emilly')">Emilly 💗</button>
+                </div>
+                <div class="movie-modal-input-row">
+                    <input class="movie-modal-input" id="movie-modal-comment-input" type="text" placeholder="O que achei desse filme...">
+                    <button class="movie-modal-send" onclick="addMovieComment()">Enviar 💌</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="event-banner" id="event-banner">🌸 Dia especial 🌸</div>
 
 <!-- ── MINI PLAYER FLUTUANTE ── -->
@@ -461,7 +517,6 @@
 
 <div class="event-music-bar" id="event-music-bar" onclick="toggleEventMusic()">
     <div class="event-music-dot"></div>
-    <span id="event-music-label">🎵 Mania de Você</span>
     <span id="event-music-toggle">⏸</span>
 </div>
 <iframe id="event-spotify" src="" style="display:none" allow="autoplay"></iframe>
@@ -865,7 +920,7 @@ async function renderMovies(){
         item.className = 'movie-item' + (m.watched ? ' watched' : '');
         item.innerHTML = `
             <div class="movie-icon">${m.watched ? '✅' : '🎬'}</div>
-            <div class="movie-name">${m.name}</div>
+            <div class="movie-name" onclick="openMovieModal(${i})">${m.name}</div>
             <button class="movie-check" onclick="toggleMovie(${i})">${m.watched ? '✓' : ''}</button>
             <button class="movie-del" onclick="deleteMovie(${i})">✕</button>`;
         list.appendChild(item);
@@ -877,7 +932,7 @@ async function addMovie(){
     const name  = input.value.trim();
     if(!name){ showToast('✏️ Escreve o nome do filme!'); return; }
     const movies = await getMovies();
-    movies.push({ name, watched: false });
+    movies.push({ name, watched: false, comments: [] });
     await saveMovies(movies);
     input.value = '';
     renderMovies();
@@ -899,6 +954,115 @@ async function deleteMovie(i){
     await saveMovies(movies);
     renderMovies();
 }
+
+// Modal de filme
+let movieModalIndex = null;
+let movieModalAuthor = 'Pietro';
+const TMDB_KEY = '4f5f43495afce4958a48d744bd161a7a'; // chave pública
+
+async function openMovieModal(i){
+    movieModalIndex = i;
+    const movies = await getMovies();
+    const m = movies[i];
+    document.getElementById('movie-modal-title').textContent = m.name;
+    document.getElementById('movie-modal-trailer').innerHTML = '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;">⏳ Buscando trailer...</p>';
+    document.getElementById('movie-modal-poster-area').innerHTML = '<div class="movie-modal-poster-placeholder">🎬</div>';
+    document.getElementById('movie-modal-overlay').classList.add('show');
+    renderMovieComments(m.comments || []);
+
+    // Buscar no TMDB
+    try {
+        const search = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(m.name)}&language=pt-BR`);
+        const sData  = await search.json();
+        const movie  = sData.results && sData.results[0];
+
+        if(movie){
+            // Poster
+            if(movie.poster_path){
+                document.getElementById('movie-modal-poster-area').innerHTML =
+                    `<img class="movie-modal-poster" src="https://image.tmdb.org/t/p/w780${movie.poster_path}" alt="${m.name}">`;
+            }
+            // Trailer via videos
+            const videos = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=pt-BR`);
+            const vData  = await videos.json();
+            let trailer  = vData.results && vData.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+            if(!trailer){
+                // Tenta em inglês
+                const vEn = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}`);
+                const vEnData = await vEn.json();
+                trailer = vEnData.results && vEnData.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+            }
+            if(trailer){
+                document.getElementById('movie-modal-trailer').innerHTML =
+                    `<iframe width="100%" height="220" src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen style="border-radius:16px;display:block;"></iframe>`;
+            } else {
+                document.getElementById('movie-modal-trailer').innerHTML =
+                    '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Trailer não encontrado 😕</p>';
+            }
+        } else {
+            document.getElementById('movie-modal-trailer').innerHTML =
+                '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Filme não encontrado 😕</p>';
+        }
+    } catch(e){
+        document.getElementById('movie-modal-trailer').innerHTML =
+            '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Erro ao buscar trailer 😕</p>';
+    }
+}
+window.openMovieModal = openMovieModal;
+
+function closeMovieModal(){
+    document.getElementById('movie-modal-overlay').classList.remove('show');
+    document.getElementById('movie-modal-trailer').innerHTML = '';
+    movieModalIndex = null;
+}
+window.closeMovieModal = closeMovieModal;
+
+function selectMovieAuthor(name){
+    movieModalAuthor = name;
+    document.getElementById('movie-btn-pietro').classList.toggle('active', name === 'Pietro');
+    document.getElementById('movie-btn-emilly').classList.toggle('active', name === 'Emilly');
+}
+window.selectMovieAuthor = selectMovieAuthor;
+
+function renderMovieComments(comments){
+    const list = document.getElementById('movie-modal-comments');
+    list.innerHTML = '';
+    if(!comments || comments.length === 0){
+        list.innerHTML = '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Nenhum comentário ainda 💬</p>';
+        return;
+    }
+    comments.forEach((c, i) => {
+        const div = document.createElement('div');
+        div.className = 'movie-modal-comment ' + c.author.toLowerCase();
+        div.innerHTML = `
+            <button class="movie-modal-comment-del" onclick="deleteMovieComment(${i})">✕</button>
+            <div class="movie-modal-comment-author">${c.author} ${c.author==='Pietro'?'💙':'💗'}</div>
+            <div class="movie-modal-comment-text">${c.text}</div>`;
+        list.appendChild(div);
+    });
+}
+
+async function addMovieComment(){
+    const input = document.getElementById('movie-modal-comment-input');
+    const text  = input.value.trim();
+    if(!text || movieModalIndex === null) return;
+    const movies = await getMovies();
+    if(!movies[movieModalIndex].comments) movies[movieModalIndex].comments = [];
+    movies[movieModalIndex].comments.push({ author: movieModalAuthor, text });
+    await saveMovies(movies);
+    input.value = '';
+    renderMovieComments(movies[movieModalIndex].comments);
+    showToast('💬 Comentário adicionado!');
+}
+window.addMovieComment = addMovieComment;
+
+async function deleteMovieComment(i){
+    const movies = await getMovies();
+    movies[movieModalIndex].comments.splice(i, 1);
+    await saveMovies(movies);
+    renderMovieComments(movies[movieModalIndex].comments);
+}
+window.deleteMovieComment = deleteMovieComment;
 
 window.addMovie    = addMovie;
 window.toggleMovie = toggleMovie;
