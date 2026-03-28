@@ -498,6 +498,11 @@
         }
         .mood-confirm-btn:hover { background: var(--velvet); }
 
+        /* Abas do picker */
+        .mood-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; background: #ffeef1; border-radius: 50px; padding: 0.3rem; }
+        .mood-tab { flex: 1; padding: 0.45rem 0.5rem; border: none; border-radius: 50px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: transparent; color: #b06070; transition: all 0.2s; }
+        .mood-tab.active { background: white; color: var(--velvet); box-shadow: 0 2px 8px rgba(89,13,34,0.1); }
+
         /* Histórico de humor */
         .mood-history-title { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; font-weight: 700; }
         .mood-history-list { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -910,7 +915,12 @@
     <div class="mood-picker-sheet" style="position:relative">
         <button class="mood-picker-close" onclick="closeMoodPicker()">✕</button>
         <div class="mood-picker-title" id="mood-picker-title">Como você está hoje?</div>
-        <div class="mood-picker-sub">Escolha a carinha que melhor descreve seu sentimento 💕</div>
+        <div class="mood-picker-sub" id="mood-picker-sub">Escolha a carinha que melhor descreve seu sentimento 💕</div>
+        <!-- Abas -->
+        <div class="mood-tabs" id="mood-tabs">
+            <button class="mood-tab active" id="mood-tab-emojis" onclick="switchMoodTab('emojis')">😊 Emojis</button>
+            <button class="mood-tab" id="mood-tab-disney" onclick="switchMoodTab('disney')">✨ Disney</button>
+        </div>
         <div class="mood-grid" id="mood-grid"></div>
         <button class="mood-confirm-btn" onclick="confirmMood()">Confirmar 💕</button>
     </div>
@@ -1103,16 +1113,7 @@
     <div class="section-label">Onde estamos</div>
     <h2 class="section-title">Nossa <em>localização</em></h2>
 
-    <!-- Dica de chave do Google Maps -->
-    <div class="location-key-tip" id="location-key-tip">
-        🗺️ Para o mapa funcionar, você precisa de uma chave da API do Google Maps (gratuita).
-        <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" style="color:var(--rose);font-weight:600;">Clique aqui para gerar</a> — ative "Maps JavaScript API" e "Geocoding API".
-        <div class="location-key-row">
-            <input class="location-key-input" id="location-key-input" type="text" placeholder="Cole sua chave aqui...">
-            <button class="location-key-btn" onclick="saveGmapsKey()">Salvar 🗺️</button>
-        </div>
-    </div>
-
+    <div id="location-key-tip" style="display:none"></div>
     <!-- Cards Pietro e Emilly -->
     <div class="location-wrapper">
         <div class="location-card" id="loc-card-pietro">
@@ -2226,20 +2227,85 @@ const MOOD_OPTIONS = [
     { emoji: '🌟', label: 'Inspirado' },
 ];
 
+// Personagens Disney — princesas para Emilly, príncipes/heróis para Pietro
+const DISNEY_EMILLY = [
+    { emoji: '👸', label: 'Cinderela' },
+    { emoji: '🌹', label: 'Bela' },
+    { emoji: '🧜‍♀️', label: 'Ariel' },
+    { emoji: '🌺', label: 'Moana' },
+    { emoji: '❄️', label: 'Elsa' },
+    { emoji: '🌸', label: 'Anna' },
+    { emoji: '🐉', label: 'Mulan' },
+    { emoji: '🌙', label: 'Jasmine' },
+    { emoji: '🐸', label: 'Tiana' },
+    { emoji: '🌿', label: 'Pocahontas' },
+    { emoji: '🌼', label: 'Rapunzel' },
+    { emoji: '🍎', label: 'Branca de Neve' },
+    { emoji: '🌊', label: 'Vaiana' },
+    { emoji: '🦁', label: 'Nala' },
+    { emoji: '💜', label: 'Raya' },
+];
+
+const DISNEY_PIETRO = [
+    { emoji: '🤴', label: 'Príncipe' },
+    { emoji: '🦁', label: 'Simba' },
+    { emoji: '🧞', label: 'Aladdin' },
+    { emoji: '🐾', label: 'Fera' },
+    { emoji: '🧊', label: 'Kristoff' },
+    { emoji: '🌊', label: 'Maui' },
+    { emoji: '⚔️', label: 'Flynn Rider' },
+    { emoji: '🎵', label: 'Eric' },
+    { emoji: '🌙', label: 'Naveen' },
+    { emoji: '🦅', label: 'John Smith' },
+    { emoji: '🐲', label: 'Shang' },
+    { emoji: '🌟', label: 'Hércules' },
+    { emoji: '🗡️', label: 'Phillip' },
+    { emoji: '🌿', label: 'Tarzan' },
+    { emoji: '🚀', label: 'Buzz' },
+];
+
 let moodPickerTarget = null;
 let moodPickerSelected = null;
+let moodActiveTab = 'emojis';
 
-function openMoodPicker(person){
-    moodPickerTarget = person;
+function switchMoodTab(tab){
+    moodActiveTab = tab;
     moodPickerSelected = null;
-    document.getElementById('mood-picker-title').textContent = `${person}, como você está hoje?`;
-    // Renderiza grid
+    document.getElementById('mood-tab-emojis').classList.toggle('active', tab === 'emojis');
+    document.getElementById('mood-tab-disney').classList.toggle('active', tab === 'disney');
+    renderMoodGrid();
+}
+window.switchMoodTab = switchMoodTab;
+
+function renderMoodGrid(){
     const grid = document.getElementById('mood-grid');
-    grid.innerHTML = MOOD_OPTIONS.map((m, i) => `
+    let options;
+    if(moodActiveTab === 'emojis'){
+        options = MOOD_OPTIONS;
+    } else {
+        // Disney: princesas para Emilly, príncipes para Pietro
+        options = (moodPickerTarget === 'Emilly') ? DISNEY_EMILLY : DISNEY_PIETRO;
+    }
+    grid.innerHTML = options.map((m, i) => `
         <div class="mood-option" onclick="selectMoodOption(${i})" id="mood-opt-${i}">
             <span class="mood-option-emoji">${m.emoji}</span>
             <span class="mood-option-label">${m.label}</span>
         </div>`).join('');
+}
+
+function openMoodPicker(person){
+    moodPickerTarget = person;
+    moodPickerSelected = null;
+    moodActiveTab = 'emojis';
+    document.getElementById('mood-picker-title').textContent = `${person}, como você está hoje?`;
+    document.getElementById('mood-tab-emojis').classList.add('active');
+    document.getElementById('mood-tab-disney').classList.remove('active');
+
+    // Personaliza a aba Disney conforme a pessoa
+    const disneyTab = document.getElementById('mood-tab-disney');
+    disneyTab.textContent = person === 'Emilly' ? '👸 Princesas' : '🤴 Príncipes';
+
+    renderMoodGrid();
     document.getElementById('mood-picker-overlay').classList.add('show');
 }
 window.openMoodPicker = openMoodPicker;
@@ -2252,7 +2318,10 @@ function closeMoodPicker(){
 window.closeMoodPicker = closeMoodPicker;
 
 function selectMoodOption(idx){
-    moodPickerSelected = MOOD_OPTIONS[idx];
+    const options = moodActiveTab === 'emojis'
+        ? MOOD_OPTIONS
+        : (moodPickerTarget === 'Emilly' ? DISNEY_EMILLY : DISNEY_PIETRO);
+    moodPickerSelected = options[idx];
     document.querySelectorAll('.mood-option').forEach((el,i) =>
         el.classList.toggle('selected', i === idx));
 }
@@ -2348,41 +2417,367 @@ renderMood();
 (function(){
     const now   = new Date();
     const day   = now.getDate();
-    const month = now.getMonth();
+    const month = now.getMonth(); // 0=jan
 
-    const isPietro = month === 0 && day === 9;
-    const isEmilly = month === 3 && day === 24;
-    const isMesv   = day === 11;
-    const isEvent  = isPietro || isEmilly || isMesv;
-    if(!isEvent) return;
+    // ── Catálogo de eventos ──────────────────────────────────────────
+    // Cada evento tem: check(d,m), banner, elementos animados, cores, mensagem popup
+    const EVENTOS = [
 
-    document.body.classList.add('event-mode');
+        // ── Datas do casal ──
+        {
+            id: 'aniv-pietro',
+            check: (d,m) => m===0 && d===9,
+            banner: '🎂 Feliz aniversário, Pietro! Hoje é o seu dia especial 💙',
+            popup: 'Feliz aniversário, Pietro! Que este dia seja tão lindo quanto você merece. A Emilly e eu te desejamos tudo de melhor 💙🎂',
+            elements: ['🎂','🎈','🎊','✨','💙','🥳'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #ddeeff 0%, #eef6ff 55%, #f0f8ff 100%)',
+            accent: '#4a90d9',
+        },
+        {
+            id: 'aniv-emilly',
+            check: (d,m) => m===3 && d===24,
+            banner: '🎂 Feliz aniversário, Emilly! Hoje é o seu dia especial 💗',
+            popup: 'Feliz aniversário, Emilly! Você é a pessoa mais especial do mundo e merece todo o amor deste dia 💗🎂',
+            elements: ['🎂','🎈','🎀','✨','💗','🥳'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #ffe0f0 0%, #fff0f8 55%, #fff8fc 100%)',
+            accent: '#e8536f',
+        },
+        {
+            id: 'mesversario',
+            check: (d,m) => d===11,
+            banner: '🥂 Feliz mesversário, Pietro & Emilly! Mais um mês de amor 💕',
+            popup: 'Feliz mesversário! Cada dia ao seu lado é um presente. Que este amor cresça sempre mais 🥂💕',
+            elements: ['🌸','🌷','💕','✨','🥂','💝'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #ffe0e8 0%, #fff0f3 55%, #fce4ec 100%)',
+            accent: '#e8536f',
+        },
 
-    const banner = document.getElementById('event-banner');
-    if(isPietro)      banner.textContent = '🎂 Feliz aniversário, Pietro! Hoje é o seu dia especial 💙🌸';
-    else if(isEmilly) banner.textContent = '🎂 Feliz aniversário, Emilly! Hoje é o seu dia especial 💕🌸';
-    else if(isMesv)   banner.textContent = '🥂 Feliz mesversário, Pietro & Emilly! Um mês a mais de amor 🌸';
+        // ── Natal ──
+        {
+            id: 'natal',
+            check: (d,m) => m===11 && d===25,
+            banner: '🎄 Feliz Natal, Pietro & Emilly! Que este dia seja cheio de amor e magia ✨',
+            popup: 'Feliz Natal! Que a magia deste dia envolva vocês dois com muito amor, alegria e cumplicidade. Que 2025 traga ainda mais momentos lindos juntos 🎄🎁✨',
+            elements: ['🎄','⭐','🎁','❄️','🦌','🔔','🧦','🕯️'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #d4edda 0%, #e8f5e9 55%, #f1f8e9 100%)',
+            accent: '#2e7d32',
+        },
+        {
+            id: 'vespera-natal',
+            check: (d,m) => m===11 && d===24,
+            banner: '🎄 Feliz Véspera de Natal! A magia começa hoje 🌟',
+            popup: 'A noite mais mágica do ano chegou! Feliz Natal a vocês dois, Pietro & Emilly 🎄✨',
+            elements: ['🎄','⭐','🎁','❄️','🔔','🕯️'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #d4edda 0%, #e8f5e9 55%, #f1f8e9 100%)',
+            accent: '#2e7d32',
+        },
 
-    const PETALS = ['🌸','🌺','🌷','💮','🌼','🪷'];
-    function spawnPetal(){
-        const el = document.createElement('div');
-        el.textContent = PETALS[Math.floor(Math.random() * PETALS.length)];
-        el.style.cssText = `position:fixed;left:${Math.random()*100}vw;top:-60px;font-size:${Math.random()*18+14}px;z-index:9996;pointer-events:none;animation:petalFall ${Math.random()*5+5}s linear forwards;`;
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 10000);
+        // ── Ano Novo ──
+        {
+            id: 'ano-novo',
+            check: (d,m) => m===0 && d===1,
+            banner: '🎆 Feliz Ano Novo! Que 2026 seja incrível para vocês dois 🥂✨',
+            popup: 'Feliz Ano Novo, Pietro & Emilly! Que este novo ano traga ainda mais amor, cumplicidade e momentos inesquecíveis juntos 🎆🥂💕',
+            elements: ['🎆','🎇','✨','🥂','🎊','⭐','🌟'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #1a1a2e 0%, #16213e 55%, #0f3460 100%)',
+            accent: '#f0c040',
+            dark: true,
+        },
+        {
+            id: 'reveillon',
+            check: (d,m) => m===11 && d===31,
+            banner: '🎆 Feliz Réveillon! A contagem regressiva começa 🥂',
+            popup: 'Última noite do ano! Que a virada seja especial para vocês dois 🎆💕',
+            elements: ['🎆','🎇','✨','🥂','🎊'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #1a1a2e 0%, #16213e 55%, #0f3460 100%)',
+            accent: '#f0c040',
+            dark: true,
+        },
+
+        // ── Páscoa (domingo variável — 2025: 20 abr, 2026: 5 abr) ──
+        {
+            id: 'pascoa',
+            check: (d,m) => isPascoa(now),
+            banner: '🐣 Feliz Páscoa, Pietro & Emilly! Que este dia seja doce como o chocolate 🍫',
+            popup: 'Feliz Páscoa! Que este dia traga alegria, renovação e muito chocolate para vocês dois 🐣🌸🍫',
+            elements: ['🐣','🐰','🥚','🌸','🍫','🌷','🌼'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #fff3e0 0%, #fffde7 55%, #f9fbe7 100%)',
+            accent: '#f57f17',
+        },
+
+        // ── Carnaval (terça variável — 2025: 4 mar, 2026: 17 fev) ──
+        {
+            id: 'carnaval',
+            check: (d,m) => isCarnaval(now),
+            banner: '🎭 Feliz Carnaval! Curta a folia com muito amor 🎊',
+            popup: 'Feliz Carnaval, Pietro & Emilly! Que a festa seja cheia de alegria, cores e muito amor 🎭🎊💃',
+            elements: ['🎭','🎊','🎉','🌈','🎶','💃','🕺'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #fff9c4 0%, #fff3e0 55%, #fce4ec 100%)',
+            accent: '#e040fb',
+        },
+
+        // ── Dia dos Namorados (12 jun — Brasil) ──
+        {
+            id: 'namorados',
+            check: (d,m) => m===5 && d===12,
+            banner: '💕 Feliz Dia dos Namorados, Pietro & Emilly! Amor eterno 💕',
+            popup: 'Feliz Dia dos Namorados! Para o casal mais lindo: que este amor de vocês seja cada vez mais bonito, verdadeiro e eterno 💕🌹',
+            elements: ['💕','❤️','🌹','💌','💝','💘','✨'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #fce4ec 0%, #fff0f3 55%, #fff8f9 100%)',
+            accent: '#e8536f',
+        },
+
+        // ── Dia das Mães (2º domingo de maio) ──
+        {
+            id: 'dia-maes',
+            check: (d,m) => isDiaDasMaes(now),
+            banner: '🌸 Feliz Dia das Mães! Celebrando todas as mães com amor 🌸',
+            popup: 'Feliz Dia das Mães! Uma homenagem especial a todas as mães incríveis 🌸💐',
+            elements: ['🌸','💐','🌷','🌺','💝','🌼'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #fce4ec 0%, #fff0f3 55%, #fff8f9 100%)',
+            accent: '#e91e8c',
+        },
+
+        // ── Dia dos Pais (2º domingo de agosto) ──
+        {
+            id: 'dia-pais',
+            check: (d,m) => isDiaDossPais(now),
+            banner: '👨‍👧 Feliz Dia dos Pais! Uma homenagem a todos os pais 💙',
+            popup: 'Feliz Dia dos Pais! Uma homenagem especial a todos os pais maravilhosos 👨‍👧💙',
+            elements: ['👨‍👧','💙','⭐','🎊','🏆','🌟'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #e3f2fd 0%, #e8f5e9 55%, #f1f8e9 100%)',
+            accent: '#1565c0',
+        },
+
+        // ── Dia de Finados (2 nov) ──
+        {
+            id: 'finados',
+            check: (d,m) => m===10 && d===2,
+            banner: '🕯️ Dia de Finados — em memória de quem amamos 🙏',
+            popup: 'Dia de Finados. Um momento de reflexão e carinho por quem partiu 🕯️🙏',
+            elements: ['🕯️','🌷','🌸','🙏','⭐'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #f3e5f5 0%, #ede7f6 55%, #e8eaf6 100%)',
+            accent: '#7b1fa2',
+        },
+
+        // ── Independência do Brasil (7 set) ──
+        {
+            id: 'independencia',
+            check: (d,m) => m===8 && d===7,
+            banner: '🇧🇷 Feliz Dia da Independência do Brasil! 7 de Setembro 🇧🇷',
+            popup: 'Feliz 7 de Setembro! Viva o Brasil e viva o amor de vocês dois 🇧🇷💚💛',
+            elements: ['🇧🇷','💚','💛','⭐','🎊','✨'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #e8f5e9 0%, #fffde7 55%, #f1f8e9 100%)',
+            accent: '#2e7d32',
+        },
+
+        // ── Tiradentes (21 abr) ──
+        {
+            id: 'tiradentes',
+            check: (d,m) => m===3 && d===21,
+            banner: '🇧🇷 Feliz Tiradentes! Feriado Nacional 🎊',
+            popup: 'Tiradentes — feriado nacional. Aproveitem o dia juntos com muito amor 💕',
+            elements: ['🇧🇷','⭐','🌟','🎊'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #e8f5e9 0%, #fffde7 55%, #f1f8e9 100%)',
+            accent: '#2e7d32',
+        },
+
+        // ── Proclamação da República (15 nov) ──
+        {
+            id: 'republica',
+            check: (d,m) => m===10 && d===15,
+            banner: '🇧🇷 Feliz Proclamação da República! Feriado Nacional 🎊',
+            popup: 'Proclamação da República — aproveitem o feriado juntos 💕🇧🇷',
+            elements: ['🇧🇷','⭐','🌟','🎊'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #e8f5e9 0%, #fffde7 55%, #f1f8e9 100%)',
+            accent: '#2e7d32',
+        },
+
+        // ── Nossa Senhora Aparecida (12 out) ──
+        {
+            id: 'aparecida',
+            check: (d,m) => m===9 && d===12,
+            banner: '🙏 Feliz Dia de Nossa Senhora Aparecida! Feriado Nacional 🌸',
+            popup: 'Dia de Nossa Senhora Aparecida — que a fé e o amor iluminem o caminho de vocês dois 🙏🌸',
+            elements: ['🌸','🙏','⭐','🕯️','🌷'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #fce4ec 0%, #fff0f3 55%, #fff8f9 100%)',
+            accent: '#c2185b',
+        },
+
+        // ── Halloween (31 out) ──
+        {
+            id: 'halloween',
+            check: (d,m) => m===9 && d===31,
+            banner: '🎃 Happy Halloween! Que o susto seja de amor 👻',
+            popup: 'Halloween! A noite mais assustadora do ano — mas nada mais assustador do que o quanto vocês dois se amam 🎃👻💕',
+            elements: ['🎃','👻','🦇','🕷️','🌙','⭐','🕸️'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #fff3e0 0%, #fbe9e7 55%, #fce4ec 100%)',
+            accent: '#e65100',
+        },
+
+        // ── São João / Festa Junina (13 jun) ──
+        {
+            id: 'sao-joao',
+            check: (d,m) => m===5 && (d>=12 && d<=24),
+            banner: '🎉 Arraiá! Feliz Festa Junina, Pietro & Emilly! 🌽',
+            popup: 'Arraiá! Festa Junina chegou — que vocês dois dancem forró juntos com muito amor e alegria 🎉🌽💃',
+            elements: ['🎉','🌽','🎆','⭐','🌸','🎶','🏮'],
+            bg: 'radial-gradient(ellipse at 50% 60%, #fff9c4 0%, #fff3e0 55%, #fbe9e7 100%)',
+            accent: '#f57f17',
+        },
+    ];
+
+    // ── Funções auxiliares para datas móveis ──────────────────────────
+
+    function isPascoa(date){
+        // Algoritmo de Butcher para calcular a Páscoa
+        const y = date.getFullYear();
+        const a = y % 19, b = Math.floor(y/100), c = y % 100;
+        const d = Math.floor(b/4), e = b % 4;
+        const f = Math.floor((b+8)/25), g = Math.floor((b-f+1)/3);
+        const h = (19*a + b - d - g + 15) % 30;
+        const i = Math.floor(c/4), k = c % 4;
+        const l = (32 + 2*e + 2*i - h - k) % 7;
+        const m2 = Math.floor((a + 11*h + 22*l)/451);
+        const mes = Math.floor((h + l - 7*m2 + 114)/31) - 1; // 0-indexed
+        const dia = ((h + l - 7*m2 + 114) % 31) + 1;
+        return date.getMonth() === mes && date.getDate() === dia;
     }
-    for(let i = 0; i < 20; i++) setTimeout(spawnPetal, i * 300);
-    setInterval(spawnPetal, 600);
 
-    const iframe = document.getElementById('event-spotify');
-    iframe.src = 'https://open.spotify.com/embed/track/76v5KgPWIYYMgbIc82NvRR?utm_source=generator&autoplay=1';
-    let musicPlaying = true;
+    function isCarnaval(date){
+        // Carnaval = 47 dias antes da Páscoa (terça-feira)
+        const y = date.getFullYear();
+        const a = y % 19, b = Math.floor(y/100), c = y % 100;
+        const d2 = Math.floor(b/4), e = b % 4;
+        const f = Math.floor((b+8)/25), g = Math.floor((b-f+1)/3);
+        const h = (19*a + b - d2 - g + 15) % 30;
+        const i = Math.floor(c/4), k = c % 4;
+        const l = (32 + 2*e + 2*i - h - k) % 7;
+        const m2 = Math.floor((a + 11*h + 22*l)/451);
+        const mes = Math.floor((h + l - 7*m2 + 114)/31) - 1;
+        const dia = ((h + l - 7*m2 + 114) % 31) + 1;
+        const pascoa = new Date(y, mes, dia);
+        const carnaval = new Date(pascoa); carnaval.setDate(pascoa.getDate() - 47);
+        // Ativa na segunda (d-1) e terça (d) de carnaval
+        const seg = new Date(carnaval); seg.setDate(carnaval.getDate() - 1);
+        return (date.getMonth() === carnaval.getMonth() && date.getDate() === carnaval.getDate()) ||
+               (date.getMonth() === seg.getMonth() && date.getDate() === seg.getDate());
+    }
+
+    function nthWeekdayOfMonth(year, month, weekday, n){
+        // Retorna o n-ésimo dia da semana (0=dom,1=seg...) de um mês
+        let d = new Date(year, month, 1), count = 0;
+        while(true){
+            if(d.getDay() === weekday){ count++; if(count === n) return d; }
+            d.setDate(d.getDate() + 1);
+        }
+    }
+
+    function isDiaDasMaes(date){
+        const segundo = nthWeekdayOfMonth(date.getFullYear(), 4, 0, 2); // 2º domingo de maio
+        return date.getMonth() === segundo.getMonth() && date.getDate() === segundo.getDate();
+    }
+
+    function isDiaDossPais(date){
+        const segundo = nthWeekdayOfMonth(date.getFullYear(), 7, 0, 2); // 2º domingo de agosto
+        return date.getMonth() === segundo.getMonth() && date.getDate() === segundo.getDate();
+    }
+
+    // ── Detecta o evento de hoje ──────────────────────────────────────
+    const evento = EVENTOS.find(e => e.check(day, month));
+    if(!evento) return;
+
+    // ── Aplica o tema visual ──────────────────────────────────────────
+    document.body.classList.add('event-mode');
+    document.body.setAttribute('data-event', evento.id);
+
+    // Muda o background da hero
+    const heroStyle = document.createElement('style');
+    heroStyle.textContent = `
+        .hero { background: ${evento.bg} !important; }
+        body.event-mode { --rose: ${evento.accent}; }
+        ${evento.dark ? 'body.event-mode .hero-title, body.event-mode .hero-subtitle, body.event-mode .counter-num { color: #fff !important; }' : ''}
+    `;
+    document.head.appendChild(heroStyle);
+
+    // Banner
+    const banner = document.getElementById('event-banner');
+    banner.textContent = evento.banner;
+    banner.style.background = `linear-gradient(90deg, ${evento.accent}cc, ${evento.accent}, ${evento.accent}cc)`;
+
+    // ── Popup de mensagem automática ─────────────────────────────────
+    setTimeout(() => {
+        // Cria popup especial de evento
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeIn .4s ease;`;
+        overlay.innerHTML = `
+            <div style="background:#fff8f9;border-radius:28px;padding:2.2rem 2rem;max-width:420px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.25);position:relative;animation:popIn .4s cubic-bezier(.32,1.2,.5,1)">
+                <div style="font-size:3rem;margin-bottom:0.8rem">${evento.elements[0]}</div>
+                <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:#590d22;margin-bottom:1rem;line-height:1.3">${evento.banner.replace(/^[^\s]+ /,'')}</div>
+                <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:#7a3045;line-height:1.7;margin-bottom:1.5rem">${evento.popup}</p>
+                <button onclick="this.closest('div[style]').remove()" style="background:${evento.accent};color:white;border:none;padding:0.75rem 2rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer">Com amor 💕</button>
+            </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+    }, 1200);
+
+    // ── Elementos animados personalizados ────────────────────────────
+    function spawnElement(){
+        const el = document.createElement('div');
+        el.textContent = evento.elements[Math.floor(Math.random() * evento.elements.length)];
+        el.style.cssText = `position:fixed;left:${Math.random()*100}vw;top:-60px;font-size:${Math.random()*18+12}px;z-index:9996;pointer-events:none;animation:petalFall ${Math.random()*6+5}s linear forwards;`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 12000);
+    }
+    for(let i = 0; i < 18; i++) setTimeout(spawnElement, i * 300);
+    setInterval(spawnElement, 700);
+
+    // ── Música temática via YouTube (sem depender do Spotify) ─────────
+    const MUSICAS = {
+        'natal':          'MYvbBBFUNK4', // Jingle Bells
+        'vespera-natal':  'MYvbBBFUNK4',
+        'ano-novo':       'SFpqSWFGHMs', // Auld Lang Syne
+        'reveillon':      'SFpqSWFGHMs',
+        'pascoa':         null,
+        'carnaval':       'OTHqRkOikUk', // Festa - Ivete
+        'namorados':      'OKw0iTXb0ZI', // Mania de Você
+        'sao-joao':       'WMQVkH-Lk2E', // Forró clássico
+        'aniv-pietro':    'DeumyOzKqgI', // Skyfall
+        'aniv-emilly':    'MCFIEkz9nNQ', // Home
+        'mesversario':    'OKw0iTXb0ZI', // Mania de Você
+        'halloween':      null,
+    };
+    const ytId = MUSICAS[evento.id];
+    if(ytId) {
+        const bar = document.getElementById('event-music-bar');
+        bar.style.display = 'flex';
+        // Usa o player YT já existente silenciosamente
+        window._eventMusicId = ytId;
+    }
 
     window.toggleEventMusic = function(){
-        musicPlaying = !musicPlaying;
-        document.getElementById('event-music-toggle').textContent = musicPlaying ? '⏸' : '▶';
-        iframe.src = musicPlaying ? 'https://open.spotify.com/embed/track/76v5KgPWIYYMgbIc82NvRR?utm_source=generator&autoplay=1' : '';
+        const bar = document.getElementById('event-music-bar');
+        const icon = document.getElementById('event-music-toggle');
+        if(window.ytPlayer && window.ytReady){
+            const state = window.ytPlayer.getPlayerState();
+            if(state === YT.PlayerState.PLAYING){
+                window.ytPlayer.pauseVideo();
+                icon.textContent = '▶';
+            } else {
+                window.ytPlayer.loadVideoById(window._eventMusicId);
+                icon.textContent = '⏸';
+            }
+        }
     };
+
+    // ── CSS de animação de entrada do popup ──────────────────────────
+    const animStyle = document.createElement('style');
+    animStyle.textContent = `
+        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+        @keyframes popIn  { from { opacity:0; transform:scale(.85) translateY(20px) } to { opacity:1; transform:none } }
+    `;
+    document.head.appendChild(animStyle);
+
 })();
 
 const canvas = document.getElementById('particles');
@@ -2577,30 +2972,14 @@ document.getElementById('favicon-link').href = 'data:image/png;base64,iVBORw0KGg
 const LOC_DOC = doc(db, "location", "shared");
 let gMap = null;
 let gMarkers = { pietro: null, emilly: null };
-let gMapsKey = localStorage.getItem('pe_gmaps_key') || '';
+let gMapsKey = 'AIzaSyCrv59xEUDSGhSHng0jeOvKLWt3gW4WeOM';
 let locData = { pietro: null, emilly: null };
 
-// Mostra/esconde o tip de chave
+// Carrega o Maps direto, sem precisar de input
 function checkGmapsKeyTip(){
-    const tip = document.getElementById('location-key-tip');
-    if(!gMapsKey){
-        tip.style.display = 'block';
-    } else {
-        tip.style.display = 'none';
-        loadGoogleMaps();
-    }
-}
-
-function saveGmapsKey(){
-    const val = document.getElementById('location-key-input').value.trim();
-    if(!val){ showToast('⚠️ Cole a chave primeiro!'); return; }
-    gMapsKey = val;
-    localStorage.setItem('pe_gmaps_key', val);
     document.getElementById('location-key-tip').style.display = 'none';
-    showToast('✅ Chave salva!');
     loadGoogleMaps();
 }
-window.saveGmapsKey = saveGmapsKey;
 
 function loadGoogleMaps(){
     if(document.getElementById('gmaps-script')) return;
