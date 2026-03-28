@@ -365,6 +365,62 @@
         .cal-save-btn { width: 100%; background: var(--rose); color: white; border: none; padding: 0.9rem; border-radius: 50px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
         .cal-save-btn:hover { background: var(--velvet); }
 
+        .special-send-collapsed { background: #fff0f3; border-top: 1px dashed #ffb3c1; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 0.82rem; color: var(--rose); font-weight: 600; transition: background 0.2s; }
+        .special-send-collapsed:hover { background: #ffe4ec; }
+        .special-arrow { font-size: 0.75rem; transition: transform 0.3s; }
+        .special-arrow.open { transform: rotate(180deg); }
+        .special-send { background: #fff0f3; border-top: 1px dashed #ffb3c1; padding: 1.5rem; }
+
+        /* MENSAGENS ESPECIAIS */
+        .special-card { border-radius: 24px; overflow: hidden; box-shadow: 0 8px 40px rgba(89,13,34,0.12); }
+        .special-locked { background: linear-gradient(135deg, var(--velvet), #800020); padding: 2.5rem 2rem; text-align: center; color: white; }
+        .special-lock-icon { font-size: 3rem; margin-bottom: 0.8rem; }
+        .special-lock-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 0.4rem; }
+        .special-lock-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: var(--gold); margin-bottom: 0.3rem; }
+        .special-lock-hint { font-size: 0.75rem; opacity: 0.5; margin-top: 0.6rem; letter-spacing: 0.08em; }
+        .special-open { background: #fff8f9; border: 1px solid #ffd6de; padding: 2.5rem 2rem; }
+        .special-open-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+        .special-content { display: flex; flex-direction: column; gap: 1rem; }
+        .special-content-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.15rem; line-height: 1.9; color: #4a1020; }
+        .special-content img { width: 100%; border-radius: 16px; max-height: 300px; object-fit: cover; }
+        .special-content audio { width: 100%; border-radius: 50px; }
+        .special-send { background: #fff0f3; border: 1px dashed #ffb3c1; padding: 1.8rem; }
+        .special-send-label { font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--rose); margin-bottom: 0.8rem; font-weight: 600; }
+        .special-send-media { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.8rem; }
+        .special-preview { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.8rem; }
+        .special-preview img { width: 100%; border-radius: 12px; max-height: 200px; object-fit: cover; }
+        .special-preview audio { width: 100%; }
+
+        /* MINI PLAYER FLUTUANTE */
+        .mini-player { position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 9997; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        .mini-player-toggle { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--velvet), #800020); color: white; border: none; font-size: 1.4rem; cursor: pointer; box-shadow: 0 6px 20px rgba(89,13,34,0.4); transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; }
+        .mini-player-toggle:hover { transform: scale(1.1); box-shadow: 0 10px 28px rgba(89,13,34,0.5); }
+        .mini-player-panel { background: white; border-radius: 20px; box-shadow: 0 12px 40px rgba(89,13,34,0.2); width: 260px; overflow: hidden; display: none; border: 1px solid #ffd6de; }
+        .mini-player-panel.open { display: block; animation: fadeSlideDown 0.25s ease; }
+        .mini-player-header { background: linear-gradient(135deg, var(--velvet), #800020); color: white; padding: 0.8rem 1.2rem; font-family: 'Playfair Display', serif; font-size: 0.95rem; letter-spacing: 0.05em; }
+        .mini-player-list { max-height: 240px; overflow-y: auto; padding: 0.5rem 0; }
+        .mini-player-item { display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 1rem; cursor: pointer; transition: background 0.2s; }
+        .mini-player-item:hover { background: #fff0f3; }
+        .mini-player-item.active { background: linear-gradient(135deg, #fff0f3, #fce4ec); }
+        .mini-player-item-icon { font-size: 1rem; flex-shrink: 0; }
+        .mini-player-item-info { flex: 1; min-width: 0; }
+        .mini-player-item-name { font-family: 'Playfair Display', serif; font-size: 0.85rem; color: var(--velvet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mini-player-item-artist { font-size: 0.7rem; color: var(--rose-lt); margin-top: 0.1rem; }
+        .mini-player-embed { padding: 0.5rem; border-top: 1px solid #ffeef1; }
+        .mini-player-embed iframe { border-radius: 8px; display: block; }
+
+        /* MODO EVENTO */
+        body.event-mode { --cream: #fff5f8; }
+        body.event-mode .hero { background: radial-gradient(ellipse at 50% 60%, #ffd6e7 0%, #ffe8f0 45%, #fff0f7 100%); }
+        .event-banner { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9998; background: linear-gradient(90deg, var(--velvet), #c0003a, var(--velvet)); color: white; text-align: center; padding: 0.7rem 1rem; font-family: 'Playfair Display', serif; font-size: 1rem; letter-spacing: 0.05em; animation: fadeSlideDown 0.8s ease both; }
+        body.event-mode .event-banner { display: block; }
+        body.event-mode section { padding-top: 3rem; }
+        .event-music-bar { display: none; position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9997; background: linear-gradient(135deg, var(--velvet), #800020); color: white; border-radius: 50px; padding: 0.7rem 1.4rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 8px 25px rgba(89,13,34,0.4); cursor: pointer; transition: transform 0.2s; }
+        body.event-mode .event-music-bar { display: flex; }
+        .event-music-bar:hover { transform: scale(1.05); }
+        .event-music-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: heartbeat 1s infinite; }
+        @keyframes petalFall { 0% { transform: translateY(-60px) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg) scale(0.6); opacity: 0; } }
+
         /* FOOTER */
         footer { background: var(--velvet); color: rgba(255,255,255,0.6); text-align: center; padding: 3rem 1.5rem; font-size: 0.82rem; position: relative; z-index: 1; }
         .footer-heart { font-size: 2.5rem; display: block; margin-bottom: 0.8rem; animation: heartbeat 1.4s ease infinite; }
@@ -390,6 +446,25 @@
     </style>
 </head>
 <body>
+
+<div class="event-banner" id="event-banner">🌸 Dia especial 🌸</div>
+
+<!-- ── MINI PLAYER FLUTUANTE ── -->
+<div class="mini-player" id="mini-player">
+    <button class="mini-player-toggle" id="mini-player-toggle" onclick="toggleMiniPlayer()">🎵</button>
+    <div class="mini-player-panel" id="mini-player-panel">
+        <div class="mini-player-header">🎵 Músicas</div>
+        <div class="mini-player-list" id="mini-player-list"></div>
+        <div class="mini-player-embed" id="mini-player-embed"></div>
+    </div>
+</div>
+
+<div class="event-music-bar" id="event-music-bar" onclick="toggleEventMusic()">
+    <div class="event-music-dot"></div>
+    <span id="event-music-label">🎵 Mania de Você</span>
+    <span id="event-music-toggle">⏸</span>
+</div>
+<iframe id="event-spotify" src="" style="display:none" allow="autoplay"></iframe>
 
 <canvas id="particles"></canvas>
 <input type="file" id="file-input" accept="image/*" style="display:none">
@@ -653,6 +728,75 @@
     </div>
 </div>
 
+<!-- ── MENSAGENS ESPECIAIS ── -->
+<section>
+    <div class="divider"><span class="divider-icon">💝</span></div>
+    <div class="section-label">Só pra você, Pietro</div>
+    <h2 class="section-title">Mensagens <em>especiais</em></h2>
+
+    <!-- Card Aniversário Pietro -->
+    <div class="special-card" id="special-bday">
+        <div class="special-locked" id="special-bday-locked">
+            <div class="special-lock-icon">🎂</div>
+            <div class="special-lock-title">Mensagem de aniversário</div>
+            <div class="special-lock-sub">da Emilly pra você 💙</div>
+            <div class="special-lock-hint">Abre no dia 9 de janeiro 🎁</div>
+        </div>
+        <div class="special-open" id="special-bday-open" style="display:none">
+            <div class="special-open-label">🎂 Feliz aniversário, Pietro!</div>
+            <div id="special-bday-content" class="special-content"></div>
+        </div>
+        <!-- Área de envio colapsável -->
+        <div class="special-send-collapsed" onclick="toggleSpecialSend('bday')">
+            <span>💗 Emilly — clique para deixar sua mensagem de aniversário</span>
+            <span class="special-arrow" id="special-bday-arrow">▼</span>
+        </div>
+        <div class="special-send" id="special-bday-send" style="display:none">
+            <textarea class="cal-modal-textarea" id="special-bday-text" placeholder="Escreva sua cartinha de aniversário pra ele..."></textarea>
+            <div class="special-send-media">
+                <input type="file" id="special-bday-photo" accept="image/*" style="display:none">
+                <input type="file" id="special-bday-audio" accept="audio/*" style="display:none">
+                <button class="cal-media-btn" onclick="document.getElementById('special-bday-photo').click()">📸 Adicionar foto</button>
+                <button class="cal-media-btn" onclick="document.getElementById('special-bday-audio').click()">🎙️ Adicionar áudio</button>
+            </div>
+            <div id="special-bday-preview" class="special-preview"></div>
+            <div id="special-bday-status" class="cal-upload-status"></div>
+            <button class="cal-save-btn" onclick="saveSpecial('bday')" style="margin-top:1rem">Guardar mensagem 💕</button>
+        </div>
+    </div>
+
+    <!-- Card Mesversário -->
+    <div class="special-card" style="margin-top:1.5rem" id="special-mesv">
+        <div class="special-locked" id="special-mesv-locked">
+            <div class="special-lock-icon">💕</div>
+            <div class="special-lock-title">Mensagem do mesversário</div>
+            <div class="special-lock-sub">da Emilly pra você 💙</div>
+            <div class="special-lock-hint">Abre todo dia 11 🥂</div>
+        </div>
+        <div class="special-open" id="special-mesv-open" style="display:none">
+            <div class="special-open-label">💕 Feliz mesversário, Pietro!</div>
+            <div id="special-mesv-content" class="special-content"></div>
+        </div>
+        <!-- Área de envio colapsável -->
+        <div class="special-send-collapsed" onclick="toggleSpecialSend('mesv')">
+            <span>💗 Emilly — clique para deixar sua mensagem do mesversário</span>
+            <span class="special-arrow" id="special-mesv-arrow">▼</span>
+        </div>
+        <div class="special-send" id="special-mesv-send" style="display:none">
+            <textarea class="cal-modal-textarea" id="special-mesv-text" placeholder="Escreva sua cartinha do mesversário pra ele..."></textarea>
+            <div class="special-send-media">
+                <input type="file" id="special-mesv-photo" accept="image/*" style="display:none">
+                <input type="file" id="special-mesv-audio" accept="audio/*" style="display:none">
+                <button class="cal-media-btn" onclick="document.getElementById('special-mesv-photo').click()">📸 Adicionar foto</button>
+                <button class="cal-media-btn" onclick="document.getElementById('special-mesv-audio').click()">🎙️ Adicionar áudio</button>
+            </div>
+            <div id="special-mesv-preview" class="special-preview"></div>
+            <div id="special-mesv-status" class="cal-upload-status"></div>
+            <button class="cal-save-btn" onclick="saveSpecial('mesv')" style="margin-top:1rem">Guardar mensagem 💕</button>
+        </div>
+    </div>
+</section>
+
 <!-- ── FOOTER ── -->
 <footer>
     <span class="footer-heart">❤</span>
@@ -828,6 +972,128 @@ window.addMural    = addMural;
 window.deleteMural = deleteMural;
 window.selectAuthor = selectAuthor;
 renderMural();
+
+function toggleSpecialSend(type){
+    const send  = document.getElementById(`special-${type}-send`);
+    const arrow = document.getElementById(`special-${type}-arrow`);
+    const open  = send.style.display === 'none';
+    send.style.display = open ? 'block' : 'none';
+    arrow.classList.toggle('open', open);
+}
+window.toggleSpecialSend = toggleSpecialSend;
+
+/* ── Mensagens Especiais ── */
+const SPECIAL_BDAY_DOC = doc(db, "special", "bday");
+const SPECIAL_MESV_DOC = doc(db, "special", "mesv");
+let specialFiles = { bday: { photo: null, audio: null }, mesv: { photo: null, audio: null } };
+
+function isBdayToday(){ const n = new Date(); return n.getMonth() === 0 && n.getDate() === 9; }
+function isMesvToday(){ return new Date().getDate() === 11; }
+
+// Chave do ciclo atual — aniversário = "bday_ANO", mesversário = "mesv_ANO_MES"
+function getCurrentCycleKey(type){
+    const n = new Date();
+    if(type === 'bday') return `bday_${n.getFullYear()}`;
+    return `mesv_${n.getFullYear()}_${String(n.getMonth()+1).padStart(2,'0')}`;
+}
+
+async function initSpecial(type){
+    const isOpen     = type === 'bday' ? isBdayToday() : isMesvToday();
+    const ref        = type === 'bday' ? SPECIAL_BDAY_DOC : SPECIAL_MESV_DOC;
+    const cycleKey   = getCurrentCycleKey(type);
+    const snap       = await getDoc(ref).catch(()=>null);
+    const data       = snap && snap.exists() ? snap.data() : null;
+
+    // Verifica se a mensagem salva é do ciclo atual
+    const isCurrent  = data && data.cycleKey === cycleKey;
+    const hasData    = isCurrent && (data.text || data.photoUrl || data.audioUrl);
+
+    // Se não é do ciclo atual, limpa o formulário para nova mensagem
+    if(!isCurrent){
+        document.getElementById(`special-${type}-text`).value = '';
+        specialFiles[type] = { photo: null, audio: null };
+        document.getElementById(`special-${type}-preview`).innerHTML = '';
+    }
+
+    document.getElementById(`special-${type}-locked`).style.display = (!isOpen && !hasData) ? 'block' : 'none';
+    document.getElementById(`special-${type}-open`).style.display   = (isOpen && hasData) ? 'block' : 'none';
+
+    // Mostra o hint de "nova mensagem necessária" se ciclo expirou
+    const sendCollapsed = document.querySelector(`#special-${type}-send`).previousElementSibling;
+    if(!isCurrent && sendCollapsed){
+        sendCollapsed.querySelector('span:first-child').textContent =
+            type === 'bday'
+            ? '💗 Emilly — escreva a mensagem deste aniversário 🎂'
+            : '💗 Emilly — escreva a mensagem deste mesversário 💕';
+    }
+
+    if(isOpen && hasData){
+        const content = document.getElementById(`special-${type}-content`);
+        content.innerHTML = '';
+        if(data.text)     content.innerHTML += `<div class="special-content-text">${data.text}</div>`;
+        if(data.photoUrl) content.innerHTML += `<img src="${data.photoUrl}" alt="Foto especial">`;
+        if(data.audioUrl) content.innerHTML += `<audio controls src="${data.audioUrl}"></audio>`;
+    }
+
+    if(!isOpen && isCurrent && data.text){
+        document.getElementById(`special-${type}-text`).value = data.text;
+    }
+}
+
+async function uploadSpecialFile(file, type){
+    const status = document.getElementById(`special-${type}-status`);
+    status.textContent = '⏳ Enviando...';
+    const form = new FormData();
+    form.append('file', file);
+    form.append('upload_preset', CLOUDINARY_PRESET);
+    const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method:'POST', body:form });
+    const data = await res.json();
+    status.textContent = data.secure_url ? '✅ Enviado!' : '❌ Erro no upload';
+    setTimeout(() => status.textContent = '', 2500);
+    return data.secure_url || null;
+}
+
+['bday','mesv'].forEach(type => {
+    document.getElementById(`special-${type}-photo`).addEventListener('change', async function(){
+        const file = this.files[0]; if(!file) return;
+        specialFiles[type].photo = file;
+        document.getElementById(`special-${type}-preview`).innerHTML = `<img src="${URL.createObjectURL(file)}">`;
+    });
+    document.getElementById(`special-${type}-audio`).addEventListener('change', async function(){
+        const file = this.files[0]; if(!file) return;
+        specialFiles[type].audio = file;
+        document.getElementById(`special-${type}-preview`).innerHTML += `<audio controls src="${URL.createObjectURL(file)}"></audio>`;
+    });
+});
+
+async function saveSpecial(type){
+    const ref      = type === 'bday' ? SPECIAL_BDAY_DOC : SPECIAL_MESV_DOC;
+    const text     = document.getElementById(`special-${type}-text`).value.trim();
+    const status   = document.getElementById(`special-${type}-status`);
+    const cycleKey = getCurrentCycleKey(type);
+    status.textContent = '⏳ Salvando...';
+
+    // Mantém URLs antigas se não subiu arquivo novo
+    let photoUrl = null, audioUrl = null;
+    const snap = await getDoc(ref).catch(()=>null);
+    if(snap && snap.exists() && snap.data().cycleKey === cycleKey){
+        photoUrl = snap.data().photoUrl || null;
+        audioUrl = snap.data().audioUrl || null;
+    }
+
+    if(specialFiles[type].photo) photoUrl = await uploadSpecialFile(specialFiles[type].photo, type);
+    if(specialFiles[type].audio) audioUrl = await uploadSpecialFile(specialFiles[type].audio, type);
+
+    await setDoc(ref, { text, photoUrl, audioUrl, cycleKey });
+    showToast('💕 Mensagem guardada com amor!');
+    status.textContent = '';
+    initSpecial(type);
+}
+window.saveSpecial = saveSpecial;
+
+initSpecial('bday');
+initSpecial('mesv');
+
 
 /* ── Calendário ── */
 const CLOUDINARY_CLOUD = 'dqy0l7fh6';
@@ -1271,6 +1537,88 @@ window.openDailyPopup  = openDailyPopup;
 window.closeDailyPopup = closeDailyPopup;
 initDaily();
 
+/* ── Mini Player Flutuante ── */
+let miniPlayerOpen = false;
+let miniCurrentId  = null;
+
+function toggleMiniPlayer(){
+    miniPlayerOpen = !miniPlayerOpen;
+    document.getElementById('mini-player-panel').classList.toggle('open', miniPlayerOpen);
+}
+window.toggleMiniPlayer = toggleMiniPlayer;
+
+function miniPlay(id, name, artist){
+    miniCurrentId = id;
+    const embed = document.getElementById('mini-player-embed');
+    embed.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${id}?utm_source=generator" width="100%" height="80" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+    document.querySelectorAll('.mini-player-item').forEach(el => el.classList.remove('active'));
+    const btn = document.querySelector(`.mini-player-item[data-id="${id}"]`);
+    if(btn) btn.classList.add('active');
+    showToast(`🎵 ${name} — ${artist}`);
+}
+window.miniPlay = miniPlay;
+
+function renderMiniPlayerList(){
+    const list = document.getElementById('mini-player-list');
+    list.innerHTML = PLAYLIST.map(t => `
+        <div class="mini-player-item" data-id="${t.id}" onclick="miniPlay('${t.id}','${t.name}','${t.artist}')">
+            <div class="mini-player-item-icon">🎵</div>
+            <div class="mini-player-item-info">
+                <div class="mini-player-item-name">${t.name}</div>
+                <div class="mini-player-item-artist">${t.artist}</div>
+            </div>
+        </div>`).join('');
+}
+
+// Fechar ao clicar fora
+document.addEventListener('click', e => {
+    const mp = document.getElementById('mini-player');
+    if(miniPlayerOpen && !mp.contains(e.target)){
+        miniPlayerOpen = false;
+        document.getElementById('mini-player-panel').classList.remove('open');
+    }
+});
+
+/* ── Modo Evento ── */
+(function(){
+    const now   = new Date();
+    const day   = now.getDate();
+    const month = now.getMonth();
+
+    const isPietro = month === 0 && day === 9;
+    const isEmilly = month === 3 && day === 24;
+    const isMesv   = day === 11;
+    const isEvent  = isPietro || isEmilly || isMesv;
+    if(!isEvent) return;
+
+    document.body.classList.add('event-mode');
+
+    const banner = document.getElementById('event-banner');
+    if(isPietro)      banner.textContent = '🎂 Feliz aniversário, Pietro! Hoje é o seu dia especial 💙🌸';
+    else if(isEmilly) banner.textContent = '🎂 Feliz aniversário, Emilly! Hoje é o seu dia especial 💕🌸';
+    else if(isMesv)   banner.textContent = '🥂 Feliz mesversário, Pietro & Emilly! Um mês a mais de amor 🌸';
+
+    const PETALS = ['🌸','🌺','🌷','💮','🌼','🪷'];
+    function spawnPetal(){
+        const el = document.createElement('div');
+        el.textContent = PETALS[Math.floor(Math.random() * PETALS.length)];
+        el.style.cssText = `position:fixed;left:${Math.random()*100}vw;top:-60px;font-size:${Math.random()*18+14}px;z-index:9996;pointer-events:none;animation:petalFall ${Math.random()*5+5}s linear forwards;`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 10000);
+    }
+    for(let i = 0; i < 20; i++) setTimeout(spawnPetal, i * 300);
+    setInterval(spawnPetal, 600);
+
+    const iframe = document.getElementById('event-spotify');
+    iframe.src = 'https://open.spotify.com/embed/track/76v5KgPWIYYMgbIc82NvRR?utm_source=generator&autoplay=1';
+    let musicPlaying = true;
+
+    window.toggleEventMusic = function(){
+        musicPlaying = !musicPlaying;
+        document.getElementById('event-music-toggle').textContent = musicPlaying ? '⏸' : '▶';
+        iframe.src = musicPlaying ? 'https://open.spotify.com/embed/track/76v5KgPWIYYMgbIc82NvRR?utm_source=generator&autoplay=1' : '';
+    };
+})();
 
 const canvas = document.getElementById('particles');
 const ctx    = canvas.getContext('2d');
@@ -1306,11 +1654,13 @@ function showToast(msg, ms=3000){
 
 /* ── Music ── */
 const PLAYLIST = [
-    { name: "Deixa", artist: "Tiago Iorc", id: "4uLU6hMCjMI75M1A2tKUQC" },
-    { name: "Mania de Você", artist: "Raça Negra", id: "76v5KgPWIYYMgbIc82NvRR" },
-    { name: "Lança Perfume", artist: "Rita Lee", id: "3cijWAljXxxJDco4N2aLQl" },
-    { name: "Skyfall", artist: "Adele", id: "6VObnIkLVruX4UVyxWhlqm" },
-    { name: "Os Anjos Cantam", artist: "Zé Ramalho", id: "6ccKu0LwJzOhLAxBwP2PTk" },
+    { name: "Mania de Você",  artist: "Raça Negra",   id: "76v5KgPWIYYMgbIc82NvRR" },
+    { name: "Deixa",          artist: "Tiago Iorc",    id: "4uLU6hMCjMI75M1A2tKUQC" },
+    { name: "Lança Perfume",  artist: "Rita Lee",      id: "3cijWAljXxxJDco4N2aLQl" },
+    { name: "Skyfall",        artist: "Adele",         id: "6VObnIkLVruX4UVyxWhlqm" },
+    { name: "Os Anjos Cantam",artist: "Zé Ramalho",   id: "6ccKu0LwJzOhLAxBwP2PTk" },
+    { name: "Home",           artist: "Michael Bublé", id: "2qPSa6HXjzwa9sLhNGpA1T" },
+    { name: "Sailor Song",    artist: "Gigi Perez",    id: "2262bWmqomIaJXwCRHr13j" },
 ];
 
 const MUSIC_KEY = 'pe_music_v1';
@@ -1452,6 +1802,7 @@ document.getElementById('file-input').addEventListener('change', async function(
 
 renderGallery();
 renderPlaylist();
+renderMiniPlayerList();
 </script>
 </body>
 </html>
