@@ -586,7 +586,7 @@
         .mood-history-pair-name { font-size: 0.55rem; color: #c9a9b0; text-transform: uppercase; letter-spacing: 0.08em; }
 
         /* MINI PLAYER FLUTUANTE (botão + lista) */
-        .mini-player { position: fixed; bottom: 5.5rem; left: 1.2rem; z-index: 9999; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        .mini-player { position: fixed; bottom: calc(60px + 1rem + env(safe-area-inset-bottom, 0px)); left: 1.2rem; z-index: 9999; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
         .mini-player-toggle { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--velvet), #800020); color: white; border: none; font-size: 1.3rem; cursor: pointer; box-shadow: 0 4px 16px rgba(89,13,34,0.4); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
         .mini-player-toggle:hover { transform: scale(1.1); }
         .mini-player-panel { background: white; border-radius: 16px; box-shadow: 0 12px 40px rgba(89,13,34,0.2); width: 240px; overflow: hidden; display: none; border: 1px solid #ffd6de; }
@@ -607,12 +607,8 @@
             background: linear-gradient(135deg, var(--velvet) 0%, #800020 100%);
             color: white; display: flex; align-items: center; justify-content: space-between;
             padding: 0.75rem 1.4rem;
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
             box-shadow: 0 -4px 30px rgba(89,13,34,0.35); gap: 1rem;
-            transform: translate3d(0, 0, 0);
-            -webkit-transform: translate3d(0, 0, 0);
-            will-change: transform;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
         }
         .mini-bar-info { display: flex; align-items: center; gap: 0.8rem; flex: 1; min-width: 0; }
         /* Nota musical sem animação de scale — evita reflow da barra */
@@ -2248,7 +2244,6 @@ function doPlay(idx){
     document.getElementById('mini-track-artist').textContent = track.artist;
     document.getElementById('mini-player-bar').style.display = 'flex';
     document.getElementById('mini-play-icon').textContent    = '▶';
-    _lockBarPos();
 
     document.querySelectorAll('.playlist-item').forEach((el,i) =>
         el.classList.toggle('active', i === idx));
@@ -2966,32 +2961,9 @@ window.addEventListener('resize', () => {
 });
 window.addEventListener('orientationchange', () => { setTimeout(resize, 400); });
 
-// ── visualViewport: trava a barra de música no fundo da tela visível ──
-// Sem isso, no iOS/Android a barra "pula" quando o browser chrome aparece/some
-function _lockBarPos(){
-    const bar = document.getElementById('mini-player-bar');
-    const btn = document.getElementById('mini-player');
-    if(!bar) return;
-    if(window.visualViewport){
-        const vv = window.visualViewport;
-        // deslocamento do fundo do layout viewport até o fundo do viewport visível
-        const offsetBottom = Math.max(0, Math.round(window.innerHeight - vv.offsetTop - vv.height));
-        bar.style.bottom = offsetBottom + 'px';
-        if(btn){
-            const barVisible = bar.style.display !== 'none';
-            btn.style.bottom = (offsetBottom + (barVisible ? 74 : 16)) + 'px';
-        }
-    }
-}
-window._lockBarPos = _lockBarPos;
-
-if(window.visualViewport){
-    window.visualViewport.addEventListener('resize', _lockBarPos);
-    window.visualViewport.addEventListener('scroll', _lockBarPos);
-} else {
-    // fallback para browsers sem visualViewport
-    window.addEventListener('resize', () => { setTimeout(_lockBarPos, 50); });
-}
+// ── Posicionamento da barra e nota musical via CSS puro ──
+// position: fixed + env(safe-area-inset-bottom) cuidam disso nativamente.
+// Nenhum JS de repositionamento necessário — ele causava o "pulo" ao rolar.
 
 const HEARTS = Array.from({length:28}, mkHeart);
 function mkHeart(){ return { x:Math.random()*800, y:Math.random()*800+600, size:Math.random()*16+8, speed:Math.random()*0.6+0.3, opacity:Math.random()*0.4+0.08, drift:(Math.random()-0.5)*0.4, rot:Math.random()*Math.PI*2, rotSpeed:(Math.random()-0.5)*0.02 }; }
