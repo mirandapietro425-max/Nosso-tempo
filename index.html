@@ -606,17 +606,11 @@
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 10000;
             background: linear-gradient(135deg, var(--velvet) 0%, #800020 100%);
             color: white; display: flex; align-items: center; justify-content: space-between;
-            padding: 0 1.4rem;
-            height: 60px; /* altura fixa — evita resize quando safe-area muda */
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-            box-sizing: content-box; /* safe-area adiciona altura, não comprime conteúdo */
+            padding: 0.75rem 1.4rem;
             box-shadow: 0 -4px 30px rgba(89,13,34,0.35); gap: 1rem;
-            /* GPU layer completo — a barra não é afetada por nenhum reflow da página */
             transform: translate3d(0, 0, 0);
             -webkit-transform: translate3d(0, 0, 0);
             will-change: transform;
-            contain: layout style paint;
-            isolation: isolate;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
         }
@@ -2241,7 +2235,11 @@ function doPlay(idx){
     const area = document.getElementById('yt-embed-area');
     if(area){
         area.style.display = 'block';
-        setTimeout(() => area.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+        // scrollIntoView só no desktop — no celular causa a barra do browser
+        // aparecer/sumir e faz o player de música pular
+        if(!('ontouchstart' in window)){
+            setTimeout(() => area.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+        }
     }
 
     ytPlayer.loadVideoById({ videoId: track.ytId });
@@ -2250,6 +2248,7 @@ function doPlay(idx){
     document.getElementById('mini-track-artist').textContent = track.artist;
     document.getElementById('mini-player-bar').style.display = 'flex';
     document.getElementById('mini-play-icon').textContent    = '▶';
+    _lockBarPos();
 
     document.querySelectorAll('.playlist-item').forEach((el,i) =>
         el.classList.toggle('active', i === idx));
@@ -2316,7 +2315,7 @@ function playCustomYT(){
     if(!id){ showToast('⚠️ Link inválido! Cole um link do YouTube.', 3500); return; }
     if(!ytReady || !ytPlayer){ showToast('⏳ Aguarda um segundo...'); return; }
     const area = document.getElementById('yt-embed-area');
-    if(area){ area.style.display = 'block'; area.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    if(area){ area.style.display = 'block'; if(!('ontouchstart' in window)) area.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
     ytPlayer.loadVideoById(id);
     isPlaying = true;
     currentTrackIdx = -1;
@@ -2954,21 +2953,46 @@ const ctx    = canvas.getContext('2d');
 let W, H;
 function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 resize();
-// Só redimensiona no celular ao girar a tela, não quando a barra do browser aparece/some
+
+// Resize do canvas: ignora mudanças causadas pela barra do browser aparecendo/sumindo
 let _resizeTimer;
 window.addEventListener('resize', () => {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(() => {
-        // Ignora mudanças pequenas de altura (< 120px) que são só a barra do browser
-        const newW = window.innerWidth;
-        const newH = window.innerHeight;
-        if(Math.abs(newW - W) > 50 || Math.abs(newH - H) > 120) {
+        if(Math.abs(window.innerWidth - W) > 50 || Math.abs(window.innerHeight - H) > 150){
             resize();
         }
-    }, 250);
+    }, 300);
 });
-// Redimensiona normalmente ao girar o celular
-window.addEventListener('orientationchange', () => { setTimeout(resize, 300); });
+window.addEventListener('orientationchange', () => { setTimeout(resize, 400); });
+
+// ── visualViewport: trava a barra de música no fundo da tela visível ──
+// Sem isso, no iOS/Android a barra "pula" quando o browser chrome aparece/some
+function _lockBarPos(){
+    const bar = document.getElementById('mini-player-bar');
+    const btn = document.getElementById('mini-player');
+    if(!bar) return;
+    if(window.visualViewport){
+        const vv = window.visualViewport;
+        // deslocamento do fundo do layout viewport até o fundo do viewport visível
+        const offsetBottom = Math.max(0, Math.round(window.innerHeight - vv.offsetTop - vv.height));
+        bar.style.bottom = offsetBottom + 'px';
+        if(btn){
+            const barVisible = bar.style.display !== 'none';
+            btn.style.bottom = (offsetBottom + (barVisible ? 74 : 16)) + 'px';
+        }
+    }
+}
+window._lockBarPos = _lockBarPos;
+
+if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', _lockBarPos);
+    window.visualViewport.addEventListener('scroll', _lockBarPos);
+} else {
+    // fallback para browsers sem visualViewport
+    window.addEventListener('resize', () => { setTimeout(_lockBarPos, 50); });
+}
+
 const HEARTS = Array.from({length:28}, mkHeart);
 function mkHeart(){ return { x:Math.random()*800, y:Math.random()*800+600, size:Math.random()*16+8, speed:Math.random()*0.6+0.3, opacity:Math.random()*0.4+0.08, drift:(Math.random()-0.5)*0.4, rot:Math.random()*Math.PI*2, rotSpeed:(Math.random()-0.5)*0.02 }; }
 function drawHeart(x,y,size,rot){
