@@ -958,7 +958,7 @@ async function deleteMovie(i){
 // Modal de filme
 let movieModalIndex = null;
 let movieModalAuthor = 'Pietro';
-const TMDB_KEY = '4f5f43495afce4958a48d744bd161a7a'; // chave pública
+const TMDB_KEY = '8265bd1679663a7ea12ac168da84d2e8'; // chave pública TMDB
 
 async function openMovieModal(i){
     movieModalIndex = i;
@@ -1667,6 +1667,7 @@ const POPUP_KEY = 'pe_daily_seen';
 function getDailyMessage(){
     const start = new Date('2024-10-11');
     const today = new Date();
+    today.setHours(0,0,0,0);
     const diff  = Math.floor((today - start) / 86400000);
     return RECADINHOS[diff % RECADINHOS.length];
 }
@@ -1696,6 +1697,15 @@ function initDaily(){
     if(seen !== new Date().toDateString()){
         setTimeout(() => openDailyPopup(), 1800);
     }
+
+    // Agenda atualização automática à meia-noite
+    const now       = new Date();
+    const meianoite = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+    const msAte     = meianoite - now;
+    setTimeout(() => {
+        initDaily();
+        setInterval(initDaily, 86400000);
+    }, msAte);
 }
 window.openDailyPopup  = openDailyPopup;
 window.closeDailyPopup = closeDailyPopup;
