@@ -190,6 +190,8 @@ let _db=null,_doc=null,_state=JSON.parse(JSON.stringify(DEFAULT_HOME));
 let _activePlayer=null; // "pietro" ou "emilly"
 let _quizPerson="pietro",_currentQ=null,_answered=false;
 let _dialogRunning=false,_dialogQueue=[];
+let _selecting=false;     // trava: impede re-render durante seleção de jogador
+let _renderPending=false; // debounce: agrupa múltiplos snapshots num único renderRPG
 
 // Atalhos para o jogador ativo
 function playerState(){ return _activePlayer?(_state[_activePlayer]||null):null; }
@@ -377,17 +379,26 @@ function renderPlayerSelect(wrap){
 }
 
 window._homeSelectPlayer=function(player){
+  // FIX: trava contra duplo clique ou re-render do onSnapshot durante a seleção
+  if(_selecting) return;
+  _selecting=true;
+
   _activePlayer=player;
   _state.selectedPlayer=player;
-  const ps=playerState();
-  // Se o jogador ainda não tem dados, cria um DEFAULT_PLAYER
-  if(!ps){
+
+  // Garante estrutura do jogador antes de qualquer render
+  if(!_state[player]){
     _state[player]=JSON.parse(JSON.stringify(DEFAULT_PLAYER));
   }
-  saveState(); renderCoins(); renderLevel(); renderEarnList(); renderRPG();
-  // Mostra toast de boas-vindas
+
+  // FIX: renderiza ANTES do saveState — feedback imediato, sem depender do Firebase
+  renderCoins(); renderLevel(); renderEarnList(); renderRPG();
+
   const nome=player==="pietro"?"Pietro 💙":"Emilly 💗";
   showToastNativo(`Olá, ${nome}! Bem-vind${player==="emilly"?"a":"o"} à sua casinha! 🏡`);
+
+  // FIX: libera a trava ao fim do save (com ou sem erro)
+  saveState().finally(()=>{ _selecting=false; });
 };
 
 function renderIntro(wrap){
@@ -734,12 +745,20 @@ export function initHome(db){
           };
           _state={ selectedPlayer:null, pietro:legacyPlayer, emilly:null };
         } else {
-          _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
-          // Restaura jogador ativo: prioriza sessão local (evita resetar mid-game)
-          if(_activePlayer){
-            _state.selectedPlayer = _activePlayer; // garante consistência
-          } else if(_state.selectedPlayer){
-            _activePlayer=_state.selectedPlayer;
+          // FIX: merge inteligente — nunca sobrescreve o jogador ativo durante um save em andamento
+          if(_activePlayer && _selecting){
+            // Só atualiza o outro jogador; o ativo está com save pendente — ignore o eco local
+            const other=_activePlayer==="pietro"?"emilly":"pietro";
+            if(data[other]) _state[other]=data[other];
+            _state.selectedPlayer=_activePlayer; // mantém consistência
+          } else {
+            _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
+            // Restaura jogador ativo: prioriza sessão local (evita resetar mid-game)
+            if(_activePlayer){
+              _state.selectedPlayer=_activePlayer;
+            } else if(_state.selectedPlayer){
+              _activePlayer=_state.selectedPlayer;
+            }
           }
           // Garante estrutura de cada jogador
           ["pietro","emilly"].forEach(p=>{
@@ -756,8 +775,16 @@ export function initHome(db){
         }
       }
       petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList();
-      // Não re-renderiza o RPG se um diálogo está em andamento (evita interromper a intro)
-      if (!_dialogRunning) renderRPG();
+      // FIX: não re-renderiza o RPG se:
+      //   1. um diálogo está em andamento (evita interromper a intro)
+      //   2. o usuário está no meio de uma seleção (_selecting) — evita o botão morto
+      //   3. debounce: múltiplos snapshots em sequência viram um único renderRPG
+      if(!_dialogRunning && !_selecting){
+        if(!_renderPending){
+          _renderPending=true;
+          setTimeout(()=>{ _renderPending=false; renderRPG(); }, 80);
+        }
+      }
     },
     err=>console.warn('[Firebase] onSnapshot home:', err.message)
   );

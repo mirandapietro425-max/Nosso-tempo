@@ -878,6 +878,13 @@
         .then(reg => console.log('[SW] Registrado:', reg.scope))
         .catch(err => console.warn('[SW] Falha:', err));
     });
+
+    // FIX: quando um novo SW assume controle (após deploy), recarrega a aba
+    // para garantir que todos os assets JS/CSS são a versão mais recente
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('[SW] Novo service worker ativado — recarregando para atualizar assets...');
+      window.location.reload();
+    });
   }
 </script>
 
