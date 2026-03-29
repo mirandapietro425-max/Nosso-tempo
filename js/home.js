@@ -727,8 +727,10 @@ export function initHome(db){
           _state={ selectedPlayer:null, pietro:legacyPlayer, emilly:null };
         } else {
           _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
-          // Restaura jogador ativo da sessão salva (se ainda não foi escolhido nesta sessão)
-          if(!_activePlayer && _state.selectedPlayer){
+          // Restaura jogador ativo: prioriza sessão local (evita resetar mid-game)
+          if(_activePlayer){
+            _state.selectedPlayer = _activePlayer; // garante consistência
+          } else if(_state.selectedPlayer){
             _activePlayer=_state.selectedPlayer;
           }
           // Garante estrutura de cada jogador
@@ -745,7 +747,9 @@ export function initHome(db){
           });
         }
       }
-      petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG();
+      petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList();
+      // Não re-renderiza o RPG se um diálogo está em andamento (evita interromper a intro)
+      if (!_dialogRunning) renderRPG();
     },
     err=>console.warn('[Firebase] onSnapshot home:', err.message)
   );
