@@ -833,6 +833,7 @@ export function initHome(db){
   window._homeFeedPet=e=>feedPet(e); window._homePetPet=e=>petPet(e);
   window._homePlayPet=e=>playWithPet(e); window._homeSleepPet=()=>sleepPet();
   const starsContainer=document.getElementById("house-stars-container");
+  if(starsContainer){ starsContainer.style.pointerEvents="none"; }
   if(starsContainer&&!starsContainer.children.length){ for(let i=0;i<18;i++){ const star=document.createElement("div"); star.className="house-star"; star.style.left=Math.random()*100+"%"; star.style.top=Math.random()*55+"%"; star.style.animationDelay=(Math.random()*2.5)+"s"; starsContainer.appendChild(star); } }
   startPetDecayInterval();
   window._homeTab("rpg");
