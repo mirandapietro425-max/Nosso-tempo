@@ -154,8 +154,20 @@ exposeMusicGlobals();
 // Controla o botão de play/pause da barra de música dos eventos sazonais
 window.toggleEventMusic = function() {
   togglePlayPause();
+  // FIX Bug B: lê o estado real do player após a ação em vez de simplesmente inverter o ícone
+  // (evita dessincronização quando o player ainda não está pronto)
   const btn = document.getElementById('event-music-toggle');
-  if (btn) btn.textContent = btn.textContent === '⏸' ? '▶' : '⏸';
+  if (!btn) return;
+  setTimeout(() => {
+    try {
+      const state = window._ytPlayerState?.();
+      // YT.PlayerState.PLAYING = 1
+      btn.textContent = (state === 1) ? '⏸' : '▶';
+    } catch(e) {
+      // fallback: simplesmente inverte
+      btn.textContent = btn.textContent === '⏸' ? '▶' : '⏸';
+    }
+  }, 150); // aguarda o player processar a ação
 };
 initMiniPlayerClickOutside();
 
@@ -958,8 +970,11 @@ async function confirmMood() {
   // label legível separado, só para exibição
   const todayLabel = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
   if (!current.history) current.history = [];
-  // Remove entrada do dia de hoje se já existe (compara pela key ISO)
-  current.history = current.history.filter(h => h.date !== today && h.date !== todayLabel);
+  // Remove entrada do dia de hoje se já existe (compara pela key ISO ou pelo label legível)
+  // FIX Bug D: também checa h._dateKey para entradas antigas que tinham ISO em h.date
+  current.history = current.history.filter(h =>
+    h._dateKey !== today && h.date !== today && h.date !== todayLabel
+  );
   current.history.unshift({
     date: todayLabel, // mantém label legível para display, mas key de dedup agora é ISO
     _dateKey: today,  // key ISO para comparação futura

@@ -49,12 +49,16 @@ window.onYouTubeIframeAPIReady = function () {
       },
       onStateChange: (e) => {
         const icon = document.getElementById('mini-play-icon');
+        // FIX Bug B: também sincroniza o ícone da barra de evento sazonal
+        const eventIcon = document.getElementById('event-music-toggle');
         if (e.data === YT.PlayerState.PLAYING) {
           isPlaying = true;
           if (icon) icon.textContent = '⏸';
+          if (eventIcon) eventIcon.textContent = '⏸';
         } else if ([YT.PlayerState.PAUSED, YT.PlayerState.ENDED, YT.PlayerState.CUED].includes(e.data)) {
           isPlaying = false;
           if (icon) icon.textContent = '▶';
+          if (eventIcon) eventIcon.textContent = '▶';
         }
         if (e.data === YT.PlayerState.ENDED) playNext();
       },
@@ -106,6 +110,8 @@ function _updateBarUI(track) {
   if (artistEl) artistEl.textContent = track.artist;
   if (barEl)    barEl.style.display  = 'flex';
   if (iconEl)   iconEl.textContent   = '▶';
+  // FIX Bug C: empurra o conteúdo para não ficar atrás da barra
+  document.getElementById('page-wrap')?.classList.add('music-bar-open');
 }
 
 function _updateActiveClass(idx) {
@@ -235,6 +241,8 @@ export function renderMiniPlayerList() {
 export function closeMusicBar() {
   const bar = document.getElementById('mini-player-bar');
   if (bar) bar.style.display = 'none';
+  // FIX Bug C: remove padding quando barra fecha
+  document.getElementById('page-wrap')?.classList.remove('music-bar-open');
   // Pausa a música ao fechar
   if (ytPlayer && ytReady) {
     try { ytPlayer.pauseVideo(); } catch(e) {}
@@ -266,4 +274,6 @@ export function exposeGlobals() {
   window.playCustomYT    = playCustomYT;
   window.toggleMiniPlayer = toggleMiniPlayer;
   window.closeMusicBar   = closeMusicBar;
+  // FIX Bug B: expõe getter do estado real do player para toggleEventMusic
+  window._ytPlayerState  = () => ytPlayer?.getPlayerState?.() ?? -1;
 }

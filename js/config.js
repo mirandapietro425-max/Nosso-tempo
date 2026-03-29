@@ -24,7 +24,7 @@ export const IMGBB_KEY = 'fd49cf34ebd541510c6f4b64abc3f4f8';
 export const TMDB_KEY = '8265bd1679663a7ea12ac168da84d2e8';
 
 // ── Datas especiais ──
-export const START_DATE       = new Date('2024-10-11'); // início do relacionamento
+export const START_DATE       = new Date('2024-10-11T03:00:00Z'); // início — meia-noite horário de Brasília (UTC-3)
 export const ANNIVERSARY_DAY  = 11;                    // dia do mesversário
 export const BDAY_MONTH       = 0;  // Janeiro (0-indexed) — aniversário Pietro: 9 jan
 export const BDAY_DAY         = 9;
