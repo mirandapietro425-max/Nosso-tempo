@@ -158,22 +158,35 @@ const QUIZ_QUESTIONS = [
 ];
 
 /* ════ STATE ════ */
-const DEFAULT_HOME = {
+
+// Template para os dados de cada jogador (separado por pessoa)
+const DEFAULT_PLAYER = {
   gamePhase:"intro", currentSave:0, saves:[],
-  coins:200, xp:0, level:0,
+  coins:200,
   pet:{ adopted:false, gatoId:null, nome:null, hunger:80, energy:80, happy:80, love:80, lastFed:null, lastPet:null, lastPlayed:null, lastSlept:null },
-  quiz:{ pietro:{ lastDate:null }, emilly:{ lastDate:null } },
+  quiz:{ lastDate:null },
   earnedToday:{ date:null, mood:false, location:false, mural:false },
   dialogoVisto:{}, eventoDiarioVisto:null,
 };
 
+// Estado global compartilhado
+const DEFAULT_HOME = {
+  selectedPlayer: null, // "pietro" | "emilly" | null
+  pietro: null,
+  emilly: null,
+};
+
 let _db=null,_doc=null,_state=JSON.parse(JSON.stringify(DEFAULT_HOME));
+let _activePlayer=null; // "pietro" ou "emilly"
 let _quizPerson="pietro",_currentQ=null,_answered=false;
 let _dialogRunning=false,_dialogQueue=[];
 
+// Atalhos para o jogador ativo
+function playerState(){ return _activePlayer?(_state[_activePlayer]||null):null; }
+
 async function saveState(){ if(!_doc)return; try{ await setDoc(_doc,_state); }catch(e){ console.warn("home save:",e); } }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
-function currentSave(){ return _state.saves[_state.currentSave]||null; }
+function currentSave(){ const ps=playerState(); return ps?ps.saves[ps.currentSave]||null:null; }
 function currentTerreno(){ const sv=currentSave(); return sv?TERRENOS.find(t=>t.id===sv.terrenoId)||null:null; }
 function ownedItems(){ const sv=currentSave(); return new Set(sv?sv.items:[]); }
 function getLoja(){ const sv=currentSave(); if(!sv)return LOJA_EXTERIOR; if(sv.fase==="interior")return LOJA_INTERIOR; if(sv.fase==="jardim")return LOJA_JARDIM; return LOJA_EXTERIOR; }
@@ -186,10 +199,11 @@ function showToastNativo(msg){ import("./ui.js").then(m=>m.showToast(msg)); }
 
 /* ════ COINS ════ */
 export function awardCoins(reason,amount){
+  const ps=playerState(); if(!ps)return;
   const today=todayStr();
-  if(_state.earnedToday.date!==today) _state.earnedToday={date:today,mood:false,location:false,mural:false};
-  if(_state.earnedToday[reason])return;
-  _state.earnedToday[reason]=true; _state.coins+=amount;
+  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false};
+  if(ps.earnedToday[reason])return;
+  ps.earnedToday[reason]=true; ps.coins+=amount;
   saveState(); renderCoins(); renderEarnList();
   spawnCoinPop(amount,window.innerWidth/2-30,window.innerHeight/2);
   showToastNativo(`🪙 +${amount} moedas!`);
@@ -222,14 +236,23 @@ function checkLevelUp(){
   }
 }
 
-function renderCoins(){ document.querySelectorAll(".home-coin-amount").forEach(el=>el.textContent=_state.coins); }
+function renderCoins(){
+  const ps=playerState();
+  document.querySelectorAll(".home-coin-amount").forEach(el=>el.textContent=ps?ps.coins:0);
+}
 
 function renderLevel(){
+  if(!_activePlayer){
+    document.querySelectorAll(".home-level-label").forEach(el=>el.textContent="Selecione um jogador 👆");
+    document.querySelectorAll(".home-xp-fill").forEach(el=>el.style.width="0%");
+    document.querySelectorAll(".home-xp-label").forEach(el=>el.textContent="");
+    return;
+  }
   const sv=currentSave();
   const LEVEL_NAMES=["Início","Fundação","Fachada","Jardim & Entrada","Interior — Sala","Interior — Quarto","Lar Completo 🏡"];
   // XP thresholds indexed by level (level 1→2 needs 200 XP, etc.)
   const XP_NEXT=[200,200,500,900,1400,2000,2000];
-  const lvl=sv?(sv.level||1):0;
+  const lvl=sv?(sv.level||1):1;
   const xp=sv?(sv.xp||0):0;
   document.querySelectorAll(".home-level-label").forEach(el=>el.textContent=`Nível ${lvl} — ${LEVEL_NAMES[lvl]||""}`);
   const nextXp=XP_NEXT[lvl]||2000;
@@ -246,18 +269,30 @@ function showLevelUpModal(lv){
 }
 
 function renderEarnList(){
-  const today=todayStr(); const earned=_state.earnedToday?.date===today?_state.earnedToday:{};
-  const quizDone={ quiz:_state.quiz?.pietro?.lastDate===today, quiz2:_state.quiz?.emilly?.lastDate===today };
-  const list=[{key:"quiz",label:"📝 Quiz diário (Pietro)",amt:15},{key:"quiz2",label:"📝 Quiz diário (Emilly)",amt:15},{key:"mood",label:"😊 Registrar humor",amt:5},{key:"location",label:"📍 Compartilhar localização",amt:8},{key:"mural",label:"💌 Mensagem no mural",amt:5}];
+  const ps=playerState(); if(!ps){
+    const wrap=document.getElementById("home-earn-list"); if(wrap)wrap.innerHTML=""; return;
+  }
+  const today=todayStr(); const earned=ps.earnedToday?.date===today?ps.earnedToday:{};
+  const quizDone=ps.quiz?.lastDate===today;
+  const list=[
+    {key:"quiz",label:"📝 Quiz diário",amt:15},
+    {key:"mood",label:"😊 Registrar humor",amt:5},
+    {key:"location",label:"📍 Compartilhar localização",amt:8},
+    {key:"mural",label:"💌 Mensagem no mural",amt:5}
+  ];
   const wrap=document.getElementById("home-earn-list"); if(!wrap)return;
-  wrap.innerHTML=list.map(item=>{ const done=item.key.startsWith("quiz")?quizDone[item.key]:earned[item.key]; return `<div class="earn-row"><span class="earn-row-left">${item.label}</span><span class="earn-row-right">${done?'<span class="done-check">✓ Feito</span>':`+${item.amt} 🪙`}</span></div>`; }).join("");
+  wrap.innerHTML=list.map(item=>{
+    const done=item.key==="quiz"?quizDone:earned[item.key];
+    return `<div class="earn-row"><span class="earn-row-left">${item.label}</span><span class="earn-row-right">${done?'<span class="done-check">✓ Feito</span>':`+${item.amt} 🪙`}</span></div>`;
+  }).join("");
 }
 
 /* ════ DIALOGOS ════ */
 function triggerDialogo(chave,onDone){
+  const ps=playerState(); if(!ps){ onDone?.(); return; }
   const msgs=DIALOGOS[chave];
-  if(!msgs||_state.dialogoVisto?.[chave]){ onDone?.(); return; }
-  _state.dialogoVisto=_state.dialogoVisto||{}; _state.dialogoVisto[chave]=true; saveState();
+  if(!msgs||ps.dialogoVisto?.[chave]){ onDone?.(); return; }
+  ps.dialogoVisto=ps.dialogoVisto||{}; ps.dialogoVisto[chave]=true; saveState();
   showDialogoSequence(msgs,onDone);
 }
 
@@ -279,30 +314,81 @@ function showDialogoSequence(msgs,onDone){
 /* ════ RENDER RPG ════ */
 function renderRPG(){
   const wrap=document.getElementById("home-rpg-wrap"); if(!wrap)return;
-  const phase=_state.gamePhase||"intro";
+  // Se nenhum jogador selecionado, mostra tela de seleção de personagem
+  if(!_activePlayer){ renderPlayerSelect(wrap); return; }
+  const ps=playerState();
+  const phase=ps?.gamePhase||"intro";
   if(phase==="intro") renderIntro(wrap);
   else if(phase==="terreno") renderEscolhaTerreno(wrap);
   else renderCasinha(wrap);
 }
 
+/* ════ PLAYER SELECT ════ */
+function renderPlayerSelect(wrap){
+  wrap.innerHTML=`
+    <div class="player-select-wrap">
+      <div class="player-select-title">💕 Quem é você?</div>
+      <div class="player-select-sub">Cada um tem sua própria casinha e progresso</div>
+      <div class="player-select-grid">
+        <button class="player-card player-card-pietro" onclick="window._homeSelectPlayer('pietro')">
+          <div class="player-card-emoji">💙</div>
+          <div class="player-card-name">Pietro</div>
+          <div class="player-card-desc">Programador & arquiteto da nossa história</div>
+          <div class="player-card-btn">Sou eu!</div>
+        </button>
+        <button class="player-card player-card-emilly" onclick="window._homeSelectPlayer('emilly')">
+          <div class="player-card-emoji">💗</div>
+          <div class="player-card-name">Emilly</div>
+          <div class="player-card-desc">Designer & coração da nossa casinha</div>
+          <div class="player-card-btn">Sou eu!</div>
+        </button>
+      </div>
+      <div class="player-select-note">✨ Seus saves ficam guardados separadamente</div>
+    </div>`;
+}
+
+window._homeSelectPlayer=function(player){
+  _activePlayer=player;
+  const ps=playerState();
+  // Se o jogador ainda não tem dados, cria um DEFAULT_PLAYER
+  if(!ps){
+    _state[player]=JSON.parse(JSON.stringify(DEFAULT_PLAYER));
+  }
+  saveState(); renderCoins(); renderLevel(); renderEarnList(); renderRPG();
+  // Mostra toast de boas-vindas
+  const nome=player==="pietro"?"Pietro 💙":"Emilly 💗";
+  showToastNativo(`Olá, ${nome}! Bem-vind${player==="emilly"?"a":"o"} à sua casinha! 🏡`);
+};
+
 function renderIntro(wrap){
+  const isPietro=_activePlayer==="pietro";
+  const emoji=isPietro?"💙":"💗";
+  const desc=isPietro
+    ?"Você é o programador que vai garantir que nada vai falhar. ❤️"
+    :"Você é a designer com um olhar especial pra beleza. 🎨";
   wrap.innerHTML=`<div class="rpg-intro">
+    <div class="player-active-badge">${emoji} Jogando como <strong>${isPietro?"Pietro":"Emilly"}</strong></div>
     <div style="font-size:4rem;margin-bottom:1rem">🏙️</div>
     <h3 class="rpg-intro-title">A história começa aqui</h3>
     <p class="rpg-intro-sub">Pietro & Emilly, em Santa Maria — RS</p>
-    <p class="rpg-intro-texto">Dois apaixonados, um sonho compartilhado: ter o primeiro lar juntos.<br>Ela, arquiteta de interiores com um olhar especial pra beleza.<br>Ele, programador que garante que nada vai falhar. ❤️</p>
+    <p class="rpg-intro-texto">Dois apaixonados, um sonho compartilhado: ter o primeiro lar juntos.<br>${desc}</p>
     <button class="rpg-start-btn" onclick="window._homeStartGame()">✨ Começar nossa história</button>
+    <button class="trocar-player-btn" onclick="window._homeTrocarPlayer()">🔄 Trocar de jogador</button>
   </div>`;
 }
 
 function renderEscolhaTerreno(wrap){
-  const saves=_state.saves||[];
+  const ps=playerState()||{}; const saves=ps.saves||[];
+  const coins=ps.coins||0; const currentSaveIdx=ps.currentSave||0;
+  const isPietro=_activePlayer==="pietro"; const emoji=isPietro?"💙":"💗";
   const savesHtml=saves.length>0?`<div class="saves-wrap">
-    <div class="saves-titulo">📁 Saves anteriores</div>
-    ${saves.map((sv,i)=>{ const t=TERRENOS.find(t=>t.id===sv.terrenoId); return `<div class="save-card${i===_state.currentSave?" active":""}" onclick="window._homeSwitchSave(${i})">${t?.emoji||"🏠"} ${sv.nome} <span class="save-bairro">${t?.nome||""}</span></div>`; }).join("")}
+    <div class="saves-titulo">📁 Saves de ${isPietro?"Pietro":"Emilly"}</div>
+    ${saves.map((sv,i)=>{ const t=TERRENOS.find(t=>t.id===sv.terrenoId); return `<div class="save-card${i===currentSaveIdx?" active":""}" onclick="window._homeSwitchSave(${i})">${t?.emoji||"🏠"} ${sv.nome} <span class="save-bairro">${t?.nome||""}</span></div>`; }).join("")}
     ${saves.length<3?`<button class="save-novo-btn" onclick="window._homeNovoSave()">+ Novo terreno</button>`:""}
   </div>`:"";
-  wrap.innerHTML=`<div class="terreno-header"><div class="terreno-titulo">📍 Escolha o terreno em Santa Maria</div><div class="terreno-subtitulo">Você tem <strong>🪙 ${_state.coins}</strong> para investir</div></div>
+  wrap.innerHTML=`
+  <div class="player-active-badge">${emoji} ${isPietro?"Pietro":"Emilly"} — <button class="trocar-inline" onclick="window._homeTrocarPlayer()">trocar jogador</button></div>
+  <div class="terreno-header"><div class="terreno-titulo">📍 Escolha o terreno em Santa Maria</div><div class="terreno-subtitulo">Você tem <strong>🪙 ${coins}</strong> para investir</div></div>
   ${savesHtml}
   <div class="terrenos-grid">
     ${TERRENOS.map(t=>`<div class="terreno-card" onclick="window._homeEscolherTerreno('${t.id}')">
@@ -312,17 +398,18 @@ function renderEscolhaTerreno(wrap){
       <div class="terreno-info"><span>📐 ${t.area}</span><span>🎓 ${t.distUFSM}</span></div>
       <div class="terreno-frase">${t.frase}</div>
       <div class="terreno-preco-wrap"><span class="terreno-preco">🪙 ${t.preco}</span></div>
-      <button class="terreno-btn${_state.coins<t.preco?" disabled":""}" ${_state.coins<t.preco?"disabled":""}>${_state.coins>=t.preco?"Escolher este terreno":`Precisa de mais 🪙 ${t.preco-_state.coins}`}</button>
+      <button class="terreno-btn${coins<t.preco?" disabled":""}" ${coins<t.preco?"disabled":""}>${coins>=t.preco?"Escolher este terreno":`Precisa de mais 🪙 ${t.preco-coins}`}</button>
     </div>`).join("")}
   </div>`;
 }
 
 function renderCasinha(wrap){
+  const ps=playerState();
   const sv=currentSave(); const terreno=currentTerreno();
   const owned=ownedItems(); const loja=getLoja();
   const today=todayStr();
   let eventoDiario="";
-  if(_state.eventoDiarioVisto!==today){
+  if(ps?.eventoDiarioVisto!==today){
     const msgs=DIALOGOS.evento_diario; const msg=msgs[Math.floor(Math.random()*msgs.length)];
     const isPietro=msg.quem==="pietro";
     eventoDiario=`<div class="evento-diario" id="evento-diario-card"><button class="evento-close" onclick="window._homeFecharEvento()">✕</button><div class="dialogo-box ${isPietro?"dialogo-pietro":"dialogo-emilly"}" style="margin:0"><div class="dialogo-avatar">${isPietro?"💙":"💗"}</div><div class="dialogo-bubble"><div class="dialogo-nome">${isPietro?"Pietro":"Emilly"}</div><div class="dialogo-texto">${msg.texto}</div></div></div></div>`;
@@ -335,7 +422,9 @@ function renderCasinha(wrap){
   else if(sv?.fase==="interior" && doneItems>=6) avancarBtn=`<button class="avancar-btn" onclick="window._homeCompletarCasa()">🎉 Casa Completa!</button>`;
   else avancarBtn=`<div class="avancar-hint">Compre mais itens para avançar de fase (${doneItems} de ${sv?.fase==="interior"?6:4} necessários)</div>`;
 
+  const isPietro=_activePlayer==="pietro";
   wrap.innerHTML=`${eventoDiario}
+  <div class="player-active-badge">${isPietro?"💙":"💗"} ${isPietro?"Pietro":"Emilly"} — <button class="trocar-inline" onclick="window._homeTrocarPlayer()">trocar jogador</button></div>
   <div class="casinha-header"><span class="casinha-bairro">${terreno?.emoji||"🏠"} ${terreno?.nome||""} — Santa Maria</span><span class="casinha-fase">${sv?.fase==="interior"?"🏠 Interior":sv?.fase==="jardim"?"🌳 Jardim":"🔨 Exterior"}</span></div>
   <div class="casa-visual-wrap">${getCasaSVG(owned,sv?.fase)}</div>
   <div class="fase-progress"><div class="fase-progress-label">Progresso: ${doneItems}/${totalItems} itens</div><div class="fase-progress-bar"><div class="fase-progress-fill" style="width:${fasePct}%"></div></div></div>
@@ -406,44 +495,49 @@ function getCasaSVG(owned,fase){
     ${portaSVG}
     <circle cx="150" cy="150" r="2" fill="#ffd54f"/>
     ${ilum}
-    ${_state.pet?.adopted?`<text x="102" y="174" font-size="14" text-anchor="middle">🐱</text>`:""}
+    ${playerState()?.pet?.adopted?`<text x="102" y="174" font-size="14" text-anchor="middle">🐱</text>`:""}
     <text x="14" y="190" font-size="13">${gL.join(" ")}</text>
     <text x="210" y="190" font-size="13">${gR.join(" ")}</text>
   </svg></div>`;
 }
 
 /* ════ GAME ACTIONS ════ */
-window._homeStartGame=function(){ triggerDialogo("introducao",()=>{ _state.gamePhase="terreno"; saveState(); renderRPG(); }); };
+window._homeStartGame=function(){
+  const ps=playerState(); if(!ps)return;
+  triggerDialogo("introducao",()=>{ ps.gamePhase="terreno"; saveState(); renderRPG(); });
+};
 
 window._homeEscolherTerreno=function(terrenoId){
+  const ps=playerState(); if(!ps)return;
   const t=TERRENOS.find(t=>t.id===terrenoId); if(!t)return;
-  if(_state.coins<t.preco){ showToastNativo(`Precisa de mais 🪙 ${t.preco-_state.coins}`); return; }
-  _state.coins-=t.preco;
+  if(ps.coins<t.preco){ showToastNativo(`Precisa de mais 🪙 ${t.preco-ps.coins}`); return; }
+  ps.coins-=t.preco;
   const sv={ id:Date.now(), terrenoId, nome:`Casinha em ${t.nome}`, criadoEm:new Date().toISOString(), fase:"exterior", items:[], xp:0, level:1 };
-  _state.saves=_state.saves||[]; _state.saves.push(sv);
-  _state.currentSave=_state.saves.length-1; _state.gamePhase="building";
+  ps.saves=ps.saves||[]; ps.saves.push(sv);
+  ps.currentSave=ps.saves.length-1; ps.gamePhase="building";
   saveState(); triggerDialogo("terreno_escolhido",()=>renderRPG());
 };
 
-window._homeNovoSave=function(){ if((_state.saves||[]).length>=3)return; _state.gamePhase="terreno"; renderRPG(); };
-window._homeSwitchSave=function(idx){ _state.currentSave=idx; _state.gamePhase="building"; saveState(); renderRPG(); };
-window._homeRecomecar=function(){ if(!confirm("Quer comprar um novo terreno? Seu save atual continua salvo!"))return; _state.gamePhase="terreno"; saveState(); renderRPG(); };
-window._homeFecharEvento=function(){ _state.eventoDiarioVisto=todayStr(); saveState(); document.getElementById("evento-diario-card")?.remove(); };
+window._homeNovoSave=function(){ const ps=playerState(); if(!ps||(ps.saves||[]).length>=3)return; ps.gamePhase="terreno"; renderRPG(); };
+window._homeSwitchSave=function(idx){ const ps=playerState(); if(!ps)return; ps.currentSave=idx; ps.gamePhase="building"; saveState(); renderRPG(); };
+window._homeRecomecar=function(){ const ps=playerState(); if(!ps||!confirm("Quer comprar um novo terreno? Seu save atual continua salvo!"))return; ps.gamePhase="terreno"; saveState(); renderRPG(); };
+window._homeFecharEvento=function(){ const ps=playerState(); if(ps)ps.eventoDiarioVisto=todayStr(); saveState(); document.getElementById("evento-diario-card")?.remove(); };
+window._homeTrocarPlayer=function(){ _activePlayer=null; renderCoins(); renderLevel(); renderEarnList(); renderRPG(); };
 
 window._homeComprar=function(itemId){
-  const sv=currentSave(); if(!sv)return;
+  const ps=playerState(); const sv=currentSave(); if(!sv||!ps)return;
   const loja=getLoja(); const item=loja.find(i=>i.id===itemId); if(!item)return;
   if(sv.items.includes(itemId)){ showToastNativo("Você já tem esse item!"); return; }
-  if(_state.coins<item.preco){ showToastNativo(`Precisa de mais 🪙 ${item.preco-_state.coins}`); return; }
+  if(ps.coins<item.preco){ showToastNativo(`Precisa de mais 🪙 ${item.preco-ps.coins}`); return; }
   if(item.exclusivo) sv.items=sv.items.filter(id=>{ const o=loja.find(i=>i.id===id); return !(o?.exclusivo===item.exclusivo); });
-  _state.coins-=item.preco; sv.items.push(itemId); addXp(item.xp);
+  ps.coins-=item.preco; sv.items.push(itemId); addXp(item.xp);
   saveState(); renderCoins(); renderRPG();
   spawnHearts(window.innerWidth/2,window.innerHeight/2,5);
   showToastNativo(`${item.icon} ${item.nome} adicionado! +${item.xp} XP`);
 };
 
 window._homeAvancarFase=function(){
-  const sv=currentSave(); if(!sv)return;
+  const ps=playerState(); const sv=currentSave(); if(!sv||!ps)return;
   if(sv.fase==="exterior"){ sv.fase="jardim"; triggerDialogo("level3_jardim",()=>renderRPG()); }
   else if(sv.fase==="jardim"){ sv.fase="interior"; triggerDialogo("level4_sala",()=>renderRPG()); }
   saveState();
@@ -455,7 +549,7 @@ window._homeCompletarCasa=function(){ triggerDialogo("level6_completo",()=>{ sho
 function getCatSVG(mood){
   const moods={ happy:{eyes:"◕◕",mouth:"▽",color:"#ffb3c1",ear:"#ff85a1"},hungry:{eyes:"◔◔",mouth:"△",color:"#ffd4a0",ear:"#ffb870"},sleepy:{eyes:"－－",mouth:"‥",color:"#c9b8d4",ear:"#a990c0"},idle:{eyes:"◡◡",mouth:"‿",color:"#ffb3c1",ear:"#ff85a1"},playing:{eyes:"★★",mouth:"∪",color:"#ffcc99",ear:"#ffaa66"},loved:{eyes:"♡♡",mouth:"▽",color:"#ffb3c1",ear:"#ff85a1"} };
   let c=moods[mood]?.color||moods.idle.color, ear=moods[mood]?.ear||moods.idle.ear;
-  const g=_state.pet?.gatoId;
+  const g=playerState()?.pet?.gatoId;
   if(g==="preto"){ c="#424242"; ear="#212121"; } if(g==="cinza"){ c="#b0bec5"; ear="#90a4ae"; }
   if(g==="rajado"){ c="#a1887f"; ear="#795548"; } if(g==="branco"){ c="#fafafa"; ear="#e0e0e0"; }
   const m={...moods[mood]||moods.idle,color:c,ear};
@@ -473,13 +567,15 @@ function getCatSVG(mood){
   </svg>`;
 }
 
-function getPetMood(){ const{hunger,energy,happy,love}=_state.pet; if(happy>80&&hunger>60)return"happy"; if(hunger<30)return"hungry"; if(energy<25)return"sleepy"; if(love>75)return"loved"; return"idle"; }
+function getPetMood(){ const ps=playerState(); const{hunger,energy,happy,love}=ps?.pet||{hunger:80,energy:80,happy:80,love:80}; if(happy>80&&hunger>60)return"happy"; if(hunger<30)return"hungry"; if(energy<25)return"sleepy"; if(love>75)return"loved"; return"idle"; }
 const PET_MSG={ happy:["Miau! 😸 Tô tão feliz!","Purrrr... ♡"],hungry:["Miau! Comiiida! 😿","Cadê meu petisco?"],sleepy:["Zzzzz... 💤","Tô cansado..."],loved:["Purrrr ♡","*ronrona muito*"],playing:["Brinca mais!","*pula em tudo*"] };
 function showPetBubble(text){ const el=document.getElementById("pet-bubble"); if(!el)return; el.textContent=text; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),2500); }
 
 function renderPet(){
   const petWrap=document.getElementById("pet-svg-container"); if(!petWrap)return;
-  const adopted=_state.pet?.adopted;
+  const ps=playerState();
+  if(!ps||!_activePlayer){ petWrap.innerHTML=`<div class="pet-locked"><div style="font-size:2.5rem">🐱</div><div style="font-size:.9rem;margin-top:.5rem;color:#c9a9b0">Selecione um jogador primeiro!</div></div>`; document.querySelectorAll(".pet-stats,.pet-actions").forEach(el=>el.style.display="none"); return; }
+  const adopted=ps?.pet?.adopted;
   document.querySelectorAll(".pet-stats,.pet-actions").forEach(el=>el.style.display=adopted?"":"none");
   if(!adopted){
     if((currentSave()?.level||0)>=2){
@@ -491,52 +587,55 @@ function renderPet(){
   }
   document.querySelectorAll(".pet-stats,.pet-actions").forEach(el=>el.style.display="");
   const mood=getPetMood(); petWrap.className=`pet-pixel-cat state-${mood}`; petWrap.innerHTML=getCatSVG(mood);
-  const nL=document.querySelector(".pet-name-label"); if(nL)nL.textContent=`✦ ${_state.pet.nome||"Bolinha"} ✦`;
+  const nL=document.querySelector(".pet-name-label"); if(nL)nL.textContent=`✦ ${ps.pet.nome||"Bolinha"} ✦`;
   const badge=document.getElementById("pet-mood-badge");
   const bt={happy:"😸 Feliz e satisfeito!",hungry:"🍖 Com fominha!",sleepy:"💤 Com sono...",loved:"💕 Cheio de amor!",idle:"🐾 Querendo atenção"};
   if(badge)badge.textContent=bt[mood]||bt.idle;
-  [["hunger",_state.pet.hunger],["energy",_state.pet.energy],["happy",_state.pet.happy],["love",_state.pet.love]].forEach(([k,v])=>{ const f=document.getElementById(`pet-bar-${k}`); const vl=document.getElementById(`pet-bar-${k}-val`); if(f)f.style.width=v+"%"; if(vl)vl.textContent=Math.round(v)+"%"; });
+  [["hunger",ps.pet.hunger],["energy",ps.pet.energy],["happy",ps.pet.happy],["love",ps.pet.love]].forEach(([k,v])=>{ const f=document.getElementById(`pet-bar-${k}`); const vl=document.getElementById(`pet-bar-${k}-val`); if(f)f.style.width=v+"%"; if(vl)vl.textContent=Math.round(v)+"%"; });
 }
 
 window._homeAdotarGato=function(gatoId){
+  const ps=playerState(); if(!ps)return;
   const gato=GATOS_ADOCAO.find(g=>g.id===gatoId); if(!gato)return;
   triggerDialogo("adocao_gato",()=>{
     const nome=prompt(`Que nome para o ${gato.raca}?`,gato.nome)||gato.nome;
-    _state.pet={..._state.pet,adopted:true,gatoId,nome,hunger:80,energy:80,happy:80,love:80,lastFed:new Date().toISOString()};
+    ps.pet={...ps.pet,adopted:true,gatoId,nome,hunger:80,energy:80,happy:80,love:80,lastFed:new Date().toISOString()};
     saveState(); renderPet(); showToastNativo(`🐱 ${nome} foi adotado!`);
     spawnHearts(window.innerWidth/2,window.innerHeight/3,10);
   });
 };
 
-function petDecay(){ const last=_state.pet.lastFed?new Date(_state.pet.lastFed):null; if(last){ const h=(Date.now()-last.getTime())/3600000; _state.pet.hunger=Math.max(0,_state.pet.hunger-Math.min(h*8,40)); _state.pet.energy=Math.max(0,_state.pet.energy-Math.min(h*5,30)); } }
-function startPetDecayInterval(){ setInterval(()=>{ if(!_state.pet?.adopted)return; _state.pet.hunger=Math.max(0,_state.pet.hunger-2); _state.pet.energy=Math.max(0,_state.pet.energy-1); _state.pet.happy=Math.max(0,_state.pet.happy-1); renderPet(); if(_state.pet.hunger===0||_state.pet.energy===0)saveState(); },5*60*1000); }
+function petDecay(){ const ps=playerState(); if(!ps?.pet)return; const last=ps.pet.lastFed?new Date(ps.pet.lastFed):null; if(last){ const h=(Date.now()-last.getTime())/3600000; ps.pet.hunger=Math.max(0,ps.pet.hunger-Math.min(h*8,40)); ps.pet.energy=Math.max(0,ps.pet.energy-Math.min(h*5,30)); } }
+function startPetDecayInterval(){ setInterval(()=>{ const ps=playerState(); if(!ps?.pet?.adopted)return; ps.pet.hunger=Math.max(0,ps.pet.hunger-2); ps.pet.energy=Math.max(0,ps.pet.energy-1); ps.pet.happy=Math.max(0,ps.pet.happy-1); renderPet(); if(ps.pet.hunger===0||ps.pet.energy===0)saveState(); },5*60*1000); }
 
-function feedPet(e){ if(!_state.pet?.adopted)return; if(_state.pet.hunger>=95){ showPetBubble("Estou cheio! 😸"); return; } _state.pet.hunger=Math.min(100,_state.pet.hunger+25); _state.pet.happy=Math.min(100,_state.pet.happy+10); _state.pet.lastFed=new Date().toISOString(); saveState(); renderPet(); showPetBubble(PET_MSG.happy[Math.floor(Math.random()*PET_MSG.happy.length)]); spawnHearts(e.clientX,e.clientY,4); }
-function petPet(e){ if(!_state.pet?.adopted)return; _state.pet.love=Math.min(100,_state.pet.love+15); _state.pet.happy=Math.min(100,_state.pet.happy+12); _state.pet.lastPet=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-loved"; setTimeout(()=>renderPet(),1200); } saveState(); renderPet(); showPetBubble(PET_MSG.loved[Math.floor(Math.random()*PET_MSG.loved.length)]); spawnHearts(e.clientX,e.clientY,6); }
-function playWithPet(e){ if(!_state.pet?.adopted)return; if(_state.pet.energy<15){ showPetBubble("Tô cansado demais... 😴"); return; } _state.pet.happy=Math.min(100,_state.pet.happy+20); _state.pet.energy=Math.max(0,_state.pet.energy-15); _state.pet.love=Math.min(100,_state.pet.love+8); _state.pet.lastPlayed=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-playing"; setTimeout(()=>renderPet(),1500); } saveState(); renderPet(); showPetBubble(PET_MSG.playing[Math.floor(Math.random()*PET_MSG.playing.length)]); spawnHearts(e.clientX,e.clientY,3); }
-function sleepPet(){ if(!_state.pet?.adopted)return; _state.pet.energy=Math.min(100,_state.pet.energy+30); _state.pet.lastSlept=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-sleepy"; setTimeout(()=>renderPet(),2000); } saveState(); renderPet(); showPetBubble("Zzz... 💤"); }
+function feedPet(e){ const ps=playerState(); if(!ps?.pet?.adopted)return; if(ps.pet.hunger>=95){ showPetBubble("Estou cheio! 😸"); return; } ps.pet.hunger=Math.min(100,ps.pet.hunger+25); ps.pet.happy=Math.min(100,ps.pet.happy+10); ps.pet.lastFed=new Date().toISOString(); saveState(); renderPet(); showPetBubble(PET_MSG.happy[Math.floor(Math.random()*PET_MSG.happy.length)]); spawnHearts(e.clientX,e.clientY,4); }
+function petPet(e){ const ps=playerState(); if(!ps?.pet?.adopted)return; ps.pet.love=Math.min(100,ps.pet.love+15); ps.pet.happy=Math.min(100,ps.pet.happy+12); ps.pet.lastPet=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-loved"; setTimeout(()=>renderPet(),1200); } saveState(); renderPet(); showPetBubble(PET_MSG.loved[Math.floor(Math.random()*PET_MSG.loved.length)]); spawnHearts(e.clientX,e.clientY,6); }
+function playWithPet(e){ const ps=playerState(); if(!ps?.pet?.adopted)return; if(ps.pet.energy<15){ showPetBubble("Tô cansado demais... 😴"); return; } ps.pet.happy=Math.min(100,ps.pet.happy+20); ps.pet.energy=Math.max(0,ps.pet.energy-15); ps.pet.love=Math.min(100,ps.pet.love+8); ps.pet.lastPlayed=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-playing"; setTimeout(()=>renderPet(),1500); } saveState(); renderPet(); showPetBubble(PET_MSG.playing[Math.floor(Math.random()*PET_MSG.playing.length)]); spawnHearts(e.clientX,e.clientY,3); }
+function sleepPet(){ const ps=playerState(); if(!ps?.pet?.adopted)return; ps.pet.energy=Math.min(100,ps.pet.energy+30); ps.pet.lastSlept=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-sleepy"; setTimeout(()=>renderPet(),2000); } saveState(); renderPet(); showPetBubble("Zzz... 💤"); }
 
 /* ════ QUIZ ════ */
 function renderQuiz(){
   const today=todayStr(); const wrap=document.getElementById("quiz-content"); if(!wrap)return;
-  const personState=_state.quiz?.[_quizPerson]||{lastDate:null}; const done=personState.lastDate===today;
+  const ps=playerState();
+  if(!ps||!_activePlayer){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎮</span><div class="quiz-done-title">Selecione um jogador</div><div class="quiz-done-sub">Vá na aba Nossa Casa e escolha seu personagem!</div></div>`; return; }
+  const done=ps.quiz?.lastDate===today;
   if(done){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎉</span><div class="quiz-done-title">Quiz de hoje concluído!</div><div class="quiz-done-sub">Volte amanhã para uma nova pergunta.<br>As moedas já estão na conta! 🪙</div></div>`; return; }
-  const seed=today.replace(/-/g,""); const off=_quizPerson==="emilly"?Math.floor(QUIZ_QUESTIONS.length/2):0;
+  const isPietro=_activePlayer==="pietro"; const seed=today.replace(/-/g,""); const off=isPietro?0:Math.floor(QUIZ_QUESTIONS.length/2);
   const qIdx=(parseInt(seed.slice(-4))+off)%QUIZ_QUESTIONS.length; _currentQ=QUIZ_QUESTIONS[qIdx]; _answered=false;
-  wrap.innerHTML=`<div class="quiz-who-row"><button class="quiz-who-btn ${_quizPerson==="pietro"?"active":""}" onclick="window._homeSetQuizPerson('pietro')">💙 Pietro</button><button class="quiz-who-btn ${_quizPerson==="emilly"?"active":""}" onclick="window._homeSetQuizPerson('emilly')">💗 Emilly</button></div><div class="quiz-cat-badge">${_currentQ.cat}</div><div class="quiz-question">${_currentQ.q}</div><div class="quiz-options">${_currentQ.opts.map((opt,i)=>`<button class="quiz-option" onclick="window._homeAnswerQuiz(${i},this)">${opt}</button>`).join("")}</div><div class="quiz-feedback" id="quiz-feedback"></div>`;
+  wrap.innerHTML=`<div class="quiz-who-row"><div class="quiz-player-badge">${isPietro?"💙 Pietro":"💗 Emilly"} jogando</div></div><div class="quiz-cat-badge">${_currentQ.cat}</div><div class="quiz-question">${_currentQ.q}</div><div class="quiz-options">${_currentQ.opts.map((opt,i)=>`<button class="quiz-option" onclick="window._homeAnswerQuiz(${i},this)">${opt}</button>`).join("")}</div><div class="quiz-feedback" id="quiz-feedback"></div>`;
 }
 
 window._homeSetQuizPerson=function(p){ _quizPerson=p; renderQuiz(); };
 
 window._homeAnswerQuiz=function(idx,btn){
   if(_answered||!_currentQ)return; _answered=true; const correct=idx===_currentQ.ans; const today=todayStr();
+  const ps=playerState(); if(!ps)return;
   document.querySelectorAll(".quiz-option").forEach(b=>b.disabled=true);
   document.querySelectorAll(".quiz-option")[_currentQ.ans].classList.add("correct");
   if(!correct)btn.classList.add("wrong");
   const fb=document.getElementById("quiz-feedback"); if(fb){ fb.className=`quiz-feedback show ${correct?"correct":"wrong"}`; fb.textContent=correct?`✓ Correto! +15 🪙 para a casinha!`:`✗ Era "${_currentQ.opts[_currentQ.ans]}" — mas tudo bem!`; }
-  if(!_state.quiz)_state.quiz={}; if(!_state.quiz[_quizPerson])_state.quiz[_quizPerson]={};
-  _state.quiz[_quizPerson].lastDate=today;
-  if(correct){ _state.coins+=15; saveState(); renderCoins(); spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3); if(_state.pet?.adopted){ _state.pet.happy=Math.min(100,_state.pet.happy+10); renderPet(); } }
+  if(!ps.quiz)ps.quiz={}; ps.quiz.lastDate=today;
+  if(correct){ ps.coins+=15; saveState(); renderCoins(); spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3); if(ps.pet?.adopted){ ps.pet.happy=Math.min(100,ps.pet.happy+10); renderPet(); } }
   else saveState();
   renderEarnList(); showPetBubble(correct?"Acertou! 🎉":"Quase! Você consegue! 💪");
   setTimeout(()=>renderQuiz(),2500);
@@ -557,13 +656,34 @@ export function initHome(db){
   onSnapshot(_doc,snap=>{
     if(snap.exists()){
       const data=snap.data();
-      _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
-      if(!_state.pet)_state.pet=DEFAULT_HOME.pet;
-      if(!_state.quiz)_state.quiz=DEFAULT_HOME.quiz;
-      if(!_state.saves)_state.saves=[];
-      if(!_state.dialogoVisto)_state.dialogoVisto={};
-      // Migração: saves antigos sem xp/level por save
-      _state.saves=_state.saves.map(sv=>({xp:0,level:1,...sv}));
+      // Migração: se dados antigos (sem pietro/emilly), migra pra novo formato
+      if(data.gamePhase!==undefined && !data.pietro && !data.emilly){
+        // Dados legados: migra tudo pro Pietro por padrão
+        const legacyPlayer={
+          gamePhase:data.gamePhase||"intro", currentSave:data.currentSave||0,
+          saves:(data.saves||[]).map(sv=>({xp:0,level:1,...sv})),
+          coins:data.coins||200,
+          pet:data.pet||JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet)),
+          quiz:{ lastDate:data.quiz?.pietro?.lastDate||null },
+          earnedToday:data.earnedToday||{date:null,mood:false,location:false,mural:false},
+          dialogoVisto:data.dialogoVisto||{}, eventoDiarioVisto:data.eventoDiarioVisto||null,
+        };
+        _state={ selectedPlayer:null, pietro:legacyPlayer, emilly:null };
+      } else {
+        _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
+        // Garante estrutura de cada jogador
+        ["pietro","emilly"].forEach(p=>{
+          if(_state[p]){
+            if(!_state[p].pet) _state[p].pet=JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet));
+            if(!_state[p].quiz) _state[p].quiz={lastDate:null};
+            if(!_state[p].saves) _state[p].saves=[];
+            if(!_state[p].dialogoVisto) _state[p].dialogoVisto={};
+            if(!_state[p].earnedToday) _state[p].earnedToday={date:null,mood:false,location:false,mural:false};
+            // Migração de saves antigos sem xp/level
+            _state[p].saves=_state[p].saves.map(sv=>({xp:0,level:1,...sv}));
+          }
+        });
+      }
     }
     petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG();
   });

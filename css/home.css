@@ -793,3 +793,165 @@
 /* XP pop animation */
 .xp-pop { position:fixed;pointer-events:none;z-index:9999;font-size:1rem;font-weight:700;color:#9c27b0;animation:coinFloat .95s ease-out forwards; }
 
+
+/* ════════════════════════════════════════════
+   v23 — SELEÇÃO DE JOGADOR
+   ════════════════════════════════════════════ */
+
+/* Tela de seleção */
+.player-select-wrap {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+.player-select-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem;
+  color: #590d22;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+.player-select-sub {
+  font-size: 0.88rem;
+  color: #c9a9b0;
+  font-style: italic;
+  margin-bottom: 1.8rem;
+}
+.player-select-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+@media(max-width: 360px){ .player-select-grid { grid-template-columns: 1fr; } }
+
+.player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: none;
+  border-radius: 24px;
+  padding: 1.8rem 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  text-align: center;
+  gap: 0.4rem;
+}
+.player-card:active { transform: scale(0.97); }
+
+.player-card-pietro {
+  background: linear-gradient(145deg, #e8f4ff, #d0e8ff);
+  border: 2.5px solid #90caf9;
+  box-shadow: 0 6px 24px rgba(74,144,217,0.18);
+}
+.player-card-pietro:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(74,144,217,0.28);
+}
+.player-card-emilly {
+  background: linear-gradient(145deg, #fff0f3, #fce4ec);
+  border: 2.5px solid #f48fb1;
+  box-shadow: 0 6px 24px rgba(232,83,111,0.18);
+}
+.player-card-emilly:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(232,83,111,0.28);
+}
+
+.player-card-emoji {
+  font-size: 2.8rem;
+  margin-bottom: 0.2rem;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12));
+}
+.player-card-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #4a1020;
+}
+.player-card-pietro .player-card-name { color: #1a4a7a; }
+.player-card-emilly .player-card-name { color: #7a1a35; }
+
+.player-card-desc {
+  font-size: 0.75rem;
+  color: #7a6070;
+  font-style: italic;
+  line-height: 1.45;
+  margin-bottom: 0.6rem;
+}
+.player-card-btn {
+  background: linear-gradient(135deg, #e8536f, #c0392b);
+  color: white;
+  padding: 0.55rem 1.3rem;
+  border-radius: 50px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+}
+.player-card-pietro .player-card-btn {
+  background: linear-gradient(135deg, #4a90d9, #1565c0);
+}
+
+.player-select-note {
+  font-size: 0.75rem;
+  color: #c9a9b0;
+  letter-spacing: 0.04em;
+}
+
+/* Badge do jogador ativo */
+.player-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fff0f3;
+  border: 1px solid #ffd6de;
+  border-radius: 50px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.78rem;
+  color: #590d22;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Botão inline de trocar jogador */
+.trocar-inline {
+  background: none;
+  border: none;
+  color: #e8536f;
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+.trocar-inline:hover { color: #c0392b; }
+
+/* Botão de trocar jogador na intro */
+.trocar-player-btn {
+  display: block;
+  margin: 0.8rem auto 0;
+  background: none;
+  border: 1.5px solid #ffd6de;
+  color: #c9a9b0;
+  padding: 0.6rem 1.5rem;
+  border-radius: 50px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.trocar-player-btn:hover { border-color: #e8536f; color: #e8536f; }
+
+/* Badge no quiz */
+.quiz-player-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #fff0f3;
+  border: 1px solid #ffd6de;
+  border-radius: 50px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #590d22;
+  margin-bottom: 0.6rem;
+}

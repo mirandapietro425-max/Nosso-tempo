@@ -129,7 +129,7 @@ export function initSurprise() {
 
 // ── RECADINHO DIÁRIO ────────────────────────────
 export function getDailyMessage() {
-  const start = new Date('2024-10-11');
+  const start = new Date(START_DATE);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const diff = Math.floor((today - start) / 86400000);

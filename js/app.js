@@ -413,7 +413,10 @@ async function addMovieComment() {
 }
 
 async function deleteMovieComment(i) {
+  if (movieModalIndex === null) return;
   const movies = await getMovies();
+  if (!movies[movieModalIndex]) return;
+  if (!movies[movieModalIndex].comments) movies[movieModalIndex].comments = [];
   movies[movieModalIndex].comments.splice(i, 1);
   await saveMovies(movies);
   renderMovieComments(movies[movieModalIndex].comments);
@@ -1568,7 +1571,7 @@ window.shareLocation = shareLocation;
   const now     = new Date();
   const day     = now.getDate();
   const month   = now.getMonth();
-  const start   = new Date('2024-10-11');
+  const start   = new Date(START_DATE);
   const dias    = Math.floor((now - start) / 86400000);
 
   // Mensagem muda dependendo do dia
