@@ -175,7 +175,7 @@ const DEFAULT_PLAYER = {
   coins:200,
   pet:{ adopted:false, gatoId:null, nome:null, hunger:80, energy:80, happy:80, love:80, lastFed:null, lastPet:null, lastPlayed:null, lastSlept:null },
   quiz:{ lastDate:null },
-  earnedToday:{ date:null, mood:false, location:false, mural:false },
+  earnedToday:{ date:null, mood:false, location:false, mural:false, quiz:false },
   dialogoVisto:{}, eventoDiarioVisto:null,
 };
 
@@ -746,8 +746,14 @@ window._homeAnswerQuiz=function(idx,btn){
   if(!correct)btn.classList.add("wrong");
   const fb=document.getElementById("quiz-feedback"); if(fb){ fb.className=`quiz-feedback show ${correct?"correct":"wrong"}`; fb.textContent=correct?`✓ Correto! +15 🪙 para a casinha!`:`✗ Era "${_currentQ.opts[_currentQ.ans]}" — mas tudo bem!`; }
   if(!ps.quiz)ps.quiz={}; ps.quiz.lastDate=today;
-  if(correct){ ps.coins+=15; saveState(); renderCoins(); spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3); if(ps.pet?.adopted){ ps.pet.happy=Math.min(100,ps.pet.happy+10); renderPet(); } }
-  else saveState();
+  if(correct){ 
+    // Usa awardCoins para marcar earnedToday e atualizar a lista "Como ganhar moedas"
+    ps.coins+=15; saveState(); renderCoins(); 
+    spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3); 
+    if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false};
+    ps.earnedToday.quiz=true;
+    if(ps.pet?.adopted){ ps.pet.happy=Math.min(100,ps.pet.happy+10); renderPet(); } 
+  } else saveState();
   renderEarnList(); showPetBubble(correct?"Acertou! 🎉":"Quase! Você consegue! 💪");
   setTimeout(()=>renderQuiz(),2500);
 };
@@ -783,7 +789,7 @@ export function initHome(db){
             coins:data.coins||200,
             pet:data.pet||JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet)),
             quiz:{ lastDate:data.quiz?.pietro?.lastDate||null },
-            earnedToday:data.earnedToday||{date:null,mood:false,location:false,mural:false},
+            earnedToday:data.earnedToday||{date:null,mood:false,location:false,mural:false,quiz:false},
             dialogoVisto:data.dialogoVisto||{}, eventoDiarioVisto:data.eventoDiarioVisto||null,
           };
           _state={ selectedPlayer:null, pietro:legacyPlayer, emilly:null };

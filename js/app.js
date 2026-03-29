@@ -542,8 +542,9 @@ async function getMural() {
 }
 
 async function saveMural(msgs, lastClean) {
-  const payload = { msgs };
-  if (lastClean !== undefined) payload.lastClean = lastClean;
+  const snap = await getDoc(MURAL_DOC).catch(() => null);
+  const existing = snap?.exists() ? snap.data() : {};
+  const payload = { msgs, lastClean: lastClean !== undefined ? lastClean : (existing.lastClean || null) };
   await setDoc(MURAL_DOC, payload);
 }
 
