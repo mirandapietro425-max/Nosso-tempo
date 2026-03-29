@@ -326,8 +326,9 @@ function showDialogoSequence(msgs,onDone){
   if(_dialogRunning){ _dialogQueue.push({msgs,onDone}); return; }
   _dialogRunning=true;
   const overlay=document.createElement("div"); overlay.className="dialogo-overlay"; document.body.appendChild(overlay);
-  let idx=0;
+  let idx=0, _tapping=false;
   function showNext(){
+    if(_tapping)return; _tapping=true; setTimeout(()=>{ _tapping=false; },320);
     overlay.innerHTML="";
     if(idx>=msgs.length){ overlay.remove(); _dialogRunning=false; onDone?.(); if(_dialogQueue.length){ const nx=_dialogQueue.shift(); showDialogoSequence(nx.msgs,nx.onDone); } return; }
     const m=msgs[idx]; const isPietro=m.quem==="pietro";
@@ -568,8 +569,8 @@ window._homeComprar=function(itemId){
 
 window._homeAvancarFase=function(){
   const ps=playerState(); const sv=currentSave(); if(!sv||!ps)return;
-  if(sv.fase==="exterior"){ sv.fase="jardim"; saveState(); triggerDialogo("level3_jardim",()=>{ const s=currentSave(); if(s){}; renderRPG(); }); }
-  else if(sv.fase==="jardim"){ sv.fase="interior"; saveState(); triggerDialogo("level4_sala",()=>{ renderRPG(); }); }
+  if(sv.fase==="exterior"){ sv.fase="jardim"; saveState(); triggerDialogo("level3_jardim",()=>renderRPG()); }
+  else if(sv.fase==="jardim"){ sv.fase="interior"; saveState(); triggerDialogo("level4_sala",()=>renderRPG()); }
 };
 
 window._homeCompletarCasa=function(){
