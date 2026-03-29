@@ -501,6 +501,67 @@
 .dreams-btn { background: var(--rose); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: var(--radius-pill); cursor: pointer; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600; transition: background var(--transition-fast); white-space: nowrap; }
 .dreams-btn:hover { background: var(--velvet); }
 
+<<<<<<< HEAD
+/* ── MODO NOTURNO (eventos escuros: Ano Novo, Réveillon, Halloween) ── */
+body.event-mode[data-event="ano-novo"] .dream-item,
+body.event-mode[data-event="reveillon"] .dream-item,
+body.event-mode[data-event="halloween"] .dream-item {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.event-mode[data-event="ano-novo"] .dream-text,
+body.event-mode[data-event="reveillon"] .dream-text,
+body.event-mode[data-event="halloween"] .dream-text {
+  color: #f0e6ea;
+}
+
+body.event-mode[data-event="ano-novo"] .dream-check,
+body.event-mode[data-event="reveillon"] .dream-check,
+body.event-mode[data-event="halloween"] .dream-check {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.3);
+  color: white;
+}
+
+body.event-mode[data-event="ano-novo"] .dream-del,
+body.event-mode[data-event="reveillon"] .dream-del,
+body.event-mode[data-event="halloween"] .dream-del {
+  color: rgba(255,255,255,0.4);
+}
+
+body.event-mode[data-event="ano-novo"] .dream-del:hover,
+body.event-mode[data-event="reveillon"] .dream-del:hover,
+body.event-mode[data-event="halloween"] .dream-del:hover {
+  color: rgba(255,255,255,0.85);
+}
+
+body.event-mode[data-event="ano-novo"] .dream-item.done,
+body.event-mode[data-event="reveillon"] .dream-item.done,
+body.event-mode[data-event="halloween"] .dream-item.done {
+  background: rgba(255,255,255,0.04);
+}
+
+body.event-mode[data-event="ano-novo"] .dreams-input,
+body.event-mode[data-event="reveillon"] .dreams-input,
+body.event-mode[data-event="halloween"] .dreams-input {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.2);
+  color: #f0e6ea;
+}
+
+body.event-mode[data-event="ano-novo"] .dreams-input::placeholder,
+body.event-mode[data-event="reveillon"] .dreams-input::placeholder,
+body.event-mode[data-event="halloween"] .dreams-input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+body.event-mode[data-event="ano-novo"] .dreams-input:focus,
+body.event-mode[data-event="reveillon"] .dreams-input:focus,
+body.event-mode[data-event="halloween"] .dreams-input:focus {
+  border-color: rgba(255,255,255,0.5);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+=======
 /* ══════════════════════════════════════════
    MODO NOTURNO — eventos escuros (Ano Novo,
    Réveillon, Halloween e qualquer dark:true)
@@ -550,6 +611,7 @@ body.dark-event .dreams-input::placeholder {
 body.dark-event .dreams-input:focus {
   border-color: rgba(255, 255, 255, 0.55);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07);
+>>>>>>> 898a373 (Fix textos sonhos modo noturno/madrugada 🌙)
 }
 
 /* ── MURAL BLOQUEADO ── */

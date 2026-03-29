@@ -359,8 +359,6 @@
   </div>
 </section>
 
-<!-- ── FIGURINHAS (galeria visual) ── -->
-
 
 <!-- ── SONHOS ── -->
 <section id="sec-sonhos" aria-labelledby="sec-sonhos-title">
@@ -449,15 +447,19 @@
     </div>
   </div>
 
-  <!-- ── FIGURINHAS DENTRO DO HUMOR ── -->
+  <!-- ── FIGURINHAS DO HUMOR ── -->
   <div class="mood-sticker-panel">
     <div class="mood-sticker-panel-title">
-      <span>🎭</span> Figurinha do momento
+      <span>🎭</span> Escolha sua figurinha do momento
     </div>
-    <p class="mood-sticker-panel-sub">Clique na figurinha que representa como você está agora 💕</p>
-    <div id="sticker-container"></div>
+    <div class="mood-sticker-author-row">
+      <button class="mood-sticker-author-btn active" id="mood-sticker-btn-pietro" onclick="selectMoodStickerAuthor('Pietro')">Pietro 💙</button>
+      <button class="mood-sticker-author-btn"        id="mood-sticker-btn-emilly" onclick="selectMoodStickerAuthor('Emilly')">Emilly 💗</button>
+    </div>
+    <div id="mood-sticker-container"></div>
   </div>
 </section>
+
 
 <!-- ── MENSAGENS ESPECIAIS ── -->
 <section aria-labelledby="sec-especiais-title">

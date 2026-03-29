@@ -407,122 +407,169 @@ function _buildSectionHTML() {
    MOOD STICKERS — integração com #sec-humor
    ════════════════════════════════════════════ */
 
-const LS_MOOD_STICKER = 'pe_mood_sticker';
+const LS_MOOD_STICKER_PIETRO = 'pe_mood_sticker_pietro';
+const LS_MOOD_STICKER_EMILLY = 'pe_mood_sticker_emilly';
 
-const MOOD_MESSAGES = {
-  happy:  ['Hoje você tá radiante 💖', 'Que alegria contagiante! 🌟', 'Seu sorriso ilumina tudo ✨'],
-  sad:    ['Tô aqui com você sempre ❤️', 'Dias difíceis passam, o amor fica 🤍', 'Um abraço bem apertado pra você 🫂'],
-  angry:  ['Respira fundo, eu te entendo 💙', 'Vai passar — você é forte 💪', 'Estou aqui do seu lado sempre ❤️'],
-  scared: ['Não precisa ter medo, estou aqui 🌙', 'Juntos não tem nada que assuste 💫', 'Você é mais corajoso(a) do que imagina ⭐'],
-};
+let _moodStickerAuthor = 'Pietro';
 
-function _getMoodMessage(emotion) {
-  const msgs = MOOD_MESSAGES[emotion] || MOOD_MESSAGES.happy;
-  return msgs[Math.floor(Math.random() * msgs.length)];
+// Categorias exibidas no mural de humor
+const MOOD_CAT_ORDER = [
+  { id: 'princesas',  label: 'Princesas',  icon: '👑' },
+  { id: 'princes',    label: 'Príncipes',  icon: '🤴' },
+  { id: 'crepusculo', label: 'Crepúsculo', icon: '🌙' },
+  { id: 'marvel',     label: 'Marvel',     icon: '🕷️' },
+];
+
+function _getMoodStickerKey(author) {
+  return author === 'Emilly' ? LS_MOOD_STICKER_EMILLY : LS_MOOD_STICKER_PIETRO;
 }
 
-function _saveMoodSticker(sticker) {
-  localStorage.setItem(LS_MOOD_STICKER, JSON.stringify({
+function _saveMoodStickerForPerson(sticker, author) {
+  const data = {
     id: sticker.id, label: sticker.label,
     file: sticker.file, emotion: sticker.emotion,
-    name: sticker.name, savedAt: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-  }));
+    name: sticker.name,
+    savedAt: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+  };
+  localStorage.setItem(_getMoodStickerKey(author), JSON.stringify(data));
 }
 
-function _loadMoodSticker() {
-  try { return JSON.parse(localStorage.getItem(LS_MOOD_STICKER) || 'null'); } catch { return null; }
+function _loadMoodStickerForPerson(author) {
+  try { return JSON.parse(localStorage.getItem(_getMoodStickerKey(author)) || 'null'); } catch { return null; }
 }
 
-function _renderMoodStickerMessage(container, sticker) {
-  const msgEl = container.querySelector('#mood-sticker-message');
-  if (!msgEl) return;
-  const msg = _getMoodMessage(sticker.emotion);
-  msgEl.innerHTML = `
-    <div class="mood-sticker-selected-wrap">
-      <img src="${sticker.file}" alt="${sticker.label}" class="mood-sticker-selected-img">
-      <div class="mood-sticker-selected-info">
-        <div class="mood-sticker-selected-name">${sticker.label}</div>
-        <div class="mood-sticker-selected-msg">${msg}</div>
-        <div class="mood-sticker-selected-time">às ${sticker.savedAt || '—'}</div>
-      </div>
-    </div>`;
-  msgEl.classList.add('show');
-}
+// Seleciona autor (Pietro / Emilly) e re-renderiza highlights
+window.selectMoodStickerAuthor = function(author) {
+  _moodStickerAuthor = author;
 
-// Categorias visíveis no Mural de Humor (sem "todos" e "favoritos")
-const MOOD_CAT_ORDER = [
-  { id: 'princesas', label: 'Princesas',  icon: '👑' },
-  { id: 'princes',   label: 'Príncipes',  icon: '🤴' },
-  { id: 'marvel',    label: 'Marvel',     icon: '🕷️' },
-  { id: 'crepusculo',label: 'Crepúsculo', icon: '🌙' },
-];
+  // Atualiza botões
+  document.getElementById('mood-sticker-btn-pietro')?.classList.toggle('active', author === 'Pietro');
+  document.getElementById('mood-sticker-btn-emilly')?.classList.toggle('active', author === 'Emilly');
+
+  // Atualiza seleção visual no grid
+  const container = document.getElementById('mood-sticker-container');
+  if (!container) return;
+
+  // Remove seleção de todos
+  container.querySelectorAll('.mood-sticker-card.selected').forEach(c => c.classList.remove('selected'));
+
+  // Restaura seleção da pessoa
+  const saved = _loadMoodStickerForPerson(author);
+  if (saved) {
+    const el = container.querySelector(`[data-id="${saved.id}"]`);
+    if (el) el.classList.add('selected');
+  }
+};
 
 export function initMoodStickers(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // Monta HTML: mensagem selecionada + categorias
-  let html = `<div class="mood-sticker-message" id="mood-sticker-message"></div>`;
+  // Abas de universo
+  const tabsHTML = MOOD_CAT_ORDER.map((cat, i) => `
+    <button class="mood-univ-tab${i === 0 ? ' active' : ''}" data-cat="${cat.id}">
+      ${cat.icon} ${cat.label}
+    </button>
+  `).join('');
 
-  MOOD_CAT_ORDER.forEach(cat => {
+  // Grid de figurinhas por categoria (todos os universos, mostrado/oculto via JS)
+  let gridsHTML = '';
+  MOOD_CAT_ORDER.forEach((cat, i) => {
     const stickers = STICKERS[cat.id] || [];
-    if (!stickers.length) return;
-    html += `
-      <div class="mood-sticker-category">
-        <div class="mood-sticker-cat-title">${cat.icon} ${cat.label}</div>
-        <div class="mood-sticker-grid">
-          ${stickers.map(s => `
-            <div class="mood-sticker-card" data-id="${s.id}" data-emotion="${s.emotion}" title="${s.label}">
-              <div class="mood-sticker-img-wrap">
-                <img src="${s.file}" alt="${s.label}" loading="lazy" draggable="false" class="mood-sticker-img">
-              </div>
-              <div class="mood-sticker-card-label">${s.name}</div>
-            </div>`).join('')}
-        </div>
+    gridsHTML += `
+      <div class="mood-univ-grid" id="mood-univ-${cat.id}" style="${i > 0 ? 'display:none' : ''}">
+        ${stickers.map(s => `
+          <div class="mood-sticker-card" data-id="${s.id}" data-emotion="${s.emotion}" title="${s.label}">
+            <img src="${s.file}" alt="${s.label}" loading="lazy" draggable="false" class="mood-sticker-img">
+            <div class="mood-sticker-card-label">${s.name}</div>
+          </div>`).join('')}
       </div>`;
   });
 
-  container.innerHTML = html;
+  container.innerHTML = `
+    <div class="mood-univ-tabs">${tabsHTML}</div>
+    <div class="mood-univ-grids">${gridsHTML}</div>
+  `;
 
-  // Restaura seleção salva
-  const saved = _loadMoodSticker();
-  if (saved) {
-    const el = container.querySelector(`[data-id="${saved.id}"]`);
-    if (el) el.classList.add('selected');
-    _renderMoodStickerMessage(container, saved);
-  }
+  // Restaura seleções salvas para cada pessoa
+  ['Pietro', 'Emilly'].forEach(author => {
+    const saved = _loadMoodStickerForPerson(author);
+    if (saved) {
+      const el = container.querySelector(`[data-id="${saved.id}"]`);
+      if (el) el.classList.add(`selected-${author.toLowerCase()}`);
+    }
+  });
 
-  // Eventos de clique
+  // Eventos de tab
+  container.querySelectorAll('.mood-univ-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.mood-univ-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      MOOD_CAT_ORDER.forEach(cat => {
+        const grid = container.querySelector(`#mood-univ-${cat.id}`);
+        if (grid) grid.style.display = cat.id === btn.dataset.cat ? '' : 'none';
+      });
+    });
+  });
+
+  // Eventos de clique nas figurinhas
   container.querySelectorAll('.mood-sticker-card').forEach(card => {
     card.addEventListener('click', () => {
-      // Remove seleção anterior
-      container.querySelectorAll('.mood-sticker-card.selected')
-        .forEach(c => c.classList.remove('selected'));
+      const author = _moodStickerAuthor;
+      const authorLower = author.toLowerCase();
 
-      card.classList.add('selected');
+      // Remove seleção anterior desta pessoa
+      container.querySelectorAll(`.mood-sticker-card.selected-${authorLower}`)
+        .forEach(c => c.classList.remove(`selected-${authorLower}`));
 
-      // Animação bounce
+      card.classList.add(`selected-${authorLower}`);
+
+      // Animação
       card.classList.add('mood-sticker-bounce');
       setTimeout(() => card.classList.remove('mood-sticker-bounce'), 400);
 
-      // Encontra sticker
       const id = card.dataset.id;
       const sticker = Object.values(STICKERS).flat().find(s => s.id === id);
       if (!sticker) return;
 
-      sticker.savedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      _saveMoodSticker(sticker);
-      _renderMoodStickerMessage(container, sticker);
+      _saveMoodStickerForPerson(sticker, author);
 
-      // Toast global
+      // Atualiza o card de humor da pessoa no topo
+      const emojiEl = document.getElementById(`mood-emoji-${authorLower}`);
+      const labelEl = document.getElementById(`mood-label-${authorLower}`);
+      const timeEl  = document.getElementById(`mood-time-${authorLower}`);
+      const imgWrap = document.getElementById(`mood-box-${authorLower}`);
+
+      if (emojiEl) {
+        // Mostra imagem da figurinha no lugar do emoji
+        emojiEl.innerHTML = `<img src="${sticker.file}" alt="${sticker.label}" style="width:56px;height:56px;object-fit:contain;">`;
+      }
+      if (labelEl) labelEl.textContent = sticker.label;
+      if (timeEl)  timeEl.textContent  = `às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      if (imgWrap) imgWrap.classList.add('active-mood');
+
+      // Toast
       const toast = document.getElementById('toast');
       if (toast) {
-        toast.textContent = `${getEmotionEmoji(sticker.emotion)} ${sticker.label} — humor salvo!`;
+        toast.textContent = `🎭 ${sticker.label} — humor de ${author} salvo!`;
         toast.classList.add('show');
         clearTimeout(toast._mood_timer);
         toast._mood_timer = setTimeout(() => toast.classList.remove('show'), 2500);
       }
     });
+  });
+
+  // Restaura exibição no topo para ambos
+  ['Pietro', 'Emilly'].forEach(author => {
+    const saved = _loadMoodStickerForPerson(author);
+    if (!saved) return;
+    const authorLower = author.toLowerCase();
+    const emojiEl = document.getElementById(`mood-emoji-${authorLower}`);
+    const labelEl = document.getElementById(`mood-label-${authorLower}`);
+    const timeEl  = document.getElementById(`mood-time-${authorLower}`);
+    if (emojiEl) emojiEl.innerHTML = `<img src="${saved.file}" alt="${saved.label}" style="width:56px;height:56px;object-fit:contain;">`;
+    if (labelEl) labelEl.textContent = saved.label;
+    if (timeEl && saved.savedAt)  timeEl.textContent = `às ${saved.savedAt}`;
   });
 }
 

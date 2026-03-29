@@ -36,7 +36,7 @@ import {
 import { initExperience } from './experience.js';
 
 // ── Stickers (figurinhas) ──
-import { initStickers } from './stickers.js';
+import { initStickers, initMoodStickers } from './stickers.js';
 
 /* ════════════════════════════════════════════
    FIREBASE INIT
@@ -124,6 +124,7 @@ initMiniPlayerClickOutside();
    FIGURINHAS
    ════════════════════════════════════════════ */
 try { initStickers(); } catch(e) { console.error('initStickers:', e); }
+try { initMoodStickers('mood-sticker-container'); } catch(e) { console.error('initMoodStickers:', e); }
 
 /* ════════════════════════════════════════════
    GALERIA
