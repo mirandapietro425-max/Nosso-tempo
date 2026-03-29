@@ -48,6 +48,21 @@ import { initExperience } from './experience.js';
 // ── Stickers (figurinhas) ──
 import { STICKERS as _STICKERS_DATA } from './stickers.js';
 window._STICKERS = _STICKERS_DATA;
+// ── Pré-carrega imagens das figurinhas em background após o load ──
+// Garante que o mood picker abre instantaneamente, sem esperar rede
+window.addEventListener('load', () => {
+  // Pequeno delay para não competir com recursos críticos da página
+  setTimeout(() => {
+    const allStickers = Object.values(window._STICKERS || {}).flat();
+    allStickers.forEach(s => {
+      if (s.file) {
+        const img = new Image();
+        img.src = s.file; // navegador cacheia silenciosamente
+      }
+    });
+  }, 2000);
+});
+
 
 // ── Home (casinha + pet + quiz) ──
 import { initHome, awardCoins as _awardCoins } from './home.js';
@@ -894,7 +909,7 @@ function renderMoodGrid() {
     grid.classList.add('mood-grid--sticker');
     grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s) => `
       <div class="mood-sticker-pick" data-sid="${s.id}" data-cat="${moodActiveTab}" onclick="selectStickerOption(this)">
-        <img src="${s.file}" alt="${s.label}" loading="lazy" class="mood-sticker-pick-img">
+        <img src="${s.file}" alt="${s.label}" class="mood-sticker-pick-img">
         <div class="mood-sticker-pick-label">${s.name}</div>
       </div>`).join('')}
     </div>`;
@@ -984,8 +999,11 @@ async function confirmMood() {
   current.history = current.history.slice(0, 7);
 
   await setDoc(MOOD_DOC, current);
+  // Salva referências ANTES de closeMoodPicker() zerá-las
+  const _toastEmoji  = moodPickerSelected.emoji;
+  const _toastPerson = moodPickerTarget;
   closeMoodPicker();
-  showToast(`${moodPickerSelected.emoji} Humor de ${moodPickerTarget} atualizado!`);
+  showToast(`${_toastEmoji} Humor de ${_toastPerson} atualizado!`);
 
   // FIX Bug 1: atualiza UI imediatamente com os dados locais — sem esperar novo getDoc
   const _p = person; // já é lowercase
@@ -1009,8 +1027,9 @@ async function confirmMood() {
   // Atualiza histórico em background (não bloqueia a UI)
   initMoodDisplay();
 
-  // Moedas pela casinha
-  try { window.awardCoins('mood', 5, moodPickerTarget); } catch(e) {}
+  // Moedas pela casinha — usa `person` (já é lowercase) em vez de moodPickerTarget
+  // (closeMoodPicker() zeraria moodPickerTarget antes desta linha)
+  try { window.awardCoins('mood', 5, person); } catch(e) {}
   } finally {
     _savingMood = false;
   }
@@ -1713,6 +1732,39 @@ async function shareLocation(person) {
 }
 
 window.shareLocation = shareLocation;
+
+// ── FIX Bug Localização: IntersectionObserver para reforçar mapa quando section fica visível ──
+// Problema: quando o onSnapshot dispara ao carregar a página, o #location-map-wrap
+// ainda não está na viewport → Leaflet cria o mapa com tamanho 0 → pins não aparecem.
+// Solução: re-renderizar e invalidar tamanho toda vez que a section entrar na tela.
+(function initLocationObserver() {
+  const wrap = document.getElementById('location-map-wrap');
+  if (!wrap || typeof IntersectionObserver === 'undefined') return;
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && _leafletMap) {
+        // Pequeno delay para garantir que a transição CSS terminou
+        setTimeout(() => {
+          _leafletMap.invalidateSize(true);
+          const positions = [];
+          ['pietro', 'emilly'].forEach(p => {
+            if (locData[p]?.lat) positions.push([locData[p].lat, locData[p].lng]);
+          });
+          if (positions.length === 2) {
+            _leafletMap.fitBounds(positions, { padding: [40, 40] });
+          } else if (positions.length === 1) {
+            _leafletMap.setView(positions[0], 13);
+          }
+        }, 150);
+      } else if (entry.isIntersecting && !_leafletMap) {
+        // Mapa ainda não inicializado mas há dados — tenta renderizar agora
+        const { pietro, emilly } = locData;
+        if (pietro?.lat || emilly?.lat) renderEmbedMap();
+      }
+    });
+  }, { threshold: 0.1 });
+  obs.observe(wrap);
+})();
 
 // Esconde o tip e carrega o mapa direto (chave já está no código)
 // Mapa renderizado via Leaflet/OSM quando dados chegam do Firebase

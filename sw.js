@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v25
+   PIETRO & EMILLY — sw.js v27
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
 // Versão do cache — altere este valor ao fazer deploy para invalidar o cache antigo
-const CACHE_VERSION  = 'v37';
+const CACHE_VERSION  = 'v39';
 const CACHE_STATIC   = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC  = `pe-dynamic-${CACHE_VERSION}`;
 
@@ -29,7 +29,68 @@ const STATIC_ASSETS = [
   '/assets/favicon.png',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
-  // Não pré-cacheia emojis individuais (muitos arquivos) — carregados sob demanda
+  // Emojis das figurinhas — pré-cacheados para abertura instantânea do mood picker
+  '/emojis/Ariel/Ariel_Happy.png',
+  '/emojis/Ariel/Ariel_Sad.png',
+  '/emojis/Ariel/Ariel_Scared.png',
+  '/emojis/Bela/Bela_Angry.png',
+  '/emojis/Bela/Bela_Happy.png',
+  '/emojis/Bela/Bela_Sad.png',
+  '/emojis/Cinderela/Cinderela_Happy.png',
+  '/emojis/Cinderela/Cinderela_Sad.png',
+  '/emojis/Cinderela/Cinderela_Scared.png',
+  '/emojis/Crepusculo/Alice_Happy.png',
+  '/emojis/Crepusculo/Bella_Angry.png',
+  '/emojis/Crepusculo/Bella_Happy.png',
+  '/emojis/Crepusculo/Bella_Sad.png',
+  '/emojis/Crepusculo/Edward_Angry.png',
+  '/emojis/Crepusculo/Edward_Happy.png',
+  '/emojis/Crepusculo/Edward_Sad.png',
+  '/emojis/Crepusculo/Emmett_Happy.png',
+  '/emojis/Crepusculo/Jacob_Angry.png',
+  '/emojis/Crepusculo/Jacob_Happy.png',
+  '/emojis/Crepusculo/Jacob_Sad.png',
+  '/emojis/Crepusculo/Rosalie_Angry.png',
+  '/emojis/Marvel/Spider-Man_Angry.png',
+  '/emojis/Marvel/Spider-Man_Happy.png',
+  '/emojis/Marvel/Spider-Man_Sad.png',
+  '/emojis/Merida/Merida_Angry.png',
+  '/emojis/Merida/Merida_Scared.png',
+  '/emojis/Princes/Hercules_Angry.png',
+  '/emojis/Princes/Hercules_Happy.png',
+  '/emojis/Princes/Hercules_Sad.png',
+  '/emojis/Princes/Jim_Angry.png',
+  '/emojis/Princes/Jim_Happy.png',
+  '/emojis/Princes/Jim_Sad.png',
+  '/emojis/Princes/Milo_Angry.png',
+  '/emojis/Princes/Milo_Happy.png',
+  '/emojis/Princes/Quasimodo_Angry.png',
+  '/emojis/Princes/Quasimodo_Happy.png',
+  '/emojis/Princes/Quasimodo_Sad.png',
+  '/emojis/Princes/Tarzan_Angry.png',
+  '/emojis/Princes/Tarzan_Happy.png',
+  '/emojis/Princes/Tarzan_Sad.png',
+  '/emojis/Princesas/Anna_Angry.png',
+  '/emojis/Princesas/Anna_Happy.png',
+  '/emojis/Princesas/Anna_Sad.png',
+  '/emojis/Princesas/Elsa_Angry.png',
+  '/emojis/Princesas/Elsa_Happy.png',
+  '/emojis/Princesas/Elsa_Sad.png',
+  '/emojis/Princesas/Merida_Happy.png',
+  '/emojis/Princesas/Merida_Sad.png',
+  '/emojis/Princesas/Moana_Angry.png',
+  '/emojis/Princesas/Moana_Happy.png',
+  '/emojis/Princesas/Moana_Sad.png',
+  '/emojis/Princesas/Rapunzel_Angry.png',
+  '/emojis/Princesas/Rapunzel_Happy.png',
+  '/emojis/Princesas/Rapunzel_Sad.png',
+  '/emojis/Princesas/Raya_Angry.png',
+  '/emojis/Princesas/Raya_Happy.png',
+  '/emojis/Princesas/Raya_Sad.png',
+  '/emojis/Princesas/Tiana_Happy.png',
+  '/emojis/Princesas/Tiana_Happy_2.png',
+  '/emojis/Princesas/Tiana_Sad.png',
+  '/emojis/Rapunzel/Rapunzel_Scared.png',
 ];
 
 // ── INSTALL: pré-cacheia assets estáticos ──
@@ -43,7 +104,8 @@ self.addEventListener('install', (event) => {
           )
         )
       )
-      .then(() => self.skipWaiting())
+      // NÃO chama skipWaiting() no install — evita reload surpresa em abas abertas
+      // SW assume controle só quando não há abas usando a versão anterior
   );
 });
 
@@ -61,11 +123,27 @@ self.addEventListener('activate', (event) => {
             })
         )
       )
-      .then(() => self.clients.claim())
+      .then(async () => {
+        // Só assume controle imediatamente se não há abas abertas com versão antiga
+        // Isso evita o reload surpresa quando o usuário está usando o app
+        const clients = await self.clients.matchAll({ type: 'window' });
+        if (clients.length === 0) {
+          return self.clients.claim();
+        }
+        // Notifica as abas que há atualização disponível (elas mostram toast)
+        clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
+      })
   );
 });
 
 // ── FETCH: ignora requisições externas, usa network-first para locais ──
+
+// ── Aceita SKIP_WAITING sob demanda (botão "Atualizar" na página) ──
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
