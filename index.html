@@ -153,7 +153,7 @@
     .mood-tabs{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-bottom:.75rem}
     .mood-tab{font-size:.78rem;padding:.35rem .7rem;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;background:transparent;color:#b06070;transition:all .2s}
     .mood-tab.active{background:white;color:#590d22;box-shadow:0 2px 8px rgba(89,13,34,.1)}
-    .mood-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem}
+    .mood-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem}.mood-grid--sticker{display:block}
     .mood-option{display:flex;flex-direction:column;align-items:center;background:white;border:2px solid #ffeef1;border-radius:16px;padding:.7rem .3rem;cursor:pointer;transition:all .2s;gap:.25rem}
     .mood-option:hover{border-color:#e8536f;transform:scale(1.06)}
     .mood-option.selected{border-color:#e8536f;background:#fff0f3}
@@ -236,7 +236,7 @@
 </div>
 
 <!-- ── BARRA MÚSICA EVENTO ── -->
-<div class="event-music-bar" id="event-music-bar" onclick="toggleEventMusic && toggleEventMusic()">
+<div class="event-music-bar" id="event-music-bar" onclick="toggleEventMusic()">
   <div class="event-music-dot"></div>
   <span id="event-music-toggle">⏸</span>
 </div>

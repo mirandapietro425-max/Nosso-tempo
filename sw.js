@@ -20,7 +20,6 @@ const STATIC_ASSETS = [
   '/js/music.js?v=19',
   '/js/stickers.js?v=19',
   '/js/experience.js?v=19',
-  '/js/storage.js?v=19',
   '/js/app.js?v=19',
   'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap',
 ];

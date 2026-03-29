@@ -438,29 +438,6 @@ function _loadMoodStickerForPerson(author) {
   try { return JSON.parse(localStorage.getItem(_getMoodStickerKey(author)) || 'null'); } catch { return null; }
 }
 
-// Seleciona autor (Pietro / Emilly) e re-renderiza highlights
-window.selectMoodStickerAuthor = function(author) {
-  _moodStickerAuthor = author;
-
-  // Atualiza botões
-  document.getElementById('mood-sticker-btn-pietro')?.classList.toggle('active', author === 'Pietro');
-  document.getElementById('mood-sticker-btn-emilly')?.classList.toggle('active', author === 'Emilly');
-
-  // Atualiza seleção visual no grid
-  const container = document.getElementById('mood-sticker-container');
-  if (!container) return;
-
-  // Remove seleção de todos
-  container.querySelectorAll('.mood-sticker-card.selected').forEach(c => c.classList.remove('selected'));
-
-  // Restaura seleção da pessoa
-  const saved = _loadMoodStickerForPerson(author);
-  if (saved) {
-    const el = container.querySelector(`[data-id="${saved.id}"]`);
-    if (el) el.classList.add('selected');
-  }
-};
-
 export function initMoodStickers(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;

@@ -264,6 +264,7 @@
 .mood-picker-close { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--rose); font-weight: 700; }
 
 .mood-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
+.mood-grid--sticker { display: block; }
 
 .mood-option {
   display: flex; flex-direction: column; align-items: center;

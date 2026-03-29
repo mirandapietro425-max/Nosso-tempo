@@ -202,6 +202,7 @@ export function initParticles() {
     const periodId = canvas.dataset.periodId;
     const EVENT_COLORS = {
       natal:           'rgba(200,230,255,',
+      'vespera-natal': 'rgba(200,230,255,',
       'dia-namorados': 'rgba(232,83,111,',
       pascoa:          'rgba(244,135,156,',
       carnaval:        'rgba(255,200,0,',
@@ -290,7 +291,7 @@ export function initParticles() {
 
   function getDrawFn() {
     const eventId = canvas.dataset.eventId;
-    if (eventId === 'natal') return 'snowflake';
+    if (eventId === 'natal' || eventId === 'vespera-natal') return 'snowflake';
     if (eventId === 'carnaval' || eventId === 'sao-joao') return 'star';
     const periodId = canvas.dataset.periodId;
     if (periodId === 'noite' || periodId === 'madrugada') return 'star';
@@ -330,12 +331,3 @@ export function initTimeline() {
   items.forEach(el => io.observe(el));
 }
 
-// ── FAVICON BASE64 ──────────────────────────────
-export function initFavicon() {
-  const link = document.getElementById('favicon-link');
-  const icon = document.getElementById('apple-touch-icon');
-  // eslint-disable-next-line max-len
-  const BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAhjklEQVR4nOXX';
-  if (link) link.href = BASE64;
-  if (icon) icon.href = BASE64;
-}

@@ -103,8 +103,8 @@ export const MOOD_OPTIONS = [
   { emoji: '😤', label: 'Frustrado' },
   { emoji: '🥵', label: 'Estressado' },
   { emoji: '🤒', label: 'Indisposto' },
-  { emoji: '😴', label: 'Cansado' },
-  { emoji: '😇', label: 'Gratitude' },
+  { emoji: '🥱', label: 'Cansado' },
+  { emoji: '😇', label: 'Gratidão' },
   { emoji: '🌟', label: 'Inspirado' },
 ];
 
@@ -406,7 +406,7 @@ export const EVENTOS = [
     musicIdx: 0,
   },
   {
-    id: 'sao-joao', check: (d, m) => m === 5 && d >= 12 && d <= 24,
+    id: 'sao-joao', check: (d, m) => m === 5 && d >= 13 && d <= 24,
     banner: '🎉 Arraiá! Feliz Festa Junina, Pietro & Emilly! 🌽',
     popup: 'Arraiá! Festa Junina chegou — que vocês dois dancem forró juntos com muito amor e alegria 🎉🌽💃',
     elements: ['🎉','🌽','🎆','⭐','🌸','🎶','🏮'],

@@ -151,7 +151,7 @@ const EVENT_PARTICLES = {
     speed: [6, 10],
     canvas: { color: 'rgba(200,230,255,', shape: 'snowflake' },
   },
-  'dia-namorados': {
+  'namorados': {
     elements: ['💕', '❤️', '💗', '💝', '🌹', '💌', '✨'],
     rate: 400,
     size: [12, 24],
@@ -346,7 +346,7 @@ const EASTER_EGGS = {
       animation: 'bloom',
     },
   ],
-  'dia-namorados': [
+  'namorados': [
     {
       selector: '.letter-card',
       message: '💌 No Dia dos Namorados, cada palavra desta carta foi escrita com o coração cheio. "Se eu pudesse reescrever o tempo, te escolheria em cada versão da minha vida." — Pietro 💕',
@@ -377,6 +377,32 @@ const EASTER_EGGS = {
       selector: '.mood-card',
       message: '🎊 Encontraste o confete! No Carnaval, a alegria é coletiva. Mas a minha alegria mais verdadeira é reservada só para você, Emilly. Feliz Carnaval! 🎭',
       animation: 'confetti',
+    },
+  ],
+  'aniv-pietro': [
+    {
+      selector: '.letter-card',
+      message: '🎂 No seu aniversário, Pietro, a Emilly separou um segredo especial aqui. Que este dia seja tão incrível quanto você é. Feliz aniversário, meu amor! 💙',
+      animation: 'heartburst',
+    },
+    {
+      selector: '.hero-title',
+      tripleClick: true,
+      message: '🎈 Segredo de aniversário desbloqueado! \"Cada ano que passa só aumenta a certeza de que você é a pessoa certa. Parabéns, Pietro — você merece todo o amor do mundo.\" — Emilly 💙',
+      animation: 'starburst',
+    },
+  ],
+  'aniv-emilly': [
+    {
+      selector: '.letter-card',
+      message: '🎀 Hoje é o seu dia, Emilly! O Pietro escondeu um segredo aqui só para você. Você é a pessoa mais especial que ele já encontrou. Feliz aniversário, minha princesa! 💗',
+      animation: 'heartburst',
+    },
+    {
+      selector: '.hero-title',
+      tripleClick: true,
+      message: '🎈 Segredo de aniversário desbloqueado! \"Você chegou ao mundo em 24 de abril e desde então o Pietro acredita que existem dias abençoados. Feliz aniversário, minha vida!\" — Pietro 💗',
+      animation: 'starburst',
     },
   ],
 };
@@ -598,7 +624,7 @@ const ROMANTIC_MESSAGES = {
     { text: 'Você é a minha esperança mais bonita, minha Emilly. Feliz Páscoa! 🌷', from: 'Pietro' },
     { text: '"Porque assim amou Deus ao mundo..." — e assim eu te amo, completamente. ✝️', from: 'Pietro' },
   ],
-  'dia-namorados': [
+  'namorados': [
     { text: 'Hoje é o Dia dos Namorados, mas eu te amo todos os dias do ano. 💕', from: 'Pietro' },
     { text: 'Você é a razão pela qual o Dia dos Namorados é meu feriado favorito. 🌹', from: 'Pietro' },
     { text: 'Não preciso de uma data especial para te dizer que você é especial. Mas gosto de te lembrar! 💌', from: 'Pietro' },
@@ -619,6 +645,16 @@ const ROMANTIC_MESSAGES = {
     { text: 'Mais um mês e ainda não me canso de te amar. Impossível! 🥂', from: 'Pietro' },
     { text: 'Mesversário! Cada mês é uma nova razão para ser grato por te ter. 💕', from: 'Pietro' },
     { text: 'Todo dia 11 é meu dia favorito. Porque é o nosso dia. 🌹', from: 'Pietro' },
+  ],
+  'aniv-pietro': [
+    { text: 'Hoje é seu dia, Pietro! Que este aniversário seja cheio de amor e alegria. 🎂', from: 'Emilly' },
+    { text: 'Parabéns, meu amor! Fico feliz em poder comemorar mais um ano ao seu lado. 🎈', from: 'Emilly' },
+    { text: 'Você merece todo o bem deste mundo. Feliz aniversário, Pietro! 💙🎁', from: 'Emilly' },
+  ],
+  'aniv-emilly': [
+    { text: 'Feliz aniversário, Emilly! Você é a melhor coisa que já aconteceu comigo. 🎂', from: 'Pietro' },
+    { text: 'Hoje o mundo ganhou a pessoa mais linda e especial. Parabéns, minha princesa! 🎀', from: 'Pietro' },
+    { text: 'Que este aniversário seja tão incrível quanto você é todos os dias. 💗🎈', from: 'Pietro' },
   ],
 };
 
@@ -696,10 +732,11 @@ export function openEventGame(eventId) {
     pascoa:          () => _gamePascoaHunt(),
     natal:           () => _gameNatalQuiz(),
     'vespera-natal': () => _gameNatalQuiz(),
-    'dia-namorados': () => _gameLoveQuiz(),
+    'namorados': () => _gameLoveQuiz(),
     carnaval:        () => _gameCarnavalMatch(),
     mesversario:     () => _gameMesversarioMemory(),
-    halloween:      () => _gameHalloweenHunt(),
+    halloween:       () => _gameHalloweenHunt(),
+    'sao-joao':      () => _gameSaoJoaoMatch(),
   };
 
   const fn = games[eventId];
@@ -906,8 +943,138 @@ function _gameCarnavalMatch() {
 
 // ── Jogo: Memória do Mesversário ──
 function _gameMesversarioMemory() {
-  const loveEmojis = ['💕', '🌹', '💌', '🥂', '💍', '🌸'];
-  _gameCarnavalMatch(); // Reutiliza a memória mas com tema romântico
+  const pairs = ['💕', '🌹', '💌', '🥂', '💍', '🌸'];
+  const cards = [...pairs, ...pairs].sort(() => Math.random() - 0.5);
+
+  let flipped = [], matched = 0, locked = false;
+
+  const overlay = _createGameOverlay();
+  overlay.querySelector('.game-content').innerHTML = `
+    <div style="font-size:2rem;margin-bottom:0.5rem;">💕</div>
+    <h3 style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#590d22;margin-bottom:0.5rem;">Memória do Mesversário</h3>
+    <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#7a3045;font-size:1rem;margin-bottom:1.2rem;">Encontre os pares do nosso amor!</p>
+    <div id="memory-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;max-width:280px;margin:0 auto 1rem;"></div>
+    <div id="memory-msg" style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.9rem;color:#590d22;min-height:1.5rem;text-align:center;"></div>
+  `;
+
+  const grid = overlay.querySelector('#memory-grid');
+
+  cards.forEach((emoji) => {
+    const card = document.createElement('div');
+    card.dataset.emoji = emoji;
+    card.style.cssText = `
+      width:56px;height:56px;
+      background:linear-gradient(135deg,#e8536f,#ff9ab5);
+      border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.5rem;cursor:pointer;
+      transition:all 0.3s ease;
+      user-select:none;
+    `;
+    card.textContent = '💗';
+
+    card.addEventListener('click', () => {
+      if (locked || card.dataset.revealed || flipped.length >= 2) return;
+      card.textContent = emoji;
+      card.style.background = 'white';
+      card.style.border = '2px solid #e8536f';
+      card.dataset.revealed = '1';
+      flipped.push(card);
+
+      if (flipped.length === 2) {
+        locked = true;
+        if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
+          matched++;
+          flipped.forEach(c => { c.style.border = '2px solid #e8536f'; c.style.background = '#fff0f3'; });
+          flipped = [];
+          locked = false;
+          if (matched === pairs.length) {
+            setTimeout(() => {
+              overlay.querySelector('#memory-msg').innerHTML = '🎉 <strong>Você completou!</strong> \"Assim como você encontrou cada par, nós dois nos encontramos — e foi a combinação mais perfeita do universo.\" 💕';
+            }, 400);
+          }
+        } else {
+          setTimeout(() => {
+            flipped.forEach(c => { c.textContent = '💗'; c.style.background = 'linear-gradient(135deg,#e8536f,#ff9ab5)'; c.style.border = 'none'; delete c.dataset.revealed; });
+            flipped = [];
+            locked = false;
+          }, 1000);
+        }
+      }
+    });
+    grid.appendChild(card);
+  });
+
+  document.body.appendChild(overlay);
+  _setupGameClose(overlay);
+}
+
+// ── Jogo: Memória de São João ──
+function _gameSaoJoaoMatch() {
+  const pairs = ['🎆', '🌽', '🎉', '🌸', '🏮', '🎶'];
+  const cards = [...pairs, ...pairs].sort(() => Math.random() - 0.5);
+
+  let flipped = [], matched = 0, locked = false;
+
+  const overlay = _createGameOverlay();
+  overlay.querySelector('.game-content').innerHTML = `
+    <div style="font-size:2rem;margin-bottom:0.5rem;">🎆</div>
+    <h3 style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#590d22;margin-bottom:0.5rem;">Memória do Arraiá</h3>
+    <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#7a3045;font-size:1rem;margin-bottom:1.2rem;">Encontre os pares da festa junina!</p>
+    <div id="memory-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;max-width:280px;margin:0 auto 1rem;"></div>
+    <div id="memory-msg" style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.9rem;color:#590d22;min-height:1.5rem;text-align:center;"></div>
+  `;
+
+  const grid = overlay.querySelector('#memory-grid');
+
+  cards.forEach((emoji) => {
+    const card = document.createElement('div');
+    card.dataset.emoji = emoji;
+    card.style.cssText = `
+      width:56px;height:56px;
+      background:linear-gradient(135deg,#f57f17,#ffd54f);
+      border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.5rem;cursor:pointer;
+      transition:all 0.3s ease;
+      user-select:none;
+    `;
+    card.textContent = '🎪';
+
+    card.addEventListener('click', () => {
+      if (locked || card.dataset.revealed || flipped.length >= 2) return;
+      card.textContent = emoji;
+      card.style.background = 'white';
+      card.style.border = '2px solid #f57f17';
+      card.dataset.revealed = '1';
+      flipped.push(card);
+
+      if (flipped.length === 2) {
+        locked = true;
+        if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
+          matched++;
+          flipped.forEach(c => { c.style.border = '2px solid #f57f17'; c.style.background = '#fff9c4'; });
+          flipped = [];
+          locked = false;
+          if (matched === pairs.length) {
+            setTimeout(() => {
+              overlay.querySelector('#memory-msg').innerHTML = '🎉 <strong>Arraiá completo!</strong> \"Nossa história é mais colorida que qualquer festa junina!\" 💕';
+            }, 400);
+          }
+        } else {
+          setTimeout(() => {
+            flipped.forEach(c => { c.textContent = '🎪'; c.style.background = 'linear-gradient(135deg,#f57f17,#ffd54f)'; c.style.border = 'none'; delete c.dataset.revealed; });
+            flipped = [];
+            locked = false;
+          }, 1000);
+        }
+      }
+    });
+    grid.appendChild(card);
+  });
+
+  document.body.appendChild(overlay);
+  _setupGameClose(overlay);
 }
 
 // ── Jogo: Caça ao Tesouro Halloween ──
@@ -1137,7 +1304,7 @@ function _setupGameClose(overlay) {
 export function injectGameButton(eventId) {
   if (!eventId) return;
 
-  const gameEvents = ['pascoa', 'natal', 'vespera-natal', 'dia-namorados', 'carnaval', 'mesversario', 'halloween', 'sao-joao'];
+  const gameEvents = ['pascoa', 'natal', 'vespera-natal', 'namorados', 'carnaval', 'mesversario', 'halloween', 'sao-joao'];
   if (!gameEvents.includes(eventId)) return;
 
   // Evita duplicar

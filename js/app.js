@@ -12,7 +12,7 @@ import { getFirestore, doc, getDoc, setDoc, onSnapshot }
 // ── Config ──
 import {
   FIREBASE_CONFIG, CLOUDINARY_CLOUD, CLOUDINARY_PRESET, IMGBB_KEY,
-  TMDB_KEY, SENHA_MURAL, GALLERY_SLOTS, LS_DAILY_POPUP, LS_GMAPS_KEY,
+  TMDB_KEY, SENHA_MURAL, GALLERY_SLOTS, LS_DAILY_POPUP,
   PLAYLIST, RECADINHOS, MOOD_OPTIONS, DISNEY_EMILLY, DISNEY_PIETRO, EVENTOS,
   START_DATE, ANNIVERSARY_DAY, BDAY_MONTH, BDAY_DAY, EMILLY_BDAY_MONTH, EMILLY_BDAY_DAY,
 } from './config.js';
@@ -103,7 +103,7 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
   else if (day === ANNIVERSARY_DAY)                           activeEventId = 'mesversario';
   else if (month === 11 && day === 25)                        activeEventId = 'natal';
   else if (month === 11 && day === 24)                        activeEventId = 'vespera-natal';
-  else if (month === 5 && day === 12)                         activeEventId = 'dia-namorados'; // 12 de junho — Dia dos Namorados BR
+  else if (month === 5 && day === 12)                         activeEventId = 'namorados'; // 12 de junho — Dia dos Namorados BR
   else if (month === 9 && day === 31)                         activeEventId = 'halloween';
   else if (month === 5 && (day >= 13 && day <= 24))           activeEventId = 'sao-joao';
   else if (isPascoa(now))                                     activeEventId = 'pascoa';
@@ -119,6 +119,13 @@ loadYTApi();
 renderPlaylist();
 renderMiniPlayerList();
 exposeMusicGlobals();
+
+// Controla o botão de play/pause da barra de música dos eventos sazonais
+window.toggleEventMusic = function() {
+  togglePlayPause();
+  const btn = document.getElementById('event-music-toggle');
+  if (btn) btn.textContent = btn.textContent === '⏸' ? '▶' : '⏸';
+};
 initMiniPlayerClickOutside();
 
 /* ════════════════════════════════════════════
@@ -627,7 +634,7 @@ function renderMoodGrid() {
   if (!grid) return;
 
   if (moodActiveTab === 'emojis') {
-    grid.style.display = '';  // volta pro CSS padrão (grid 5 colunas)
+    grid.classList.remove('mood-grid--sticker');
     grid.innerHTML = MOOD_OPTIONS.map((m, i) => `
       <div class="mood-option" onclick="selectMoodOption(${i})" id="mood-opt-${i}">
         <span class="mood-option-emoji">${m.emoji}</span>
@@ -639,8 +646,8 @@ function renderMoodGrid() {
   // Abas de figurinhas por universo
   if (STICKER_CATS.includes(moodActiveTab)) {
     const list = (window._STICKERS?.[moodActiveTab]) || [];
-    // Mudar o grid para block e usar inner grid
-    grid.style.display = 'block';
+    // Troca para modo bloco via classe CSS (sem inline style que conflita)
+    grid.classList.add('mood-grid--sticker');
     grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s, i) => `
       <div class="mood-sticker-pick" onclick="selectStickerOption(${i}, '${moodActiveTab}')" id="mood-sopt-${moodActiveTab}-${i}">
         <img src="${s.file}" alt="${s.label}" loading="lazy" class="mood-sticker-pick-img">
@@ -806,8 +813,34 @@ async function initSpecial(type) {
     if (prevEl) prevEl.innerHTML = '';
   }
 
-  document.getElementById(`special-${type}-locked`).style.display = (!isOpen && !hasData) ? 'block' : 'none';
-  document.getElementById(`special-${type}-open`).style.display   = (isOpen && hasData)  ? 'block' : 'none';
+  // 4 estados possíveis:
+  // !isOpen && !hasData → mostra cadeado normal (ainda não é o dia, carta não escrita)
+  // !isOpen &&  hasData → mostra cadeado "carta guardada" (carta escrita, aguardando o dia)
+  //  isOpen && !hasData → mostra cadeado "aguardando" (é o dia, mas Emilly ainda não escreveu)
+  //  isOpen &&  hasData → mostra o conteúdo aberto
+  const lockedEl = document.getElementById(`special-${type}-locked`);
+  const openEl   = document.getElementById(`special-${type}-open`);
+
+  openEl.style.display = (isOpen && hasData) ? 'block' : 'none';
+
+  if (!isOpen && hasData) {
+    // Carta guardada, aguardando o dia certo
+    lockedEl.style.display = 'block';
+    const hintEl = lockedEl.querySelector('.special-lock-hint');
+    if (hintEl) hintEl.textContent = '💌 Mensagem guardada com carinho — abre no dia certo 🔒';
+  } else if (isOpen && !hasData) {
+    // É o dia, mas ainda sem carta
+    lockedEl.style.display = 'block';
+    const hintEl = lockedEl.querySelector('.special-lock-hint');
+    if (hintEl) hintEl.textContent = '⏳ Ainda não tem mensagem guardada aqui...';
+  } else if (!isOpen && !hasData) {
+    lockedEl.style.display = 'block';
+    const hintEl = lockedEl.querySelector('.special-lock-hint');
+    // Restaura o texto original conforme o tipo
+    if (hintEl) hintEl.textContent = type === 'bday' ? 'Abre no dia 9 de janeiro 🎁' : 'Abre todo dia 11 🥂';
+  } else {
+    lockedEl.style.display = 'none';
+  }
 
   if (isOpen && hasData) {
     const content = document.getElementById(`special-${type}-content`);
@@ -900,7 +933,10 @@ let calDayData   = {};
 let calModalData = { text: '', media: [], comments: [] };
 
 function calKey(y, m, d) { return `cal_${y}_${String(m + 1).padStart(2, '0')}_${String(d).padStart(2, '0')}`; }
-function isBirthday(y, m, d) { return m === EMILLY_BDAY_MONTH && d === EMILLY_BDAY_DAY; }
+function isBirthday(y, m, d) {
+  return (m === EMILLY_BDAY_MONTH && d === EMILLY_BDAY_DAY) ||
+         (m === BDAY_MONTH        && d === BDAY_DAY);
+}
 
 async function getCalDay(key) {
   try {
@@ -979,7 +1015,9 @@ async function openCalModal(d) {
   if (dateEl) {
     dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
     if (isBirthday(calYear, calMonth, d)) {
-      dateEl.innerHTML += ' 🎂<br><span style="font-size:0.9rem;color:#856404;font-style:italic;">Feliz aniversário, Emilly! 💕</span>';
+      const _isPietro = calMonth === BDAY_MONTH && d === BDAY_DAY;
+      const _bdayName = _isPietro ? 'Pietro 💙' : 'Emilly 💗';
+      dateEl.innerHTML += ' 🎂<br><span style="font-size:0.9rem;color:#856404;font-style:italic;">Feliz aniversário, ' + _bdayName + '! 💕</span>';
     }
   }
 

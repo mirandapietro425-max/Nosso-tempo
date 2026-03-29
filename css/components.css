@@ -405,7 +405,7 @@
   position: fixed; inset: 0;
   background: var(--velvet-alpha-55);
   backdrop-filter: blur(4px);
-  z-index: 10000;
+  z-index: 100000;
   display: flex; align-items: center; justify-content: center;
   padding: 1.5rem;
   opacity: 0; transition: opacity var(--transition-slow); pointer-events: none;
