@@ -3,9 +3,9 @@
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'pe-cache-v19';
-const CACHE_STATIC  = 'pe-static-v19';
-const CACHE_DYNAMIC = 'pe-dynamic-v19';
+const CACHE_NAME    = 'pe-cache-v20';
+const CACHE_STATIC  = 'pe-static-v20';
+const CACHE_DYNAMIC = 'pe-dynamic-v20';
 
 const STATIC_ASSETS = [
   '/',
@@ -60,7 +60,11 @@ self.addEventListener('fetch', (event) => {
       url.hostname.includes('imgbb.com') ||
       url.hostname.includes('themoviedb.org') ||
       url.hostname.includes('youtube.com') ||
-      url.hostname.includes('nominatim.openstreetmap.org')) {
+      url.hostname.includes('nominatim.openstreetmap.org') ||
+      url.hostname.includes('tile.openstreetmap.org') ||
+      url.hostname.includes('cdnjs.cloudflare.com') ||
+      url.hostname.includes('fonts.googleapis.com') ||
+      url.hostname.includes('fonts.gstatic.com')) {
     return;
   }
 

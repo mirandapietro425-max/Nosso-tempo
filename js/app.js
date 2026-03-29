@@ -1222,7 +1222,9 @@ function renderEmbedMap() {
       _leafletMap.setView(positions[0], 13);
     }
 
-    setTimeout(() => _leafletMap.invalidateSize(), 100);
+    // Garante que o Leaflet recalcula o tamanho após o container ser exibido
+    setTimeout(() => _leafletMap.invalidateSize(), 150);
+    setTimeout(() => _leafletMap.invalidateSize(), 500);
   });
 }
 
@@ -1317,8 +1319,6 @@ onSnapshot(LOC_DOC, (snap) => {
     locData.pietro = data.pietro || null;
     locData.emilly = data.emilly || null;
     updateLocUI();
-    // Renderiza mapa iframe imediatamente se há coordenadas
-    if (locData.pietro?.lat || locData.emilly?.lat) renderEmbedMap();
   }
 });
 
