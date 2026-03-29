@@ -383,13 +383,13 @@ function renderPlayerSelect(wrap){
       <div class="player-select-title">💕 Quem é você?</div>
       <div class="player-select-sub">Cada um tem sua própria casinha e progresso</div>
       <div class="player-select-grid">
-        <button class="player-card player-card-pietro" onclick="window._homeSelectPlayer('pietro')">
+        <button class="player-card player-card-pietro" onclick="window._homeSelectPlayer('pietro')" ontouchend="event.preventDefault();window._homeSelectPlayer('pietro')">
           <div class="player-card-emoji">💙</div>
           <div class="player-card-name">Pietro</div>
           <div class="player-card-desc">Programador & arquiteto da nossa história</div>
           <div class="player-card-btn">Sou eu!</div>
         </button>
-        <button class="player-card player-card-emilly" onclick="window._homeSelectPlayer('emilly')">
+        <button class="player-card player-card-emilly" onclick="window._homeSelectPlayer('emilly')" ontouchend="event.preventDefault();window._homeSelectPlayer('emilly')">
           <div class="player-card-emoji">💗</div>
           <div class="player-card-name">Emilly</div>
           <div class="player-card-desc">Designer & coração da nossa casinha</div>
@@ -793,11 +793,12 @@ export function initHome(db){
             _state.selectedPlayer=_activePlayer; // mantém consistência
           } else {
             _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
-            // Restaura jogador ativo: prioriza sessão local (evita resetar mid-game)
+            // Sempre pede pra escolher o jogador — nunca restaura automaticamente
             if(_activePlayer){
               _state.selectedPlayer=_activePlayer;
-            } else if(_state.selectedPlayer){
-              _activePlayer=_state.selectedPlayer;
+            } else {
+              _activePlayer=null;
+              _state.selectedPlayer=null;
             }
           }
           // Garante estrutura de cada jogador
