@@ -241,13 +241,18 @@ function showToastNativo(msg){ import("./ui.js").then(m=>m.showToast(msg)); }
 /* ════ COINS ════ */
 export function awardCoins(reason,amount,playerName){
   // Se playerName fornecido, usa ele diretamente; senão usa o jogador ativo
-  const ps = playerName ? (_state[playerName.toLowerCase()] || null) : playerState();
+  const resolvedName = playerName ? playerName.toLowerCase() : _activePlayer;
+  const ps = resolvedName ? (_state[resolvedName] || null) : null;
   if(!ps)return;
   const today=todayStr();
   if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
   if(ps.earnedToday[reason])return;
   ps.earnedToday[reason]=true; ps.coins+=amount;
-  saveState(); renderCoins(); renderEarnList();
+  saveState();
+  // Só re-renderiza a UI de moedas/ganhos se for o jogador ativo
+  if(!_activePlayer || resolvedName===_activePlayer){
+    renderCoins(); renderEarnList();
+  }
   spawnCoinPop(amount,window.innerWidth/2-30,window.innerHeight/2);
   showToastNativo(`🪙 +${amount} moedas!`);
 }
@@ -488,7 +493,7 @@ function renderCasinha(wrap){
   if(sv?.fase==="exterior" && doneItems>=4) avancarBtn=`<button class="avancar-btn" onclick="window._homeAvancarFase()">🌳 Avançar para o Jardim</button>`;
   else if(sv?.fase==="jardim" && doneItems>=4) avancarBtn=`<button class="avancar-btn" onclick="window._homeAvancarFase()">🏠 Avançar para o Interior</button>`;
   else if(sv?.fase==="interior" && doneItems>=6) avancarBtn=`<button class="avancar-btn" onclick="window._homeCompletarCasa()">🎉 Casa Completa!</button>`;
-  else avancarBtn=`<div class="avancar-hint">Compre mais itens para avançar de fase (${doneItems} de ${sv?.fase==="interior"?6:4} necessários)</div>`;
+  else { const needed=sv?.fase==="interior"?6:4; avancarBtn=`<div class="avancar-hint">Compre mais itens para avançar de fase (${doneItems} de ${needed} necessários)</div>`; }
 
   const isPietro=_activePlayer==="pietro";
   wrap.innerHTML=`${eventoDiario}
@@ -653,10 +658,12 @@ function renderPet(){
   const adopted=ps?.pet?.adopted;
   document.querySelectorAll(".pet-stats,.pet-actions").forEach(el=>el.style.display=adopted?"":"none");
   if(!adopted){
-    if((currentSave()?.level||0)>=2){
+    const saveLevel = currentSave()?.level ?? 0;
+    if(saveLevel>=2){
       petWrap.innerHTML=`<div class="adocao-wrap"><div class="adocao-titulo">🐱 Escolha seu gatinho!</div><div class="adocao-subtitulo">Adoção gratuita 🏡</div><div class="adocao-grid">${GATOS_ADOCAO.map(g=>`<div class="adocao-card" onclick="window._homeAdotarGato('${g.id}')"><div class="adocao-emoji">${g.emoji}</div><div class="adocao-nome">${g.nome}</div><div class="adocao-raca">${g.raca}</div><div class="adocao-personalidade">${g.personalidade}</div><button class="adocao-btn">Adotar 🐾</button></div>`).join("")}</div></div>`;
     } else {
-      petWrap.innerHTML=`<div class="pet-locked"><div style="font-size:3rem">🔒</div><div style="font-size:.9rem;margin-top:.5rem;color:#c9a9b0">Alcance o <strong>Nível 2</strong><br>para adotar um gatinho!</div></div>`;
+      const lvAtual=currentSave()?.level??0;
+      petWrap.innerHTML=`<div class="pet-locked"><div style="font-size:3rem">🔒</div><div style="font-size:.9rem;margin-top:.5rem;color:#c9a9b0">${saveLevel===0?"Compre um terreno primeiro!":"Alcance o <strong>Nível 2</strong> (você está no "+(lvAtual||1)+") para adotar um gatinho!"}</div></div>`;
     }
     return;
   }
@@ -702,7 +709,20 @@ window._homeConfirmarAdocao=function(gatoId){
   spawnHearts(window.innerWidth/2,window.innerHeight/3,10);
 };
 
-function petDecay(){ const ps=playerState(); if(!ps?.pet?.adopted)return; const last=ps.pet.lastFed?new Date(ps.pet.lastFed):null; if(last){ const h=(Date.now()-last.getTime())/3600000; ps.pet.hunger=Math.max(0,ps.pet.hunger-Math.min(h*8,40)); ps.pet.energy=Math.max(0,ps.pet.energy-Math.min(h*5,30)); ps.pet.happy=Math.max(0,ps.pet.happy-Math.min(h*4,25)); } }
+function petDecay(){
+  const ps=playerState(); if(!ps?.pet?.adopted)return;
+  const last=ps.pet.lastDecay?new Date(ps.pet.lastDecay):(ps.pet.lastFed?new Date(ps.pet.lastFed):null);
+  if(last){
+    const h=Math.min((Date.now()-last.getTime())/3600000, 8); // máx 8h de decay acumulado
+    if(h>0.1){ // só aplica se passou mais de 6 minutos
+      ps.pet.hunger=Math.max(0,ps.pet.hunger-Math.round(h*8));
+      ps.pet.energy=Math.max(0,ps.pet.energy-Math.round(h*5));
+      ps.pet.happy=Math.max(0,ps.pet.happy-Math.round(h*4));
+    }
+  }
+  // Atualiza lastDecay para agora — evita re-calcular o mesmo intervalo em snapshots futuros
+  ps.pet.lastDecay=new Date().toISOString();
+}
 // Bug #3 fix: flag impede múltiplos intervalos empilhados (causava decay acelerado e writes duplicados)
 let _petDecayStarted = false;
 function startPetDecayInterval(){
@@ -762,9 +782,10 @@ window._homeSelectPlayerFromQuiz=function(player){
   _state.selectedPlayer=player;
   if(!_state[player]) _state[player]=JSON.parse(JSON.stringify(DEFAULT_PLAYER));
   renderCoins(); renderLevel(); renderEarnList(); renderRPG();
+  renderQuiz(); // renderiza imediatamente, não espera o save
   const nome=player==="pietro"?"Pietro 💙":"Emilly 💗";
   showToastNativo(`Olá, ${nome}! Boa sorte no quiz! 🎮`);
-  saveState().finally(()=>{ _selecting=false; renderQuiz(); });
+  saveState().finally(()=>{ _selecting=false; });
 };
 
 window._homeAnswerQuiz=function(idx,btn){
@@ -775,15 +796,16 @@ window._homeAnswerQuiz=function(idx,btn){
   if(!correct)btn.classList.add("wrong");
   const fb=document.getElementById("quiz-feedback"); if(fb){ fb.className=`quiz-feedback show ${correct?"correct":"wrong"}`; fb.textContent=correct?`✓ Correto! +15 🪙 para a casinha!`:`✗ Era "${_currentQ.opts[_currentQ.ans]}" — mas tudo bem!`; }
   if(!ps.quiz)ps.quiz={}; ps.quiz.lastDate=today;
-  if(correct){ 
-    // Usa awardCoins para marcar earnedToday e atualizar a lista "Como ganhar moedas"
-    ps.coins+=15; saveState(); renderCoins(); 
-    spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3); 
-    if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
-    ps.earnedToday.quiz=true;
-    if(ps.pet?.adopted){ ps.pet.happy=Math.min(100,ps.pet.happy+10); renderPet(); } 
-  } else saveState();
-  renderEarnList(); showPetBubble(correct?"Acertou! 🎉":"Quase! Você consegue! 💪");
+  // Marca quiz como feito hoje independente de acertar ou errar
+  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
+  ps.earnedToday.quiz=true;
+  if(correct){
+    ps.coins+=15;
+    spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3);
+    if(ps.pet?.adopted){ ps.pet.happy=Math.min(100,ps.pet.happy+10); renderPet(); }
+  }
+  saveState(); renderCoins(); renderEarnList();
+  showPetBubble(correct?"Acertou! 🎉":"Quase! Você consegue! 💪");
   setTimeout(()=>renderQuiz(),2500);
 };
 
@@ -830,7 +852,17 @@ export function initHome(db){
             if(data[other]) _state[other]=data[other];
             _state.selectedPlayer=_activePlayer; // mantém consistência
           } else {
-            _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
+            // BUG7 fix: se há save pendente (_saveTimer), não sobrescreve o jogador ativo
+            // para evitar perder compras feitas antes do Firebase confirmar
+            const safeMerge = JSON.parse(JSON.stringify(DEFAULT_HOME));
+            Object.assign(safeMerge, data);
+            if(_activePlayer && _saveTimer){
+              // Save pendente: preserva dados locais do jogador ativo, atualiza só o outro
+              const other=_activePlayer==="pietro"?"emilly":"pietro";
+              if(data[other]) safeMerge[other]=data[other];
+              safeMerge[_activePlayer]=_state[_activePlayer];
+            }
+            _state=safeMerge;
             // Sempre pede pra escolher o jogador — nunca restaura automaticamente
             if(_activePlayer){
               _state.selectedPlayer=_activePlayer;
