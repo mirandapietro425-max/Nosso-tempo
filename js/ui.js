@@ -203,7 +203,7 @@ export function initParticles() {
     const EVENT_COLORS = {
       natal:           'rgba(200,230,255,',
       'vespera-natal': 'rgba(200,230,255,',
-      'dia-namorados': 'rgba(232,83,111,',
+      'namorados':     'rgba(232,83,111,',
       pascoa:          'rgba(244,135,156,',
       carnaval:        'rgba(255,200,0,',
       'sao-joao':      'rgba(255,165,0,',

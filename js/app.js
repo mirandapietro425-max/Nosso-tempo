@@ -1151,46 +1151,29 @@ loadCalMonth();
    ════════════════════════════════════════════ */
 const GMAPS_KEY = 'AIzaSyCrv59xEUDSGhSHng0jeOvKLWt3gW4WeOM';
 let locData  = { pietro: null, emilly: null };
-let gMap     = null;
-let gMarkers = { pietro: null, emilly: null };
-
-// ── Carrega a API do Google Maps ──
-function loadGoogleMaps() {
-  if (document.getElementById('gmaps-script')) return;
-  const s   = document.createElement('script');
-  s.id      = 'gmaps-script';
-  s.src     = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=initLocationMap&loading=async`;
-  s.async   = true;
-  s.defer   = true;
-  // Fallback: se a API falhar (ex: domínio bloqueado), usa iframe do Google Maps
-  s.onerror = () => {
-    console.warn('Google Maps API falhou, usando fallback de iframe');
-    useFallbackMap();
-  };
-  document.head.appendChild(s);
-}
-
-function useFallbackMap() {
+// ── Renderiza o mapa via iframe embed (sem restrição de domínio) ──
+function renderEmbedMap() {
   const { pietro, emilly } = locData;
   const mapDiv = document.getElementById('location-map');
   const ph     = document.getElementById('location-map-placeholder');
   if (!mapDiv) return;
   if (!pietro?.lat && !emilly?.lat) return;
+
   mapDiv.style.display = 'block';
   if (ph) ph.style.display = 'none';
 
-  // Se tiver os dois, centraliza entre eles
   let src;
   if (pietro?.lat && emilly?.lat) {
-    const midLat = (pietro.lat + emilly.lat) / 2;
-    const midLng = (pietro.lng + emilly.lng) / 2;
-    // Mostra marcadores dos dois via embed com query de busca múltipla
-    src = `https://www.google.com/maps/embed/v1/directions?key=AIzaSyCrv59xEUDSGhSHng0jeOvKLWt3gW4WeOM&origin=${pietro.lat},${pietro.lng}&destination=${emilly.lat},${emilly.lng}&mode=driving`;
+    src = `https://www.google.com/maps/embed/v1/directions?key=${GMAPS_KEY}&origin=${pietro.lat},${pietro.lng}&destination=${emilly.lat},${emilly.lng}&mode=driving`;
   } else {
     const lat = pietro?.lat ?? emilly?.lat;
     const lng = pietro?.lng ?? emilly?.lng;
-    src = `https://www.google.com/maps/embed/v1/place?key=AIzaSyCrv59xEUDSGhSHng0jeOvKLWt3gW4WeOM&q=${lat},${lng}&zoom=12`;
+    src = `https://www.google.com/maps/embed/v1/place?key=${GMAPS_KEY}&q=${lat},${lng}&zoom=13`;
   }
+
+  // Só recria o iframe se a src mudou (evita flicker)
+  const existing = mapDiv.querySelector('iframe');
+  if (existing && existing.src === src) return;
 
   mapDiv.innerHTML = `<iframe
     width="100%" height="100%"
@@ -1201,100 +1184,10 @@ function useFallbackMap() {
   </iframe>`;
 }
 
-// Callback global chamado pela API do Google Maps
-window.initLocationMap = function () {
-  const mapDiv     = document.getElementById('location-map');
-  const placeholder = document.getElementById('location-map-placeholder');
-  if (!mapDiv) return;
-  mapDiv.style.display = 'block';
-  if (placeholder) placeholder.style.display = 'none';
 
-  gMap = new google.maps.Map(mapDiv, {
-    zoom: 5,
-    center: { lat: -15.77, lng: -47.92 }, // Brasil
-    mapTypeId: 'roadmap',
-    styles: [
-      { featureType: 'all',     elementType: 'geometry',         stylers: [{ color: '#fff0f3' }] },
-      { featureType: 'water',   elementType: 'geometry',         stylers: [{ color: '#ffd6de' }] },
-      { featureType: 'road',    elementType: 'geometry',         stylers: [{ color: '#ffffff' }] },
-      { featureType: 'road',    elementType: 'geometry.stroke',  stylers: [{ color: '#f4879c' }] },
-      { featureType: 'poi',     elementType: 'geometry',         stylers: [{ color: '#ffe0e8' }] },
-      { featureType: 'transit', elementType: 'geometry',         stylers: [{ color: '#ffe0e8' }] },
-      { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
-      { elementType: 'labels.text.fill',   stylers: [{ color: '#590d22' }] },
-    ],
-    disableDefaultUI:   false,
-    zoomControl:        true,
-    streetViewControl:  false,
-    mapTypeControl:     false,
-  });
 
-  // Se já tiver dados quando o mapa carregar, plota os pins
-  renderMapPins();
-};
 
-// ── Pins com cores distintas por pessoa ──
-function getPinConfig(person) {
-  return person === 'pietro'
-    ? { label: 'P', color: '#4a90d9', title: 'Pietro 💙' }
-    : { label: 'E', color: '#e8536f', title: 'Emilly 💗' };
-}
 
-function renderMapPins() {
-  if (!gMap) {
-    useFallbackMap();
-    return;
-  }
-  const positions = [];
-
-  ['pietro', 'emilly'].forEach(person => {
-    const d = locData[person];
-    if (!d?.lat) return;
-
-    const cfg = getPinConfig(person);
-    const pos = { lat: d.lat, lng: d.lng };
-    positions.push(pos);
-
-    if (gMarkers[person]) {
-      // Atualiza posição do pin existente
-      gMarkers[person].setPosition(pos);
-    } else {
-      // Cria pin novo
-      gMarkers[person] = new google.maps.Marker({
-        position: pos,
-        map:      gMap,
-        title:    cfg.title,
-        icon: {
-          path:          google.maps.SymbolPath.CIRCLE,
-          scale:         14,
-          fillColor:     cfg.color,
-          fillOpacity:   1,
-          strokeColor:   '#ffffff',
-          strokeWeight:  3,
-        },
-        label: { text: cfg.label, color: '#fff', fontWeight: 'bold', fontSize: '12px' },
-      });
-
-      // Info window ao clicar no pin
-      const iw = new google.maps.InfoWindow({
-        content: `<div style="font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#590d22;padding:0.2rem 0.4rem">
-          <strong>${cfg.title}</strong><br>${d.city || ''}
-        </div>`
-      });
-      gMarkers[person].addListener('click', () => iw.open(gMap, gMarkers[person]));
-    }
-  });
-
-  // Ajusta o zoom para mostrar os dois pins
-  if (positions.length === 2) {
-    const bounds = new google.maps.LatLngBounds();
-    positions.forEach(p => bounds.extend(p));
-    gMap.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 });
-  } else if (positions.length === 1) {
-    gMap.setCenter(positions[0]);
-    gMap.setZoom(12);
-  }
-}
 
 // ── Distância entre os dois ──
 function calcDistance(lat1, lng1, lat2, lng2) {
@@ -1384,7 +1277,7 @@ function updateLocUI() {
     distDiv?.classList.remove('show');
   }
 
-  renderMapPins();
+  renderEmbedMap();
 }
 
 // ── Escuta Firebase em tempo real ──
@@ -1394,14 +1287,8 @@ onSnapshot(LOC_DOC, (snap) => {
     locData.pietro = data.pietro || null;
     locData.emilly = data.emilly || null;
     updateLocUI();
-    // Se o mapa ainda não inicializou mas já temos coords, prepara o div
-    // para que o callback initLocationMap já plote os pins ao carregar
-    if (!gMap && (locData.pietro?.lat || locData.emilly?.lat)) {
-      const mapDiv = document.getElementById('location-map');
-      const ph     = document.getElementById('location-map-placeholder');
-      if (mapDiv) mapDiv.style.display = 'block';
-      if (ph)     ph.style.display     = 'none';
-    }
+    // Renderiza mapa iframe imediatamente se há coordenadas
+    if (locData.pietro?.lat || locData.emilly?.lat) renderEmbedMap();
   }
 });
 
@@ -1442,7 +1329,7 @@ window.shareLocation = shareLocation;
 
 // Esconde o tip e carrega o mapa direto (chave já está no código)
 const _keyTip = document.getElementById('location-key-tip'); if (_keyTip) _keyTip.style.display = 'none';
-loadGoogleMaps();
+// Mapa renderizado via iframe embed quando dados chegam do Firebase
 
 /* ════════════════════════════════════════════
    EVENTOS SAZONAIS
