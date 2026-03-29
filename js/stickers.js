@@ -11,7 +11,7 @@
 /* ════════════════════════════════════════════
    BANCO DE DADOS DE FIGURINHAS
    ════════════════════════════════════════════ */
-const BASE = 'assets/stickers';
+const BASE = 'emojis';
 
 export const STICKER_CATEGORIES = [
   {
