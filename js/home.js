@@ -172,7 +172,7 @@ const QUIZ_QUESTIONS = [
 // Template para os dados de cada jogador (separado por pessoa)
 const DEFAULT_PLAYER = {
   gamePhase:"intro", currentSave:0, saves:[],
-  coins:200,
+  coins:300, // 300 garante que dá pra comprar o terreno mais barato (240🪙) e ainda sobra pra começar
   pet:{ adopted:false, gatoId:null, nome:null, hunger:80, energy:80, happy:80, love:80, lastFed:null, lastPet:null, lastPlayed:null, lastSlept:null },
   quiz:{ lastDate:null },
   earnedToday:{ date:null, mood:false, location:false, mural:false, quiz:false },
@@ -291,6 +291,8 @@ function checkLevelUp(){
         setTimeout(()=>_levelUpShown.delete(modalKey), 5000); // limpa após 5s
       }
       if(lv.unlocks?.includes("cat")) showToastNativo("🐱 Adoção de gato desbloqueada! Aba Pet!");
+      // Bug 1 fix: nivéis 3–5 avisam qual fase da casa está disponível
+      if(lv.unlocks?.includes("interior_hint")) showToastNativo("🏠 Avance para o Interior quando o jardim estiver pronto!");
     }
   }
   if(leveled) saveState();
@@ -319,7 +321,8 @@ function renderLevel(){
     document.querySelectorAll(".home-xp-fill").forEach(el=>el.style.width="100%");
     document.querySelectorAll(".home-xp-label").forEach(el=>el.textContent="Nível máximo! 🏆");
   } else {
-    const xpAtual=xp-XP_THRESHOLD[lvl];
+    // Bug 4 fix: clampeia xpAtual a 0 para evitar valor negativo se xp < threshold (ex: save antigo)
+    const xpAtual=Math.max(0,xp-XP_THRESHOLD[lvl]);
     const xpNeeded=XP_THRESHOLD[lvl+1]-XP_THRESHOLD[lvl];
     const pct=Math.min(100,Math.round((xpAtual/xpNeeded)*100));
     document.querySelectorAll(".home-xp-fill").forEach(el=>el.style.width=pct+"%");
@@ -668,11 +671,15 @@ function renderPet(){
   const adopted=ps?.pet?.adopted;
   document.querySelectorAll(".pet-stats,.pet-actions").forEach(el=>el.style.display=adopted?"":"none");
   if(!adopted){
-    const saveLevel = currentSave()?.level ?? 0;
+    // Bug 2 fix: usa o maior nível entre TODOS os saves do jogador, não só o save atual
+    // Evita bloquear/desbloquear pet errado ao trocar de save
+    const ps2 = playerState();
+    const maxLevel = ps2?.saves?.reduce((max, sv) => Math.max(max, sv.level || 1), 0) ?? 0;
+    const saveLevel = maxLevel;
     if(saveLevel>=2){
       petWrap.innerHTML=`<div class="adocao-wrap"><div class="adocao-titulo">🐱 Escolha seu gatinho!</div><div class="adocao-subtitulo">Adoção gratuita 🏡</div><div class="adocao-grid">${GATOS_ADOCAO.map(g=>`<div class="adocao-card" onclick="window._homeAdotarGato('${g.id}')"><div class="adocao-emoji">${g.emoji}</div><div class="adocao-nome">${g.nome}</div><div class="adocao-raca">${g.raca}</div><div class="adocao-personalidade">${g.personalidade}</div><button class="adocao-btn">Adotar 🐾</button></div>`).join("")}</div></div>`;
     } else {
-      const lvAtual=currentSave()?.level??0;
+      const lvAtual = maxLevel || 0;
       petWrap.innerHTML=`<div class="pet-locked"><div style="font-size:3rem">🔒</div><div style="font-size:.9rem;margin-top:.5rem;color:#c9a9b0">${saveLevel===0?"Compre um terreno primeiro!":"Alcance o <strong>Nível 2</strong> (você está no "+(lvAtual||1)+") para adotar um gatinho!"}</div></div>`;
     }
     return;
