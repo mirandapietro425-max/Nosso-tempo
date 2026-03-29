@@ -178,11 +178,15 @@ export function initDaily() {
       setTimeout(() => openDailyPopup(), 1800);
     } else {
       // Primeira visita da sessão: carta de boas-vindas vai aparecer em 800ms
-      // Aguarda tempo suficiente para o usuário ler e fechar a carta (~8s)
-      setTimeout(() => {
-        // Só abre se a carta já foi dispensada (ou se passou tempo demais)
-        openDailyPopup();
-      }, 8500);
+      // Tenta a cada 500ms se a carta já foi fechada (_welcomeClosed), com timeout máximo de 15s
+      let _dailyAttempts = 0;
+      const _dailyInterval = setInterval(() => {
+        _dailyAttempts++;
+        if (window._welcomeClosed || _dailyAttempts >= 30) {
+          clearInterval(_dailyInterval);
+          setTimeout(() => openDailyPopup(), 600);
+        }
+      }, 500);
     }
   }
 

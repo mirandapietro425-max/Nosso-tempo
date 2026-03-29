@@ -91,8 +91,9 @@ const DREAMS_DOC       = db ? doc(db, 'dreams',        'shared') : null;
 const MURAL_DOC        = db ? doc(db, 'mural',         'shared') : null;
 const MOOD_DOC         = db ? doc(db, 'mood',          'shared') : null;
 const LOC_DOC          = db ? doc(db, 'location',      'shared') : null;
-const SPECIAL_BDAY_DOC = db ? doc(db, 'special_bday',  'shared') : null;
-const SPECIAL_MESV_DOC = db ? doc(db, 'special_mesv',  'shared') : null;
+const SPECIAL_BDAY_DOC       = db ? doc(db, 'special_bday',       'shared') : null;
+const SPECIAL_EMILLY_BDAY_DOC = db ? doc(db, 'special_bday_emilly', 'shared') : null;
+const SPECIAL_MESV_DOC       = db ? doc(db, 'special_mesv',       'shared') : null;
 const STICKERS_DOC     = db ? doc(db, 'stickers',      'shared') : null;
 
 /* ════════════════════════════════════════════
@@ -647,12 +648,14 @@ async function renderMural() {
   // Isso evita limpar quando lastClean é null (primeiro acesso) mas há mensagens novas
   // O mural só deve ser limpo na virada real do dia
   if (lastClean !== null && lastClean !== today) {
+    // Virada real do dia: limpa mensagens
     _muralLastCleanCache = today;
     await saveMural([], today);
     if (msgs.length > 0) showToast('🧹 Mural limpo! Novo dia, novos recados 💕');
     msgs = [];
   } else if (lastClean === null) {
-    // Primeiro acesso: registra o dia atual sem limpar mensagens existentes
+    // Primeiro acesso ou deploy sem lastClean: registra hoje como data base
+    // sem apagar as mensagens existentes — elas serão limpas na próxima virada do dia
     _muralLastCleanCache = today;
     await saveMural(msgs, today);
   }
@@ -1090,20 +1093,22 @@ initMoodDisplay();
 /* ════════════════════════════════════════════
    MENSAGENS ESPECIAIS
    ════════════════════════════════════════════ */
-const specialFiles = { bday: { photo: null, audio: null }, mesv: { photo: null, audio: null } };
+const specialFiles = { bday: { photo: null, audio: null }, 'bday-emilly': { photo: null, audio: null }, mesv: { photo: null, audio: null } };
 
-function isBdayToday()  { const n = new Date(); return n.getMonth() === BDAY_MONTH  && n.getDate() === BDAY_DAY; }
-function isMesvToday()  { return new Date().getDate() === ANNIVERSARY_DAY; }
+function isBdayToday()       { const n = new Date(); return n.getMonth() === BDAY_MONTH        && n.getDate() === BDAY_DAY; }
+function isEmillyBdayToday() { const n = new Date(); return n.getMonth() === EMILLY_BDAY_MONTH && n.getDate() === EMILLY_BDAY_DAY; }
+function isMesvToday()       { return new Date().getDate() === ANNIVERSARY_DAY; }
 
 function getCurrentCycleKey(type) {
   const n = new Date();
-  if (type === 'bday') return `bday_${n.getFullYear()}`;
+  if (type === 'bday')       return `bday_${n.getFullYear()}`;
+  if (type === 'bday-emilly') return `bday_emilly_${n.getFullYear()}`;
   return `mesv_${n.getFullYear()}_${String(n.getMonth() + 1).padStart(2, '0')}`;
 }
 
 async function initSpecial(type) {
-  const isOpen   = type === 'bday' ? isBdayToday() : isMesvToday();
-  const ref      = type === 'bday' ? SPECIAL_BDAY_DOC : SPECIAL_MESV_DOC;
+  const isOpen = type === 'bday' ? isBdayToday() : type === 'bday-emilly' ? isEmillyBdayToday() : isMesvToday();
+  const ref      = type === 'bday' ? SPECIAL_BDAY_DOC : type === 'bday-emilly' ? SPECIAL_EMILLY_BDAY_DOC : SPECIAL_MESV_DOC;
   if (!ref) { // APP-9: Firebase falhou, mostra estado padrão
     const lockedEl = document.getElementById(`special-${type}-locked`);
     const openEl   = document.getElementById(`special-${type}-open`);
@@ -1149,7 +1154,7 @@ async function initSpecial(type) {
     lockedEl.style.display = 'block';
     const hintEl = lockedEl.querySelector('.special-lock-hint');
     // Restaura o texto original conforme o tipo
-    if (hintEl) hintEl.textContent = type === 'bday' ? 'Abre no dia 9 de janeiro 🎁' : 'Abre todo dia 11 🥂';
+    if (hintEl) hintEl.textContent = type === 'bday' ? 'Abre no dia 9 de janeiro 🎁' : type === 'bday-emilly' ? 'Abre no dia 24 de abril 🎁' : 'Abre todo dia 11 🥂';
   } else {
     lockedEl.style.display = 'none';
   }
@@ -1204,7 +1209,7 @@ async function uploadSpecialFile(file, type) {
   }
 }
 
-const _savingSpecial = { bday: false, mesv: false };
+const _savingSpecial = { bday: false, 'bday-emilly': false, mesv: false };
 async function saveSpecial(type) {
   if (_savingSpecial[type]) return;
   _savingSpecial[type] = true;
@@ -1234,7 +1239,7 @@ async function saveSpecial(type) {
   }
 }
 
-['bday', 'mesv'].forEach(type => {
+['bday', 'bday-emilly', 'mesv'].forEach(type => {
   document.getElementById(`special-${type}-photo`)?.addEventListener('change', function () {
     const file = this.files[0]; if (!file) return;
     specialFiles[type].photo = file;
@@ -1264,6 +1269,7 @@ async function saveSpecial(type) {
 window.saveSpecial       = saveSpecial;
 window.toggleSpecialSend = toggleSpecialSend;
 initSpecial('bday');
+initSpecial('bday-emilly');
 initSpecial('mesv');
 
 /* ════════════════════════════════════════════
@@ -2011,18 +2017,18 @@ window.shareLocation = shareLocation;
       </div>`;
     document.body.appendChild(overlay);
 
-    document.getElementById('welcome-close-btn').addEventListener('click', () => {
+    function closeWelcome() {
       overlay.style.opacity = '0';
       overlay.style.transition = 'opacity 0.3s ease';
-      setTimeout(() => overlay.remove(), 300);
-    });
-    overlay.addEventListener('click', e => {
-      if (e.target === overlay) {
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => overlay.remove(), 300);
-      }
-    });
+      setTimeout(() => {
+        overlay.remove();
+        // Sinaliza que a carta foi dispensada — popup diário pode abrir agora
+        // (cancela o timer de 8.5s e abre em 1s)
+        window._welcomeClosed = true;
+      }, 300);
+    }
+    document.getElementById('welcome-close-btn').addEventListener('click', closeWelcome);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeWelcome(); });
 
     // Toca música ao abrir a carta (se não tiver evento ativo)
     if (!document.body.classList.contains('event-mode')) {

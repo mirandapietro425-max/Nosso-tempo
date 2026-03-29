@@ -654,6 +654,36 @@
     </div>
   </div>
 
+  <!-- Aniversário Emilly -->
+  <div class="special-card" style="margin-top:1.5rem" id="special-bday-emilly">
+    <div class="special-locked" id="special-bday-emilly-locked">
+      <div class="special-lock-icon">🎀</div>
+      <div class="special-lock-title">Mensagem de aniversário</div>
+      <div class="special-lock-sub">do Pietro pra você 💗</div>
+      <div class="special-lock-hint">Abre no dia 24 de abril 🎁</div>
+    </div>
+    <div class="special-open" id="special-bday-emilly-open" style="display:none">
+      <div class="special-open-label">🎂 Feliz aniversário, Emilly!</div>
+      <div id="special-bday-emilly-content" class="special-content"></div>
+    </div>
+    <div class="special-send-collapsed" onclick="toggleSpecialSend('bday-emilly')">
+      <span>💙 Pietro — clique para deixar sua mensagem de aniversário</span>
+      <span class="special-arrow" id="special-bday-emilly-arrow">▼</span>
+    </div>
+    <div class="special-send" id="special-bday-emilly-send" style="display:none">
+      <textarea class="cal-modal-textarea" id="special-bday-emilly-text" placeholder="Escreva sua cartinha de aniversário pra ela..."></textarea>
+      <div class="special-send-media">
+        <input type="file" id="special-bday-emilly-photo" accept="image/*"  style="display:none">
+        <input type="file" id="special-bday-emilly-audio" accept="audio/*"  style="display:none">
+        <button class="cal-media-btn" onclick="document.getElementById('special-bday-emilly-photo').click()">📸 Adicionar foto</button>
+        <button class="cal-media-btn" onclick="document.getElementById('special-bday-emilly-audio').click()">🎙️ Adicionar áudio</button>
+      </div>
+      <div id="special-bday-emilly-preview" class="special-preview"></div>
+      <div id="special-bday-emilly-status" class="cal-upload-status"></div>
+      <button class="cal-save-btn" onclick="saveSpecial('bday-emilly')" style="margin-top:1rem">Guardar mensagem 💕</button>
+    </div>
+  </div>
+
   <!-- Mesversário -->
   <div class="special-card" style="margin-top:1.5rem" id="special-mesv">
     <div class="special-locked" id="special-mesv-locked">
