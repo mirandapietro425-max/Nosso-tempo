@@ -101,7 +101,12 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
 /* ════════════════════════════════════════════
    EXPERIENCE SYSTEM
    ════════════════════════════════════════════ */
-// Detecta evento ativo (mesmo lógica do bloco de eventos sazonais)
+// FIX: usa EVENTOS.find() — mesma lógica do initEventos para garantir que o experience module
+// (partículas, easter eggs, mensagens) receba o MESMO evento que o visual do banner/fundo.
+// Antes, detectAndInitExperience tinha sua própria lista de if/else que omitia 9 eventos
+// (ano-novo, reveillon, dia-maes, dia-pais, finados, independencia, tiradentes, republica,
+// aparecida), fazendo com que as partículas ficassem no estilo padrão enquanto o banner
+// mostrava o evento correto.
 (function detectAndInitExperience() {
   const now   = new Date();
   const day   = now.getDate();
@@ -112,26 +117,23 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
     const h=(19*a+b-d2-g+15)%30,i2=Math.floor(c/4),k=c%4,l=(32+2*e+2*i2-h-k)%7,m2=Math.floor((a+11*h+22*l)/451);
     return new Date(y,Math.floor((h+l-7*m2+114)/31)-1,((h+l-7*m2+114)%31)+1);
   }
-  function isPascoa(d) { const p=calcPascoa(d.getFullYear()); return d.getMonth()===p.getMonth()&&d.getDate()===p.getDate(); }
-  function isCarnaval(d) {
-    const p=calcPascoa(d.getFullYear()),t=new Date(p);t.setDate(p.getDate()-47);
-    const s=new Date(t);s.setDate(t.getDate()-1);
-    return (d.getMonth()===t.getMonth()&&d.getDate()===t.getDate())||(d.getMonth()===s.getMonth()&&d.getDate()===s.getDate());
-  }
+  function isPascoa(d)   { const p=calcPascoa(d.getFullYear()); return d.getMonth()===p.getMonth()&&d.getDate()===p.getDate(); }
+  function isCarnaval(d) { const p=calcPascoa(d.getFullYear()),t=new Date(p);t.setDate(p.getDate()-47);const s=new Date(t);s.setDate(t.getDate()-1); return (d.getMonth()===t.getMonth()&&d.getDate()===t.getDate())||(d.getMonth()===s.getMonth()&&d.getDate()===s.getDate()); }
+  function nthWeekday(y,m,wd,n){ let d=new Date(y,m,1),count=0; while(true){if(d.getDay()===wd){count++;if(count===n)return d;} d.setDate(d.getDate()+1); } }
+  function isDiaDasMaes(d){ const s=nthWeekday(d.getFullYear(),4,0,2); return d.getMonth()===s.getMonth()&&d.getDate()===s.getDate(); }
+  function isDiaDossPais(d){ const s=nthWeekday(d.getFullYear(),7,0,2); return d.getMonth()===s.getMonth()&&d.getDate()===s.getDate(); }
 
-  let activeEventId = null;
-
-  // Ordem de prioridade: aniversários → mesversário → datas fixas
-  if (month === BDAY_MONTH && day === BDAY_DAY)               activeEventId = 'aniv-pietro';
-  else if (month === EMILLY_BDAY_MONTH && day === EMILLY_BDAY_DAY) activeEventId = 'aniv-emilly';
-  else if (day === ANNIVERSARY_DAY)                           activeEventId = 'mesversario';
-  else if (month === 11 && day === 25)                        activeEventId = 'natal';
-  else if (month === 11 && day === 24)                        activeEventId = 'vespera-natal';
-  else if (month === 5 && day === 12)                         activeEventId = 'namorados'; // 12 de junho — Dia dos Namorados BR
-  else if (month === 9 && day === 31)                         activeEventId = 'halloween';
-  else if (month === 5 && (day >= 13 && day <= 24))           activeEventId = 'sao-joao';
-  else if (isPascoa(now))                                     activeEventId = 'pascoa';
-  else if (isCarnaval(now))                                   activeEventId = 'carnaval';
+  const dynamicChecks = {
+    'pascoa':   () => isPascoa(now),
+    'carnaval': () => isCarnaval(now),
+    'dia-maes': () => isDiaDasMaes(now),
+    'dia-pais': () => isDiaDossPais(now),
+  };
+  const found = EVENTOS.find(e => {
+    if (e.check) return e.check(day, month);
+    return dynamicChecks[e.id] ? dynamicChecks[e.id]() : false;
+  });
+  const activeEventId = found ? found.id : null;
 
   try { initExperience(activeEventId); } catch(e) { console.error('initExperience:', e); }
   // Partículas iniciam DEPOIS do experience para garantir que canvas.dataset.eventId já está setado
