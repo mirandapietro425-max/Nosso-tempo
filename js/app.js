@@ -628,6 +628,7 @@ function renderMoodGrid() {
   if (!grid) return;
 
   if (moodActiveTab === 'emojis') {
+    grid.style.display = '';  // volta pro CSS padrão (grid 5 colunas)
     grid.innerHTML = MOOD_OPTIONS.map((m, i) => `
       <div class="mood-option" onclick="selectMoodOption(${i})" id="mood-opt-${i}">
         <span class="mood-option-emoji">${m.emoji}</span>
@@ -639,6 +640,8 @@ function renderMoodGrid() {
   // Abas de figurinhas por universo
   if (STICKER_CATS.includes(moodActiveTab)) {
     const list = (window._STICKERS?.[moodActiveTab]) || [];
+    // Mudar o grid para block e usar inner grid
+    grid.style.display = 'block';
     grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s, i) => `
       <div class="mood-sticker-pick" onclick="selectStickerOption(${i}, '${moodActiveTab}')" id="mood-sopt-${moodActiveTab}-${i}">
         <img src="${s.file}" alt="${s.label}" loading="lazy" class="mood-sticker-pick-img">

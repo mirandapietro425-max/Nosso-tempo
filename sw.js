@@ -3,21 +3,21 @@
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'pe-cache-v12';
-const CACHE_STATIC  = 'pe-static-v12';
-const CACHE_DYNAMIC = 'pe-dynamic-v12';
+const CACHE_NAME    = 'pe-cache-v15';
+const CACHE_STATIC  = 'pe-static-v15';
+const CACHE_DYNAMIC = 'pe-dynamic-v15';
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/css/main.css',
-  '/css/components.css',
-  '/css/modals.css',
-  '/css/animations.css',
-  '/js/config.js',
-  '/js/ui.js',
-  '/js/music.js',
-  '/js/app.js',
+  '/css/main.css?v=14',
+  '/css/components.css?v=14',
+  '/css/modals.css?v=14',
+  '/css/animations.css?v=14',
+  '/js/config.js?v=14',
+  '/js/ui.js?v=14',
+  '/js/music.js?v=14',
+  '/js/app.js?v=14',
   'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap',
 ];
 
