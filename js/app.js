@@ -788,13 +788,11 @@ function renderMoodGrid() {
     return;
   }
 
-  // Abas de figurinhas por universo
   if (STICKER_CATS.includes(moodActiveTab)) {
     const list = (window._STICKERS?.[moodActiveTab]) || [];
-    // Troca para modo bloco via classe CSS (sem inline style que conflita)
     grid.classList.add('mood-grid--sticker');
-    grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s, i) => `
-      <div class="mood-sticker-pick" onclick="selectStickerOption(${i}, '${moodActiveTab}')" id="mood-sopt-${moodActiveTab}-${i}">
+    grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s) => `
+      <div class="mood-sticker-pick" data-sid="${s.id}" data-cat="${moodActiveTab}" onclick="selectStickerOption(this)">
         <img src="${s.file}" alt="${s.label}" loading="lazy" class="mood-sticker-pick-img">
         <div class="mood-sticker-pick-label">${s.name}</div>
       </div>`).join('')}
@@ -834,10 +832,12 @@ function selectMoodOption(i) {
   moodPickerSelected = MOOD_OPTIONS[i];
 }
 
-function selectStickerOption(i, cat) {
-  document.querySelectorAll('.mood-sticker-pick').forEach(el => el.classList.remove('selected'));
-  document.getElementById(`mood-sopt-${cat}-${i}`)?.classList.add('selected');
-  const s = (window._STICKERS?.[cat] || [])[i];
+function selectStickerOption(el) {
+  document.querySelectorAll('.mood-sticker-pick').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  const sid = el.dataset.sid;
+  const cat = el.dataset.cat;
+  const s = (window._STICKERS?.[cat] || []).find(x => x.id === sid);
   if (s) moodPickerSelected = { emoji: '🎭', label: s.label, file: s.file, isSticker: true };
 }
 
