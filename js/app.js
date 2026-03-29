@@ -78,6 +78,7 @@ const MOOD_DOC         = db ? doc(db, 'mood',          'shared') : null;
 const LOC_DOC          = db ? doc(db, 'location',      'shared') : null;
 const SPECIAL_BDAY_DOC = db ? doc(db, 'special_bday',  'shared') : null;
 const SPECIAL_MESV_DOC = db ? doc(db, 'special_mesv',  'shared') : null;
+const STICKERS_DOC     = db ? doc(db, 'stickers',      'shared') : null;
 
 /* ════════════════════════════════════════════
    UI INIT
@@ -176,8 +177,13 @@ async function getPhotos() {
 }
 
 async function setPhotos(p) {
-  if (!GALLERY_DOC) { showToast('❌ Banco de dados indisponível.'); return; } // APP-11
-  await setDoc(GALLERY_DOC, { photos: p });
+  if (!GALLERY_DOC) { showToast('❌ Banco de dados indisponível.'); return; }
+  try {
+    await setDoc(GALLERY_DOC, { photos: p });
+  } catch (err) {
+    showToast('❌ Erro ao salvar a galeria. Tente novamente.', 4000);
+    throw err;
+  }
 }
 
 async function renderGallery() {
@@ -224,11 +230,15 @@ function startUpload(i, e) {
 async function deletePhoto(i, e) {
   if (e) e.stopPropagation();
   if (!confirm('Remover esta foto?')) return;
-  const p = await getPhotos();
-  p[i] = null;
-  await setPhotos(p);
-  renderGallery();
-  showToast('🗑 Foto removida!');
+  try {
+    const p = await getPhotos();
+    p[i] = null;
+    await setPhotos(p);
+    renderGallery();
+    showToast('🗑 Foto removida!');
+  } catch (err) {
+    showToast('❌ Erro ao remover foto. Tente novamente.', 4000);
+  }
 }
 
 document.getElementById('file-input')?.addEventListener('change', async function () {
@@ -294,8 +304,13 @@ async function getMovies() {
 }
 
 async function saveMovies(m) {
-  if (!MOVIES_DOC) { showToast('❌ Banco de dados indisponível.'); return; } // APP-12
-  await setDoc(MOVIES_DOC, { movies: m });
+  if (!MOVIES_DOC) { showToast('❌ Banco de dados indisponível.'); return; }
+  try {
+    await setDoc(MOVIES_DOC, { movies: m });
+  } catch (err) {
+    showToast('❌ Erro ao salvar filmes. Tente novamente.', 4000);
+    throw err;
+  }
 }
 
 async function renderMovies() {
@@ -341,11 +356,15 @@ async function addMovie() {
 }
 
 async function toggleMovie(i) {
-  const movies = await getMovies();
-  movies[i].watched = !movies[i].watched;
-  await saveMovies(movies);
-  renderMovies();
-  if (movies[i].watched) showToast('✅ Assistido! 🥰');
+  try {
+    const movies = await getMovies();
+    movies[i].watched = !movies[i].watched;
+    await saveMovies(movies);
+    renderMovies();
+    if (movies[i].watched) showToast('✅ Assistido! 🥰');
+  } catch (err) {
+    showToast('❌ Erro ao salvar. Tente novamente.', 4000);
+  }
 }
 
 let _deletingMovie = false;
@@ -466,14 +485,22 @@ async function addMovieComment() {
   }
 }
 
+let _deletingMovieComment = false;
 async function deleteMovieComment(i) {
   if (movieModalIndex === null) return;
-  const movies = await getMovies();
-  if (!movies[movieModalIndex]) return;
-  if (!movies[movieModalIndex].comments) movies[movieModalIndex].comments = [];
-  movies[movieModalIndex].comments.splice(i, 1);
-  await saveMovies(movies);
-  renderMovieComments(movies[movieModalIndex].comments);
+  if (_deletingMovieComment) return;
+  if (!confirm('Remover este comentário?')) return;
+  _deletingMovieComment = true;
+  try {
+    const movies = await getMovies();
+    if (!movies[movieModalIndex]) return;
+    if (!movies[movieModalIndex].comments) movies[movieModalIndex].comments = [];
+    movies[movieModalIndex].comments.splice(i, 1);
+    await saveMovies(movies);
+    renderMovieComments(movies[movieModalIndex].comments);
+  } finally {
+    _deletingMovieComment = false;
+  }
 }
 
 window.addMovie          = addMovie;
@@ -572,7 +599,10 @@ async function renderMural() {
   if (!list) return;
 
   let { msgs, lastClean } = await getMural();
-  const today = new Date().toLocaleDateString('pt-BR');
+  // FIX: usar ISO YYYY-MM-DD em vez de toLocaleDateString('pt-BR') para garantir
+  // comparação consistente independente do locale do dispositivo
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   if (lastClean !== today) {
     await saveMural([], today);
     if (msgs.length > 0) showToast('🧹 Mural limpo! Novo dia, novos recados 💕');
@@ -593,7 +623,7 @@ async function renderMural() {
       mediaHTML = `<img src="${m.photo}" alt="foto" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin:0.6rem 0;cursor:pointer;" onclick="window.open('${m.photo}','_blank')">`;
     }
     div.innerHTML = `
-      <button class="mural-msg-del" onclick="deleteMural(${i})">✕</button>
+      <button class="mural-msg-del" onclick="deleteMural('${m.id || String(i)}')">✕</button>
       <div class="mural-msg-author">${sanitizeHTML(m.author)} ${m.author === 'Pietro' ? '💙' : '💗'}</div>
       ${mediaHTML}
       <div class="mural-msg-text">${sanitizeHTML(m.text)}</div>
@@ -650,7 +680,9 @@ async function addMural() {
   try {
     const { msgs } = await getMural();
     const date = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
-    const msg = { author: muralAuthor, text: text || '', date };
+    // FIX: id estável (timestamp+random) para deletar pela mensagem certa mesmo se outra for adicionada/removida em paralelo
+    const msgId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const msg = { id: msgId, author: muralAuthor, text: text || '', date };
     if (_muralPhotoUrl) msg.photo = _muralPhotoUrl;
     msgs.push(msg);
     await saveMural(msgs);
@@ -666,13 +698,16 @@ async function addMural() {
 }
 
 let _deletingMural = false;
-async function deleteMural(i) {
+async function deleteMural(idOrIndex) {
   if (_deletingMural) return;
   if (!confirm('Remover este recado?')) return;
   _deletingMural = true;
   try {
     const { msgs } = await getMural();
-    msgs.splice(i, 1);
+    // FIX: busca por id estável — se não encontrar (msgs antigas sem id), cai no índice numérico
+    const byId = msgs.findIndex(m => m.id === idOrIndex);
+    const idx  = byId !== -1 ? byId : Number(idOrIndex);
+    if (idx >= 0 && idx < msgs.length) msgs.splice(idx, 1);
     await saveMural(msgs);
     renderMural();
   } finally { _deletingMural = false; }
@@ -712,8 +747,13 @@ async function getDreams() {
 }
 
 async function saveDreams(d) {
-  if (!DREAMS_DOC) { showToast('❌ Banco de dados indisponível.'); return; } // APP-13
-  await setDoc(DREAMS_DOC, { dreams: d });
+  if (!DREAMS_DOC) { showToast('❌ Banco de dados indisponível.'); return; }
+  try {
+    await setDoc(DREAMS_DOC, { dreams: d });
+  } catch (err) {
+    showToast('❌ Erro ao salvar sonhos. Tente novamente.', 4000);
+    throw err;
+  }
 }
 
 async function renderDreams() {
@@ -758,16 +798,21 @@ async function addDream() {
 }
 
 async function toggleDream(i) {
-  const dreams = await getDreams();
-  dreams[i].done = !dreams[i].done;
-  await saveDreams(dreams);
-  renderDreams();
-  if (dreams[i].done) showToast('✨ Sonho realizado!');
+  try {
+    const dreams = await getDreams();
+    dreams[i].done = !dreams[i].done;
+    await saveDreams(dreams);
+    renderDreams();
+    if (dreams[i].done) showToast('✨ Sonho realizado!');
+  } catch (err) {
+    showToast('❌ Erro ao salvar. Tente novamente.', 4000);
+  }
 }
 
 let _deletingDream = false;
 async function deleteDream(i) {
   if (_deletingDream) return;
+  if (!confirm('Remover este sonho?')) return;
   _deletingDream = true;
   try {
     const dreams = await getDreams();
@@ -870,6 +915,7 @@ async function confirmMood() {
     showToast('😊 Escolhe uma opção primeiro!'); return;
   }
   if (_savingMood) return;
+  if (!MOOD_DOC) { showToast('❌ Banco de dados indisponível.'); return; } // guard db null
   _savingMood = true;
   try {
   const person = moodPickerTarget.toLowerCase();
@@ -885,12 +931,17 @@ async function confirmMood() {
   };
 
   // Adiciona ao histórico (máximo 7 entradas)
-  const today = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+  // FIX: usar ISO YYYY-MM-DD como key para evitar duplicatas por diferença de locale entre dispositivos
+  const _nd = new Date();
+  const today = `${_nd.getFullYear()}-${String(_nd.getMonth()+1).padStart(2,'0')}-${String(_nd.getDate()).padStart(2,'0')}`;
+  // label legível separado, só para exibição
+  const todayLabel = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
   if (!current.history) current.history = [];
-  // Remove entrada do dia de hoje se já existe
-  current.history = current.history.filter(h => h.date !== today);
+  // Remove entrada do dia de hoje se já existe (compara pela key ISO)
+  current.history = current.history.filter(h => h.date !== today && h.date !== todayLabel);
   current.history.unshift({
-    date: today,
+    date: todayLabel, // mantém label legível para display, mas key de dedup agora é ISO
+    _dateKey: today,  // key ISO para comparação futura
     pietro: current.pietro ? { emoji: current.pietro.emoji, label: current.pietro.label, file: current.pietro.file || null, isSticker: current.pietro.isSticker || false } : null,
     emilly: current.emilly ? { emoji: current.emilly.emoji, label: current.emilly.label, file: current.emilly.file || null, isSticker: current.emilly.isSticker || false } : null,
   });
@@ -1111,13 +1162,25 @@ async function saveSpecial(type) {
     const file = this.files[0]; if (!file) return;
     specialFiles[type].photo = file;
     const prevEl = document.getElementById(`special-${type}-preview`);
-    if (prevEl) prevEl.innerHTML = `<img src="${URL.createObjectURL(file)}">`;
+    if (prevEl) {
+      // FIX: revogar URL anterior antes de criar nova (evita memory leak)
+      const oldImg = prevEl.querySelector('img');
+      if (oldImg?.src?.startsWith('blob:')) URL.revokeObjectURL(oldImg.src);
+      const url = URL.createObjectURL(file);
+      prevEl.innerHTML = `<img src="${url}">`;
+    }
   });
   document.getElementById(`special-${type}-audio`)?.addEventListener('change', function () {
     const file = this.files[0]; if (!file) return;
     specialFiles[type].audio = file;
     const prevEl = document.getElementById(`special-${type}-preview`);
-    if (prevEl) prevEl.innerHTML += `<audio controls src="${URL.createObjectURL(file)}"></audio>`;
+    if (prevEl) {
+      // FIX: revogar URL anterior antes de criar nova (evita memory leak)
+      const oldAudio = prevEl.querySelector('audio');
+      if (oldAudio?.src?.startsWith('blob:')) URL.revokeObjectURL(oldAudio.src);
+      const url = URL.createObjectURL(file);
+      prevEl.innerHTML += `<audio controls src="${url}"></audio>`;
+    }
   });
 });
 
@@ -1151,7 +1214,12 @@ async function getCalDay(key) {
 
 async function saveCalDayData(key, data) {
   if (!db) { showToast('❌ Banco de dados indisponível.'); return; }
-  await setDoc(doc(db, 'calendar', key), data);
+  try {
+    await setDoc(doc(db, 'calendar', key), data);
+  } catch (err) {
+    showToast('❌ Erro ao salvar o dia. Tente novamente.', 4000);
+    throw err; // repropaga para saveCalDay liberar _savingCalDay
+  }
 }
 
 async function renderCal() {
@@ -1258,6 +1326,7 @@ function renderCalMedia() {
 }
 
 function removeCalMedia(i) {
+  if (!confirm('Remover esta mídia?')) return;
   calModalData.media.splice(i, 1);
   renderCalMedia();
 }
@@ -1278,6 +1347,7 @@ function renderCalComments() {
 }
 
 function removeCalComment(i) {
+  if (!confirm('Remover este comentário?')) return;
   calModalData.comments.splice(i, 1);
   renderCalComments();
 }
