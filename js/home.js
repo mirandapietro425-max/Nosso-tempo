@@ -239,10 +239,12 @@ function spawnHearts(x,y,count){ for(let i=0;i<(count||3);i++){ setTimeout(()=>{
 function showToastNativo(msg){ import("./ui.js").then(m=>m.showToast(msg)); }
 
 /* ════ COINS ════ */
-export function awardCoins(reason,amount){
-  const ps=playerState(); if(!ps)return;
+export function awardCoins(reason,amount,playerName){
+  // Se playerName fornecido, usa ele diretamente; senão usa o jogador ativo
+  const ps = playerName ? (_state[playerName.toLowerCase()] || null) : playerState();
+  if(!ps)return;
   const today=todayStr();
-  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false};
+  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
   if(ps.earnedToday[reason])return;
   ps.earnedToday[reason]=true; ps.coins+=amount;
   saveState(); renderCoins(); renderEarnList();
@@ -727,7 +729,21 @@ function sleepPet(){ const ps=playerState(); if(!ps?.pet?.adopted)return; ps.pet
 function renderQuiz(){
   const today=todayStr(); const wrap=document.getElementById("quiz-content"); if(!wrap)return;
   const ps=playerState();
-  if(!ps||!_activePlayer){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎮</span><div class="quiz-done-title">Quem está jogando?</div><div class="quiz-done-sub">Escolha seu personagem primeiro!</div><button class="quiz-option" style="margin-top:1rem" onclick="window._homeTab('rpg')">🏠 Ir para Nossa Casa</button></div>`; return; }
+  if(!ps||!_activePlayer){
+    wrap.innerHTML=`
+      <div class="quiz-done-msg">
+        <span class="quiz-done-icon">🎮</span>
+        <div class="quiz-done-title">Quem está jogando?</div>
+        <div class="quiz-done-sub">Escolha seu personagem para começar o quiz!</div>
+        <div style="display:flex;gap:.8rem;justify-content:center;margin-top:1.2rem;flex-wrap:wrap">
+          <button class="quiz-option" style="background:linear-gradient(135deg,#4a90d9,#2171c7);color:white;border:none;min-width:120px"
+            onclick="window._homeSelectPlayerFromQuiz('pietro')">💙 Pietro</button>
+          <button class="quiz-option" style="background:linear-gradient(135deg,#e8536f,#c73a57);color:white;border:none;min-width:120px"
+            onclick="window._homeSelectPlayerFromQuiz('emilly')">💗 Emilly</button>
+        </div>
+      </div>`;
+    return;
+  }
   const done=ps.quiz?.lastDate===today;
   if(done){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎉</span><div class="quiz-done-title">Quiz de hoje concluído!</div><div class="quiz-done-sub">Volte amanhã para uma nova pergunta.<br>As moedas já estão na conta! 🪙</div></div>`; return; }
   const isPietro=_activePlayer==="pietro"; const seed=today.replace(/-/g,""); const off=isPietro?0:Math.floor(QUIZ_QUESTIONS.length/2);
@@ -737,6 +753,19 @@ function renderQuiz(){
 }
 
 window._homeSetQuizPerson=function(p){ _quizPerson=p; renderQuiz(); };
+
+// Seleciona jogador direto pela aba Quiz (sem precisar ir para Nossa Casa)
+window._homeSelectPlayerFromQuiz=function(player){
+  if(_selecting) return;
+  _selecting=true;
+  _activePlayer=player;
+  _state.selectedPlayer=player;
+  if(!_state[player]) _state[player]=JSON.parse(JSON.stringify(DEFAULT_PLAYER));
+  renderCoins(); renderLevel(); renderEarnList(); renderRPG();
+  const nome=player==="pietro"?"Pietro 💙":"Emilly 💗";
+  showToastNativo(`Olá, ${nome}! Boa sorte no quiz! 🎮`);
+  saveState().finally(()=>{ _selecting=false; renderQuiz(); });
+};
 
 window._homeAnswerQuiz=function(idx,btn){
   if(_answered||!_currentQ)return; _answered=true; const correct=idx===_currentQ.ans; const today=todayStr();
@@ -750,7 +779,7 @@ window._homeAnswerQuiz=function(idx,btn){
     // Usa awardCoins para marcar earnedToday e atualizar a lista "Como ganhar moedas"
     ps.coins+=15; saveState(); renderCoins(); 
     spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3); 
-    if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false};
+    if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
     ps.earnedToday.quiz=true;
     if(ps.pet?.adopted){ ps.pet.happy=Math.min(100,ps.pet.happy+10); renderPet(); } 
   } else saveState();
@@ -817,7 +846,8 @@ export function initHome(db){
               if(!_state[p].quiz) _state[p].quiz={lastDate:null};
               if(!_state[p].saves) _state[p].saves=[];
               if(!_state[p].dialogoVisto) _state[p].dialogoVisto={};
-              if(!_state[p].earnedToday) _state[p].earnedToday={date:null,mood:false,location:false,mural:false};
+              if(!_state[p].earnedToday) _state[p].earnedToday={date:null,mood:false,location:false,mural:false,quiz:false};
+              else if(_state[p].earnedToday.quiz===undefined) _state[p].earnedToday.quiz=false;
               // Migração de saves antigos sem xp/level
               _state[p].saves=_state[p].saves.map(sv=>({xp:0,level:1,...sv}));
             }
