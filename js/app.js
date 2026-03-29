@@ -1866,13 +1866,14 @@ window.shareLocation = shareLocation;
   if (!skipPopup) {
     setTimeout(() => {
       const overlay = document.createElement('div');
+      overlay.id = '_evento-popup-overlay'; // FIX: id fixo para o botão fechar corretamente
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeIn .4s ease;';
       overlay.innerHTML = `
         <div style="background:#fff8f9;border-radius:28px;padding:2.2rem 2rem;max-width:420px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.25);position:relative;animation:popIn .4s cubic-bezier(.32,1.2,.5,1)">
           <div style="font-size:3rem;margin-bottom:0.8rem">${evento.elements[0]}</div>
           <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:#590d22;margin-bottom:1rem;line-height:1.3">${evento.banner.replace(/^[^\s]+ /, '')}</div>
           <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:#7a3045;line-height:1.7;margin-bottom:1.5rem">${evento.popup}</p>
-          <button onclick="this.closest('div[style]').remove()" style="background:${evento.accent};color:white;border:none;padding:0.75rem 2rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer">Com amor 💕</button>
+          <button onclick="document.getElementById('_evento-popup-overlay')?.remove()" style="background:${evento.accent};color:white;border:none;padding:0.75rem 2rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer">Com amor 💕</button>
         </div>`;
       document.body.appendChild(overlay);
       overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });

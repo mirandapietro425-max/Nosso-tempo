@@ -185,7 +185,7 @@
 <body>
 
 <!-- ── MODAL FILME ── -->
-<div class="movie-modal-overlay" id="movie-modal-overlay">
+<div class="movie-modal-overlay" id="movie-modal-overlay" onclick="if(event.target===this)closeMovieModal()">
   <div class="movie-modal">
     <button class="movie-modal-close" onclick="closeMovieModal()">✕</button>
     <div id="movie-modal-poster-area"></div>
@@ -366,6 +366,7 @@
     <a class="hero-nav-btn" href="#sec-sonhos">     <span class="hero-nav-icon">🌟</span><span class="hero-nav-label">Sonhos</span></a>
     <a class="hero-nav-btn" href="#sec-mural">      <span class="hero-nav-icon">💬</span><span class="hero-nav-label">Recados</span></a>
     <a class="hero-nav-btn" href="#sec-localizacao"><span class="hero-nav-icon">📍</span><span class="hero-nav-label">Localização</span></a>
+    <a class="hero-nav-btn" href="#sec-casinha">    <span class="hero-nav-icon">🏡</span><span class="hero-nav-label">Casinha</span></a>
   </nav>
 
   <div class="scroll-hint" aria-hidden="true">↓</div>
@@ -737,6 +738,7 @@
 
 <!-- ── NOSSA CASINHA ── -->
 <section id="sec-casinha" aria-labelledby="sec-casinha-title">
+  <div class="divider"><span class="divider-icon">🏡</span></div>
   <div class="section-label">Nosso mundinho</div>
   <h2 class="section-title" id="sec-casinha-title">Nossa <em>Casinha</em> 🏡</h2>
 
