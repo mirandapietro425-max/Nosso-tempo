@@ -566,6 +566,12 @@
         <button class="mural-author-btn"         id="btn-emilly" onclick="selectAuthor('Emilly')">Emilly 💗</button>
       </div>
       <textarea class="mural-textarea" id="mural-input" placeholder="Escreva seu recado com amor..."></textarea>
+      <input type="file" id="mural-photo-input" accept="image/*" style="display:none">
+      <div id="mural-photo-preview"></div>
+      <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+        <button class="cal-media-btn" onclick="document.getElementById('mural-photo-input').click()">📸 Adicionar foto</button>
+        <span id="mural-photo-status" style="font-size:0.8rem;color:#c9a9b0;"></span>
+      </div>
       <button class="mural-btn" onclick="addMural()">Enviar recado 💌</button>
     </div>
     <button class="mural-lock-again" onclick="bloquearMural()">🔒 Bloquear novamente</button>

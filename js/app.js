@@ -530,21 +530,45 @@ window.bloquearMural    = bloquearMural;
    MURAL
    ════════════════════════════════════════════ */
 let muralAuthor = 'Pietro';
+let _muralPhotoUrl = null;
+let _uploadingMuralPhoto = false;
 
 async function getMural() {
   try {
     const snap = await getDoc(MURAL_DOC);
-    if (snap.exists()) return snap.data().msgs || [];
+    if (snap.exists()) return { msgs: snap.data().msgs || [], lastClean: snap.data().lastClean || null };
   } catch (e) {}
-  return [];
+  return { msgs: [], lastClean: null };
 }
 
-async function saveMural(msgs) { await setDoc(MURAL_DOC, { msgs }); }
+async function saveMural(msgs, lastClean) {
+  const payload = { msgs };
+  if (lastClean !== undefined) payload.lastClean = lastClean;
+  await setDoc(MURAL_DOC, payload);
+}
+
+// Limpeza automática diária — apaga todas as mensagens uma vez por dia
+async function checkMuralDailyClean() {
+  const today = new Date().toLocaleDateString('pt-BR');
+  const { msgs, lastClean } = await getMural();
+  if (lastClean === today) return; // já limpou hoje
+  if (msgs.length === 0) {
+    // nada pra limpar, só marca o dia
+    await saveMural([], today);
+    return;
+  }
+  await saveMural([], today);
+  showToast('🧹 Mural limpo! Novo dia, novos recados 💕');
+}
 
 async function renderMural() {
   const list = document.getElementById('mural-list');
   if (!list) return;
-  const msgs = await getMural();
+
+  // Verifica limpeza diária ao abrir
+  await checkMuralDailyClean();
+
+  const { msgs } = await getMural();
   list.innerHTML = '';
 
   if (msgs.length === 0) {
@@ -555,28 +579,75 @@ async function renderMural() {
   msgs.forEach((m, i) => {
     const div = document.createElement('div');
     div.className = 'mural-msg ' + m.author.toLowerCase();
+    let mediaHTML = '';
+    if (m.photo) {
+      mediaHTML = `<img src="${m.photo}" alt="foto" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin:0.6rem 0;cursor:pointer;" onclick="window.open('${m.photo}','_blank')">`;
+    }
     div.innerHTML = `
       <button class="mural-msg-del" onclick="deleteMural(${i})">✕</button>
       <div class="mural-msg-author">${sanitizeHTML(m.author)} ${m.author === 'Pietro' ? '💙' : '💗'}</div>
+      ${mediaHTML}
       <div class="mural-msg-text">${sanitizeHTML(m.text)}</div>
       <div class="mural-msg-date">${m.date || ''}</div>`;
     list.appendChild(div);
   });
 }
 
+// Upload de foto para o mural via ImgBB
+async function uploadMuralPhoto(file) {
+  if (_uploadingMuralPhoto) return;
+  _uploadingMuralPhoto = true;
+  const statusEl = document.getElementById('mural-photo-status');
+  const previewEl = document.getElementById('mural-photo-preview');
+  if (statusEl) statusEl.textContent = '⏳ Enviando foto...';
+  try {
+    const form = new FormData();
+    form.append('image', file);
+    form.append('key', IMGBB_KEY);
+    const res  = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.success) {
+      _muralPhotoUrl = data.data.url;
+      if (statusEl) statusEl.textContent = '✅ Foto pronta!';
+      if (previewEl) {
+        previewEl.innerHTML = `<img src="${_muralPhotoUrl}" style="width:100%;max-height:160px;object-fit:cover;border-radius:12px;margin-top:0.5rem;">
+          <button onclick="removeMuralPhoto()" style="background:none;border:none;color:#e8536f;cursor:pointer;font-size:0.8rem;margin-top:0.3rem;">✕ Remover foto</button>`;
+      }
+    } else {
+      if (statusEl) statusEl.textContent = '❌ Erro no upload';
+    }
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '❌ Erro no upload';
+  } finally {
+    _uploadingMuralPhoto = false;
+  }
+}
+
+window.removeMuralPhoto = function() {
+  _muralPhotoUrl = null;
+  const statusEl = document.getElementById('mural-photo-status');
+  const previewEl = document.getElementById('mural-photo-preview');
+  if (statusEl) statusEl.textContent = '';
+  if (previewEl) previewEl.innerHTML = '';
+};
+
 let _addingMural = false;
 async function addMural() {
   if (_addingMural) return;
   const input = document.getElementById('mural-input');
   const text  = input?.value.trim();
-  if (!text) { showToast('✏️ Escreve um recado!'); return; }
+  if (!text && !_muralPhotoUrl) { showToast('✏️ Escreve um recado ou adiciona uma foto!'); return; }
   _addingMural = true;
   try {
-    const msgs = await getMural();
+    const { msgs } = await getMural();
     const date = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
-    msgs.push({ author: muralAuthor, text, date });
+    const msg = { author: muralAuthor, text: text || '', date };
+    if (_muralPhotoUrl) msg.photo = _muralPhotoUrl;
+    msgs.push(msg);
     await saveMural(msgs);
     if (input) input.value = '';
+    _muralPhotoUrl = null;
+    window.removeMuralPhoto();
     renderMural();
     showToast('💌 Recado enviado com amor!');
     try { window.awardCoins('mural', 5); } catch(e) {}
@@ -587,7 +658,7 @@ async function addMural() {
 
 async function deleteMural(i) {
   if (!confirm('Remover este recado?')) return;
-  const msgs = await getMural();
+  const { msgs } = await getMural();
   msgs.splice(i, 1);
   await saveMural(msgs);
   renderMural();
@@ -599,8 +670,13 @@ function selectAuthor(name) {
   document.getElementById('btn-emilly')?.classList.toggle('active', name === 'Emilly');
 }
 
-window.addMural    = addMural;
-window.deleteMural = deleteMural;
+// Input de foto do mural
+document.getElementById('mural-photo-input')?.addEventListener('change', function() {
+  if (this.files?.[0]) uploadMuralPhoto(this.files[0]);
+});
+
+window.addMural     = addMural;
+window.deleteMural  = deleteMural;
 window.selectAuthor = selectAuthor;
 
 /* ════════════════════════════════════════════
@@ -696,7 +772,7 @@ let moodPickerTarget   = null;
 let moodPickerSelected = null;
 let moodActiveTab      = 'emojis';
 
-const STICKER_CATS = ['princesas','marvel'];
+const STICKER_CATS = ['princesas','princes','crepusculo','marvel'];
 
 function renderMoodGrid() {
   const grid = document.getElementById('mood-grid');

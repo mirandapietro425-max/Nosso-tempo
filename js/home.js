@@ -724,7 +724,7 @@ function sleepPet(){ const ps=playerState(); if(!ps?.pet?.adopted)return; ps.pet
 function renderQuiz(){
   const today=todayStr(); const wrap=document.getElementById("quiz-content"); if(!wrap)return;
   const ps=playerState();
-  if(!ps||!_activePlayer){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎮</span><div class="quiz-done-title">Selecione um jogador</div><div class="quiz-done-sub">Vá na aba Nossa Casa e escolha seu personagem!</div></div>`; return; }
+  if(!ps||!_activePlayer){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎮</span><div class="quiz-done-title">Quem está jogando?</div><div class="quiz-done-sub">Vá na aba <strong>Nossa Casa</strong> e toque em <strong>"Sou eu!"</strong> para começar o quiz! 💕</div></div>`; return; }
   const done=ps.quiz?.lastDate===today;
   if(done){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎉</span><div class="quiz-done-title">Quiz de hoje concluído!</div><div class="quiz-done-sub">Volte amanhã para uma nova pergunta.<br>As moedas já estão na conta! 🪙</div></div>`; return; }
   const isPietro=_activePlayer==="pietro"; const seed=today.replace(/-/g,""); const off=isPietro?0:Math.floor(QUIZ_QUESTIONS.length/2);
