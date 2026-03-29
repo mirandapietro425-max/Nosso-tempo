@@ -36,7 +36,8 @@ import {
 import { initExperience } from './experience.js';
 
 // ── Stickers (figurinhas) ──
-import { initStickers, initMoodStickers } from './stickers.js';
+import { initStickers, initMoodStickers, STICKERS as _STICKERS_DATA } from './stickers.js';
+window._STICKERS = _STICKERS_DATA;
 
 /* ════════════════════════════════════════════
    FIREBASE INIT
@@ -637,15 +638,13 @@ function renderMoodGrid() {
 
   // Abas de figurinhas por universo
   if (STICKER_CATS.includes(moodActiveTab)) {
-    import('./stickers.js').then(({ STICKERS }) => {
-      const list = STICKERS[moodActiveTab] || [];
-      grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s, i) => `
-        <div class="mood-sticker-pick" onclick="selectStickerOption(${i}, '${moodActiveTab}')" id="mood-sopt-${moodActiveTab}-${i}">
-          <img src="${s.file}" alt="${s.label}" loading="lazy" class="mood-sticker-pick-img">
-          <div class="mood-sticker-pick-label">${s.name}</div>
-        </div>`).join('')}
-      </div>`;
-    });
+    const list = (window._STICKERS?.[moodActiveTab]) || [];
+    grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s, i) => `
+      <div class="mood-sticker-pick" onclick="selectStickerOption(${i}, '${moodActiveTab}')" id="mood-sopt-${moodActiveTab}-${i}">
+        <img src="${s.file}" alt="${s.label}" loading="lazy" class="mood-sticker-pick-img">
+        <div class="mood-sticker-pick-label">${s.name}</div>
+      </div>`).join('')}
+    </div>`;
     return;
   }
 }
@@ -684,10 +683,8 @@ function selectMoodOption(i) {
 function selectStickerOption(i, cat) {
   document.querySelectorAll('.mood-sticker-pick').forEach(el => el.classList.remove('selected'));
   document.getElementById(`mood-sopt-${cat}-${i}`)?.classList.add('selected');
-  import('./stickers.js').then(({ STICKERS }) => {
-    const s = (STICKERS[cat] || [])[i];
-    if (s) moodPickerSelected = { emoji: '🎭', label: s.label, file: s.file, isSticker: true };
-  });
+  const s = (window._STICKERS?.[cat] || [])[i];
+  if (s) moodPickerSelected = { emoji: '🎭', label: s.label, file: s.file, isSticker: true };
 }
 
 async function confirmMood() {
@@ -698,7 +695,13 @@ async function confirmMood() {
   const now    = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const snap   = await getDoc(MOOD_DOC).catch(() => null);
   const current = (snap?.exists() ? snap.data() : {});
-  current[person] = { emoji: moodPickerSelected.emoji, label: moodPickerSelected.label, time: now };
+  current[person] = {
+    emoji: moodPickerSelected.emoji,
+    label: moodPickerSelected.label,
+    file:  moodPickerSelected.file  || null,
+    isSticker: moodPickerSelected.isSticker || false,
+    time: now
+  };
 
   await setDoc(MOOD_DOC, current);
   closeMoodPicker();
@@ -719,7 +722,13 @@ async function initMoodDisplay() {
         const emojiEl = document.getElementById(`mood-emoji-${p}`);
         const labelEl = document.getElementById(`mood-label-${p}`);
         const timeEl  = document.getElementById(`mood-time-${p}`);
-        if (emojiEl) emojiEl.textContent = d.emoji;
+        if (emojiEl) {
+          if (d.isSticker && d.file) {
+            emojiEl.innerHTML = `<img src="${d.file}" alt="${d.label}" style="width:52px;height:52px;object-fit:contain;">`;
+          } else {
+            emojiEl.textContent = d.emoji;
+          }
+        }
         if (labelEl) labelEl.textContent = d.label;
         if (timeEl)  timeEl.textContent  = d.time ? `às ${d.time}` : '';
       }
@@ -731,6 +740,7 @@ window.openMoodPicker   = openMoodPicker;
 window.closeMoodPicker  = closeMoodPicker;
 window.switchMoodTab    = switchMoodTab;
 window.selectMoodOption = selectMoodOption;
+window.selectStickerOption = selectStickerOption;
 window.confirmMood      = confirmMood;
 initMoodDisplay();
 
