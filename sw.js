@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════ */
 
 // Versão do cache — altere este valor ao fazer deploy para invalidar o cache antigo
-const CACHE_VERSION  = 'v24';
+const CACHE_VERSION  = 'v25';
 const CACHE_STATIC   = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC  = `pe-dynamic-${CACHE_VERSION}`;
 
@@ -117,11 +117,12 @@ async function networkFirstWithTimeout(request) {
 }
 
 // Remove query string de URLs locais para unificar chaves de cache
+// FIX: não passa mode:'navigate' para new Request — é inválido e derruba o SW inteiro
 function stripQueryString(request) {
   const url = new URL(request.url);
   if (url.hostname !== self.location.hostname) return request;
   url.search = '';
-  return new Request(url.toString(), { mode: request.mode, credentials: request.credentials });
+  return new Request(url.toString());
 }
 
 // fetch com timeout via AbortController
