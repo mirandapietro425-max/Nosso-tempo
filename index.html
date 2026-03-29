@@ -20,11 +20,121 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=14">
-  <link rel="stylesheet" href="css/components.css?v=14">
-  <link rel="stylesheet" href="css/modals.css?v=14">
-  <link rel="stylesheet" href="css/animations.css?v=14">
-  <link rel="stylesheet" href="css/stickers.css?v=14">
+  <link rel="stylesheet" href="css/main.css?v=18">
+  <link rel="stylesheet" href="css/components.css?v=18">
+  <link rel="stylesheet" href="css/modals.css?v=18">
+  <link rel="stylesheet" href="css/animations.css?v=18">
+  <link rel="stylesheet" href="css/stickers.css?v=18">
+
+  <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
+  <style>
+    /* Watchlist */
+    .movies-list{display:flex;flex-direction:column;gap:.8rem;margin-bottom:1.2rem}
+    .movies-add{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+    .movies-input{flex:1;min-width:180px;padding:.7rem 1.2rem;border:1px solid #ffd6de;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;background:white;color:#590d22}
+    .movies-input:focus{border-color:#e8536f;box-shadow:0 0 0 3px rgba(232,83,111,.1)}
+    .movies-btn{background:#e8536f;color:white;border:none;padding:.7rem 1.5rem;border-radius:50px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;white-space:nowrap}
+    .movie-item{display:flex;align-items:center;gap:1rem;background:white;border:1px solid #ffd6de;border-radius:16px;padding:1rem 1.2rem;margin-bottom:.5rem}
+    .movie-item.watched{opacity:.55;background:#f9f9f9}
+    .movie-item.watched .movie-name{text-decoration:line-through}
+    .movie-icon{font-size:1.3rem;flex-shrink:0}
+    .movie-name{flex:1;font-family:'DM Sans',sans-serif;font-size:.95rem;color:#4a1020;cursor:pointer}
+    .movie-name:hover{color:#e8536f}
+    .movie-check{background:none;border:2px solid #f4a0b0;color:transparent;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.85rem;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .movie-item.watched .movie-check{background:#e8536f;border-color:#e8536f;color:white}
+    .movie-del{background:none;border:none;color:#e0b0b8;cursor:pointer;font-size:1rem}
+    .movie-del:hover{color:#e8536f}
+
+    /* Mural */
+    .mural-list{display:flex;flex-direction:column;gap:1rem;margin-bottom:1.8rem}
+    .mural-msg{border-radius:18px;padding:1.4rem 1.6rem;position:relative}
+    .mural-msg.pietro{background:linear-gradient(135deg,#e8f4ff,#ddeeff);border:1px solid #b3d4f5}
+    .mural-msg.emilly{background:linear-gradient(135deg,#fff0f3,#fce4ec);border:1px solid #ffb3c1;text-align:right}
+    .mural-msg-author{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;font-weight:600;margin-bottom:.4rem}
+    .mural-msg.pietro .mural-msg-author{color:#4a90d9}
+    .mural-msg.emilly .mural-msg-author{color:#e8536f}
+    .mural-msg-text{font-style:italic;font-size:1.05rem;line-height:1.7;color:#4a1020}
+    .mural-msg-date{font-size:.68rem;color:#c9a9b0;margin-top:.5rem}
+    .mural-msg-del{position:absolute;top:.6rem;right:.8rem;background:none;border:none;color:#a06070;cursor:pointer;font-size:1rem;font-weight:700}
+    .mural-lock-card{background:linear-gradient(135deg,#590d22,#800020);border-radius:24px;padding:2.5rem 2rem;text-align:center;color:white}
+    .mural-lock-icon{font-size:3rem;margin-bottom:1rem}
+    .mural-lock-title{font-size:1.3rem;font-weight:700;margin-bottom:.5rem}
+    .mural-lock-sub{font-style:italic;opacity:.8;margin-bottom:1.5rem}
+    .mural-lock-btn{background:rgba(255,255,255,.2);color:white;border:2px solid rgba(255,255,255,.4);padding:.7rem 1.8rem;border-radius:50px;cursor:pointer;font-size:.9rem;font-weight:600}
+    .mural-lock-again{background:none;border:1px solid #ffd6de;color:#b06070;padding:.5rem 1.2rem;border-radius:50px;cursor:pointer;font-size:.8rem;margin-top:1rem;display:block}
+    .mural-add{display:flex;flex-direction:column;gap:.8rem}
+    .mural-author-row{display:flex;gap:.6rem}
+    .mural-author-btn{flex:1;padding:.6rem 1rem;border-radius:50px;border:2px solid #ffd6de;background:white;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;color:#b06070}
+    .mural-author-btn.active{background:#e8536f;border-color:#e8536f;color:white}
+    .mural-textarea{width:100%;padding:1rem 1.2rem;border:1px solid #ffd6de;border-radius:18px;font-style:italic;font-size:1rem;outline:none;background:white;color:#590d22;resize:none;min-height:90px;line-height:1.6}
+    .mural-btn{background:#e8536f;color:white;border:none;padding:.7rem 1.5rem;border-radius:50px;cursor:pointer;font-size:.85rem;font-weight:600;align-self:flex-end}
+
+    /* Calendário grid */
+    .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem}
+    .cal-nav-btn{background:white;border:1px solid #ffd6de;color:#e8536f;width:40px;height:40px;border-radius:50%;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .cal-nav-btn:hover{background:#e8536f;color:white}
+    .cal-month-label{font-family:'Playfair Display',serif;font-size:1.05rem;color:#4a1020}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.4rem}
+    .cal-day-name{text-align:center;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:#f4879c;padding:.4rem 0;font-weight:600}
+    .cal-day{aspect-ratio:1;border-radius:12px;border:1px solid #ffeef1;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;gap:.15rem}
+    .cal-day:hover{border-color:#e8536f;transform:scale(1.06)}
+    .cal-day.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+    .cal-day.today{border-color:#e8536f;background:#fff0f3}
+    .cal-day.has-data{background:linear-gradient(135deg,#fff0f3,#fce4ec);border-color:#f4879c}
+    .cal-day.birthday{background:linear-gradient(135deg,#fff3cd,#ffe69c);border-color:#ffc107!important}
+    .cal-day-num{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#590d22;line-height:1}
+    .cal-day.today .cal-day-num{color:#e8536f}
+    .cal-day-dot{width:5px;height:5px;border-radius:50%;background:#e8536f}
+
+    /* Modal calendário */
+    .cal-overlay{position:fixed;inset:0;background:rgba(89,13,34,.6);backdrop-filter:blur(6px);z-index:9990;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+    .cal-overlay.show{opacity:1;pointer-events:all}
+    .cal-modal{background:#fff8f9;border-radius:28px 28px 0 0;padding:2rem 1.5rem 2.5rem;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;position:relative}
+    .cal-modal-close{position:absolute;top:1rem;right:1.2rem;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#e8536f;font-weight:700}
+    .cal-modal-date{font-family:'Playfair Display',serif;font-size:1.3rem;color:#590d22;margin-bottom:1.4rem;text-transform:capitalize}
+    .cal-modal-section{margin-bottom:1.4rem}
+    .cal-modal-label{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:#c9a96e;margin-bottom:.6rem;font-weight:600}
+    .cal-modal-textarea{width:100%;padding:1rem;border:1px solid #ffd6de;border-radius:16px;font-style:italic;font-size:1rem;outline:none;background:white;color:#590d22;resize:none;min-height:80px;line-height:1.6;box-sizing:border-box}
+    .cal-modal-textarea:focus{border-color:#e8536f}
+    .cal-media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.8rem}
+    .cal-media-btn{background:white;border:1px dashed #ffb3c1;color:#e8536f;padding:.55rem 1.2rem;border-radius:50px;cursor:pointer;font-size:.82rem}
+    .cal-upload-status{font-size:.8rem;color:#c9a9b0;margin-top:.3rem}
+    .cal-comments{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.8rem}
+    .cal-comment{border-radius:14px;padding:.8rem 1rem;position:relative}
+    .cal-comment.pietro{background:#e8f4ff;border:1px solid #b3d4f5}
+    .cal-comment.emilly{background:#fff0f3;border:1px solid #ffb3c1}
+    .cal-comment-author{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
+    .cal-comment.pietro .cal-comment-author{color:#4a90d9}
+    .cal-comment.emilly .cal-comment-author{color:#e8536f}
+    .cal-comment-text{font-style:italic;font-size:1rem;color:#4a1020}
+    .cal-comment-del{position:absolute;top:.5rem;right:.6rem;background:none;border:none;color:#c9a9b0;cursor:pointer;font-size:.8rem;font-weight:700}
+    .cal-save-btn{width:100%;background:#e8536f;color:white;border:none;padding:.9rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:.5rem}
+    .cal-save-btn:hover{background:#590d22}
+
+    /* Sonhos */
+    .dreams-list{display:flex;flex-direction:column;gap:.8rem;margin-bottom:1.2rem}
+    .dream-item{display:flex;align-items:center;gap:1rem;background:white;border:1px solid #ffeef1;border-radius:16px;padding:1rem 1.2rem}
+    .dream-item.done{opacity:.55}
+    .dream-item.done .dream-text{text-decoration:line-through}
+    .dream-check{width:28px;height:28px;border-radius:50%;border:2px solid #f4a0b0;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:transparent;font-size:.85rem}
+    .dream-item.done .dream-check{background:#e8536f;border-color:#e8536f;color:white}
+    .dream-text{flex:1;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:#4a1020;line-height:1.6}
+    .dream-del{background:none;border:none;color:#e0b0b8;cursor:pointer;font-size:1rem}
+    .dreams-add{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+    .dreams-input{flex:1;min-width:180px;padding:.7rem 1.2rem;border:1px solid #ffd6de;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;background:white;color:#590d22}
+    .dreams-btn{background:#e8536f;color:white;border:none;padding:.7rem 1.5rem;border-radius:50px;cursor:pointer;font-size:.85rem;font-weight:600}
+
+    /* Galeria */
+    .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1rem}
+    .gallery-slot{aspect-ratio:1;border-radius:16px;overflow:hidden;position:relative;background:#ffeef1;border:2px dashed #ffd6de;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .gallery-slot img{width:100%;height:100%;object-fit:cover}
+    .slot-empty-icon{font-size:2rem;opacity:.5}
+    .slot-empty-text{font-size:.75rem;color:#c9a9b0;margin-top:.3rem}
+    .slot-overlay{position:absolute;inset:0;background:rgba(89,13,34,.6);display:flex;gap:.5rem;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+    .gallery-slot:hover .slot-overlay{opacity:1}
+    .slot-btn{background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);padding:.4rem .8rem;border-radius:50px;cursor:pointer;font-size:.75rem}
+    .gallery-tip{text-align:center;font-size:.8rem;color:#c9a9b0;font-style:italic;margin-top:.5rem}
+  </style>
 </head>
 <body>
 
@@ -594,7 +704,7 @@
 </script>
 
 <!-- ── APP (módulo ES) ── -->
-<script type="module" src="js/app.js?v=14"></script>
+<script type="module" src="js/app.js?v=18"></script>
 
 </body>
 </html>

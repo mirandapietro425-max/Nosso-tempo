@@ -3,9 +3,9 @@
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'pe-cache-v15';
-const CACHE_STATIC  = 'pe-static-v15';
-const CACHE_DYNAMIC = 'pe-dynamic-v15';
+const CACHE_NAME    = 'pe-cache-v18';
+const CACHE_STATIC  = 'pe-static-v18';
+const CACHE_DYNAMIC = 'pe-dynamic-v18';
 
 const STATIC_ASSETS = [
   '/',

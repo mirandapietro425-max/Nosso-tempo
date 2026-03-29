@@ -1241,19 +1241,33 @@ function calcDistance(lat1, lng1, lat2, lng2) {
 
 // ── Reverse geocode usando a chave já configurada ──
 async function reverseGeocode(lat, lng) {
+  // Tenta Nominatim (OpenStreetMap) — sem restricao de dominio
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR`,
+      { headers: { 'Accept-Language': 'pt-BR' } }
+    );
+    const d = await r.json();
+    if (d && d.address) {
+      const city  = d.address.city || d.address.town || d.address.municipality || d.address.village || '';
+      const state = d.address.state || '';
+      if (city) return state ? `${city}, ${state}` : city;
+    }
+  } catch (e) {}
+
+  // Fallback Google Maps
   try {
     const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GMAPS_KEY}&language=pt-BR`);
     const d = await r.json();
-    if (d.results?.[0]) {
+    if (d.results && d.results[0]) {
       const comps = d.results[0].address_components;
       const city  = comps.find(c => c.types.includes('administrative_area_level_2'))?.long_name
                  || comps.find(c => c.types.includes('locality'))?.long_name || '';
       const state = comps.find(c => c.types.includes('administrative_area_level_1'))?.short_name || '';
-      return city && state
-        ? `${city}, ${state}`
-        : d.results[0].formatted_address.split(',').slice(0, 2).join(',');
+      return city && state ? `${city}, ${state}` : d.results[0].formatted_address.split(',').slice(0,2).join(',');
     }
   } catch (e) {}
+
   return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
 
@@ -1267,10 +1281,22 @@ function updateLocUI() {
     const btnEl  = document.getElementById(`loc-btn-${person}`);
 
     if (d?.lat) {
-      if (cityEl) cityEl.textContent = d.city || 'Localizando...';
+      // Se city for coordenadas brutas ou vazio, tenta buscar novamente
+      const rawCoords = /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(d.city || '');
+      if (cityEl) cityEl.textContent = (!d.city || rawCoords) ? 'Identificando cidade...' : d.city;
       if (timeEl) timeEl.textContent = d.updatedAt ? `Atualizado às ${d.updatedAt}` : '';
       cardEl?.classList.add('active-loc');
       if (btnEl) btnEl.textContent = '📍 Atualizar localização';
+      // Se cidade não identificada, busca com Nominatim agora
+      if (!d.city || rawCoords) {
+        reverseGeocode(d.lat, d.lng).then(async city => {
+          if (cityEl) cityEl.textContent = city;
+          // Salva cidade corrigida no Firebase
+          const snap = await getDoc(LOC_DOC).catch(() => null);
+          const curr = snap?.exists() ? snap.data() : {};
+          if (curr[person]) { curr[person].city = city; await setDoc(LOC_DOC, curr); }
+        }).catch(() => {});
+      }
     } else {
       if (cityEl) cityEl.textContent = 'Sem localização ainda';
       if (timeEl) timeEl.textContent = '';
