@@ -14,55 +14,107 @@
 const BASE = 'emojis';
 
 export const STICKER_CATEGORIES = [
-  {
-    id: 'todos',
-    label: 'Todos',
-    icon: '✨',
-  },
-  {
-    id: 'princesas',
-    label: 'Princesas',
-    icon: '👸',
-  },
-  {
-    id: 'marvel',
-    label: 'Marvel',
-    icon: '🕷️',
-  },
-  {
-    id: 'favoritos',
-    label: 'Favoritos',
-    icon: '❤️',
-  }
+  { id: 'todos',      label: 'Todos',       icon: '✨' },
+  { id: 'princesas',  label: 'Princesas',   icon: '👸' },
+  { id: 'princes',    label: 'Príncipes',   icon: '🤴' },
+  { id: 'crepusculo', label: 'Crepúsculo',  icon: '🧛' },
+  { id: 'marvel',     label: 'Marvel',      icon: '🕷️' },
+  { id: 'favoritos',  label: 'Favoritos',   icon: '❤️' },
 ];
 
 export const STICKERS = {
   princesas: [
-    { id: 'pr_anna_happy',    file: `${BASE}/Princesas/Anna_Happy.png`,      name: 'Anna',     emotion: 'happy',  label: 'Anna Feliz' },
-    { id: 'pr_anna_angry',    file: `${BASE}/Princesas/Anna_Angry.png`,      name: 'Anna',     emotion: 'angry',  label: 'Anna Brava' },
-    { id: 'pr_elsa_sad',      file: `${BASE}/Princesas/Elsa_Sad.png`,        name: 'Elsa',     emotion: 'sad',    label: 'Elsa Triste' },
-    { id: 'pr_elsa_angry',    file: `${BASE}/Princesas/Elsa_Angry.png`,      name: 'Elsa',     emotion: 'angry',  label: 'Elsa Brava' },
-    { id: 'pr_merida_happy',  file: `${BASE}/Princesas/Merida_Happy.png`,    name: 'Mérida',   emotion: 'happy',  label: 'Mérida Feliz' },
-    { id: 'pr_moana_happy',   file: `${BASE}/Princesas/Moana_Happy.png`,     name: 'Moana',    emotion: 'happy',  label: 'Moana Feliz' },
-    { id: 'pr_moana_sad',     file: `${BASE}/Princesas/Moana_Sad.png`,       name: 'Moana',    emotion: 'sad',    label: 'Moana Triste' },
-    { id: 'pr_moana_angry',   file: `${BASE}/Princesas/Moana_Angry.png`,     name: 'Moana',    emotion: 'angry',  label: 'Moana Brava' },
-    { id: 'pr_rapunzel_happy',file: `${BASE}/Princesas/Rapunzel_Happy.png`,  name: 'Rapunzel', emotion: 'happy',  label: 'Rapunzel Feliz' },
-    { id: 'pr_raya_happy',    file: `${BASE}/Princesas/Raya_Happy.png`,      name: 'Raya',     emotion: 'happy',  label: 'Raya Feliz' },
-    { id: 'pr_raya_sad',      file: `${BASE}/Princesas/Raya_Sad.png`,        name: 'Raya',     emotion: 'sad',    label: 'Raya Triste' },
-    { id: 'pr_tiana_happy',   file: `${BASE}/Princesas/Tiana_Happy.png`,     name: 'Tiana',    emotion: 'happy',  label: 'Tiana Feliz' },
-    { id: 'pr_tiana_happy2',  file: `${BASE}/Princesas/Tiana_Happy_2.png`,   name: 'Tiana',    emotion: 'happy',  label: 'Tiana Radiante' },
-    // Pastas individuais também são princesas
-    { id: 'pr_ariel_happy',   file: `${BASE}/Ariel/Ariel_Happy.png`,         name: 'Ariel',    emotion: 'happy',  label: 'Ariel Feliz' },
-    { id: 'pr_ariel_sad',     file: `${BASE}/Ariel/Ariel_Sad.png`,           name: 'Ariel',    emotion: 'sad',    label: 'Ariel Triste' },
-    { id: 'pr_ariel_scared',  file: `${BASE}/Ariel/Ariel_Scared.png`,        name: 'Ariel',    emotion: 'scared', label: 'Ariel Assustada' },
-    { id: 'pr_cinderela_happy', file: `${BASE}/Cinderela/Cinderela_Happy.png`, name: 'Cinderela', emotion: 'happy', label: 'Cinderela Feliz' },
-    { id: 'pr_cinderela_sad',   file: `${BASE}/Cinderela/Cinderela_Sad.png`,   name: 'Cinderela', emotion: 'sad',   label: 'Cinderela Triste' },
-    { id: 'pr_cinderela_scared',file: `${BASE}/Cinderela/Cinderela_Scared.png`,name: 'Cinderela', emotion: 'scared',label: 'Cinderela Assustada' }
+    // Anna
+    { id: 'pr_anna_happy',    file: `${BASE}/Princesas/Anna_Happy.png`,        name: 'Anna',      emotion: 'happy',  label: 'Anna Feliz' },
+    { id: 'pr_anna_sad',      file: `${BASE}/Princesas/Anna_Sad.png`,          name: 'Anna',      emotion: 'sad',    label: 'Anna Triste' },
+    { id: 'pr_anna_angry',    file: `${BASE}/Princesas/Anna_Angry.png`,        name: 'Anna',      emotion: 'angry',  label: 'Anna Brava' },
+    // Elsa
+    { id: 'pr_elsa_happy',    file: `${BASE}/Princesas/Elsa_Happy.png`,        name: 'Elsa',      emotion: 'happy',  label: 'Elsa Feliz' },
+    { id: 'pr_elsa_sad',      file: `${BASE}/Princesas/Elsa_Sad.png`,          name: 'Elsa',      emotion: 'sad',    label: 'Elsa Triste' },
+    { id: 'pr_elsa_angry',    file: `${BASE}/Princesas/Elsa_Angry.png`,        name: 'Elsa',      emotion: 'angry',  label: 'Elsa Brava' },
+    // Merida
+    { id: 'pr_merida_happy',  file: `${BASE}/Princesas/Merida_Happy.png`,      name: 'Mérida',    emotion: 'happy',  label: 'Mérida Feliz' },
+    { id: 'pr_merida_sad',    file: `${BASE}/Princesas/Merida_Sad.png`,        name: 'Mérida',    emotion: 'sad',    label: 'Mérida Triste' },
+    { id: 'pr_merida_angry',  file: `${BASE}/Merida/Merida_Angry.png`,         name: 'Mérida',    emotion: 'angry',  label: 'Mérida Brava' },
+    { id: 'pr_merida_scared', file: `${BASE}/Merida/Merida_Scared.png`,        name: 'Mérida',    emotion: 'scared', label: 'Mérida Assustada' },
+    // Moana
+    { id: 'pr_moana_happy',   file: `${BASE}/Princesas/Moana_Happy.png`,       name: 'Moana',     emotion: 'happy',  label: 'Moana Feliz' },
+    { id: 'pr_moana_sad',     file: `${BASE}/Princesas/Moana_Sad.png`,         name: 'Moana',     emotion: 'sad',    label: 'Moana Triste' },
+    { id: 'pr_moana_angry',   file: `${BASE}/Princesas/Moana_Angry.png`,       name: 'Moana',     emotion: 'angry',  label: 'Moana Brava' },
+    // Rapunzel
+    { id: 'pr_rapunzel_happy', file: `${BASE}/Princesas/Rapunzel_Happy.png`,   name: 'Rapunzel',  emotion: 'happy',  label: 'Rapunzel Feliz' },
+    { id: 'pr_rapunzel_sad',   file: `${BASE}/Princesas/Rapunzel_Sad.png`,     name: 'Rapunzel',  emotion: 'sad',    label: 'Rapunzel Triste' },
+    { id: 'pr_rapunzel_angry', file: `${BASE}/Princesas/Rapunzel_Angry.png`,   name: 'Rapunzel',  emotion: 'angry',  label: 'Rapunzel Brava' },
+    { id: 'pr_rapunzel_scared',file: `${BASE}/Rapunzel/Rapunzel_Scared.png`,   name: 'Rapunzel',  emotion: 'scared', label: 'Rapunzel Assustada' },
+    // Raya
+    { id: 'pr_raya_happy',    file: `${BASE}/Princesas/Raya_Happy.png`,        name: 'Raya',      emotion: 'happy',  label: 'Raya Feliz' },
+    { id: 'pr_raya_sad',      file: `${BASE}/Princesas/Raya_Sad.png`,          name: 'Raya',      emotion: 'sad',    label: 'Raya Triste' },
+    { id: 'pr_raya_angry',    file: `${BASE}/Princesas/Raya_Angry.png`,        name: 'Raya',      emotion: 'angry',  label: 'Raya Brava' },
+    // Tiana
+    { id: 'pr_tiana_happy',   file: `${BASE}/Princesas/Tiana_Happy.png`,       name: 'Tiana',     emotion: 'happy',  label: 'Tiana Feliz' },
+    { id: 'pr_tiana_happy2',  file: `${BASE}/Princesas/Tiana_Happy_2.png`,     name: 'Tiana',     emotion: 'happy',  label: 'Tiana Radiante' },
+    { id: 'pr_tiana_sad',     file: `${BASE}/Princesas/Tiana_Sad.png`,         name: 'Tiana',     emotion: 'sad',    label: 'Tiana Triste' },
+    // Ariel
+    { id: 'pr_ariel_happy',   file: `${BASE}/Ariel/Ariel_Happy.png`,           name: 'Ariel',     emotion: 'happy',  label: 'Ariel Feliz' },
+    { id: 'pr_ariel_sad',     file: `${BASE}/Ariel/Ariel_Sad.png`,             name: 'Ariel',     emotion: 'sad',    label: 'Ariel Triste' },
+    { id: 'pr_ariel_scared',  file: `${BASE}/Ariel/Ariel_Scared.png`,          name: 'Ariel',     emotion: 'scared', label: 'Ariel Assustada' },
+    // Bela
+    { id: 'pr_bela_happy',    file: `${BASE}/Bela/Bela_Happy.png`,             name: 'Bela',      emotion: 'happy',  label: 'Bela Feliz' },
+    { id: 'pr_bela_sad',      file: `${BASE}/Bela/Bela_Sad.png`,               name: 'Bela',      emotion: 'sad',    label: 'Bela Triste' },
+    { id: 'pr_bela_angry',    file: `${BASE}/Bela/Bela_Angry.png`,             name: 'Bela',      emotion: 'angry',  label: 'Bela Brava' },
+    // Cinderela
+    { id: 'pr_cinderela_happy',  file: `${BASE}/Cinderela/Cinderela_Happy.png`,  name: 'Cinderela', emotion: 'happy',  label: 'Cinderela Feliz' },
+    { id: 'pr_cinderela_sad',    file: `${BASE}/Cinderela/Cinderela_Sad.png`,    name: 'Cinderela', emotion: 'sad',    label: 'Cinderela Triste' },
+    { id: 'pr_cinderela_scared', file: `${BASE}/Cinderela/Cinderela_Scared.png`, name: 'Cinderela', emotion: 'scared', label: 'Cinderela Assustada' },
   ],
+
+  princes: [
+    // Hércules
+    { id: 'pc_hercules_happy', file: `${BASE}/Princes/Hercules_Happy.png`, name: 'Hércules', emotion: 'happy',  label: 'Hércules Feliz' },
+    { id: 'pc_hercules_sad',   file: `${BASE}/Princes/Hercules_Sad.png`,   name: 'Hércules', emotion: 'sad',    label: 'Hércules Triste' },
+    { id: 'pc_hercules_angry', file: `${BASE}/Princes/Hercules_Angry.png`, name: 'Hércules', emotion: 'angry',  label: 'Hércules Bravo' },
+    // Tarzan
+    { id: 'pc_tarzan_happy',   file: `${BASE}/Princes/Tarzan_Happy.png`,   name: 'Tarzan',   emotion: 'happy',  label: 'Tarzan Feliz' },
+    { id: 'pc_tarzan_sad',     file: `${BASE}/Princes/Tarzan_Sad.png`,     name: 'Tarzan',   emotion: 'sad',    label: 'Tarzan Triste' },
+    { id: 'pc_tarzan_angry',   file: `${BASE}/Princes/Tarzan_Angry.png`,   name: 'Tarzan',   emotion: 'angry',  label: 'Tarzan Bravo' },
+    // Quasimodo
+    { id: 'pc_quasi_happy',    file: `${BASE}/Princes/Quasimodo_Happy.png`, name: 'Quasimodo', emotion: 'happy', label: 'Quasimodo Feliz' },
+    { id: 'pc_quasi_sad',      file: `${BASE}/Princes/Quasimodo_Sad.png`,   name: 'Quasimodo', emotion: 'sad',   label: 'Quasimodo Triste' },
+    { id: 'pc_quasi_angry',    file: `${BASE}/Princes/Quasimodo_Angry.png`, name: 'Quasimodo', emotion: 'angry', label: 'Quasimodo Bravo' },
+    // Milo
+    { id: 'pc_milo_happy',     file: `${BASE}/Princes/Milo_Happy.png`,     name: 'Milo',     emotion: 'happy',  label: 'Milo Feliz' },
+    { id: 'pc_milo_angry',     file: `${BASE}/Princes/Milo_Angry.png`,     name: 'Milo',     emotion: 'angry',  label: 'Milo Bravo' },
+    // Jim (Planeta do Tesouro)
+    { id: 'pc_jim_happy',      file: `${BASE}/Princes/Jim_Happy.png`,      name: 'Jim',      emotion: 'happy',  label: 'Jim Feliz' },
+    { id: 'pc_jim_sad',        file: `${BASE}/Princes/Jim_Sad.png`,        name: 'Jim',      emotion: 'sad',    label: 'Jim Triste' },
+    { id: 'pc_jim_angry',      file: `${BASE}/Princes/Jim_Angry.png`,      name: 'Jim',      emotion: 'angry',  label: 'Jim Bravo' },
+  ],
+
+  crepusculo: [
+    // Edward
+    { id: 'cr_edward_happy',   file: `${BASE}/Crepusculo/Edward_Happy.png`,   name: 'Edward',  emotion: 'happy',  label: 'Edward Feliz' },
+    { id: 'cr_edward_sad',     file: `${BASE}/Crepusculo/Edward_Sad.png`,     name: 'Edward',  emotion: 'sad',    label: 'Edward Triste' },
+    { id: 'cr_edward_angry',   file: `${BASE}/Crepusculo/Edward_Angry.png`,   name: 'Edward',  emotion: 'angry',  label: 'Edward Bravo' },
+    // Bella
+    { id: 'cr_bella_happy',    file: `${BASE}/Crepusculo/Bella_Happy.png`,    name: 'Bella',   emotion: 'happy',  label: 'Bella Feliz' },
+    { id: 'cr_bella_sad',      file: `${BASE}/Crepusculo/Bella_Sad.png`,      name: 'Bella',   emotion: 'sad',    label: 'Bella Triste' },
+    { id: 'cr_bella_angry',    file: `${BASE}/Crepusculo/Bella_Angry.png`,    name: 'Bella',   emotion: 'angry',  label: 'Bella Brava' },
+    // Jacob
+    { id: 'cr_jacob_happy',    file: `${BASE}/Crepusculo/Jacob_Happy.png`,    name: 'Jacob',   emotion: 'happy',  label: 'Jacob Feliz' },
+    { id: 'cr_jacob_sad',      file: `${BASE}/Crepusculo/Jacob_Sad.png`,      name: 'Jacob',   emotion: 'sad',    label: 'Jacob Triste' },
+    { id: 'cr_jacob_angry',    file: `${BASE}/Crepusculo/Jacob_Angry.png`,    name: 'Jacob',   emotion: 'angry',  label: 'Jacob Bravo' },
+    // Alice
+    { id: 'cr_alice_happy',    file: `${BASE}/Crepusculo/Alice_Happy.png`,    name: 'Alice',   emotion: 'happy',  label: 'Alice Feliz' },
+    // Rosalie
+    { id: 'cr_rosalie_angry',  file: `${BASE}/Crepusculo/Rosalie_Angry.png`,  name: 'Rosalie', emotion: 'angry',  label: 'Rosalie Brava' },
+    // Emmett
+    { id: 'cr_emmett_happy',   file: `${BASE}/Crepusculo/Emmett_Happy.png`,   name: 'Emmett',  emotion: 'happy',  label: 'Emmett Feliz' },
+  ],
+
   marvel: [
     { id: 'mv_spider_happy', file: `${BASE}/Marvel/Spider-Man_Happy.png`, name: 'Spider-Man', emotion: 'happy', label: 'Spider-Man Feliz' },
     { id: 'mv_spider_sad',   file: `${BASE}/Marvel/Spider-Man_Sad.png`,   name: 'Spider-Man', emotion: 'sad',   label: 'Spider-Man Triste' },
-    { id: 'mv_spider_angry', file: `${BASE}/Marvel/Spider-Man_Angry.png`, name: 'Spider-Man', emotion: 'angry', label: 'Spider-Man Bravo' }
+    { id: 'mv_spider_angry', file: `${BASE}/Marvel/Spider-Man_Angry.png`, name: 'Spider-Man', emotion: 'angry', label: 'Spider-Man Bravo' },
   ],
 };
 
@@ -359,7 +411,9 @@ let _moodStickerAuthor = 'Pietro';
 // Categorias exibidas no mural de humor
 const MOOD_CAT_ORDER = [
   { id: 'princesas',  label: 'Princesas',  icon: '👑' },
-  { id: 'marvel',     label: 'Marvel',     icon: '🕷️' }
+  { id: 'princes',    label: 'Príncipes',  icon: '🤴' },
+  { id: 'crepusculo', label: 'Crepúsculo', icon: '🧛' },
+  { id: 'marvel',     label: 'Marvel',     icon: '🕷️' },
 ];
 
 function _getMoodStickerKey(author) {

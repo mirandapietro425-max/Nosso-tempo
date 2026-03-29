@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════ */
 
 // Versão do cache — altere este valor ao fazer deploy para invalidar o cache antigo
-const CACHE_VERSION  = 'v23';
+const CACHE_VERSION  = 'v24';
 const CACHE_STATIC   = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC  = `pe-dynamic-${CACHE_VERSION}`;
 
@@ -29,6 +29,7 @@ const STATIC_ASSETS = [
   '/assets/favicon.png',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
+  // Não pré-cacheia emojis individuais (muitos arquivos) — carregados sob demanda
 ];
 
 // ── INSTALL: pré-cacheia assets estáticos ──

@@ -13,7 +13,7 @@ services:
         value: public, max-age=31536000, immutable
       - path: /js/*
         name: Cache-Control
-        value: public, max-age=31536000, immutable
+        value: public, max-age=3600
       - path: /assets/*
         name: Cache-Control
         value: public, max-age=31536000, immutable

@@ -327,15 +327,17 @@ function showDialogoSequence(msgs,onDone){
   _dialogRunning=true;
   const overlay=document.createElement("div"); overlay.className="dialogo-overlay"; document.body.appendChild(overlay);
   let idx=0, _tapping=false;
-  function showNext(){
-    if(_tapping)return; _tapping=true; setTimeout(()=>{ _tapping=false; },320);
+  function showNext(fromUser=false){
+    // Debounce só bloqueia cliques do usuário, nunca a chamada automática inicial
+    if(fromUser){ if(_tapping)return; _tapping=true; setTimeout(()=>{ _tapping=false; },320); }
     overlay.innerHTML="";
     if(idx>=msgs.length){ overlay.remove(); _dialogRunning=false; onDone?.(); if(_dialogQueue.length){ const nx=_dialogQueue.shift(); showDialogoSequence(nx.msgs,nx.onDone); } return; }
     const m=msgs[idx]; const isPietro=m.quem==="pietro";
     overlay.innerHTML=`<div class="dialogo-box ${isPietro?"dialogo-pietro":"dialogo-emilly"}"><div class="dialogo-avatar">${isPietro?"💙":"💗"}</div><div class="dialogo-bubble"><div class="dialogo-nome">${isPietro?"Pietro":"Emilly"}</div><div class="dialogo-texto">${m.texto}</div></div></div><div class="dialogo-hint">toque para continuar</div>`;
     idx++;
   }
-  overlay.addEventListener("click",showNext); showNext();
+  overlay.addEventListener("click", () => showNext(true));
+  showNext(false); // chamada automática inicial — sem debounce
 }
 
 /* ════ RENDER RPG ════ */

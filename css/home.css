@@ -709,7 +709,7 @@
 .evento-close { position:absolute;top:.3rem;right:.3rem;background:none;border:none;font-size:1rem;cursor:pointer;color:#e8536f;z-index:1;font-weight:700; }
 
 /* RPG Intro */
-.rpg-intro { text-align:center;padding:2rem 1rem; }
+.rpg-intro { text-align:center;padding:2rem 1rem;overflow-y:auto;max-height:calc(100dvh - 180px);-webkit-overflow-scrolling:touch; }
 .rpg-intro-title { font-family:'Playfair Display',serif;font-size:1.6rem;color:#590d22;margin-bottom:.4rem; }
 .rpg-intro-sub { font-style:italic;color:#e8536f;margin-bottom:1rem; }
 .rpg-intro-texto { color:#4a1020;line-height:1.8;font-size:.95rem;margin-bottom:1.5rem; }
