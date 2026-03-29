@@ -20,12 +20,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=20">
-  <link rel="stylesheet" href="css/components.css?v=20">
-  <link rel="stylesheet" href="css/modals.css?v=20">
-  <link rel="stylesheet" href="css/animations.css?v=20">
-  <link rel="stylesheet" href="css/stickers.css?v=20">
-  <link rel="stylesheet" href="css/home.css?v=20">
+  <link rel="stylesheet" href="css/main.css?v=22">
+  <link rel="stylesheet" href="css/components.css?v=22">
+  <link rel="stylesheet" href="css/modals.css?v=22">
+  <link rel="stylesheet" href="css/animations.css?v=22">
+  <link rel="stylesheet" href="css/stickers.css?v=22">
+  <link rel="stylesheet" href="css/home.css?v=22">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -748,16 +748,29 @@
     </div>
   </div>
 
+  <!-- Level & XP bar -->
+  <div class="home-level-wrap">
+    <div class="home-level-label">Nível 0 — Início</div>
+    <div class="home-xp-bar"><div class="home-xp-fill" style="width:0%"></div></div>
+    <div class="home-xp-label">0 / 200 XP</div>
+  </div>
+
   <!-- Tabs -->
   <div class="home-tabs">
-    <button class="home-tab active" data-tab="pet"  onclick="window._homeTab('pet')">🐱 Bolinha</button>
-    <button class="home-tab"        data-tab="casa" onclick="window._homeTab('casa')">🏠 Casinha</button>
-    <button class="home-tab"        data-tab="loja" onclick="window._homeTab('loja')">🛒 Loja</button>
+    <button class="home-tab active" data-tab="rpg"  onclick="window._homeTab('rpg')">🏡 Nossa Casa</button>
+    <button class="home-tab"        data-tab="pet"  onclick="window._homeTab('pet')">🐱 Pet</button>
     <button class="home-tab"        data-tab="quiz" onclick="window._homeTab('quiz')">📝 Quiz</button>
   </div>
 
+  <!-- PANEL: RPG -->
+  <div class="home-panel active" id="home-panel-rpg">
+    <div id="home-rpg-wrap">
+      <!-- injected by JS -->
+    </div>
+  </div>
+
   <!-- PANEL: PET -->
-  <div class="home-panel active" id="home-panel-pet">
+  <div class="home-panel" id="home-panel-pet">
     <div class="pet-scene">
       <div class="pet-bg-glow"></div>
       <div class="pet-bubble" id="pet-bubble"></div>
@@ -818,10 +831,6 @@
     </div>
   </div>
 
-  <!-- PANEL: CASA -->
-  <div class="home-panel" id="home-panel-casa">
-    <div class="house-scene-wrap">
-      <div class="house-sky"></div>
       <div class="house-stars" id="house-stars-container"></div>
       <div class="house-canvas">
         <svg class="house-svg" id="house-svg-wrap" viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg">
@@ -838,11 +847,6 @@
     </p>
   </div>
 
-  <!-- PANEL: LOJA -->
-  <div class="home-panel" id="home-panel-loja">
-    <div class="home-shop-grid" id="home-shop-grid">
-      <!-- injected by JS -->
-    </div>
   </div>
 
   <!-- PANEL: QUIZ -->
@@ -878,7 +882,7 @@
 </script>
 
 <!-- ── APP (módulo ES) ── -->
-<script type="module" src="js/app.js?v=20"></script>
+<script type="module" src="js/app.js?v=22"></script>
 
 </body>
 </html>

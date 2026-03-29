@@ -3,26 +3,26 @@
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'pe-cache-v20';
-const CACHE_STATIC  = 'pe-static-v20';
-const CACHE_DYNAMIC = 'pe-dynamic-v20';
+const CACHE_NAME    = 'pe-cache-v22';
+const CACHE_STATIC  = 'pe-static-v22';
+const CACHE_DYNAMIC = 'pe-dynamic-v22';
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/css/main.css?v=20',
-  '/css/components.css?v=20',
-  '/css/modals.css?v=20',
-  '/css/animations.css?v=20',
-  '/css/stickers.css?v=20',
-  '/css/home.css?v=20',
-  '/js/home.js?v=20',
-  '/js/config.js?v=20',
-  '/js/ui.js?v=20',
-  '/js/music.js?v=20',
-  '/js/stickers.js?v=20',
-  '/js/experience.js?v=20',
-  '/js/app.js?v=20',
+  '/css/main.css?v=22',
+  '/css/components.css?v=22',
+  '/css/modals.css?v=22',
+  '/css/animations.css?v=22',
+  '/css/stickers.css?v=22',
+  '/css/home.css?v=22',
+  '/js/home.js?v=22',
+  '/js/config.js?v=22',
+  '/js/ui.js?v=22',
+  '/js/music.js?v=22',
+  '/js/stickers.js?v=22',
+  '/js/experience.js?v=22',
+  '/js/app.js?v=22',
   'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap',
 ];
 

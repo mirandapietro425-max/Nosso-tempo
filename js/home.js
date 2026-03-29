@@ -1,835 +1,570 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — home.js
-   Nossa Casinha + Pet Virtual + Quiz Diário
+   PIETRO & EMILLY — home.js v22
+   Santa Maria Casinha RPG + Pet Virtual + Quiz
    ═══════════════════════════════════════════════ */
 
-import { getFirestore, doc, getDoc, setDoc, onSnapshot }
+import { doc, setDoc, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* ════════════════════════════════════════════
-   QUIZ QUESTIONS BANK
+   TERRENOS DE SANTA MARIA
    ════════════════════════════════════════════ */
+const TERRENOS = [
+  { id:"centro",   nome:"Centro",             desc:"Perto de tudo — UFSM, comércio, restaurantes. Charmoso e movimentado.", preco:420, area:"180 m²", emoji:"🏙️", distUFSM:"2 km da UFSM",    frase:"\"Acordar e já estar no coração da cidade.\"" },
+  { id:"camobi",   nome:"Camobi",             desc:"Ao lado da UFSM. Bairro universitário cheio de vida, cafés e parques.", preco:310, area:"220 m²", emoji:"🎓", distUFSM:"500m da UFSM",   frase:"\"Nossa casinha pertinho da faculdade.\"" },
+  { id:"fatima",   nome:"Nossa Sra. Fátima",  desc:"Bairro nobre e tranquilo. Ruas arborizadas, seguro e bem localizado.",  preco:380, area:"200 m²", emoji:"🌳", distUFSM:"3 km da UFSM",    frase:"\"Um bairro que parece feito pra família.\"" },
+  { id:"urlandia", nome:"Urlândia",           desc:"Bairro residencial e aconchegante. Ótimo custo-benefício em SM.",       preco:240, area:"260 m²", emoji:"🏡", distUFSM:"5 km da UFSM",    frase:"\"Espaço de sobra pra gente crescer.\"" },
+  { id:"platano",  nome:"Pé de Plátano",      desc:"Bairro arborizado e charmoso, com ruas sombreadas e muito verde.",      preco:290, area:"240 m²", emoji:"🍃", distUFSM:"4 km da UFSM",    frase:"\"Morar entre árvores e silêncio.\"" },
+  { id:"medianeira",nome:"Medianeira",        desc:"Bairro tradicional e bem servido de comércio local.",                   preco:270, area:"250 m²", emoji:"🛍️", distUFSM:"4,5 km da UFSM",  frase:"\"Tudo que precisamos perto de casa.\"" },
+];
+
+const LOJA_EXTERIOR = [
+  { id:"casa_branca",   cat:"cor",     icon:"🏠", nome:"Casa Branca",     desc:"Clássica e elegante",        preco:80,  xp:30, exclusivo:"cor" },
+  { id:"casa_rosa",     cat:"cor",     icon:"🏠", nome:"Casa Rosa",       desc:"Romântica e delicada",       preco:80,  xp:30, exclusivo:"cor" },
+  { id:"casa_azul",     cat:"cor",     icon:"🏠", nome:"Casa Azul",       desc:"Calma como o céu",           preco:80,  xp:30, exclusivo:"cor" },
+  { id:"casa_amarela",  cat:"cor",     icon:"🏠", nome:"Casa Amarela",    desc:"Alegre e acolhedora",        preco:80,  xp:30, exclusivo:"cor" },
+  { id:"casa_verde",    cat:"cor",     icon:"🏠", nome:"Casa Verde",      desc:"Harmonia com a natureza",    preco:80,  xp:30, exclusivo:"cor" },
+  { id:"telhado_telha", cat:"telhado", icon:"🏘️", nome:"Telha Cerâmica",  desc:"Tradicional gaúcho",         preco:60,  xp:20, exclusivo:"telhado" },
+  { id:"telhado_metal", cat:"telhado", icon:"🏚️", nome:"Telhado Metálico",desc:"Moderno e resistente",       preco:90,  xp:25, exclusivo:"telhado" },
+  { id:"telhado_verde", cat:"telhado", icon:"🌱", nome:"Telhado Verde",   desc:"Ecológico e charmoso",       preco:130, xp:40, exclusivo:"telhado" },
+  { id:"janela_simples",cat:"janela",  icon:"🪟", nome:"Janela Simples",  desc:"Clean e funcional",          preco:40,  xp:15 },
+  { id:"janela_arco",   cat:"janela",  icon:"🪟", nome:"Janela Arco",     desc:"Arquitetura clássica",       preco:70,  xp:20 },
+  { id:"porta_madeira", cat:"porta",   icon:"🚪", nome:"Porta de Madeira",desc:"Calorosa e rústica",         preco:50,  xp:15, exclusivo:"porta" },
+  { id:"porta_vidro",   cat:"porta",   icon:"🚪", nome:"Porta de Vidro",  desc:"Moderna e iluminada",        preco:90,  xp:25, exclusivo:"porta" },
+  { id:"porta_arco",    cat:"porta",   icon:"🚪", nome:"Porta em Arco",   desc:"Romântica e encantada",      preco:110, xp:35, exclusivo:"porta" },
+  { id:"calcada_pedra", cat:"entrada", icon:"🪨", nome:"Calçada de Pedra",desc:"Charme natural",             preco:45,  xp:15, exclusivo:"entrada" },
+  { id:"calcada_tijolo",cat:"entrada", icon:"🧱", nome:"Calçada de Tijolo",desc:"Estilo colonial gaúcho",    preco:55,  xp:18, exclusivo:"entrada" },
+];
+
+const LOJA_JARDIM = [
+  { id:"cerca_madeira", cat:"cerca",  icon:"🪵", nome:"Cerca de Madeira",  desc:"Simples e charmosa",        preco:35, xp:12, exclusivo:"cerca" },
+  { id:"cerca_ferro",   cat:"cerca",  icon:"⚙️", nome:"Cerca de Ferro",    desc:"Elegante e segura",         preco:65, xp:20, exclusivo:"cerca" },
+  { id:"cerca_viva",    cat:"cerca",  icon:"🌿", nome:"Cerca Viva",        desc:"Verde e natural",           preco:50, xp:18, exclusivo:"cerca" },
+  { id:"roseiras",      cat:"planta", icon:"🌹", nome:"Roseiras",          desc:"Jardim romântico",          preco:30, xp:10 },
+  { id:"girassois",     cat:"planta", icon:"🌻", nome:"Girassóis",         desc:"Alegria e calor",           preco:20, xp:8  },
+  { id:"lavanda",       cat:"planta", icon:"💜", nome:"Lavanda",           desc:"Cheiro maravilhoso",        preco:25, xp:9  },
+  { id:"arvorezinha",   cat:"planta", icon:"🌳", nome:"Arvorezinha",       desc:"Sombra e frescor",          preco:55, xp:20 },
+  { id:"fonte",         cat:"detalhe",icon:"⛲", nome:"Fontezinha",        desc:"Som da água no jardim",     preco:80, xp:28 },
+  { id:"banco",         cat:"detalhe",icon:"🪑", nome:"Banco de Jardim",   desc:"Pra sentar juntos",         preco:40, xp:14 },
+  { id:"iluminacao",    cat:"detalhe",icon:"🪔", nome:"Luminárias",        desc:"Casa iluminada à noite",    preco:45, xp:15 },
+];
+
+const LOJA_INTERIOR = [
+  { id:"sofa",           cat:"sala",    icon:"🛋️", nome:"Sofá do Casal",      desc:"Pra ver séries juntos",    preco:90,  xp:30 },
+  { id:"tv",             cat:"sala",    icon:"📺", nome:"TV na parede",        desc:"Filmes e maratonas",       preco:120, xp:35 },
+  { id:"tapete",         cat:"sala",    icon:"🟫", nome:"Tapete Persa",        desc:"Aconchego no chão",        preco:50,  xp:18 },
+  { id:"quadros",        cat:"sala",    icon:"🖼️", nome:"Quadros de Arte",     desc:"Emilly escolheu cada um",  preco:60,  xp:20 },
+  { id:"plantas_sala",   cat:"sala",    icon:"🪴", nome:"Plantas na Sala",     desc:"Verde dentro de casa",     preco:35,  xp:12 },
+  { id:"cozinha_moveis", cat:"cozinha", icon:"🍳", nome:"Armários & Bancada",  desc:"Projeto de Emilly",        preco:200, xp:60 },
+  { id:"mesa_jantar",    cat:"cozinha", icon:"🍽️", nome:"Mesa de Jantar",      desc:"Café da manhã todo dia",   preco:80,  xp:25 },
+  { id:"cama_casal",     cat:"quarto",  icon:"🛏️", nome:"Cama de Casal",       desc:"O cantinho de vocês",      preco:150, xp:45 },
+  { id:"guarda_roupa",   cat:"quarto",  icon:"🪞", nome:"Guarda-Roupa",        desc:"Espaço pra tudo",          preco:100, xp:30 },
+  { id:"escrivaninha",   cat:"quarto",  icon:"💻", nome:"Escrivaninha",         desc:"Pietro programa daqui",    preco:70,  xp:22 },
+  { id:"home_office",    cat:"especial",icon:"🖥️", nome:"Home Office",         desc:"Pietro trabalha de casa",  preco:180, xp:55 },
+  { id:"studio_emilly",  cat:"especial",icon:"📐", nome:"Studio de Design",    desc:"O ateliê da Emilly",       preco:180, xp:55 },
+  { id:"banheira",       cat:"especial",icon:"🛁", nome:"Banheira",            desc:"Fim de semana especial",   preco:160, xp:48 },
+];
+
+const GATOS_ADOCAO = [
+  { id:"laranja", nome:"Brigadeiro",  raca:"Vira-lata laranja",   emoji:"🐱",   cor:"#ff9800", personalidade:"Dengoso e come tudo que vê" },
+  { id:"preto",   nome:"Merlot",      raca:"Gato preto",          emoji:"🐈‍⬛",  cor:"#212121", personalidade:"Misterioso, dorme onde quer" },
+  { id:"cinza",   nome:"Névoa",       raca:"Azul russo",          emoji:"🐈",   cor:"#90a4ae", personalidade:"Elegante e introspectivo" },
+  { id:"rajado",  nome:"Farofa",      raca:"Tigrado",             emoji:"🐱",   cor:"#795548", personalidade:"Brincalhão e irrequieto" },
+  { id:"branco",  nome:"Marshmallow", raca:"Angora branco",       emoji:"🐱",   cor:"#eeeeee", personalidade:"Delicado, ama colo" },
+];
+
+const DIALOGOS = {
+  introducao: [
+    { quem:"pietro", texto:"Emilly... e se a gente parasse de sonhar e realmente comprasse um lugar nosso?" },
+    { quem:"emilly", texto:"Aqui em Santa Maria? Meu Deus, Pietro... você tá falando sério?" },
+    { quem:"pietro", texto:"Completamente sério. Já até pesquisei alguns terrenos. Olha aqui..." },
+    { quem:"emilly", texto:"😍 Nossa casinha... posso já começar a planejar a decoração?" },
+    { quem:"pietro", texto:"Claro que sim — você é a arquiteta da família! Vamos escolher onde vai ser?" },
+  ],
+  terreno_escolhido: [
+    { quem:"emilly", texto:"Perfeito! Já dá pra imaginar como vai ficar!" },
+    { quem:"pietro", texto:"É o começo de tudo. Da nossa história aqui." },
+    { quem:"emilly", texto:"Vamos com tudo, amor. 🏡" },
+  ],
+  level3_jardim: [
+    { quem:"pietro", texto:"Imagina tomar café no jardim todo domingo de manhã." },
+    { quem:"emilly", texto:"Com as flores que eu escolhi ali na entrada... 🌹 Perfeito." },
+    { quem:"pietro", texto:"A fachada ficou linda. Você tem um dom incrível, meu amor." },
+    { quem:"emilly", texto:"Agora o jardim! 🌻 Pode deixar que cuido de tudo." },
+  ],
+  level4_sala: [
+    { quem:"emilly", texto:"Que linda ficou nossa sala, Pietro!" },
+    { quem:"pietro", texto:"Valeu cada centavo. E cada hora que você ficou planejando." },
+    { quem:"emilly", texto:"É onde a gente vai maratonar série, receber a família..." },
+    { quem:"pietro", texto:"É o coração da casa. Igualzinho você pra mim. 💕" },
+  ],
+  level6_completo: [
+    { quem:"emilly", texto:"Que linda ficou nossa casa, meu amor..." },
+    { quem:"pietro", texto:"Valeu a pena cada segundo gasto aqui. Cada escolha, cada moeda." },
+    { quem:"emilly", texto:"Você programou, eu decorei, e juntos fizemos um lar de verdade." },
+    { quem:"pietro", texto:"E isso é só o começo. Ainda temos toda uma vida pra preencher esse lugar." },
+    { quem:"emilly", texto:"Com muito amor, muitas xícaras de café... e nossos gatinhos. 😻" },
+    { quem:"pietro", texto:"Com você, sempre. 💙" },
+  ],
+  adocao_gato: [
+    { quem:"emilly", texto:"PIETROOO olha esse gatinho... posso? Por favor? 🥺" },
+    { quem:"pietro", texto:"...Como que eu falo não pra essa carinha?" },
+    { quem:"emilly", texto:"Não consegue né? 😂 Então ele é nosso!" },
+    { quem:"pietro", texto:"Bem-vindo à família, pequeno! 🐾" },
+  ],
+  evento_diario: [
+    { quem:"pietro", texto:"Bom dia, meu amor! Mais um dia pra construir nosso sonho juntos. ☀️" },
+    { quem:"emilly", texto:"Olhei pra casa de novo e me apaixonei de novo. Igual a você. 🥰" },
+    { quem:"pietro", texto:"Cada cantinho aqui tem uma história nossa. Amo isso." },
+    { quem:"emilly", texto:"Quando chego em casa e vejo tudo assim... não quero ir a lugar nenhum." },
+    { quem:"pietro", texto:"Casa é onde você está. Sempre." },
+    { quem:"emilly", texto:"Hoje acordei querendo passar o dia aqui com você. Fica?" },
+    { quem:"pietro", texto:"Programei de casa hoje. Fica mais gostoso saber que você tá ao lado." },
+    { quem:"emilly", texto:"Nossa casinha cheira a café e felicidade. Amo demais." },
+  ],
+};
+
 const QUIZ_QUESTIONS = [
-  // Programação
-  { cat: 'Dev', q: 'O que significa "HTML"?', opts: ['HyperText Markup Language','High Text Making Language','Hyper Transfer Markup Link','HyperText Modern Language'], ans: 0 },
-  { cat: 'Dev', q: 'Qual símbolo inicia um comentário em JavaScript?', opts: ['#','//','--','**'], ans: 1 },
-  { cat: 'Dev', q: 'O que é CSS?', opts: ['Linguagem de programação','Banco de dados','Linguagem de estilo visual','Sistema operacional'], ans: 2 },
-  { cat: 'Dev', q: 'O que faz o comando "console.log()"?', opts: ['Salva um arquivo','Exibe mensagem no console','Cria um loop','Conecta ao servidor'], ans: 1 },
-  { cat: 'Dev', q: 'Em que ano o JavaScript foi criado?', opts: ['1989','1995','2001','2008'], ans: 1 },
-  { cat: 'Dev', q: 'Qual desses é um framework JavaScript?', opts: ['Django','Laravel','React','Flask'], ans: 2 },
-  { cat: 'Dev', q: 'O que é um "bug" em programação?', opts: ['Um inseto no computador','Um erro no código','Um tipo de vírus','Uma linguagem nova'], ans: 1 },
-  { cat: 'Dev', q: 'O que significa "API"?', opts: ['Application Programming Interface','Advanced Program Integration','Automated Process Interaction','Application Protocol Index'], ans: 0 },
-  // Matemática
-  { cat: 'Math', q: 'Quanto é 7 × 8?', opts: ['54','56','58','62'], ans: 1 },
-  { cat: 'Math', q: 'Qual é a raiz quadrada de 144?', opts: ['11','12','13','14'], ans: 1 },
-  { cat: 'Math', q: 'Quanto é 15% de 200?', opts: ['20','25','30','35'], ans: 2 },
-  { cat: 'Math', q: 'Qual é o número pi aproximado?', opts: ['2,71','3,14','3,41','2,14'], ans: 1 },
-  { cat: 'Math', q: 'Se um triângulo tem ângulos de 90° e 45°, qual é o terceiro?', opts: ['30°','45°','60°','75°'], ans: 1 },
-  { cat: 'Math', q: 'Quanto é 2 elevado a 10?', opts: ['512','1024','2048','256'], ans: 1 },
-  { cat: 'Math', q: 'Qual é o resultado de 3/4 + 1/4?', opts: ['4/8','1','3/8','2/4'], ans: 1 },
-  { cat: 'Math', q: 'Quantos lados tem um hexágono?', opts: ['5','6','7','8'], ans: 1 },
-  // Português
-  { cat: 'Português', q: 'Qual é o plural de "pão"?', opts: ['Pãos','Pões','Pães','Pãoes'], ans: 2 },
-  { cat: 'Português', q: 'O que é um substantivo?', opts: ['Palavra que indica ação','Palavra que nomeia seres e coisas','Palavra que qualifica','Palavra que liga orações'], ans: 1 },
-  { cat: 'Português', q: 'Qual é o antônimo de "generoso"?', opts: ['Humilde','Sovina','Orgulhoso','Fiel'], ans: 1 },
-  { cat: 'Português', q: '"Mal" ou "mau"? — "Ele é um ___ elemento."', opts: ['mal','mau'], ans: 1 },
-  { cat: 'Português', q: 'Qual figura de linguagem é "O mar de gente na festa"?', opts: ['Metáfora','Metonímia','Hipérbole','Personificação'], ans: 0 },
-  { cat: 'Português', q: 'O que é um haiku?', opts: ['Poema japonês de 3 versos','Romance medieval','Fábula africana','Soneto italiano'], ans: 0 },
-  { cat: 'Português', q: 'Qual palavra está escrita corretamente?', opts: ['Excessão','Exceção','Exeção','Excecão'], ans: 1 },
-  { cat: 'Português', q: 'Quem escreveu "Dom Casmurro"?', opts: ['José de Alencar','Machado de Assis','Clarice Lispector','Carlos Drummond'], ans: 1 },
-  // Religião / Cultura
-  { cat: 'Cultura', q: 'Qual é o livro sagrado do Islamismo?', opts: ['Torá','Bíblia','Alcorão','Vedas'], ans: 2 },
-  { cat: 'Cultura', q: 'Quantos apóstolos Jesus escolheu?', opts: ['10','12','7','14'], ans: 1 },
-  { cat: 'Cultura', q: 'Em qual cidade Jesus nasceu?', opts: ['Jerusalém','Nazaré','Belém','Cafarnaum'], ans: 2 },
-  { cat: 'Cultura', q: 'Qual é o animal símbolo do Budismo?', opts: ['Leão','Tigre','Elefante','Serpente'], ans: 2 },
-  { cat: 'Cultura', q: 'Quantos dias durou a criação segundo a Bíblia?', opts: ['5','6','7','8'], ans: 1 },
-  { cat: 'Cultura', q: 'Qual religião acredita no karma e reencarnação?', opts: ['Judaísmo','Budismo','Islamismo','Protestantismo'], ans: 1 },
-  // Curiosidades Gerais
-  { cat: 'Geral', q: 'Qual é o maior planeta do Sistema Solar?', opts: ['Saturno','Netuno','Júpiter','Urano'], ans: 2 },
-  { cat: 'Geral', q: 'Em que país fica a Torre Eiffel?', opts: ['Itália','Espanha','França','Portugal'], ans: 2 },
-  { cat: 'Geral', q: 'Quantos ossos tem o corpo humano adulto?', opts: ['186','206','226','246'], ans: 1 },
-  { cat: 'Geral', q: 'Qual é o menor país do mundo?', opts: ['San Marino','Mônaco','Vaticano','Liechtenstein'], ans: 2 },
-  { cat: 'Geral', q: 'Qual é a capital do Japão?', opts: ['Osaka','Tóquio','Kyoto','Hiroshima'], ans: 1 },
-  { cat: 'Geral', q: 'Qual animal tem o coração maior do mundo?', opts: ['Elefante','Baleia azul','Girafa','Rinoceronte'], ans: 1 },
-  { cat: 'Geral', q: 'Quantos continentes tem a Terra?', opts: ['5','6','7','8'], ans: 2 },
-  { cat: 'Geral', q: 'Qual é o rio mais longo do mundo?', opts: ['Amazonas','Nilo','Yangtzé','Mississippi'], ans: 1 },
-  // Sobre eles (especial)
-  { cat: '💕 Especial', q: 'Em que mês Pietro faz aniversário?', opts: ['Dezembro','Janeiro','Fevereiro','Março'], ans: 1 },
-  { cat: '💕 Especial', q: 'Em que mês Emilly faz aniversário?', opts: ['Março','Maio','Abril','Junho'], ans: 2 },
-  { cat: '💕 Especial', q: 'Em que dia Pietro e Emilly começaram a namorar?', opts: ['10 de outubro','11 de outubro','12 de outubro','13 de outubro'], ans: 1 },
-  { cat: '💕 Especial', q: 'Qual destas músicas está na playlist do app?', opts: ['Perfect - Ed Sheeran','Skyfall - Adele','Shape of You - Ed Sheeran','Blinding Lights'], ans: 1 },
+  { cat:"Dev",      q:"O que significa \"HTML\"?",                   opts:["HyperText Markup Language","High Text Making Language","Hyper Transfer Markup Link","HyperText Modern Language"], ans:0 },
+  { cat:"Dev",      q:"Qual símbolo inicia um comentário em JavaScript?", opts:["#","//","--","**"], ans:1 },
+  { cat:"Dev",      q:"O que é CSS?",                                  opts:["Linguagem de programação","Banco de dados","Linguagem de estilo visual","Sistema operacional"], ans:2 },
+  { cat:"Dev",      q:"O que faz o comando \"console.log()\"?",       opts:["Salva um arquivo","Exibe mensagem no console","Cria um loop","Conecta ao servidor"], ans:1 },
+  { cat:"Dev",      q:"Em que ano o JavaScript foi criado?",           opts:["1989","1995","2001","2008"], ans:1 },
+  { cat:"Dev",      q:"Qual desses é um framework JavaScript?",        opts:["Django","Laravel","React","Flask"], ans:2 },
+  { cat:"Dev",      q:"O que é um \"bug\" em programação?",           opts:["Um inseto no computador","Um erro no código","Um tipo de vírus","Uma linguagem nova"], ans:1 },
+  { cat:"Dev",      q:"O que significa \"API\"?",                     opts:["Application Programming Interface","Advanced Program Integration","Automated Process Interaction","Application Protocol Index"], ans:0 },
+  { cat:"Math",     q:"Quanto é 7 × 8?",                              opts:["54","56","58","62"], ans:1 },
+  { cat:"Math",     q:"Qual é a raiz quadrada de 144?",               opts:["11","12","13","14"], ans:1 },
+  { cat:"Math",     q:"Quanto é 15% de 200?",                         opts:["20","25","30","35"], ans:2 },
+  { cat:"Math",     q:"Qual é o número pi aproximado?",               opts:["2,71","3,14","3,41","2,14"], ans:1 },
+  { cat:"Math",     q:"Quanto é 2 elevado a 10?",                     opts:["512","1024","2048","256"], ans:1 },
+  { cat:"Math",     q:"Quantos lados tem um hexágono?",               opts:["5","6","7","8"], ans:1 },
+  { cat:"Português",q:"Qual é o plural de \"pão\"?",                  opts:["Pãos","Pões","Pães","Pãoes"], ans:2 },
+  { cat:"Português",q:"Qual é o antônimo de \"generoso\"?",           opts:["Humilde","Sovina","Orgulhoso","Fiel"], ans:1 },
+  { cat:"Português",q:"\"Mal\" ou \"mau\"? — \"Ele é um ___ elemento.\"", opts:["mal","mau"], ans:1 },
+  { cat:"Português",q:"Quem escreveu \"Dom Casmurro\"?",             opts:["José de Alencar","Machado de Assis","Clarice Lispector","Carlos Drummond"], ans:1 },
+  { cat:"Cultura",  q:"Qual é o livro sagrado do Islamismo?",         opts:["Torá","Bíblia","Alcorão","Vedas"], ans:2 },
+  { cat:"Cultura",  q:"Quantos apóstolos Jesus escolheu?",            opts:["10","12","7","14"], ans:1 },
+  { cat:"Cultura",  q:"Em qual cidade Jesus nasceu?",                 opts:["Jerusalém","Nazaré","Belém","Cafarnaum"], ans:2 },
+  { cat:"Geral",    q:"Qual é o maior planeta do Sistema Solar?",     opts:["Saturno","Netuno","Júpiter","Urano"], ans:2 },
+  { cat:"Geral",    q:"Em que país fica a Torre Eiffel?",             opts:["Itália","Espanha","França","Portugal"], ans:2 },
+  { cat:"Geral",    q:"Quantos continentes tem a Terra?",             opts:["5","6","7","8"], ans:2 },
+  { cat:"Geral",    q:"Qual é o rio mais longo do mundo?",            opts:["Amazonas","Nilo","Yangtzé","Mississippi"], ans:1 },
+  { cat:"💕 Especial", q:"Em que mês Pietro faz aniversário?",        opts:["Dezembro","Janeiro","Fevereiro","Março"], ans:1 },
+  { cat:"💕 Especial", q:"Em que mês Emilly faz aniversário?",        opts:["Março","Maio","Abril","Junho"], ans:2 },
+  { cat:"💕 Especial", q:"Em que dia Pietro e Emilly começaram a namorar?", opts:["10 de outubro","11 de outubro","12 de outubro","13 de outubro"], ans:1 },
+  { cat:"🏙️ Santa Maria", q:"Qual universidade federal fica em Santa Maria?", opts:["UFRGS","UFSM","UFPEL","UNIPAMPA"], ans:1 },
+  { cat:"🏙️ Santa Maria", q:"Santa Maria é conhecida como Cidade dos...?",   opts:["Gaúchos","Estudantes","Açorianos","Pinheiros"], ans:1 },
 ];
 
-/* ════════════════════════════════════════════
-   SHOP ITEMS
-   ════════════════════════════════════════════ */
-export const SHOP_ITEMS = [
-  // Móveis
-  { id: 'sofa',      icon: '🛋️', name: 'Sofazinho',    desc: 'Cantinho pra relaxar juntos', price: 40,  cat: 'furniture', layer: 'furniture1' },
-  { id: 'bed',       icon: '🛏️', name: 'Caminha',      desc: 'Pra descansar bem',           price: 60,  cat: 'furniture', layer: 'furniture2' },
-  { id: 'table',     icon: '🪑', name: 'Mesinha',      desc: 'Café da manhã juntos',        price: 35,  cat: 'furniture', layer: 'furniture3' },
-  { id: 'lamp',      icon: '🪔', name: 'Luminária',    desc: 'Luz aconchegante',            price: 25,  cat: 'furniture', layer: 'furniture4' },
-  // Jardim
-  { id: 'rose',      icon: '🌹', name: 'Roseiras',     desc: 'Jardim romântico',            price: 30,  cat: 'garden',    layer: 'garden1' },
-  { id: 'tree',      icon: '🌳', name: 'Arvorezinha',  desc: 'Sombra pra vocês dois',       price: 45,  cat: 'garden',    layer: 'garden2' },
-  { id: 'sunflower', icon: '🌻', name: 'Girassóis',    desc: 'Alegria no jardim',           price: 20,  cat: 'garden',    layer: 'garden3' },
-  { id: 'mushroom',  icon: '🍄', name: 'Cogumelos',    desc: 'Toque mágico',                price: 15,  cat: 'garden',    layer: 'garden4' },
-  // Paredes
-  { id: 'wallpink',  icon: '🎀', name: 'Parede Rosa',  desc: 'Tom suave e romântico',       price: 50,  cat: 'wall',      layer: 'wall' },
-  { id: 'wallblue',  icon: '💙', name: 'Parede Azul',  desc: 'Calmo como o céu',            price: 50,  cat: 'wall',      layer: 'wall' },
-  { id: 'wallwood',  icon: '🪵', name: 'Madeira',      desc: 'Rústico e aconchegante',      price: 65,  cat: 'wall',      layer: 'wall' },
-  // Janelas / Portas
-  { id: 'window2',   icon: '🪟', name: 'Janela Dupla', desc: 'Mais luz na casinha',         price: 40,  cat: 'window',    layer: 'window' },
-  { id: 'door2',     icon: '🚪', name: 'Porta Arco',   desc: 'Entrada encantada',           price: 55,  cat: 'door',      layer: 'door' },
-  // Especiais
-  { id: 'star',      icon: '⭐', name: 'Estrelinhas',  desc: 'Teto estrelado',              price: 80,  cat: 'special',   layer: 'special1' },
-  { id: 'heart',     icon: '💖', name: 'Corações',     desc: 'Amor em todo lugar',          price: 90,  cat: 'special',   layer: 'special2' },
-  { id: 'rainbow',   icon: '🌈', name: 'Arco-íris',    desc: 'Pra sempre colorido',         price: 120, cat: 'special',   layer: 'special3' },
-];
-
-/* ════════════════════════════════════════════
-   CAT SVG STATES (pixel art inline SVG)
-   ════════════════════════════════════════════ */
-function getCatSVG(mood, name) {
-  // Pixel art cat — different expressions per mood
-  const moods = {
-    happy:   { eyes: '◕◕', mouth: '▽', color: '#ffb3c1', ear: '#ff85a1', detail: '♡' },
-    hungry:  { eyes: '◔◔', mouth: '△', color: '#ffd4a0', ear: '#ffb870', detail: '!' },
-    sleepy:  { eyes: '－－', mouth: '‥', color: '#c9b8d4', ear: '#a990c0', detail: 'z' },
-    idle:    { eyes: '◡◡', mouth: '‿', color: '#ffb3c1', ear: '#ff85a1', detail: '♪' },
-    playing: { eyes: '★★', mouth: '∪', color: '#ffcc99', ear: '#ffaa66', detail: '♫' },
-    loved:   { eyes: '♡♡', mouth: '▽', color: '#ffb3c1', ear: '#ff85a1', detail: '❤' },
-  };
-  const m = moods[mood] || moods.idle;
-
-  return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;image-rendering:pixelated">
-    <!-- Shadow -->
-    <ellipse cx="32" cy="60" rx="14" ry="3" fill="rgba(0,0,0,0.2)"/>
-    <!-- Tail -->
-    <path d="M44 50 Q58 44 56 36 Q54 28 50 32 Q54 36 52 42 Q50 48 44 50Z" fill="${m.color}" stroke="${m.ear}" stroke-width="1"/>
-    <!-- Body -->
-    <rect x="18" y="38" width="28" height="20" rx="8" fill="${m.color}"/>
-    <!-- Stripes on body -->
-    <line x1="26" y1="42" x2="24" y2="54" stroke="${m.ear}" stroke-width="1.5" opacity="0.5"/>
-    <line x1="32" y1="41" x2="32" y2="55" stroke="${m.ear}" stroke-width="1.5" opacity="0.5"/>
-    <line x1="38" y1="42" x2="40" y2="54" stroke="${m.ear}" stroke-width="1.5" opacity="0.5"/>
-    <!-- Paws -->
-    <ellipse cx="22" cy="57" rx="5" ry="3" fill="${m.color}"/>
-    <ellipse cx="42" cy="57" rx="5" ry="3" fill="${m.color}"/>
-    <!-- Paw toes -->
-    <circle cx="20" cy="58" r="1.2" fill="${m.ear}"/><circle cx="22" cy="59" r="1.2" fill="${m.ear}"/><circle cx="24" cy="58" r="1.2" fill="${m.ear}"/>
-    <circle cx="40" cy="58" r="1.2" fill="${m.ear}"/><circle cx="42" cy="59" r="1.2" fill="${m.ear}"/><circle cx="44" cy="58" r="1.2" fill="${m.ear}"/>
-    <!-- Head -->
-    <ellipse cx="32" cy="28" rx="16" ry="15" fill="${m.color}"/>
-    <!-- Ears -->
-    <polygon points="16,18 12,6 22,14" fill="${m.ear}"/>
-    <polygon points="48,18 52,6 42,14" fill="${m.ear}"/>
-    <polygon points="17,17 14,9 21,14" fill="#ffe0ea"/>
-    <polygon points="47,17 50,9 43,14" fill="#ffe0ea"/>
-    <!-- Face stripes -->
-    <line x1="20" y1="20" x2="16" y2="22" stroke="${m.ear}" stroke-width="1.5"/>
-    <line x1="20" y1="23" x2="15" y2="24" stroke="${m.ear}" stroke-width="1.5"/>
-    <line x1="44" y1="20" x2="48" y2="22" stroke="${m.ear}" stroke-width="1.5"/>
-    <line x1="44" y1="23" x2="49" y2="24" stroke="${m.ear}" stroke-width="1.5"/>
-    <!-- Eyes -->
-    <text x="32" y="27" text-anchor="middle" font-size="9" fill="#590d22" font-family="serif">${m.eyes}</text>
-    <!-- Nose -->
-    <ellipse cx="32" cy="31" rx="2.5" ry="2" fill="#ff85a1"/>
-    <!-- Mouth -->
-    <text x="32" y="37" text-anchor="middle" font-size="7" fill="#590d22" font-family="serif">${m.mouth}</text>
-    <!-- Whiskers -->
-    <line x1="24" y1="31" x2="10" y2="28" stroke="#a06070" stroke-width="1" opacity="0.7"/>
-    <line x1="24" y1="33" x2="10" y2="33" stroke="#a06070" stroke-width="1" opacity="0.7"/>
-    <line x1="40" y1="31" x2="54" y2="28" stroke="#a06070" stroke-width="1" opacity="0.7"/>
-    <line x1="40" y1="33" x2="54" y2="33" stroke="#a06070" stroke-width="1" opacity="0.7"/>
-    <!-- Collar -->
-    <rect x="22" y="40" width="20" height="4" rx="2" fill="#e8536f"/>
-    <circle cx="32" cy="42" r="2" fill="#ffd700"/>
-    <!-- Detail -->
-    <text x="32" y="12" text-anchor="middle" font-size="7" fill="${m.ear}" opacity="0.8">${m.detail}</text>
-    <!-- Name tag on collar -->
-  </svg>`;
-}
-
-/* ════════════════════════════════════════════
-   HOUSE SVG RENDERER
-   ════════════════════════════════════════════ */
-function getHouseSVG(items) {
-  const owned = new Set(items || []);
-
-  // Wall color
-  let wallFill = '#8B6060';
-  if (owned.has('wallpink')) wallFill = '#f4879c';
-  else if (owned.has('wallblue')) wallFill = '#6eb5ff';
-  else if (owned.has('wallwood')) wallFill = '#c8966e';
-
-  // Window style
-  const hasWindow2 = owned.has('window2');
-  // Door style
-  const hasDoor2 = owned.has('door2');
-  // Special decorations
-  const hasStars   = owned.has('star');
-  const hasHearts  = owned.has('heart');
-  const hasRainbow = owned.has('rainbow');
-
-  return `<svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;image-rendering:pixelated">
-
-    <!-- Sky gradient -->
-    <defs>
-      <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:#0d1b2a"/>
-        <stop offset="100%" style="stop-color:#1a2a3a"/>
-      </linearGradient>
-      <linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:#2d4a1e"/>
-        <stop offset="100%" style="stop-color:#1a2e10"/>
-      </linearGradient>
-    </defs>
-
-    <!-- Sky -->
-    <rect width="280" height="180" fill="url(#skyGrad)"/>
-
-    <!-- Moon -->
-    <circle cx="230" cy="25" r="14" fill="#fff9c4" opacity="0.9"/>
-    <circle cx="236" cy="21" r="11" fill="#0d1b2a" opacity="0.9"/>
-
-    <!-- Stars -->
-    <rect x="20" y="10" width="3" height="3" fill="#fff" opacity="0.8"/>
-    <rect x="60" y="6"  width="2" height="2" fill="#fff" opacity="0.6"/>
-    <rect x="100" y="15" width="3" height="3" fill="#ffd700" opacity="0.7"/>
-    <rect x="150" y="8" width="2" height="2" fill="#fff" opacity="0.5"/>
-    <rect x="190" y="18" width="3" height="3" fill="#fff" opacity="0.8"/>
-    ${hasStars ? `
-    <rect x="40" y="20"  width="2" height="2" fill="#ffd700" opacity="0.9"/>
-    <rect x="80" y="12"  width="2" height="2" fill="#ffd700" opacity="0.9"/>
-    <rect x="120" y="5"  width="3" height="3" fill="#ffd700" opacity="0.9"/>
-    <rect x="170" y="22" width="2" height="2" fill="#ffd700" opacity="0.9"/>
-    <text x="140" y="18" text-anchor="middle" font-size="10" fill="#ffd700" opacity="0.7">✦✦✦</text>
-    ` : ''}
-
-    ${hasRainbow ? `
-    <!-- Rainbow arc -->
-    <path d="M 20 100 Q 140 20 260 100" stroke="#ff6b6b" stroke-width="3" fill="none" opacity="0.5"/>
-    <path d="M 20 100 Q 140 30 260 100" stroke="#ffd700" stroke-width="3" fill="none" opacity="0.5"/>
-    <path d="M 20 100 Q 140 40 260 100" stroke="#7ac44a" stroke-width="3" fill="none" opacity="0.5"/>
-    <path d="M 20 100 Q 140 48 260 100" stroke="#6eb5ff" stroke-width="3" fill="none" opacity="0.5"/>
-    ` : ''}
-
-    <!-- Ground -->
-    <rect x="0" y="140" width="280" height="40" fill="url(#groundGrad)"/>
-    <!-- Grass pixels -->
-    <rect x="0" y="140" width="280" height="4" fill="#4a7a2a"/>
-    ${Array.from({length: 40}, (_,i) => `<rect x="${i*7}" y="${136 + (i%3)*2}" width="4" height="${4 + i%3}" fill="#5a9a3a"/>`).join('')}
-
-    <!-- Path to door -->
-    <rect x="120" y="140" width="40" height="40" fill="#8B7355" opacity="0.6"/>
-    <rect x="126" y="140" width="12" height="40" fill="#a08060" opacity="0.4"/>
-    <rect x="142" y="140" width="12" height="40" fill="#a08060" opacity="0.4"/>
-
-    <!-- House foundation -->
-    <rect x="50" y="130" width="180" height="14" rx="2" fill="#5a4040"/>
-
-    <!-- House walls -->
-    <rect x="55" y="90" width="170" height="50" fill="${wallFill}"/>
-
-    <!-- Wall texture (pixel bricks) -->
-    ${Array.from({length: 5}, (_,row) =>
-      Array.from({length: 9}, (_,col) =>
-        `<rect x="${55 + col*19 + (row%2)*9}" y="${90 + row*10}" width="17" height="8" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="1" rx="0"/>`
-      ).join('')
-    ).join('')}
-
-    <!-- Roof -->
-    <polygon points="40,92 140,45 240,92" fill="#8B2020"/>
-    <polygon points="40,92 140,45 240,92" fill="none" stroke="#6B1010" stroke-width="2"/>
-    <!-- Roof shingles -->
-    ${Array.from({length:6},(_,i)=>`<line x1="${40+i*20}" y1="${92-i*7.8}" x2="${240-i*20}" y2="${92-i*7.8}" stroke="#6B1010" stroke-width="1.5" opacity="0.5"/>`).join('')}
-    <!-- Chimney -->
-    <rect x="175" y="55" width="20" height="30" fill="#7a3030"/>
-    <rect x="172" y="52" width="26" height="6" fill="#5a2020"/>
-    <!-- Smoke -->
-    <circle cx="185" cy="44" r="5" fill="#888" opacity="0.3"/>
-    <circle cx="188" cy="36" r="6" fill="#999" opacity="0.25"/>
-    <circle cx="183" cy="28" r="7" fill="#aaa" opacity="0.2"/>
-
-    <!-- Roof peak decoration -->
-    ${hasHearts ? `<text x="140" y="58" text-anchor="middle" font-size="10" fill="#ff85a1">♥</text>` : `<circle cx="140" cy="50" r="4" fill="#ffd700"/>`}
-
-    <!-- Windows -->
-    ${hasWindow2 ? `
-    <!-- Double windows -->
-    <rect x="68" y="98" width="28" height="24" rx="2" fill="#87CEEB" opacity="0.8"/>
-    <rect x="68" y="98" width="28" height="24" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
-    <line x1="82" y1="98" x2="82" y2="122" stroke="#fff" stroke-width="1.5"/>
-    <line x1="68" y1="110" x2="96" y2="110" stroke="#fff" stroke-width="1.5"/>
-    <!-- Window glow -->
-    <rect x="70" y="100" width="10" height="10" fill="#fff9c4" opacity="0.4"/>
-    <rect x="84" y="100" width="10" height="10" fill="#fff9c4" opacity="0.4"/>
-
-    <rect x="184" y="98" width="28" height="24" rx="2" fill="#87CEEB" opacity="0.8"/>
-    <rect x="184" y="98" width="28" height="24" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
-    <line x1="198" y1="98" x2="198" y2="122" stroke="#fff" stroke-width="1.5"/>
-    <line x1="184" y1="110" x2="212" y2="110" stroke="#fff" stroke-width="1.5"/>
-    <rect x="186" y="100" width="10" height="10" fill="#fff9c4" opacity="0.4"/>
-    <rect x="200" y="100" width="10" height="10" fill="#fff9c4" opacity="0.4"/>
-    ` : `
-    <!-- Single windows -->
-    <rect x="70" y="100" width="26" height="22" rx="2" fill="#87CEEB" opacity="0.8"/>
-    <rect x="70" y="100" width="26" height="22" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
-    <line x1="83" y1="100" x2="83" y2="122" stroke="#fff" stroke-width="1.5"/>
-    <line x1="70" y1="111" x2="96" y2="111" stroke="#fff" stroke-width="1.5"/>
-    <rect x="72" y="102" width="9" height="8" fill="#fff9c4" opacity="0.4"/>
-
-    <rect x="184" y="100" width="26" height="22" rx="2" fill="#87CEEB" opacity="0.8"/>
-    <rect x="184" y="100" width="26" height="22" rx="2" fill="none" stroke="#fff" stroke-width="2"/>
-    <line x1="197" y1="100" x2="197" y2="122" stroke="#fff" stroke-width="1.5"/>
-    <line x1="184" y1="111" x2="210" y2="111" stroke="#fff" stroke-width="1.5"/>
-    <rect x="186" y="102" width="9" height="8" fill="#fff9c4" opacity="0.4"/>
-    `}
-
-    <!-- Curtains (if heart special) -->
-    ${hasHearts ? `
-    <path d="M70 100 Q76 110 70 122" fill="#ffb3c1" opacity="0.6"/>
-    <path d="M96 100 Q90 110 96 122" fill="#ffb3c1" opacity="0.6"/>
-    <path d="M184 100 Q190 110 184 122" fill="#ffb3c1" opacity="0.6"/>
-    <path d="M210 100 Q204 110 210 122" fill="#ffb3c1" opacity="0.6"/>
-    ` : ''}
-
-    <!-- Door -->
-    ${hasDoor2 ? `
-    <!-- Arch door -->
-    <rect x="122" y="110" width="36" height="30" fill="#5a3010"/>
-    <ellipse cx="140" cy="110" rx="18" ry="10" fill="#5a3010"/>
-    <rect x="122" y="110" width="36" height="30" fill="none" stroke="#8B5030" stroke-width="2"/>
-    <ellipse cx="140" cy="110" rx="18" ry="10" fill="none" stroke="#8B5030" stroke-width="2"/>
-    <line x1="140" y1="100" x2="140" y2="140" stroke="#8B5030" stroke-width="1.5" opacity="0.5"/>
-    <circle cx="148" cy="125" r="2.5" fill="#ffd700"/>
-    <!-- Arch window -->
-    <ellipse cx="140" cy="108" rx="10" ry="6" fill="#87CEEB" opacity="0.5"/>
-    ` : `
-    <!-- Simple door -->
-    <rect x="122" y="112" width="36" height="28" rx="3" fill="#6B4020"/>
-    <rect x="122" y="112" width="36" height="28" rx="3" fill="none" stroke="#8B5030" stroke-width="2"/>
-    <line x1="140" y1="112" x2="140" y2="140" stroke="#8B5030" stroke-width="1.5" opacity="0.5"/>
-    <circle cx="147" cy="126" r="2.5" fill="#ffd700"/>
-    <!-- Door top window -->
-    <rect x="128" y="115" width="10" height="8" rx="1" fill="#87CEEB" opacity="0.5"/>
-    <rect x="142" y="115" width="10" height="8" rx="1" fill="#87CEEB" opacity="0.5"/>
-    `}
-
-    <!-- Furniture hints through windows -->
-    ${owned.has('sofa') ? `<rect x="72" y="113" width="18" height="6" rx="2" fill="#e8536f" opacity="0.4"/>` : ''}
-    ${owned.has('lamp') ? `<line x1="190" y1="102" x2="190" y2="116" stroke="#ffd700" stroke-width="1.5" opacity="0.5"/>` : ''}
-
-    <!-- Mailbox -->
-    <rect x="220" y="128" width="14" height="10" rx="2" fill="#e8536f"/>
-    <rect x="220" y="128" width="14" height="5" rx="1" fill="#c0392b"/>
-    <rect x="226" y="124" width="2" height="14" fill="#888"/>
-    <rect x="219" y="133" width="6" height="1.5" fill="#fff" opacity="0.5"/>
-
-    <!-- Heart floating above house (if heart special) -->
-    ${hasHearts ? `
-    <text x="90" y="82" font-size="8" fill="#ff85a1" opacity="0.8">♥</text>
-    <text x="190" y="80" font-size="8" fill="#ff85a1" opacity="0.8">♥</text>
-    <text x="140" y="38" font-size="10" fill="#ff85a1" opacity="0.7">♥</text>
-    ` : ''}
-  </svg>`;
-}
-
-/* ════════════════════════════════════════════
-   GARDEN RENDERER
-   ════════════════════════════════════════════ */
-function getGardenItems(items) {
-  const owned = new Set(items || []);
-  const parts = [];
-  if (owned.has('rose'))      parts.push('<span class="garden-item" style="font-size:clamp(1rem,4vw,1.5rem)">🌹</span><span class="garden-item" style="font-size:clamp(0.8rem,3vw,1.2rem)">🌹</span>');
-  if (owned.has('sunflower')) parts.push('<span class="garden-item">🌻</span>');
-  if (owned.has('mushroom'))  parts.push('<span class="garden-item" style="font-size:clamp(0.7rem,2.5vw,1rem)">🍄</span><span class="garden-item" style="font-size:clamp(0.6rem,2vw,0.9rem)">🍄</span>');
-  if (owned.has('tree'))      parts.push('<span class="garden-item" style="font-size:clamp(1.2rem,5vw,2rem)">🌳</span>');
-  if (parts.length === 0) parts.push('<span class="garden-item" style="font-size:clamp(0.7rem,2.5vw,1rem);opacity:0.4">🌿</span><span class="garden-item" style="font-size:clamp(0.7rem,2.5vw,1rem);opacity:0.4">🌿</span>');
-  return parts.join('');
-}
-
-/* ════════════════════════════════════════════
-   DEFAULT STATE
-   ════════════════════════════════════════════ */
+/* ════ STATE ════ */
 const DEFAULT_HOME = {
-  coins: 0,
-  items: [],
-  pet: {
-    name: 'Bolinha',
-    hunger: 80,   // 0–100
-    energy: 80,
-    happy:  80,
-    love:   80,
-    lastFed:    null,
-    lastPet:    null,
-    lastPlayed: null,
-    lastSlept:  null,
-  },
-  quiz: {
-    pietro: { lastDate: null, done: false },
-    emilly: { lastDate: null, done: false },
-  },
-  earnedToday: {
-    date: null,
-    mood: false,
-    location: false,
-    mural: false,
-  },
+  gamePhase:"intro", currentSave:0, saves:[],
+  coins:200, xp:0, level:0,
+  pet:{ adopted:false, gatoId:null, nome:null, hunger:80, energy:80, happy:80, love:80, lastFed:null, lastPet:null, lastPlayed:null, lastSlept:null },
+  quiz:{ pietro:{ lastDate:null }, emilly:{ lastDate:null } },
+  earnedToday:{ date:null, mood:false, location:false, mural:false },
+  dialogoVisto:{}, eventoDiarioVisto:null,
 };
 
-/* ════════════════════════════════════════════
-   MODULE STATE
-   ════════════════════════════════════════════ */
-let _db    = null;
-let _doc   = null;
-let _state = JSON.parse(JSON.stringify(DEFAULT_HOME));
-let _quizPerson = 'pietro';
-let _currentQ   = null;
-let _answered   = false;
+let _db=null,_doc=null,_state=JSON.parse(JSON.stringify(DEFAULT_HOME));
+let _quizPerson="pietro",_currentQ=null,_answered=false;
+let _dialogRunning=false,_dialogQueue=[];
 
-/* ════════════════════════════════════════════
-   FIREBASE HELPERS
-   ════════════════════════════════════════════ */
-async function saveState() {
-  if (!_doc) return;
-  try { await setDoc(_doc, _state); } catch(e) { console.warn('home save:', e); }
+async function saveState(){ if(!_doc)return; try{ await setDoc(_doc,_state); }catch(e){ console.warn("home save:",e); } }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function currentSave(){ return _state.saves[_state.currentSave]||null; }
+function currentTerreno(){ const sv=currentSave(); return sv?TERRENOS.find(t=>t.id===sv.terrenoId)||null:null; }
+function ownedItems(){ const sv=currentSave(); return new Set(sv?sv.items:[]); }
+function getLoja(){ const sv=currentSave(); if(!sv)return LOJA_EXTERIOR; if(sv.fase==="interior")return LOJA_INTERIOR; if(sv.fase==="jardim")return LOJA_JARDIM; return LOJA_EXTERIOR; }
+
+/* ════ ANIMATIONS ════ */
+function spawnCoinPop(amount,x,y){ if(!amount)return; const el=document.createElement("div"); el.className="coin-pop"; el.textContent=`+${amount} 🪙`; el.style.left=(x||window.innerWidth/2-20)+"px"; el.style.top=(y||window.innerHeight/2)+"px"; document.body.appendChild(el); setTimeout(()=>el.remove(),950); }
+function spawnXpPop(amount,x,y){ if(!amount)return; const el=document.createElement("div"); el.className="xp-pop"; el.textContent=`+${amount} XP ⭐`; el.style.left=(x||window.innerWidth/2-20)+"px"; el.style.top=((y||window.innerHeight/2)-40)+"px"; document.body.appendChild(el); setTimeout(()=>el.remove(),950); }
+function spawnHearts(x,y,count){ for(let i=0;i<(count||3);i++){ setTimeout(()=>{ const el=document.createElement("div"); el.className="heart-pop"; el.textContent=["💗","💕","❤️","💖"][Math.floor(Math.random()*4)]; el.style.left=(x+(Math.random()-0.5)*40)+"px"; el.style.top=y+"px"; el.style.animationDuration=(0.8+Math.random()*0.6)+"s"; document.body.appendChild(el); setTimeout(()=>el.remove(),1400); },i*120); } }
+function showToastNativo(msg){ import("./ui.js").then(m=>m.showToast(msg)); }
+
+/* ════ COINS ════ */
+export function awardCoins(reason,amount){
+  const today=todayStr();
+  if(_state.earnedToday.date!==today) _state.earnedToday={date:today,mood:false,location:false,mural:false};
+  if(_state.earnedToday[reason])return;
+  _state.earnedToday[reason]=true; _state.coins+=amount;
+  saveState(); renderCoins(); renderEarnList();
+  spawnCoinPop(amount,window.innerWidth/2-30,window.innerHeight/2);
+  showToastNativo(`🪙 +${amount} moedas!`);
 }
 
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+function addXp(amount){
+  _state.xp+=amount;
+  spawnXpPop(amount,window.innerWidth/2+40,window.innerHeight/2);
+  checkLevelUp();
 }
 
-/* ════════════════════════════════════════════
-   COIN ANIMATIONS
-   ════════════════════════════════════════════ */
-function spawnCoinPop(amount, x, y) {
-  const el = document.createElement('div');
-  el.className = 'coin-pop';
-  el.textContent = `+${amount} 🪙`;
-  el.style.left = (x || window.innerWidth/2 - 20) + 'px';
-  el.style.top  = (y || window.innerHeight/2) + 'px';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 950);
-}
-
-function spawnHearts(x, y, count) {
-  for (let i = 0; i < (count || 3); i++) {
-    setTimeout(() => {
-      const el = document.createElement('div');
-      el.className = 'heart-pop';
-      el.textContent = ['💗','💕','❤️','💖'][Math.floor(Math.random()*4)];
-      el.style.left = (x + (Math.random()-0.5)*40) + 'px';
-      el.style.top  = y + 'px';
-      el.style.animationDuration = (0.8 + Math.random()*0.6) + 's';
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 1400);
-    }, i * 120);
-  }
-}
-
-/* ════════════════════════════════════════════
-   ADD COINS (called from app.js hooks)
-   ════════════════════════════════════════════ */
-export function awardCoins(reason, amount) {
-  const today = todayStr();
-  if (_state.earnedToday.date !== today) {
-    _state.earnedToday = { date: today, mood: false, location: false, mural: false };
-  }
-  if (_state.earnedToday[reason]) return; // já ganhou hoje
-  _state.earnedToday[reason] = true;
-  _state.coins += amount;
-  saveState();
-  renderCoins();
-  renderEarnList();
-  // pop no meio da tela
-  spawnCoinPop(amount, window.innerWidth/2 - 30, window.innerHeight/2);
-  import('./ui.js').then(m => m.showToast(`🪙 +${amount} moedas! (${reason})`));
-}
-
-/* ════════════════════════════════════════════
-   RENDER COINS
-   ════════════════════════════════════════════ */
-function renderCoins() {
-  document.querySelectorAll('.home-coin-amount').forEach(el => {
-    el.textContent = _state.coins;
-  });
-}
-
-/* ════════════════════════════════════════════
-   RENDER EARN LIST
-   ════════════════════════════════════════════ */
-function renderEarnList() {
-  const today = todayStr();
-  const earned = _state.earnedToday?.date === today ? _state.earnedToday : {};
-  const list = [
-    { key: 'quiz',     label: '📝 Quiz diário (Pietro)',   amt: 15 },
-    { key: 'quiz2',    label: '📝 Quiz diário (Emilly)',   amt: 15 },
-    { key: 'mood',     label: '😊 Registrar humor',        amt: 5  },
-    { key: 'location', label: '📍 Compartilhar localização', amt: 8 },
-    { key: 'mural',    label: '💌 Mensagem no mural',      amt: 5  },
+function checkLevelUp(){
+  const LEVELS=[
+    {level:1,nome:"Fundação",        xpNeeded:0},
+    {level:2,nome:"Fachada",         xpNeeded:200, unlocks:["cat"]},
+    {level:3,nome:"Jardim & Entrada",xpNeeded:500, unlocks:["interior_hint"]},
+    {level:4,nome:"Interior — Sala", xpNeeded:900},
+    {level:5,nome:"Interior — Quarto",xpNeeded:1400},
+    {level:6,nome:"Lar Completo 🏡", xpNeeded:2000},
   ];
-
-  const quizDone = {
-    quiz:  _state.quiz?.pietro?.lastDate === today,
-    quiz2: _state.quiz?.emilly?.lastDate === today,
-  };
-
-  const wrap = document.getElementById('home-earn-list');
-  if (!wrap) return;
-  wrap.innerHTML = list.map(item => {
-    const done = item.key.startsWith('quiz') ? quizDone[item.key] : earned[item.key];
-    return `<div class="earn-row">
-      <span class="earn-row-left">${item.label}</span>
-      <span class="earn-row-right">
-        ${done ? '<span class="done-check">✓ Feito</span>' : `+${item.amt} 🪙`}
-      </span>
-    </div>`;
-  }).join('');
+  for(const lv of LEVELS){
+    if(_state.xp>=lv.xpNeeded && _state.level<lv.level){
+      _state.level=lv.level; saveState(); renderLevel();
+      showLevelUpModal(lv);
+      if(lv.unlocks?.includes("cat")) showToastNativo("🐱 Adoção de gato desbloqueada! Aba Pet!");
+    }
+  }
 }
 
-/* ════════════════════════════════════════════
-   PET LOGIC
-   ════════════════════════════════════════════ */
-function getPetMood() {
-  const { hunger, energy, happy, love } = _state.pet;
-  if (happy > 80 && hunger > 60)  return 'happy';
-  if (hunger < 30)                return 'hungry';
-  if (energy < 30)                return 'sleepy';
-  if (love > 85)                  return 'loved';
-  return 'idle';
+function renderCoins(){ document.querySelectorAll(".home-coin-amount").forEach(el=>el.textContent=_state.coins); }
+
+function renderLevel(){
+  const LEVELS=[
+    {level:0,nome:"Início"},
+    {level:1,nome:"Fundação"},
+    {level:2,nome:"Fachada"},
+    {level:3,nome:"Jardim & Entrada"},
+    {level:4,nome:"Interior — Sala"},
+    {level:5,nome:"Interior — Quarto"},
+    {level:6,nome:"Lar Completo 🏡"},
+  ];
+  const XP_NEXT=[0,0,200,500,900,1400,2000];
+  const lvl=_state.level||0;
+  document.querySelectorAll(".home-level-label").forEach(el=>el.textContent=`Nível ${lvl} — ${LEVELS[lvl]?.nome||""}`);
+  const nextXp=XP_NEXT[lvl+1]||2000;
+  const pct=lvl>=6?100:Math.min(100,Math.round((_state.xp/nextXp)*100));
+  document.querySelectorAll(".home-xp-fill").forEach(el=>el.style.width=pct+"%");
+  document.querySelectorAll(".home-xp-label").forEach(el=>el.textContent=lvl>=6?"Nível máximo! 🏆":`${_state.xp} / ${nextXp} XP`);
 }
 
-const PET_MESSAGES = {
-  happy:   ['Miau! Estou feliz! 😸', 'Que dia lindo! 🌟', 'Amo vocês dois! 💕'],
-  hungry:  ['Miaaaau! Tô com fome! 🍖', 'Me alimenta, por favor! 😿', 'Barriga vazia... 🥺'],
-  sleepy:  ['Zzz... com soninho... 😴', 'Deixa eu dormir 5 minutos... 💤', 'Boceja* 🥱'],
-  idle:    ['Miau! O que vamos fazer? 🐾', 'Quero brincar! 🎾', 'Me faz carinho? 🥺'],
-  playing: ['Wheee! 🎉', 'Isso sim é diversão! ✨', 'Mais! Mais! 🎊'],
-  loved:   ['Purrrr... 💖', 'Sou o gatinho mais amado! 🥰', 'Coração quentinho 💗'],
+function showLevelUpModal(lv){
+  const ex=document.getElementById("levelup-modal"); if(ex)ex.remove();
+  const modal=document.createElement("div"); modal.id="levelup-modal"; modal.className="levelup-overlay";
+  modal.innerHTML=`<div class="levelup-card"><div class="levelup-stars">⭐⭐⭐</div><div class="levelup-titulo">Nível ${lv.level}!</div><div class="levelup-nome">${lv.nome}</div><button class="levelup-btn" onclick="document.getElementById('levelup-modal').remove()">Continuar 🏡</button></div>`;
+  document.body.appendChild(modal); spawnHearts(window.innerWidth/2,window.innerHeight/3,12);
+}
+
+function renderEarnList(){
+  const today=todayStr(); const earned=_state.earnedToday?.date===today?_state.earnedToday:{};
+  const quizDone={ quiz:_state.quiz?.pietro?.lastDate===today, quiz2:_state.quiz?.emilly?.lastDate===today };
+  const list=[{key:"quiz",label:"📝 Quiz diário (Pietro)",amt:15},{key:"quiz2",label:"📝 Quiz diário (Emilly)",amt:15},{key:"mood",label:"😊 Registrar humor",amt:5},{key:"location",label:"📍 Compartilhar localização",amt:8},{key:"mural",label:"💌 Mensagem no mural",amt:5}];
+  const wrap=document.getElementById("home-earn-list"); if(!wrap)return;
+  wrap.innerHTML=list.map(item=>{ const done=item.key.startsWith("quiz")?quizDone[item.key]:earned[item.key]; return `<div class="earn-row"><span class="earn-row-left">${item.label}</span><span class="earn-row-right">${done?'<span class="done-check">✓ Feito</span>':`+${item.amt} 🪙`}</span></div>`; }).join("");
+}
+
+/* ════ DIALOGOS ════ */
+function triggerDialogo(chave,onDone){
+  const msgs=DIALOGOS[chave];
+  if(!msgs||_state.dialogoVisto?.[chave]){ onDone?.(); return; }
+  _state.dialogoVisto=_state.dialogoVisto||{}; _state.dialogoVisto[chave]=true; saveState();
+  showDialogoSequence(msgs,onDone);
+}
+
+function showDialogoSequence(msgs,onDone){
+  if(_dialogRunning){ _dialogQueue.push({msgs,onDone}); return; }
+  _dialogRunning=true;
+  const overlay=document.createElement("div"); overlay.className="dialogo-overlay"; document.body.appendChild(overlay);
+  let idx=0;
+  function showNext(){
+    overlay.innerHTML="";
+    if(idx>=msgs.length){ overlay.remove(); _dialogRunning=false; onDone?.(); if(_dialogQueue.length){ const nx=_dialogQueue.shift(); showDialogoSequence(nx.msgs,nx.onDone); } return; }
+    const m=msgs[idx]; const isPietro=m.quem==="pietro";
+    overlay.innerHTML=`<div class="dialogo-box ${isPietro?"dialogo-pietro":"dialogo-emilly"}"><div class="dialogo-avatar">${isPietro?"💙":"💗"}</div><div class="dialogo-bubble"><div class="dialogo-nome">${isPietro?"Pietro":"Emilly"}</div><div class="dialogo-texto">${m.texto}</div></div></div><div class="dialogo-hint">toque para continuar</div>`;
+    idx++;
+  }
+  overlay.addEventListener("click",showNext); showNext();
+}
+
+/* ════ RENDER RPG ════ */
+function renderRPG(){
+  const wrap=document.getElementById("home-rpg-wrap"); if(!wrap)return;
+  const phase=_state.gamePhase||"intro";
+  if(phase==="intro") renderIntro(wrap);
+  else if(phase==="terreno") renderEscolhaTerreno(wrap);
+  else renderCasinha(wrap);
+}
+
+function renderIntro(wrap){
+  wrap.innerHTML=`<div class="rpg-intro">
+    <div style="font-size:4rem;margin-bottom:1rem">🏙️</div>
+    <h3 class="rpg-intro-title">A história começa aqui</h3>
+    <p class="rpg-intro-sub">Pietro & Emilly, em Santa Maria — RS</p>
+    <p class="rpg-intro-texto">Dois apaixonados, um sonho compartilhado: ter o primeiro lar juntos.<br>Ela, arquiteta de interiores com um olhar especial pra beleza.<br>Ele, programador que garante que nada vai falhar. ❤️</p>
+    <button class="rpg-start-btn" onclick="window._homeStartGame()">✨ Começar nossa história</button>
+  </div>`;
+}
+
+function renderEscolhaTerreno(wrap){
+  const saves=_state.saves||[];
+  const savesHtml=saves.length>0?`<div class="saves-wrap">
+    <div class="saves-titulo">📁 Saves anteriores</div>
+    ${saves.map((sv,i)=>{ const t=TERRENOS.find(t=>t.id===sv.terrenoId); return `<div class="save-card${i===_state.currentSave?" active":""}" onclick="window._homeSwitchSave(${i})">${t?.emoji||"🏠"} ${sv.nome} <span class="save-bairro">${t?.nome||""}</span></div>`; }).join("")}
+    ${saves.length<3?`<button class="save-novo-btn" onclick="window._homeNovoSave()">+ Novo terreno</button>`:""}
+  </div>`:"";
+  wrap.innerHTML=`<div class="terreno-header"><div class="terreno-titulo">📍 Escolha o terreno em Santa Maria</div><div class="terreno-subtitulo">Você tem <strong>🪙 ${_state.coins}</strong> para investir</div></div>
+  ${savesHtml}
+  <div class="terrenos-grid">
+    ${TERRENOS.map(t=>`<div class="terreno-card" onclick="window._homeEscolherTerreno('${t.id}')">
+      <div class="terreno-emoji">${t.emoji}</div>
+      <div class="terreno-nome">${t.nome}</div>
+      <div class="terreno-desc">${t.desc}</div>
+      <div class="terreno-info"><span>📐 ${t.area}</span><span>🎓 ${t.distUFSM}</span></div>
+      <div class="terreno-frase">${t.frase}</div>
+      <div class="terreno-preco-wrap"><span class="terreno-preco">🪙 ${t.preco}</span></div>
+      <button class="terreno-btn${_state.coins<t.preco?" disabled":""}" ${_state.coins<t.preco?"disabled":""}>${_state.coins>=t.preco?"Escolher este terreno":`Precisa de mais 🪙 ${t.preco-_state.coins}`}</button>
+    </div>`).join("")}
+  </div>`;
+}
+
+function renderCasinha(wrap){
+  const sv=currentSave(); const terreno=currentTerreno();
+  const owned=ownedItems(); const loja=getLoja();
+  const today=todayStr();
+  let eventoDiario="";
+  if(_state.eventoDiarioVisto!==today){
+    const msgs=DIALOGOS.evento_diario; const msg=msgs[Math.floor(Math.random()*msgs.length)];
+    const isPietro=msg.quem==="pietro";
+    eventoDiario=`<div class="evento-diario" id="evento-diario-card"><button class="evento-close" onclick="window._homeFecharEvento()">✕</button><div class="dialogo-box ${isPietro?"dialogo-pietro":"dialogo-emilly"}" style="margin:0"><div class="dialogo-avatar">${isPietro?"💙":"💗"}</div><div class="dialogo-bubble"><div class="dialogo-nome">${isPietro?"Pietro":"Emilly"}</div><div class="dialogo-texto">${msg.texto}</div></div></div></div>`;
+  }
+  const totalItems=loja.length; const doneItems=loja.filter(i=>owned.has(i.id)).length;
+  const fasePct=totalItems>0?Math.round((doneItems/totalItems)*100):0;
+  let avancarBtn="";
+  if(sv?.fase==="exterior" && doneItems>=4) avancarBtn=`<button class="avancar-btn" onclick="window._homeAvancarFase()">🌳 Avançar para o Jardim</button>`;
+  else if(sv?.fase==="jardim" && doneItems>=4) avancarBtn=`<button class="avancar-btn" onclick="window._homeAvancarFase()">🏠 Avançar para o Interior</button>`;
+  else if(sv?.fase==="interior" && doneItems>=6) avancarBtn=`<button class="avancar-btn" onclick="window._homeCompletarCasa()">🎉 Casa Completa!</button>`;
+  else avancarBtn=`<div class="avancar-hint">Compre mais itens para avançar de fase (${doneItems} de ${Math.max(4,6)} necessários)</div>`;
+
+  wrap.innerHTML=`${eventoDiario}
+  <div class="casinha-header"><span class="casinha-bairro">${terreno?.emoji||"🏠"} ${terreno?.nome||""} — Santa Maria</span><span class="casinha-fase">${sv?.fase==="interior"?"🏠 Interior":sv?.fase==="jardim"?"🌳 Jardim":"🔨 Exterior"}</span></div>
+  <div class="casa-visual-wrap">${getCasaSVG(owned,sv?.fase)}</div>
+  <div class="fase-progress"><div class="fase-progress-label">Progresso: ${doneItems}/${totalItems} itens</div><div class="fase-progress-bar"><div class="fase-progress-fill" style="width:${fasePct}%"></div></div></div>
+  <div class="loja-wrap">
+    <div class="loja-titulo">🛒 ${sv?.fase==="interior"?"Interior":sv?.fase==="jardim"?"Jardim & Entrada":"Fachada"}</div>
+    <div class="loja-grid">${loja.map(item=>{ const isOwned=owned.has(item.id); const exclBlock=item.exclusivo?loja.some(i=>i.exclusivo===item.exclusivo&&owned.has(i.id)&&i.id!==item.id):false; return `<div class="loja-item${isOwned?" owned":""}${exclBlock?" exclbl":""}" onclick="${isOwned||exclBlock?"":` window._homeComprar('${item.id}')`}">
+      ${isOwned?'<span class="loja-owned-badge">✓</span>':""}
+      <div class="loja-item-icon">${item.icon}</div>
+      <div class="loja-item-nome">${item.nome}</div>
+      <div class="loja-item-desc">${item.desc}</div>
+      <div class="loja-item-footer"><span class="loja-item-preco">${isOwned?"✓ Na casinha":`🪙 ${item.preco}`}</span><span class="loja-item-xp">+${item.xp} XP</span></div>
+    </div>`; }).join("")}</div>
+  </div>
+  ${avancarBtn}
+  <div style="text-align:center;margin-top:1.5rem"><button class="recomecar-btn" onclick="window._homeRecomecar()">🔄 Comprar novo terreno</button></div>`;
+}
+
+/* ════ CASA SVG ════ */
+function getCasaSVG(owned,fase){
+  let wall="#f5f5f5";
+  if(owned.has("casa_rosa"))    wall="#f8bbd0";
+  if(owned.has("casa_azul"))    wall="#bbdefb";
+  if(owned.has("casa_amarela")) wall="#fff9c4";
+  if(owned.has("casa_verde"))   wall="#c8e6c9";
+  if(owned.has("casa_branca"))  wall="#ffffff";
+  let roof="#c0392b";
+  if(owned.has("telhado_metal")) roof="#607d8b";
+  if(owned.has("telhado_verde")) roof="#388e3c";
+  let portaFill="#795548"; let portaArco=owned.has("porta_arco");
+  if(owned.has("porta_vidro")) portaFill="#90caf9";
+  if(portaArco) portaFill="#a5745b";
+  const janArco=owned.has("janela_arco"); const janFr=owned.has("janela_francesa");
+  let calcada="#9e9e9e";
+  if(owned.has("calcada_pedra")) calcada="#78909c";
+  if(owned.has("calcada_tijolo")) calcada="#bf360c";
+  const portaSVG=portaArco
+    ?`<path d="M126 140 Q140 120 154 140 L154 165 L126 165 Z" fill="${portaFill}"/><rect x="126" y="145" width="28" height="20" fill="${portaFill}"/>`
+    :`<rect x="126" y="128" width="28" height="37" rx="${owned.has("porta_vidro")?2:3}" fill="${portaFill}"/>`;
+  const janSVG=(x,y)=>janFr
+    ?`<rect x="${x}" y="${y}" width="30" height="36" rx="2" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/><line x1="${x+15}" y1="${y}" x2="${x+15}" y2="${y+36}" stroke="#90caf9" stroke-width="1"/><line x1="${x}" y1="${y+18}" x2="${x+30}" y2="${y+18}" stroke="#90caf9" stroke-width="1"/>`
+    :janArco
+    ?`<path d="M${x} ${y+16} Q${x} ${y} ${x+15} ${y} Q${x+30} ${y} ${x+30} ${y+16} L${x+30} ${y+36} L${x} ${y+36} Z" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/>`
+    :`<rect x="${x}" y="${y}" width="30" height="28" rx="3" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/><line x1="${x+15}" y1="${y}" x2="${x+15}" y2="${y+28}" stroke="#90caf9" stroke-width="1"/><line x1="${x}" y1="${y+14}" x2="${x+30}" y2="${y+14}" stroke="#90caf9" stroke-width="1"/>`;
+  let cerca="";
+  if(owned.has("cerca_madeira")) cerca=`<g fill="#8d6e63">${[0,18,36,54,72,90,108,126,144,162,180,198,216,234,252].map(x=>`<rect x="${x}" y="156" width="12" height="24" rx="2"/>`).join("")}<rect x="0" y="162" width="280" height="5" rx="2"/><rect x="0" y="172" width="280" height="5" rx="2"/></g>`;
+  else if(owned.has("cerca_ferro")) cerca=`<g fill="#455a64">${[4,20,36,52,68,84,100,116,132,148,164,180,196,212,228,244,260].map(x=>`<rect x="${x}" y="154" width="6" height="26" rx="1"/><polygon points="${x+3},154 ${x},158 ${x+6},158"/>`).join("")}<rect x="0" y="165" width="280" height="3" rx="1"/><rect x="0" y="174" width="280" height="3" rx="1"/></g>`;
+  else if(owned.has("cerca_viva")) cerca=`<ellipse cx="20" cy="162" rx="18" ry="12" fill="#388e3c"/><ellipse cx="50" cy="160" rx="16" ry="13" fill="#43a047"/><ellipse cx="80" cy="162" rx="18" ry="12" fill="#2e7d32"/><ellipse cx="110" cy="161" rx="17" ry="12" fill="#388e3c"/><ellipse cx="140" cy="162" rx="18" ry="12" fill="#43a047"/><ellipse cx="170" cy="161" rx="17" ry="12" fill="#2e7d32"/><ellipse cx="200" cy="162" rx="18" ry="12" fill="#388e3c"/><ellipse cx="230" cy="160" rx="16" ry="13" fill="#43a047"/><ellipse cx="260" cy="162" rx="18" ry="12" fill="#2e7d32"/>`;
+  const ilum=owned.has("iluminacao")?`<circle cx="60" cy="126" r="4" fill="#fff9c4" opacity="0.9"/><circle cx="220" cy="126" r="4" fill="#fff9c4" opacity="0.9"/><line x1="60" y1="116" x2="60" y2="126" stroke="#9e9e9e" stroke-width="2"/><line x1="220" y1="116" x2="220" y2="126" stroke="#9e9e9e" stroke-width="2"/>` :"";
+  const gL=[]; if(owned.has("roseiras"))gL.push("🌹"); if(owned.has("girassois"))gL.push("🌻"); if(owned.has("lavanda"))gL.push("💜"); if(owned.has("arvorezinha"))gL.push("🌳");
+  const gR=[]; if(owned.has("fonte"))gR.push("⛲"); if(owned.has("banco"))gR.push("🪑");
+
+  return `<div class="casa-svg-container"><svg viewBox="0 0 280 195" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:380px;display:block;margin:auto">
+    <rect width="280" height="195" fill="#e8f4fd"/>
+    <ellipse cx="40" cy="25" rx="20" ry="10" fill="white" opacity="0.8"/><ellipse cx="58" cy="22" rx="16" ry="10" fill="white" opacity="0.8"/>
+    <ellipse cx="220" cy="30" rx="18" ry="9" fill="white" opacity="0.7"/><ellipse cx="238" cy="27" rx="14" ry="9" fill="white" opacity="0.7"/>
+    <circle cx="250" cy="25" r="14" fill="#fff176"/>
+    <rect x="0" y="175" width="280" height="20" fill="#81c784"/>
+    <rect x="115" y="162" width="50" height="18" fill="${calcada}"/>
+    ${cerca}
+    <rect x="60" y="100" width="160" height="75" rx="4" fill="${wall}" stroke="#bdbdbd" stroke-width="1"/>
+    <polygon points="50,105 140,45 230,105" fill="${roof}"/>
+    <polygon points="50,105 55,108 230,108 235,105" fill="${roof}" opacity="0.7"/>
+    <rect x="175" y="55" width="16" height="30" fill="#8d6e63"/>
+    <rect x="172" y="52" width="22" height="7" rx="2" fill="#795548"/>
+    <circle cx="183" cy="44" r="6" fill="white" opacity="0.5"/>
+    <circle cx="186" cy="36" r="5" fill="white" opacity="0.35"/>
+    ${janSVG(75,113)}${janSVG(175,113)}
+    ${portaSVG}
+    <circle cx="150" cy="150" r="2" fill="#ffd54f"/>
+    ${ilum}
+    ${_state.pet?.adopted?`<text x="102" y="174" font-size="14" text-anchor="middle">🐱</text>`:""}
+    <text x="14" y="190" font-size="13">${gL.join(" ")}</text>
+    <text x="210" y="190" font-size="13">${gR.join(" ")}</text>
+  </svg></div>`;
+}
+
+/* ════ GAME ACTIONS ════ */
+window._homeStartGame=function(){ triggerDialogo("introducao",()=>{ _state.gamePhase="terreno"; saveState(); renderRPG(); }); };
+
+window._homeEscolherTerreno=function(terrenoId){
+  const t=TERRENOS.find(t=>t.id===terrenoId); if(!t)return;
+  if(_state.coins<t.preco){ showToastNativo(`Precisa de mais 🪙 ${t.preco-_state.coins}`); return; }
+  _state.coins-=t.preco;
+  const sv={ id:Date.now(), terrenoId, nome:`Casinha em ${t.nome}`, criadoEm:new Date().toISOString(), fase:"exterior", items:[] };
+  _state.saves=_state.saves||[]; _state.saves.push(sv);
+  _state.currentSave=_state.saves.length-1; _state.gamePhase="building"; _state.level=1; _state.xp=0;
+  saveState(); triggerDialogo("terreno_escolhido",()=>renderRPG());
 };
 
-function showPetBubble(msg) {
-  const bubble = document.getElementById('pet-bubble');
-  if (!bubble) return;
-  bubble.textContent = msg;
-  bubble.classList.add('show');
-  clearTimeout(bubble._timer);
-  bubble._timer = setTimeout(() => bubble.classList.remove('show'), 2800);
-}
+window._homeNovoSave=function(){ if((_state.saves||[]).length>=3)return; _state.gamePhase="terreno"; renderRPG(); };
+window._homeSwitchSave=function(idx){ _state.currentSave=idx; _state.gamePhase="building"; saveState(); renderRPG(); };
+window._homeRecomecar=function(){ if(!confirm("Quer comprar um novo terreno? Seu save atual continua salvo!"))return; _state.gamePhase="terreno"; saveState(); renderRPG(); };
+window._homeFecharEvento=function(){ _state.eventoDiarioVisto=todayStr(); saveState(); document.getElementById("evento-diario-card")?.remove(); };
 
-function renderPet() {
-  const catEl = document.getElementById('pet-svg-container');
-  if (!catEl) return;
-  const mood = getPetMood();
-  catEl.innerHTML = getCatSVG(mood, _state.pet.name);
-  catEl.className = `pet-pixel-cat state-${mood}`;
+window._homeComprar=function(itemId){
+  const sv=currentSave(); if(!sv)return;
+  const loja=getLoja(); const item=loja.find(i=>i.id===itemId); if(!item)return;
+  if(sv.items.includes(itemId)){ showToastNativo("Você já tem esse item!"); return; }
+  if(_state.coins<item.preco){ showToastNativo(`Precisa de mais 🪙 ${item.preco-_state.coins}`); return; }
+  if(item.exclusivo) sv.items=sv.items.filter(id=>{ const o=loja.find(i=>i.id===id); return !(o?.exclusivo===item.exclusivo); });
+  _state.coins-=item.preco; sv.items.push(itemId); addXp(item.xp);
+  saveState(); renderCoins(); renderRPG();
+  spawnHearts(window.innerWidth/2,window.innerHeight/2,5);
+  showToastNativo(`${item.icon} ${item.nome} adicionado! +${item.xp} XP`);
+};
 
-  // Stats
-  const setBar = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.style.width = Math.max(0, Math.min(100, val)) + '%';
-    const valEl = document.getElementById(id + '-val');
-    if (valEl) valEl.textContent = Math.round(val) + '%';
-  };
-  setBar('pet-bar-hunger', _state.pet.hunger);
-  setBar('pet-bar-energy', _state.pet.energy);
-  setBar('pet-bar-happy',  _state.pet.happy);
-  setBar('pet-bar-love',   _state.pet.love);
-
-  // Mood badge
-  const moodLabels = {
-    happy: '😸 Feliz e satisfeito', hungry: '😿 Com fome', sleepy: '😴 Com soninho',
-    idle: '🐾 Querendo atenção', playing: '🎉 Brincando', loved: '💖 Cheio de amor',
-  };
-  const badge = document.getElementById('pet-mood-badge');
-  if (badge) badge.textContent = moodLabels[mood] || '';
-}
-
-function petDecay() {
-  // Natural decay over time (called on init)
-  const last = _state.pet.lastFed ? new Date(_state.pet.lastFed) : null;
-  if (last) {
-    const hours = (Date.now() - last.getTime()) / 3600000;
-    _state.pet.hunger = Math.max(0, _state.pet.hunger - Math.min(hours * 8, 40));
-    _state.pet.energy = Math.max(0, _state.pet.energy - Math.min(hours * 5, 30));
-  }
-}
-
-function feedPet(e) {
-  if (_state.pet.hunger >= 95) { showPetBubble('Estou cheio! Obrigado! 😸'); return; }
-  _state.pet.hunger  = Math.min(100, _state.pet.hunger + 25);
-  _state.pet.happy   = Math.min(100, _state.pet.happy  + 10);
-  _state.pet.lastFed = new Date().toISOString();
-  saveState(); renderPet();
-  showPetBubble(PET_MESSAGES.happy[Math.floor(Math.random()*PET_MESSAGES.happy.length)]);
-  spawnHearts(e.clientX, e.clientY, 4);
-  spawnCoinPop(0); // visual only for feeding
-}
-function petPet(e) {
-  _state.pet.love  = Math.min(100, _state.pet.love  + 15);
-  _state.pet.happy = Math.min(100, _state.pet.happy + 12);
-  _state.pet.lastPet = new Date().toISOString();
-  const catEl = document.getElementById('pet-svg-container');
-  if (catEl) { catEl.className = 'pet-pixel-cat state-loved'; setTimeout(() => renderPet(), 1200); }
-  saveState(); renderPet();
-  showPetBubble(PET_MESSAGES.loved[Math.floor(Math.random()*PET_MESSAGES.loved.length)]);
-  spawnHearts(e.clientX, e.clientY, 6);
-}
-function playWithPet(e) {
-  if (_state.pet.energy < 15) { showPetBubble('Tô cansado demais pra brincar... 😴'); return; }
-  _state.pet.happy   = Math.min(100, _state.pet.happy  + 20);
-  _state.pet.energy  = Math.max(0,   _state.pet.energy - 15);
-  _state.pet.love    = Math.min(100, _state.pet.love   + 8);
-  _state.pet.lastPlayed = new Date().toISOString();
-  const catEl = document.getElementById('pet-svg-container');
-  if (catEl) { catEl.className = 'pet-pixel-cat state-playing'; setTimeout(() => renderPet(), 1500); }
-  saveState(); renderPet();
-  showPetBubble(PET_MESSAGES.playing[Math.floor(Math.random()*PET_MESSAGES.playing.length)]);
-  spawnHearts(e.clientX, e.clientY, 3);
-}
-function sleepPet() {
-  _state.pet.energy = Math.min(100, _state.pet.energy + 30);
-  _state.pet.lastSlept = new Date().toISOString();
-  const catEl = document.getElementById('pet-svg-container');
-  if (catEl) { catEl.className = 'pet-pixel-cat state-sleepy'; setTimeout(() => renderPet(), 2000); }
-  saveState(); renderPet();
-  showPetBubble('Zzz... dormindo... 💤');
-}
-
-/* ════════════════════════════════════════════
-   HOUSE RENDER
-   ════════════════════════════════════════════ */
-function renderHouse() {
-  const svgWrap = document.getElementById('house-svg-wrap');
-  if (svgWrap) svgWrap.innerHTML = getHouseSVG(_state.items);
-  const gardenWrap = document.getElementById('house-garden-wrap');
-  if (gardenWrap) gardenWrap.innerHTML = getGardenItems(_state.items);
-  renderShop();
-}
-
-function renderShop() {
-  const grid = document.getElementById('home-shop-grid');
-  if (!grid) return;
-  const owned = new Set(_state.items || []);
-  grid.innerHTML = SHOP_ITEMS.map(item => {
-    const isOwned = owned.has(item.id);
-    // Check if same-category item is owned (for walls/windows/doors — mutually exclusive)
-    const exclusiveCats = ['wall','window','door'];
-    const catOwned = exclusiveCats.includes(item.cat)
-      ? SHOP_ITEMS.filter(i => i.cat === item.cat && owned.has(i.id)).length > 0 && !isOwned
-      : false;
-
-    return `<div class="shop-item ${isOwned ? 'owned' : ''}" onclick="window._homeShopBuy('${item.id}')">
-      ${isOwned ? '<span class="shop-owned-badge">✓ Comprado</span>' : ''}
-      <span class="shop-item-icon">${item.icon}</span>
-      <div class="shop-item-name">${item.name}</div>
-      <div class="shop-item-desc">${item.desc}</div>
-      <span class="shop-item-price">
-        ${isOwned ? '✓ Na casinha' : `🪙 ${item.price}`}
-      </span>
-    </div>`;
-  }).join('');
-}
-
-/* ════════════════════════════════════════════
-   SHOP BUY
-   ════════════════════════════════════════════ */
-window._homeShopBuy = function(itemId) {
-  const item = SHOP_ITEMS.find(i => i.id === itemId);
-  if (!item) return;
-  if (_state.items.includes(itemId)) {
-    import('./ui.js').then(m => m.showToast('Você já tem esse item! 🏠'));
-    return;
-  }
-  if (_state.coins < item.price) {
-    import('./ui.js').then(m => m.showToast(`Precisa de mais ${item.price - _state.coins} 🪙`));
-    return;
-  }
-  _state.coins -= item.price;
-  _state.items.push(itemId);
+window._homeAvancarFase=function(){
+  const sv=currentSave(); if(!sv)return;
+  if(sv.fase==="exterior"){ sv.fase="jardim"; triggerDialogo("level3_jardim",()=>renderRPG()); }
+  else if(sv.fase==="jardim"){ sv.fase="interior"; triggerDialogo("level4_sala",()=>renderRPG()); }
   saveState();
-  renderCoins();
-  renderHouse();
-  import('./ui.js').then(m => m.showToast(`${item.icon} ${item.name} adicionado à casinha!`));
-  // celebrate
-  spawnHearts(window.innerWidth/2, window.innerHeight/2, 8);
 };
 
-/* ════════════════════════════════════════════
-   QUIZ SYSTEM
-   ════════════════════════════════════════════ */
-function getQuizQuestion() {
-  const today = todayStr();
-  // Seed by date so both people get same question set each day
-  const seed = today.replace(/-/g,'');
-  const idx  = parseInt(seed) % QUIZ_QUESTIONS.length;
-  // Different question for each person
-  const personOffset = _quizPerson === 'emilly' ? Math.floor(QUIZ_QUESTIONS.length / 2) : 0;
-  return QUIZ_QUESTIONS[(idx + personOffset) % QUIZ_QUESTIONS.length];
+window._homeCompletarCasa=function(){ triggerDialogo("level6_completo",()=>{ showToastNativo("🏆 Parabéns! A casinha está completa!"); renderRPG(); }); };
+
+/* ════ PET ════ */
+function getCatSVG(mood){
+  const moods={ happy:{eyes:"◕◕",mouth:"▽",color:"#ffb3c1",ear:"#ff85a1"},hungry:{eyes:"◔◔",mouth:"△",color:"#ffd4a0",ear:"#ffb870"},sleepy:{eyes:"－－",mouth:"‥",color:"#c9b8d4",ear:"#a990c0"},idle:{eyes:"◡◡",mouth:"‿",color:"#ffb3c1",ear:"#ff85a1"},playing:{eyes:"★★",mouth:"∪",color:"#ffcc99",ear:"#ffaa66"},loved:{eyes:"♡♡",mouth:"▽",color:"#ffb3c1",ear:"#ff85a1"} };
+  let c=moods[mood]?.color||moods.idle.color, ear=moods[mood]?.ear||moods.idle.ear;
+  const g=_state.pet?.gatoId;
+  if(g==="preto"){ c="#424242"; ear="#212121"; } if(g==="cinza"){ c="#b0bec5"; ear="#90a4ae"; }
+  if(g==="rajado"){ c="#a1887f"; ear="#795548"; } if(g==="branco"){ c="#fafafa"; ear="#e0e0e0"; }
+  const m={...moods[mood]||moods.idle,color:c,ear};
+  return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;image-rendering:pixelated">
+    <ellipse cx="32" cy="60" rx="14" ry="3" fill="rgba(0,0,0,0.2)"/>
+    <path d="M44 50 Q58 44 56 36 Q54 28 50 32 Q54 36 52 42 Q50 48 44 50Z" fill="${m.color}"/>
+    <rect x="18" y="38" width="28" height="20" rx="8" fill="${m.color}"/>
+    <ellipse cx="22" cy="57" rx="5" ry="3" fill="${m.color}"/><ellipse cx="42" cy="57" rx="5" ry="3" fill="${m.color}"/>
+    <polygon points="18,28 14,16 24,24" fill="${m.ear}"/><polygon points="46,28 50,16 40,24" fill="${m.ear}"/>
+    <ellipse cx="32" cy="34" rx="14" ry="16" fill="${m.color}"/>
+    <text x="24" y="31" font-size="9" fill="#333" font-family="monospace">${m.eyes}</text>
+    <text x="29" y="40" font-size="7" fill="#e91e63" font-family="monospace">${m.mouth}</text>
+    <ellipse cx="20" cy="36" rx="5" ry="2" fill="${m.ear}" opacity="0.5"/>
+    <ellipse cx="44" cy="36" rx="5" ry="2" fill="${m.ear}" opacity="0.5"/>
+  </svg>`;
 }
 
-function renderQuiz() {
-  const today = todayStr();
-  const wrap  = document.getElementById('quiz-content');
-  if (!wrap) return;
+function getPetMood(){ const{hunger,energy,happy,love}=_state.pet; if(happy>80&&hunger>60)return"happy"; if(hunger<30)return"hungry"; if(energy<25)return"sleepy"; if(love>75)return"loved"; return"idle"; }
+const PET_MSG={ happy:["Miau! 😸 Tô tão feliz!","Purrrr... ♡"],hungry:["Miau! Comiiida! 😿","Cadê meu petisco?"],sleepy:["Zzzzz... 💤","Tô cansado..."],loved:["Purrrr ♡","*ronrona muito*"],playing:["Brinca mais!","*pula em tudo*"] };
+function showPetBubble(text){ const el=document.getElementById("pet-bubble"); if(!el)return; el.textContent=text; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),2500); }
 
-  const personState = _state.quiz?.[_quizPerson] || { lastDate: null };
-  const done = personState.lastDate === today;
-
-  if (done) {
-    wrap.innerHTML = `<div class="quiz-done-msg">
-      <span class="quiz-done-icon">🎉</span>
-      <div class="quiz-done-title">Quiz de hoje concluído!</div>
-      <div class="quiz-done-sub">Volte amanhã para uma nova pergunta.<br>As moedas já estão na conta! 🪙</div>
-    </div>`;
+function renderPet(){
+  const petWrap=document.getElementById("pet-svg-container"); if(!petWrap)return;
+  const adopted=_state.pet?.adopted;
+  document.querySelectorAll(".pet-stats,.pet-actions").forEach(el=>el.style.display=adopted?"":"none");
+  if(!adopted){
+    if((_state.level||0)>=2){
+      petWrap.innerHTML=`<div class="adocao-wrap"><div class="adocao-titulo">🐱 Escolha seu gatinho!</div><div class="adocao-subtitulo">Adoção gratuita 🏡</div><div class="adocao-grid">${GATOS_ADOCAO.map(g=>`<div class="adocao-card" onclick="window._homeAdotarGato('${g.id}')"><div class="adocao-emoji">${g.emoji}</div><div class="adocao-nome">${g.nome}</div><div class="adocao-raca">${g.raca}</div><div class="adocao-personalidade">${g.personalidade}</div><button class="adocao-btn">Adotar 🐾</button></div>`).join("")}</div></div>`;
+    } else {
+      petWrap.innerHTML=`<div class="pet-locked"><div style="font-size:3rem">🔒</div><div style="font-size:.9rem;margin-top:.5rem;color:#c9a9b0">Alcance o <strong>Nível 2</strong><br>para adotar um gatinho!</div></div>`;
+    }
     return;
   }
-
-  _currentQ = getQuizQuestion();
-  _answered  = false;
-  const letters = ['A','B','C','D'];
-
-  wrap.innerHTML = `
-    <div class="quiz-who-row">
-      <button class="quiz-who-btn ${_quizPerson==='pietro'?'active':''}" onclick="window._homeSetQuizPerson('pietro')">💙 Pietro</button>
-      <button class="quiz-who-btn ${_quizPerson==='emilly'?'active':''}" onclick="window._homeSetQuizPerson('emilly')">💗 Emilly</button>
-    </div>
-    <div class="quiz-header">
-      <span class="quiz-title">Pergunta do Dia</span>
-      <span class="quiz-category-badge">${_currentQ.cat}</span>
-    </div>
-    <div class="quiz-question-text">${_currentQ.q}</div>
-    <div class="quiz-options">
-      ${_currentQ.opts.map((opt,i) => `
-        <button class="quiz-option" onclick="window._homeAnswerQuiz(${i}, this)">
-          <span class="quiz-option-letter">${letters[i]}</span>
-          ${opt}
-        </button>
-      `).join('')}
-    </div>
-    <div class="quiz-feedback" id="quiz-feedback"></div>
-  `;
+  document.querySelectorAll(".pet-stats,.pet-actions").forEach(el=>el.style.display="");
+  const mood=getPetMood(); petWrap.className=`pet-pixel-cat state-${mood}`; petWrap.innerHTML=getCatSVG(mood);
+  const nL=document.querySelector(".pet-name-label"); if(nL)nL.textContent=`✦ ${_state.pet.nome||"Bolinha"} ✦`;
+  const badge=document.getElementById("pet-mood-badge");
+  const bt={happy:"😸 Feliz e satisfeito!",hungry:"🍖 Com fominha!",sleepy:"💤 Com sono...",loved:"💕 Cheio de amor!",idle:"🐾 Querendo atenção"};
+  if(badge)badge.textContent=bt[mood]||bt.idle;
+  [["hunger",_state.pet.hunger],["energy",_state.pet.energy],["happy",_state.pet.happy],["love",_state.pet.love]].forEach(([k,v])=>{ const f=document.getElementById(`pet-bar-${k}`); const vl=document.getElementById(`pet-bar-${k}-val`); if(f)f.style.width=v+"%"; if(vl)vl.textContent=Math.round(v)+"%"; });
 }
 
-window._homeSetQuizPerson = function(person) {
-  _quizPerson = person;
-  renderQuiz();
-};
-
-window._homeAnswerQuiz = function(idx, btn) {
-  if (_answered || !_currentQ) return;
-  _answered = true;
-  const correct = idx === _currentQ.ans;
-  const today   = todayStr();
-
-  // Disable all buttons
-  document.querySelectorAll('.quiz-option').forEach(b => b.disabled = true);
-
-  // Mark correct/wrong
-  const btns = document.querySelectorAll('.quiz-option');
-  btns[_currentQ.ans].classList.add('correct');
-  if (!correct) btn.classList.add('wrong');
-
-  // Feedback
-  const fb = document.getElementById('quiz-feedback');
-  if (fb) {
-    fb.className = `quiz-feedback show ${correct ? 'correct' : 'wrong'}`;
-    fb.textContent = correct
-      ? `✓ Correto! +15 🪙 para a casinha!`
-      : `✗ Era "${_currentQ.opts[_currentQ.ans]}" — mas tudo bem, amanhã tem mais!`;
-  }
-
-  // Mark as done and award coins
-  if (!_state.quiz) _state.quiz = {};
-  if (!_state.quiz[_quizPerson]) _state.quiz[_quizPerson] = {};
-  _state.quiz[_quizPerson].lastDate = today;
-  _state.quiz[_quizPerson].correct  = correct;
-
-  if (correct) {
-    _state.coins += 15;
-    saveState();
-    renderCoins();
-    spawnCoinPop(15, window.innerWidth/2 - 30, window.innerHeight/3);
-    _state.pet.happy = Math.min(100, _state.pet.happy + 10);
-    renderPet();
-  } else {
-    saveState();
-  }
-
-  renderEarnList();
-
-  // Animate pet reaction
-  const catEl = document.getElementById('pet-svg-container');
-  if (catEl) {
-    catEl.className = correct ? 'pet-pixel-cat state-happy' : 'pet-pixel-cat state-idle';
-    setTimeout(() => renderPet(), 1500);
-  }
-  showPetBubble(correct ? 'Acertou! Sou muito orgulhoso! 🎉' : 'Quase! Você consegue! 💪');
-
-  setTimeout(() => renderQuiz(), 2500);
-};
-
-/* ════════════════════════════════════════════
-   TABS
-   ════════════════════════════════════════════ */
-window._homeTab = function(tab) {
-  document.querySelectorAll('.home-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.querySelectorAll('.home-panel').forEach(p => p.classList.toggle('active', p.id === `home-panel-${tab}`));
-  if (tab === 'quiz') renderQuiz();
-  if (tab === 'casa') renderHouse();
-  if (tab === 'pet')  renderPet();
-};
-
-/* ════════════════════════════════════════════
-   INIT
-   ════════════════════════════════════════════ */
-export function initHome(db) {
-  _db  = db;
-  _doc = doc(db, 'home', 'shared');
-
-  // Listen to Firebase
-  onSnapshot(_doc, snap => {
-    if (snap.exists()) {
-      const data = snap.data();
-      // Merge carefully preserving defaults
-      _state = { ...JSON.parse(JSON.stringify(DEFAULT_HOME)), ...data };
-      if (!_state.pet)  _state.pet  = DEFAULT_HOME.pet;
-      if (!_state.quiz) _state.quiz = DEFAULT_HOME.quiz;
-    }
-    petDecay();
-    renderCoins();
-    renderPet();
-    renderHouse();
-    renderQuiz();
-    renderEarnList();
+window._homeAdotarGato=function(gatoId){
+  const gato=GATOS_ADOCAO.find(g=>g.id===gatoId); if(!gato)return;
+  triggerDialogo("adocao_gato",()=>{
+    const nome=prompt(`Que nome para o ${gato.raca}?`,gato.nome)||gato.nome;
+    _state.pet={..._state.pet,adopted:true,gatoId,nome,hunger:80,energy:80,happy:80,love:80,lastFed:new Date().toISOString()};
+    saveState(); renderPet(); showToastNativo(`🐱 ${nome} foi adotado!`);
+    spawnHearts(window.innerWidth/2,window.innerHeight/3,10);
   });
+};
 
-  // Pet sprite click = pet it
-  document.getElementById('pet-sprite-btn')?.addEventListener('click', (e) => {
-    petPet(e);
+function petDecay(){ const last=_state.pet.lastFed?new Date(_state.pet.lastFed):null; if(last){ const h=(Date.now()-last.getTime())/3600000; _state.pet.hunger=Math.max(0,_state.pet.hunger-Math.min(h*8,40)); _state.pet.energy=Math.max(0,_state.pet.energy-Math.min(h*5,30)); } }
+function startPetDecayInterval(){ setInterval(()=>{ if(!_state.pet?.adopted)return; _state.pet.hunger=Math.max(0,_state.pet.hunger-2); _state.pet.energy=Math.max(0,_state.pet.energy-1); _state.pet.happy=Math.max(0,_state.pet.happy-1); renderPet(); if(_state.pet.hunger===0||_state.pet.energy===0)saveState(); },5*60*1000); }
+
+function feedPet(e){ if(!_state.pet?.adopted)return; if(_state.pet.hunger>=95){ showPetBubble("Estou cheio! 😸"); return; } _state.pet.hunger=Math.min(100,_state.pet.hunger+25); _state.pet.happy=Math.min(100,_state.pet.happy+10); _state.pet.lastFed=new Date().toISOString(); saveState(); renderPet(); showPetBubble(PET_MSG.happy[Math.floor(Math.random()*PET_MSG.happy.length)]); spawnHearts(e.clientX,e.clientY,4); }
+function petPet(e){ if(!_state.pet?.adopted)return; _state.pet.love=Math.min(100,_state.pet.love+15); _state.pet.happy=Math.min(100,_state.pet.happy+12); _state.pet.lastPet=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-loved"; setTimeout(()=>renderPet(),1200); } saveState(); renderPet(); showPetBubble(PET_MSG.loved[Math.floor(Math.random()*PET_MSG.loved.length)]); spawnHearts(e.clientX,e.clientY,6); }
+function playWithPet(e){ if(!_state.pet?.adopted)return; if(_state.pet.energy<15){ showPetBubble("Tô cansado demais... 😴"); return; } _state.pet.happy=Math.min(100,_state.pet.happy+20); _state.pet.energy=Math.max(0,_state.pet.energy-15); _state.pet.love=Math.min(100,_state.pet.love+8); _state.pet.lastPlayed=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-playing"; setTimeout(()=>renderPet(),1500); } saveState(); renderPet(); showPetBubble(PET_MSG.playing[Math.floor(Math.random()*PET_MSG.playing.length)]); spawnHearts(e.clientX,e.clientY,3); }
+function sleepPet(){ if(!_state.pet?.adopted)return; _state.pet.energy=Math.min(100,_state.pet.energy+30); _state.pet.lastSlept=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-sleepy"; setTimeout(()=>renderPet(),2000); } saveState(); renderPet(); showPetBubble("Zzz... 💤"); }
+
+/* ════ QUIZ ════ */
+function renderQuiz(){
+  const today=todayStr(); const wrap=document.getElementById("quiz-content"); if(!wrap)return;
+  const personState=_state.quiz?.[_quizPerson]||{lastDate:null}; const done=personState.lastDate===today;
+  if(done){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎉</span><div class="quiz-done-title">Quiz de hoje concluído!</div><div class="quiz-done-sub">Volte amanhã para uma nova pergunta.<br>As moedas já estão na conta! 🪙</div></div>`; return; }
+  const seed=today.replace(/-/g,""); const off=_quizPerson==="emilly"?Math.floor(QUIZ_QUESTIONS.length/2):0;
+  const qIdx=(parseInt(seed.slice(-4))+off)%QUIZ_QUESTIONS.length; _currentQ=QUIZ_QUESTIONS[qIdx]; _answered=false;
+  wrap.innerHTML=`<div class="quiz-who-row"><button class="quiz-who-btn ${_quizPerson==="pietro"?"active":""}" onclick="window._homeSetQuizPerson('pietro')">💙 Pietro</button><button class="quiz-who-btn ${_quizPerson==="emilly"?"active":""}" onclick="window._homeSetQuizPerson('emilly')">💗 Emilly</button></div><div class="quiz-cat-badge">${_currentQ.cat}</div><div class="quiz-question">${_currentQ.q}</div><div class="quiz-options">${_currentQ.opts.map((opt,i)=>`<button class="quiz-option" onclick="window._homeAnswerQuiz(${i},this)">${opt}</button>`).join("")}</div><div class="quiz-feedback" id="quiz-feedback"></div>`;
+}
+
+window._homeSetQuizPerson=function(p){ _quizPerson=p; renderQuiz(); };
+
+window._homeAnswerQuiz=function(idx,btn){
+  if(_answered||!_currentQ)return; _answered=true; const correct=idx===_currentQ.ans; const today=todayStr();
+  document.querySelectorAll(".quiz-option").forEach(b=>b.disabled=true);
+  document.querySelectorAll(".quiz-option")[_currentQ.ans].classList.add("correct");
+  if(!correct)btn.classList.add("wrong");
+  const fb=document.getElementById("quiz-feedback"); if(fb){ fb.className=`quiz-feedback show ${correct?"correct":"wrong"}`; fb.textContent=correct?`✓ Correto! +15 🪙 para a casinha!`:`✗ Era "${_currentQ.opts[_currentQ.ans]}" — mas tudo bem!`; }
+  if(!_state.quiz)_state.quiz={}; if(!_state.quiz[_quizPerson])_state.quiz[_quizPerson]={};
+  _state.quiz[_quizPerson].lastDate=today;
+  if(correct){ _state.coins+=15; saveState(); renderCoins(); spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3); if(_state.pet?.adopted){ _state.pet.happy=Math.min(100,_state.pet.happy+10); renderPet(); } }
+  else saveState();
+  renderEarnList(); showPetBubble(correct?"Acertou! 🎉":"Quase! Você consegue! 💪");
+  setTimeout(()=>renderQuiz(),2500);
+};
+
+/* ════ TABS ════ */
+window._homeTab=function(tab){
+  document.querySelectorAll(".home-tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tab));
+  document.querySelectorAll(".home-panel").forEach(p=>p.classList.toggle("active",p.id===`home-panel-${tab}`));
+  if(tab==="rpg") renderRPG();
+  if(tab==="quiz") renderQuiz();
+  if(tab==="pet") renderPet();
+};
+
+/* ════ INIT ════ */
+export function initHome(db){
+  _db=db; _doc=doc(db,"home","shared");
+  onSnapshot(_doc,snap=>{
+    if(snap.exists()){ const data=snap.data(); _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data}; if(!_state.pet)_state.pet=DEFAULT_HOME.pet; if(!_state.quiz)_state.quiz=DEFAULT_HOME.quiz; if(!_state.saves)_state.saves=[]; if(!_state.dialogoVisto)_state.dialogoVisto={}; }
+    petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG();
   });
-
-  // Expose pet actions globally
-  window._homeFeedPet   = (e) => feedPet(e);
-  window._homePetPet    = (e) => petPet(e);
-  window._homePlayPet   = (e) => playWithPet(e);
-  window._homeSleepPet  = ()  => sleepPet();
-
-  // Gera estrelinhas no céu da casinha
-  const starsContainer = document.getElementById('house-stars-container');
-  if (starsContainer && !starsContainer.children.length) {
-    for (let i = 0; i < 18; i++) {
-      const star = document.createElement('div');
-      star.className = 'house-star';
-      star.style.left = Math.random() * 100 + '%';
-      star.style.top  = Math.random() * 55 + '%';
-      star.style.animationDelay = (Math.random() * 2.5) + 's';
-      starsContainer.appendChild(star);
-    }
-  }
-
-  // Default tab
-  window._homeTab('pet');
+  document.getElementById("pet-sprite-btn")?.addEventListener("click",e=>petPet(e));
+  window._homeFeedPet=e=>feedPet(e); window._homePetPet=e=>petPet(e);
+  window._homePlayPet=e=>playWithPet(e); window._homeSleepPet=()=>sleepPet();
+  const starsContainer=document.getElementById("house-stars-container");
+  if(starsContainer&&!starsContainer.children.length){ for(let i=0;i<18;i++){ const star=document.createElement("div"); star.className="house-star"; star.style.left=Math.random()*100+"%"; star.style.top=Math.random()*55+"%"; star.style.animationDelay=(Math.random()*2.5)+"s"; starsContainer.appendChild(star); } }
+  startPetDecayInterval();
+  window._homeTab("rpg");
 }
