@@ -167,6 +167,7 @@ initMiniPlayerClickOutside();
 let uploadSlot = null;
 
 async function getPhotos() {
+  if (!GALLERY_DOC) return Array(GALLERY_SLOTS).fill(null); // APP-11
   try {
     const snap = await getDoc(GALLERY_DOC);
     if (snap.exists()) return snap.data().photos || Array(GALLERY_SLOTS).fill(null);
@@ -174,7 +175,10 @@ async function getPhotos() {
   return Array(GALLERY_SLOTS).fill(null);
 }
 
-async function setPhotos(p) { await setDoc(GALLERY_DOC, { photos: p }); }
+async function setPhotos(p) {
+  if (!GALLERY_DOC) { showToast('❌ Banco de dados indisponível.'); return; } // APP-11
+  await setDoc(GALLERY_DOC, { photos: p });
+}
 
 async function renderGallery() {
   const grid = document.getElementById('gallery-grid');
@@ -281,6 +285,7 @@ const INITIAL_MOVIES = [
 ];
 
 async function getMovies() {
+  if (!MOVIES_DOC) return INITIAL_MOVIES; // APP-12
   try {
     const snap = await getDoc(MOVIES_DOC);
     if (snap.exists()) return snap.data().movies || INITIAL_MOVIES;
@@ -288,7 +293,10 @@ async function getMovies() {
   return INITIAL_MOVIES;
 }
 
-async function saveMovies(m) { await setDoc(MOVIES_DOC, { movies: m }); }
+async function saveMovies(m) {
+  if (!MOVIES_DOC) { showToast('❌ Banco de dados indisponível.'); return; } // APP-12
+  await setDoc(MOVIES_DOC, { movies: m });
+}
 
 async function renderMovies() {
   const list   = document.getElementById('movies-list');
@@ -542,6 +550,7 @@ let _muralPhotoUrl = null;
 let _uploadingMuralPhoto = false;
 
 async function getMural() {
+  if (!MURAL_DOC) return { msgs: [], lastClean: null }; // db null guard
   try {
     const snap = await getDoc(MURAL_DOC);
     if (snap.exists()) return { msgs: snap.data().msgs || [], lastClean: snap.data().lastClean || null };
@@ -550,6 +559,7 @@ async function getMural() {
 }
 
 async function saveMural(msgs, lastClean) {
+  if (!MURAL_DOC) return; // db null guard
   const snap = await getDoc(MURAL_DOC).catch(() => null);
   const existing = snap?.exists() ? snap.data() : {};
   const payload = { msgs, lastClean: lastClean !== undefined ? lastClean : (existing.lastClean || null) };
@@ -693,6 +703,7 @@ const INITIAL_DREAMS = [
 ];
 
 async function getDreams() {
+  if (!DREAMS_DOC) return INITIAL_DREAMS; // APP-13
   try {
     const snap = await getDoc(DREAMS_DOC);
     if (snap.exists()) return snap.data().dreams || INITIAL_DREAMS;
@@ -700,7 +711,10 @@ async function getDreams() {
   return INITIAL_DREAMS;
 }
 
-async function saveDreams(d) { await setDoc(DREAMS_DOC, { dreams: d }); }
+async function saveDreams(d) {
+  if (!DREAMS_DOC) { showToast('❌ Banco de dados indisponível.'); return; } // APP-13
+  await setDoc(DREAMS_DOC, { dreams: d });
+}
 
 async function renderDreams() {
   const list   = document.getElementById('dreams-list');

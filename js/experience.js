@@ -230,7 +230,7 @@ export function initAdaptiveParticles(activeEventId = null) {
   for (let i = 0; i < 10; i++) setTimeout(() => _spawnParticle(config), i * 200);
 
   // Spawn contínuo
-  _particleInterval = setInterval(() => _spawnParticle(config), config.rate);
+  _particleInterval = setInterval(() => { if (!document.hidden) _spawnParticle(config); }, config.rate);
 
   // Atualiza canvas de corações/flocos
   _updateCanvasStyle(activeEventId);
@@ -410,7 +410,10 @@ const EASTER_EGGS = {
 let _easterEggCount = 0;
 const _discoveredEggs = new Set();
 
+let _easterEggsInited = false;
 export function initEasterEggs(activeEventId = null) {
+  if (_easterEggsInited) return; // EXP-4: evita duplicar listeners
+  _easterEggsInited = true;
   const eggs = [
     ...(EASTER_EGGS.default || []),
     ...(activeEventId && EASTER_EGGS[activeEventId] ? EASTER_EGGS[activeEventId] : []),
@@ -915,7 +918,8 @@ function _gameCarnavalMatch() {
 
       if (flipped.length === 2) {
         locked = true;
-        if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
+        // EXP-6+7: verifica que são cartas DOM diferentes E têm mesmo emoji
+        if (flipped[0] !== flipped[1] && flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
           matched++;
           flipped.forEach(c => { c.style.border = '2px solid #6bcb77'; c.style.background = '#f0fff4'; });
           flipped = [];
@@ -983,7 +987,7 @@ function _gameMesversarioMemory() {
 
       if (flipped.length === 2) {
         locked = true;
-        if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
+        if (flipped[0] !== flipped[1] && flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
           matched++;
           flipped.forEach(c => { c.style.border = '2px solid #e8536f'; c.style.background = '#fff0f3'; });
           flipped = [];
@@ -1051,7 +1055,7 @@ function _gameSaoJoaoMatch() {
 
       if (flipped.length === 2) {
         locked = true;
-        if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
+        if (flipped[0] !== flipped[1] && flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
           matched++;
           flipped.forEach(c => { c.style.border = '2px solid #f57f17'; c.style.background = '#fff9c4'; });
           flipped = [];
@@ -1224,6 +1228,7 @@ function _runQuiz(questions, title, subtitle, icon, color) {
       btn.addEventListener('mouseleave', () => { if (!btn.dataset.answered) btn.style.background = color + '15'; });
       btn.addEventListener('click', () => {
         if (btn.dataset.answered) return;
+        btn.dataset.answered = '1'; // EXP-9: marca imediatamente para bloquear duplo clique
         content.querySelectorAll('#quiz-opts button').forEach(b => b.dataset.answered = '1');
         const isCorrect = i === q.a;
         if (isCorrect) { score++; btn.style.background = '#6bcb7733'; btn.style.border = '1px solid #6bcb77'; }
@@ -1352,6 +1357,8 @@ export function initTooltips() {
   TOOLTIPS.forEach(({ selector, text }) => {
     const el = document.querySelector(selector);
     if (!el) return;
+    if (el.dataset.tipInited) return; // EXP-10: evita duplicar tooltip
+    el.dataset.tipInited = '1';
     el.style.position = 'relative';
     el.style.cursor = 'help';
 
