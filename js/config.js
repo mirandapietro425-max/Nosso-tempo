@@ -39,7 +39,6 @@ export const GALLERY_SLOTS = 6;
 
 // ── Local Storage Keys ──
 export const LS_DAILY_POPUP  = 'pe_daily_seen';
-export const LS_GMAPS_KEY    = 'pe_gmaps_key';
 
 // ── Playlist ──
 export const PLAYLIST = [

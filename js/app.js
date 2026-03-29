@@ -1149,9 +1149,24 @@ loadCalMonth();
 /* ════════════════════════════════════════════
    LOCALIZAÇÃO
    ════════════════════════════════════════════ */
-const GMAPS_KEY = 'AIzaSyCrv59xEUDSGhSHng0jeOvKLWt3gW4WeOM';
 let locData  = { pietro: null, emilly: null };
-// ── Renderiza o mapa via iframe embed (sem restrição de domínio) ──
+let _leafletMap = null;
+let _leafletMarkers = {};
+
+// ── Carrega Leaflet (OpenStreetMap) se ainda não carregou ──
+function _loadLeaflet(cb) {
+  if (window.L) { cb(); return; }
+  const link = document.createElement('link');
+  link.rel  = 'stylesheet';
+  link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+  document.head.appendChild(link);
+  const s  = document.createElement('script');
+  s.src    = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+  s.onload = cb;
+  document.head.appendChild(s);
+}
+
+// ── Renderiza mapa OpenStreetMap via Leaflet ──
 function renderEmbedMap() {
   const { pietro, emilly } = locData;
   const mapDiv = document.getElementById('location-map');
@@ -1162,26 +1177,53 @@ function renderEmbedMap() {
   mapDiv.style.display = 'block';
   if (ph) ph.style.display = 'none';
 
-  let src;
-  if (pietro?.lat && emilly?.lat) {
-    src = `https://www.google.com/maps/embed/v1/directions?key=${GMAPS_KEY}&origin=${pietro.lat},${pietro.lng}&destination=${emilly.lat},${emilly.lng}&mode=driving`;
-  } else {
-    const lat = pietro?.lat ?? emilly?.lat;
-    const lng = pietro?.lng ?? emilly?.lng;
-    src = `https://www.google.com/maps/embed/v1/place?key=${GMAPS_KEY}&q=${lat},${lng}&zoom=13`;
-  }
+  _loadLeaflet(() => {
+    const L = window.L;
 
-  // Só recria o iframe se a src mudou (evita flicker)
-  const existing = mapDiv.querySelector('iframe');
-  if (existing && existing.src === src) return;
+    if (!_leafletMap) {
+      _leafletMap = L.map(mapDiv, { zoomControl: true, scrollWheelZoom: false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18,
+      }).addTo(_leafletMap);
+    }
 
-  mapDiv.innerHTML = `<iframe
-    width="100%" height="100%"
-    style="border:0;border-radius:20px;"
-    loading="lazy"
-    referrerpolicy="no-referrer-when-downgrade"
-    src="${src}">
-  </iframe>`;
+    function makeIcon(color, label) {
+      return L.divIcon({
+        html: `<div style="background:${color};color:white;width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 3px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:14px;font-weight:700;">${label}</span></div>`,
+        iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -38], className: '',
+      });
+    }
+
+    const configs = {
+      pietro: { color: '#4a90d9', label: 'P', name: 'Pietro 💙' },
+      emilly: { color: '#e8536f', label: 'E', name: 'Emilly 💗' },
+    };
+
+    const positions = [];
+    ['pietro', 'emilly'].forEach(person => {
+      const d = locData[person];
+      if (!d?.lat) return;
+      const pos = [d.lat, d.lng];
+      positions.push(pos);
+      const cfg = configs[person];
+      if (_leafletMarkers[person]) {
+        _leafletMarkers[person].setLatLng(pos);
+      } else {
+        _leafletMarkers[person] = L.marker(pos, { icon: makeIcon(cfg.color, cfg.label) })
+          .addTo(_leafletMap)
+          .bindPopup(`<div style="font-family:'DM Sans',sans-serif;font-size:0.9rem;color:#590d22;"><strong>${cfg.name}</strong><br>${d.city || ''}</div>`);
+      }
+    });
+
+    if (positions.length === 2) {
+      _leafletMap.fitBounds(positions, { padding: [40, 40] });
+    } else if (positions.length === 1) {
+      _leafletMap.setView(positions[0], 13);
+    }
+
+    setTimeout(() => _leafletMap.invalidateSize(), 100);
+  });
 }
 
 
@@ -1214,18 +1256,6 @@ async function reverseGeocode(lat, lng) {
     }
   } catch (e) {}
 
-  // Fallback Google Maps
-  try {
-    const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GMAPS_KEY}&language=pt-BR`);
-    const d = await r.json();
-    if (d.results && d.results[0]) {
-      const comps = d.results[0].address_components;
-      const city  = comps.find(c => c.types.includes('administrative_area_level_2'))?.long_name
-                 || comps.find(c => c.types.includes('locality'))?.long_name || '';
-      const state = comps.find(c => c.types.includes('administrative_area_level_1'))?.short_name || '';
-      return city && state ? `${city}, ${state}` : d.results[0].formatted_address.split(',').slice(0,2).join(',');
-    }
-  } catch (e) {}
 
   return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
@@ -1328,8 +1358,7 @@ async function shareLocation(person) {
 window.shareLocation = shareLocation;
 
 // Esconde o tip e carrega o mapa direto (chave já está no código)
-const _keyTip = document.getElementById('location-key-tip'); if (_keyTip) _keyTip.style.display = 'none';
-// Mapa renderizado via iframe embed quando dados chegam do Firebase
+// Mapa renderizado via Leaflet/OSM quando dados chegam do Firebase
 
 /* ════════════════════════════════════════════
    EVENTOS SAZONAIS
