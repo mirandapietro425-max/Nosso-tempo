@@ -530,8 +530,11 @@ function getCasaSVG(owned,fase){
 
 /* ════ GAME ACTIONS ════ */
 window._homeStartGame=function(){
-  const ps=playerState(); if(!ps)return;
-  triggerDialogo("introducao",()=>{ ps.gamePhase="terreno"; saveState(); renderRPG(); });
+  if(!playerState())return;
+  triggerDialogo("introducao",()=>{
+    const ps=playerState(); if(!ps)return; // re-fetch após possível snapshot
+    ps.gamePhase="terreno"; saveState(); renderRPG();
+  });
 };
 
 window._homeEscolherTerreno=function(terrenoId){
@@ -545,7 +548,7 @@ window._homeEscolherTerreno=function(terrenoId){
   saveState(); triggerDialogo("terreno_escolhido",()=>renderRPG());
 };
 
-window._homeNovoSave=function(){ const ps=playerState(); if(!ps||(ps.saves||[]).length>=3)return; ps.gamePhase="terreno"; renderRPG(); };
+window._homeNovoSave=function(){ const ps=playerState(); if(!ps||(ps.saves||[]).length>=3)return; ps.gamePhase="terreno"; saveState(); renderRPG(); };
 window._homeSwitchSave=function(idx){ const ps=playerState(); if(!ps)return; ps.currentSave=idx; ps.gamePhase="building"; saveState(); renderRPG(); };
 window._homeRecomecar=function(){ const ps=playerState(); if(!ps||!confirm("Quer comprar um novo terreno? Seu save atual continua salvo!"))return; ps.gamePhase="terreno"; saveState(); renderRPG(); };
 window._homeFecharEvento=function(){ const ps=playerState(); if(ps)ps.eventoDiarioVisto=todayStr(); saveState(); document.getElementById("evento-diario-card")?.remove(); };
@@ -565,8 +568,8 @@ window._homeComprar=function(itemId){
 
 window._homeAvancarFase=function(){
   const ps=playerState(); const sv=currentSave(); if(!sv||!ps)return;
-  if(sv.fase==="exterior"){ sv.fase="jardim"; saveState(); triggerDialogo("level3_jardim",()=>renderRPG()); }
-  else if(sv.fase==="jardim"){ sv.fase="interior"; saveState(); triggerDialogo("level4_sala",()=>renderRPG()); }
+  if(sv.fase==="exterior"){ sv.fase="jardim"; saveState(); triggerDialogo("level3_jardim",()=>{ const s=currentSave(); if(s){}; renderRPG(); }); }
+  else if(sv.fase==="jardim"){ sv.fase="interior"; saveState(); triggerDialogo("level4_sala",()=>{ renderRPG(); }); }
 };
 
 window._homeCompletarCasa=function(){
@@ -706,7 +709,9 @@ window._homeTab=function(tab){
 
 /* ════ INIT ════ */
 export function initHome(db){
-  _db=db; _doc=doc(db,"home","shared");
+  _db=db;
+  if(!db){ renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG(); return; }
+  _doc=doc(db,"home","shared");
   onSnapshot(
     _doc,
     snap=>{
