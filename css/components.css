@@ -741,3 +741,72 @@ body.dark-event .dreams-input:focus {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .letter-card { padding: 2rem 1.5rem; }
 }
+
+/* ── Localização: botões flutuantes sobre o mapa ── */
+.location-map-wrap { height: 340px; }
+
+.loc-btns-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  background: linear-gradient(to top, rgba(255,240,243,0.97) 60%, rgba(255,240,243,0) 100%);
+  pointer-events: none;
+}
+
+.loc-btn-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  pointer-events: all;
+}
+.loc-btn-wrap-right { align-items: flex-end; }
+
+.loc-city-sm {
+  font-size: 0.72rem !important;
+  font-style: italic;
+  color: #590d22;
+  min-height: unset;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loc-share-btn-sm {
+  font-size: 0.78rem !important;
+  padding: 0.4rem 1rem !important;
+  pointer-events: all;
+}
+
+.location-distance-badge {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+  border: 1.5px solid #ffd6de;
+  border-radius: 50px;
+  padding: 0.3rem 0.8rem;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(232,83,111,0.15);
+}
+.location-distance-badge.show { display: flex; }
+.location-distance-badge #loc-dist-num {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #590d22;
+  line-height: 1.2;
+}
+.loc-dist-label {
+  font-size: 0.6rem;
+  color: #c9a9b0;
+  letter-spacing: 0.05em;
+}
+
+/* Cards abaixo do mapa ficam sem botão (botão está no overlay) */
+.location-wrapper { margin-top: 1rem; }

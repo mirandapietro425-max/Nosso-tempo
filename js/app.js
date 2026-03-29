@@ -1636,41 +1636,49 @@ async function reverseGeocode(lat, lng) {
 // ── Atualiza os cards de localização ──
 function updateLocUI() {
   ['pietro', 'emilly'].forEach(person => {
-    const d      = locData[person];
-    const cityEl = document.getElementById(`loc-city-${person}`);
-    const timeEl = document.getElementById(`loc-time-${person}`);
-    const cardEl = document.getElementById(`loc-card-${person}`);
-    const btnEl  = document.getElementById(`loc-btn-${person}`);
+    const d       = locData[person];
+    // Overlay (sobre o mapa)
+    const cityEl  = document.getElementById(`loc-city-${person}`);
+    // Card detalhado abaixo do mapa
+    const cityCard= document.getElementById(`loc-city-${person}-card`);
+    const timeEl  = document.getElementById(`loc-time-${person}`);
+    const cardEl  = document.getElementById(`loc-card-${person}`);
+    const btnEl   = document.getElementById(`loc-btn-${person}`);
 
     if (d?.lat) {
-      // Se city for coordenadas brutas ou vazio, tenta buscar novamente
       const rawCoords = /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(d.city || '');
-      if (cityEl) cityEl.textContent = (!d.city || rawCoords) ? 'Identificando cidade...' : d.city;
-      if (timeEl) timeEl.textContent = d.updatedAt ? `Atualizado às ${d.updatedAt}` : '';
+      const cityText  = (!d.city || rawCoords) ? 'Identificando...' : d.city;
+      if (cityEl)   cityEl.textContent  = cityText;
+      if (cityCard) cityCard.textContent = (!d.city || rawCoords) ? 'Identificando cidade...' : d.city;
+      if (timeEl)   timeEl.textContent  = d.updatedAt ? `Atualizado às ${d.updatedAt}` : '';
       cardEl?.classList.add('active-loc');
-      if (btnEl) btnEl.textContent = '📍 Atualizar localização';
+      if (btnEl) {
+        const label = person === 'pietro' ? '👨 Pietro' : '👩 Emilly';
+        btnEl.textContent = `📍 ${label.split(' ')[1]}`;
+      }
       // Se cidade não identificada, busca com Nominatim agora
       if (!d.city || rawCoords) {
         reverseGeocode(d.lat, d.lng).then(async city => {
-          if (cityEl) cityEl.textContent = city;
-          // Salva cidade corrigida no Firebase
+          if (cityEl)   cityEl.textContent  = city;
+          if (cityCard) cityCard.textContent = city;
           const snap = await getDoc(LOC_DOC).catch(() => null);
           const curr = snap?.exists() ? snap.data() : {};
           if (curr[person]) { curr[person].city = city; await setDoc(LOC_DOC, curr); }
         }).catch(() => {});
       }
     } else {
-      if (cityEl) cityEl.textContent = 'Sem localização ainda';
-      if (timeEl) timeEl.textContent = '';
+      if (cityEl)   cityEl.textContent  = 'Sem localização';
+      if (cityCard) cityCard.textContent = 'Sem localização ainda';
+      if (timeEl)   timeEl.textContent  = '';
       cardEl?.classList.remove('active-loc');
+      if (btnEl) btnEl.textContent = person === 'pietro' ? '👨 Pietro' : '👩 Emilly';
     }
   });
 
-  // Distância
+  // Distância — badge sobre o mapa
   const { pietro, emilly } = locData;
   const distDiv = document.getElementById('location-distance');
   const distNum = document.getElementById('loc-dist-num');
-
   if (pietro?.lat && emilly?.lat) {
     const km  = calcDistance(pietro.lat, pietro.lng, emilly.lat, emilly.lng);
     const str = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
@@ -1718,7 +1726,7 @@ async function shareLocation(person) {
       const curr  = snap?.exists() ? snap.data() : {};
       curr[person] = { lat, lng, city, updatedAt: now };
       await setDoc(LOC_DOC, curr);
-      if (btn) { btn.disabled = false; btn.textContent = '📍 Atualizar localização'; }
+      if (btn) { btn.disabled = false; btn.textContent = person === 'pietro' ? '👨 Pietro' : '👩 Emilly'; }
       showToast(`📍 Localização de ${person === 'pietro' ? 'Pietro' : 'Emilly'} atualizada!`);
       try { window.awardCoins('location', 8, person); } catch(e) {}
     },
