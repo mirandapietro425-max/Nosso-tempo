@@ -36,7 +36,7 @@ import {
 import { initExperience } from './experience.js';
 
 // ── Stickers (figurinhas) ──
-import { initStickers, initMoodStickers, STICKERS as _STICKERS_DATA } from './stickers.js';
+import { STICKERS as _STICKERS_DATA } from './stickers.js';
 window._STICKERS = _STICKERS_DATA;
 
 /* ════════════════════════════════════════════
@@ -124,8 +124,7 @@ initMiniPlayerClickOutside();
 /* ════════════════════════════════════════════
    FIGURINHAS
    ════════════════════════════════════════════ */
-try { initStickers(); } catch(e) { console.error('initStickers:', e); }
-try { initMoodStickers('mood-sticker-container'); } catch(e) { console.error('initMoodStickers:', e); }
+// initStickers e initMoodStickers removidos — seção de figurinhas integrada ao mural de humor
 
 /* ════════════════════════════════════════════
    GALERIA
@@ -706,6 +705,18 @@ async function confirmMood() {
     time: now
   };
 
+  // Adiciona ao histórico (máximo 7 entradas)
+  const today = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+  if (!current.history) current.history = [];
+  // Remove entrada do dia de hoje se já existe
+  current.history = current.history.filter(h => h.date !== today);
+  current.history.unshift({
+    date: today,
+    pietro: current.pietro ? { emoji: current.pietro.emoji, label: current.pietro.label, file: current.pietro.file || null, isSticker: current.pietro.isSticker || false } : null,
+    emilly: current.emilly ? { emoji: current.emilly.emoji, label: current.emilly.label, file: current.emilly.file || null, isSticker: current.emilly.isSticker || false } : null,
+  });
+  current.history = current.history.slice(0, 7);
+
   await setDoc(MOOD_DOC, current);
   closeMoodPicker();
   showToast(`${moodPickerSelected.emoji} Humor de ${moodPickerTarget} atualizado!`);
@@ -736,6 +747,23 @@ async function initMoodDisplay() {
         if (timeEl)  timeEl.textContent  = d.time ? `às ${d.time}` : '';
       }
     });
+    // Renderiza histórico
+    const histList = document.getElementById('mood-history-list');
+    if (histList && data.history && data.history.length) {
+      histList.innerHTML = data.history.map(h => {
+        const pEmoji = h.pietro ? (h.pietro.isSticker && h.pietro.file ? `<img src="${h.pietro.file}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;">` : h.pietro.emoji) : '—';
+        const eEmoji = h.emilly ? (h.emilly.isSticker && h.emilly.file ? `<img src="${h.emilly.file}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;">` : h.emilly.emoji) : '—';
+        const pLabel = h.pietro?.label || '';
+        const eLabel = h.emilly?.label || '';
+        return `<div class="mood-history-item">
+          <div class="mood-history-date">${h.date}</div>
+          <div class="mood-history-emojis">
+            <div class="mood-history-pair"><div class="mood-history-pair-name">Pietro</div><span title="${pLabel}">${pEmoji}</span></div>
+            <div class="mood-history-pair"><div class="mood-history-pair-name">Emilly</div><span title="${eLabel}">${eEmoji}</span></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
   } catch (e) {}
 }
 

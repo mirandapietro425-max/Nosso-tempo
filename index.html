@@ -20,11 +20,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=18">
-  <link rel="stylesheet" href="css/components.css?v=18">
-  <link rel="stylesheet" href="css/modals.css?v=18">
-  <link rel="stylesheet" href="css/animations.css?v=18">
-  <link rel="stylesheet" href="css/stickers.css?v=18">
+  <link rel="stylesheet" href="css/main.css?v=19">
+  <link rel="stylesheet" href="css/components.css?v=19">
+  <link rel="stylesheet" href="css/modals.css?v=19">
+  <link rel="stylesheet" href="css/animations.css?v=19">
+  <link rel="stylesheet" href="css/stickers.css?v=19">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -134,6 +134,51 @@
     .gallery-slot:hover .slot-overlay{opacity:1}
     .slot-btn{background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);padding:.4rem .8rem;border-radius:50px;cursor:pointer;font-size:.75rem}
     .gallery-tip{text-align:center;font-size:.8rem;color:#c9a9b0;font-style:italic;margin-top:.5rem}
+
+    /* Humor - histórico */
+    .mood-history-title{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:#c9a96e;margin-bottom:.8rem;font-weight:700;margin-top:1.5rem}
+    .mood-history-list{display:flex;flex-direction:column;gap:.5rem}
+    .mood-history-item{display:flex;align-items:center;gap:.8rem;background:white;border-radius:14px;padding:.7rem 1rem;border:1px solid #ffeef1}
+    .mood-history-date{font-size:.7rem;color:#c9a96e;font-weight:600;min-width:65px}
+    .mood-history-emojis{flex:1;display:flex;gap:1rem}
+    .mood-history-pair{display:flex;flex-direction:column;align-items:center;gap:.1rem}
+    .mood-history-pair-name{font-size:.55rem;color:#c9a9b0;text-transform:uppercase;letter-spacing:.08em}
+    /* Mood picker overlay */
+    .mood-picker-overlay{position:fixed;inset:0;background:rgba(89,13,34,.55);backdrop-filter:blur(6px);z-index:9991;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+    .mood-picker-overlay.show{opacity:1;pointer-events:all}
+    .mood-picker-sheet{background:#fff8f9;border-radius:28px 28px 0 0;padding:2rem 1.5rem 2.5rem;width:100%;max-width:520px;max-height:80vh;overflow-y:auto}
+    .mood-picker-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:#590d22;margin-bottom:.3rem;text-align:center}
+    .mood-picker-sub{font-size:.75rem;color:#c9a9b0;font-style:italic;text-align:center;margin-bottom:1.2rem}
+    .mood-picker-close{position:absolute;top:1rem;right:1.2rem;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#e8536f;font-weight:700}
+    .mood-tabs{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-bottom:.75rem}
+    .mood-tab{font-size:.78rem;padding:.35rem .7rem;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;background:transparent;color:#b06070;transition:all .2s}
+    .mood-tab.active{background:white;color:#590d22;box-shadow:0 2px 8px rgba(89,13,34,.1)}
+    .mood-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem}
+    .mood-option{display:flex;flex-direction:column;align-items:center;background:white;border:2px solid #ffeef1;border-radius:16px;padding:.7rem .3rem;cursor:pointer;transition:all .2s;gap:.25rem}
+    .mood-option:hover{border-color:#e8536f;transform:scale(1.06)}
+    .mood-option.selected{border-color:#e8536f;background:#fff0f3}
+    .mood-option-emoji{font-size:1.8rem;line-height:1}
+    .mood-option-label{font-size:.58rem;color:#590d22;text-align:center;line-height:1.2}
+    .mood-confirm-btn{margin-top:1.2rem;width:100%;background:#e8536f;color:white;border:none;padding:.85rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer}
+    .mood-sticker-grid-inner{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;max-height:280px;overflow-y:auto;padding:.25rem}
+    .mood-sticker-pick{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.4rem .2rem;border-radius:10px;border:2px solid transparent;background:rgba(255,255,255,.7);cursor:pointer;transition:transform .15s,border-color .2s}
+    .mood-sticker-pick:hover{transform:scale(1.07);border-color:#e8536f}
+    .mood-sticker-pick.selected{border-color:#e8536f;background:rgba(232,83,111,.08);box-shadow:0 0 0 3px rgba(232,83,111,.2)}
+    .mood-sticker-pick-img{width:50px;height:50px;object-fit:contain}
+    .mood-sticker-pick-label{font-size:.65rem;color:#7a4060;text-align:center;font-weight:500}
+    /* Mood card */
+    .mood-card{background:white;border-radius:24px;padding:1.8rem;box-shadow:0 4px 20px rgba(232,83,111,.08);border:1px solid #ffeef1}
+    .mood-header{display:flex;align-items:center;gap:.8rem;margin-bottom:1.5rem}
+    .mood-header-icon{font-size:1.4rem}
+    .mood-header-text{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;color:#590d22}
+    .mood-players{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+    .mood-player-box{background:#ffeef1;border-radius:18px;padding:1.2rem;text-align:center;transition:all .3s}
+    .mood-player-box.active-mood{background:linear-gradient(135deg,#fff0f3,#fce4ec);border:1px solid #ffb3c1}
+    .mood-player-name{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#b06070;margin-bottom:.6rem}
+    .mood-player-emoji{font-size:2.2rem;display:block;margin-bottom:.5rem;line-height:1}
+    .mood-player-label{font-size:.82rem;color:#590d22;font-weight:600;margin-bottom:.2rem}
+    .mood-player-time{font-size:.7rem;color:#c9a9b0;margin-bottom:.8rem}
+    .mood-btn{background:#e8536f;color:white;border:none;padding:.5rem 1rem;border-radius:50px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600}
   </style>
 </head>
 <body>
@@ -704,7 +749,7 @@
 </script>
 
 <!-- ── APP (módulo ES) ── -->
-<script type="module" src="js/app.js?v=18"></script>
+<script type="module" src="js/app.js?v=19"></script>
 
 </body>
 </html>

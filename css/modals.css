@@ -284,9 +284,6 @@
 }
 
 .mood-confirm-btn:hover { background: var(--velvet); }
-.mood-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; background: #ffeef1; border-radius: var(--radius-pill); padding: 0.3rem; }
-.mood-tab { flex: 1; padding: 0.45rem 0.5rem; border: none; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; cursor: pointer; background: transparent; color: #b06070; transition: all var(--transition-fast); }
-.mood-tab.active { background: white; color: var(--velvet); box-shadow: 0 2px 8px rgba(89, 13, 34, 0.1); }
 
 .mood-history-title { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.8rem; font-weight: 700; }
 .mood-history-list { display: flex; flex-direction: column; gap: 0.5rem; }
