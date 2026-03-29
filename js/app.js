@@ -1660,7 +1660,7 @@ function updateLocUI() {
       cardEl?.classList.add('active-loc');
       if (btnEl) {
         const label = person === 'pietro' ? '👨 Pietro' : '👩 Emilly';
-        btnEl.textContent = `📍 ${label.split(' ')[1]}`;
+        btnEl.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`;
       }
       // Se cidade não identificada, busca com Nominatim agora
       if (!d.city || rawCoords) {
@@ -1677,7 +1677,7 @@ function updateLocUI() {
       if (cityCard) cityCard.textContent = 'Sem localização ainda';
       if (timeEl)   timeEl.textContent  = '';
       cardEl?.classList.remove('active-loc');
-      if (btnEl) btnEl.textContent = person === 'pietro' ? '👨 Pietro' : '👩 Emilly';
+      if (btnEl) btnEl.textContent = person === 'pietro' ? '📍 Atualizar Pietro' : '📍 Atualizar Emilly';
     }
   });
 
@@ -1732,7 +1732,7 @@ async function shareLocation(person) {
       const curr  = snap?.exists() ? snap.data() : {};
       curr[person] = { lat, lng, city, updatedAt: now };
       await setDoc(LOC_DOC, curr);
-      if (btn) { btn.disabled = false; btn.textContent = person === 'pietro' ? '👨 Pietro' : '👩 Emilly'; }
+      if (btn) { btn.disabled = false; btn.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`; }
       showToast(`📍 Localização de ${person === 'pietro' ? 'Pietro' : 'Emilly'} atualizada!`);
       try { window.awardCoins('location', 8, person); } catch(e) {}
     },

@@ -810,3 +810,49 @@ body.dark-event .dreams-input:focus {
 
 /* Cards abaixo do mapa ficam sem botão (botão está no overlay) */
 .location-wrapper { margin-top: 1rem; }
+
+/* ── v15: Garante que botões de localização são SEMPRE visíveis ── */
+.loc-btns-overlay {
+  z-index: 1200 !important;
+  background: linear-gradient(to top, rgba(255,240,243,0.98) 70%, rgba(255,240,243,0) 100%) !important;
+  padding: 1rem 1rem 0.9rem !important;
+}
+
+.loc-share-btn-sm {
+  background: #e8536f !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.55rem 1.2rem !important;
+  border-radius: 50px !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 3px 12px rgba(232,83,111,0.4) !important;
+  pointer-events: all !important;
+  white-space: nowrap !important;
+}
+
+.loc-share-btn-sm:active {
+  transform: scale(0.96) !important;
+}
+
+.loc-city-sm {
+  font-size: 0.7rem !important;
+  color: #590d22 !important;
+  font-style: italic !important;
+  max-width: 130px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: left !important;
+}
+
+.loc-btn-wrap-right .loc-city-sm {
+  text-align: right !important;
+}
+
+/* Garante que o mapa não ultrapasse a área */
+.location-map-wrap {
+  height: 360px !important;
+  overflow: hidden !important;
+}
