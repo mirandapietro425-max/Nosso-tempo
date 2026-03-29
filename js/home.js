@@ -204,20 +204,21 @@ let _saveResolve = null;
 function saveState(){
   if(!_doc) return Promise.resolve();
   clearTimeout(_saveTimer);
-  // Reusa a Promise existente se já houver um save pendente
+  // HOME-4: captura resolve ANTES de zerar, evita Promise que nunca resolve
   if(!_savePending){
     _savePending = new Promise(res => { _saveResolve = res; });
   }
+  const promiseToReturn = _savePending;
   _saveTimer = setTimeout(async ()=>{
-    const resolve = _saveResolve;
-    _savePending = null;
-    _saveResolve = null;
-    _saveTimer = null;
+    const resolve = _saveResolve; // captura referência local
+    _saveTimer    = null;
+    _savePending  = null;
+    _saveResolve  = null;
     try{ await setDoc(_doc, _state); }
     catch(e){ console.warn("home save:", e); }
-    resolve();
+    resolve?.(); // HOME-4: uso de ?. por segurança extra
   }, 400);
-  return _savePending;
+  return promiseToReturn;
 }
 function todayStr(){
   // Usa data local (não UTC) para evitar bug das 21h-meia-noite no fuso UTC-3 (Brasil)
@@ -264,6 +265,7 @@ function addXp(amount){
   checkLevelUp();
 }
 
+let _levelUpShown = new Set(); // HOME-3: evita modal duplicado em chamadas rápidas
 function checkLevelUp(){
   const sv=currentSave(); if(!sv)return;
   const LEVELS=[
@@ -280,7 +282,12 @@ function checkLevelUp(){
     if(sv.xp>=lv.xpNeeded && sv.level<lv.level){
       sv.level=lv.level; leveled=true;
       renderLevel();
-      showLevelUpModal(lv);
+      const modalKey=`lv${lv.level}_${sv.id||0}`;
+      if(!_levelUpShown.has(modalKey)){
+        _levelUpShown.add(modalKey);
+        showLevelUpModal(lv);
+        setTimeout(()=>_levelUpShown.delete(modalKey), 5000); // limpa após 5s
+      }
       if(lv.unlocks?.includes("cat")) showToastNativo("🐱 Adoção de gato desbloqueada! Aba Pet!");
     }
   }
@@ -605,7 +612,8 @@ window._homeComprar=function(itemId){
   const loja=getLoja(); const item=loja.find(i=>i.id===itemId); if(!item)return;
   if(sv.items.includes(itemId)){ showToastNativo("Você já tem esse item!"); return; }
   if(ps.coins<item.preco){ showToastNativo(`Precisa de mais 🪙 ${item.preco-ps.coins}`); return; }
-  if(item.exclusivo) sv.items=sv.items.filter(id=>{ const o=loja.find(i=>i.id===id); return !(o?.exclusivo===item.exclusivo); });
+  // HOME-5: busca em TODAS as lojas para não remover itens de fases diferentes por engano
+  if(item.exclusivo){ const allItems=[...LOJA_EXTERIOR,...LOJA_JARDIM,...LOJA_INTERIOR]; sv.items=sv.items.filter(id=>{ const o=allItems.find(i=>i.id===id); return !(o?.exclusivo===item.exclusivo); }); }
   ps.coins-=item.preco; sv.items.push(itemId); addXp(item.xp);
   saveState(); renderCoins(); renderRPG();
   spawnHearts(window.innerWidth/2,window.innerHeight/2,5);

@@ -340,20 +340,27 @@ async function toggleMovie(i) {
   if (movies[i].watched) showToast('✅ Assistido! 🥰');
 }
 
+let _deletingMovie = false;
 async function deleteMovie(i) {
+  if (_deletingMovie) return;
   if (!confirm('Remover este filme?')) return;
-  const movies = await getMovies();
-  movies.splice(i, 1);
-  await saveMovies(movies);
-  renderMovies();
+  _deletingMovie = true;
+  try {
+    const movies = await getMovies();
+    movies.splice(i, 1);
+    await saveMovies(movies);
+    renderMovies();
+  } finally { _deletingMovie = false; }
 }
 
 // ── Movie Modal ──
 let movieModalIndex  = null;
 let movieModalAuthor = 'Pietro';
+let _movieFetchId    = 0; // incrementado a cada abertura para cancelar fetches anteriores
 
 async function openMovieModal(i) {
   movieModalIndex  = i;
+  const fetchId    = ++_movieFetchId; // APP-8: ID único para este fetch
   // Reset author para Pietro a cada abertura
   movieModalAuthor = 'Pietro';
   document.getElementById('movie-btn-pietro')?.classList.add('active');
@@ -372,6 +379,7 @@ async function openMovieModal(i) {
     const movie   = sData.results?.[0];
 
     if (movie) {
+      if (fetchId !== _movieFetchId) return; // APP-8: modal fechado ou outro filme aberto
       if (movie.poster_path) {
         document.getElementById('movie-modal-poster-area').innerHTML =
           `<img class="movie-modal-poster" src="https://image.tmdb.org/t/p/w780${movie.poster_path}" alt="${m.name}">`;
@@ -548,28 +556,18 @@ async function saveMural(msgs, lastClean) {
   await setDoc(MURAL_DOC, payload);
 }
 
-// Limpeza automática diária — apaga todas as mensagens uma vez por dia
-async function checkMuralDailyClean() {
-  const today = new Date().toLocaleDateString('pt-BR');
-  const { msgs, lastClean } = await getMural();
-  if (lastClean === today) return; // já limpou hoje
-  if (msgs.length === 0) {
-    // nada pra limpar, só marca o dia
-    await saveMural([], today);
-    return;
-  }
-  await saveMural([], today);
-  showToast('🧹 Mural limpo! Novo dia, novos recados 💕');
-}
-
+// APP-2: limpeza diária integrada ao render — uma única chamada getMural()
 async function renderMural() {
   const list = document.getElementById('mural-list');
   if (!list) return;
 
-  // Verifica limpeza diária ao abrir
-  await checkMuralDailyClean();
-
-  const { msgs } = await getMural();
+  let { msgs, lastClean } = await getMural();
+  const today = new Date().toLocaleDateString('pt-BR');
+  if (lastClean !== today) {
+    await saveMural([], today);
+    if (msgs.length > 0) showToast('🧹 Mural limpo! Novo dia, novos recados 💕');
+    msgs = [];
+  }
   list.innerHTML = '';
 
   if (msgs.length === 0) {
@@ -651,18 +649,23 @@ async function addMural() {
     window.removeMuralPhoto();
     renderMural();
     showToast('💌 Recado enviado com amor!');
-    try { window.awardCoins('mural', 5); } catch(e) {}
+    try { window.awardCoins('mural', 5, muralAuthor); } catch(e) {}
   } finally {
     _addingMural = false;
   }
 }
 
+let _deletingMural = false;
 async function deleteMural(i) {
+  if (_deletingMural) return;
   if (!confirm('Remover este recado?')) return;
-  const { msgs } = await getMural();
-  msgs.splice(i, 1);
-  await saveMural(msgs);
-  renderMural();
+  _deletingMural = true;
+  try {
+    const { msgs } = await getMural();
+    msgs.splice(i, 1);
+    await saveMural(msgs);
+    renderMural();
+  } finally { _deletingMural = false; }
 }
 
 function selectAuthor(name) {
@@ -748,11 +751,16 @@ async function toggleDream(i) {
   if (dreams[i].done) showToast('✨ Sonho realizado!');
 }
 
+let _deletingDream = false;
 async function deleteDream(i) {
-  const dreams = await getDreams();
-  dreams.splice(i, 1);
-  await saveDreams(dreams);
-  renderDreams();
+  if (_deletingDream) return;
+  _deletingDream = true;
+  try {
+    const dreams = await getDreams();
+    dreams.splice(i, 1);
+    await saveDreams(dreams);
+    renderDreams();
+  } finally { _deletingDream = false; }
 }
 
 window.addDream    = addDream;
@@ -879,7 +887,7 @@ async function confirmMood() {
   showToast(`${moodPickerSelected.emoji} Humor de ${moodPickerTarget} atualizado!`);
   initMoodDisplay();
   // Moedas pela casinha
-  try { window.awardCoins('mood', 5); } catch(e) {}
+  try { window.awardCoins('mood', 5, moodPickerTarget); } catch(e) {}
   } finally {
     _savingMood = false;
   }
@@ -954,6 +962,13 @@ function getCurrentCycleKey(type) {
 async function initSpecial(type) {
   const isOpen   = type === 'bday' ? isBdayToday() : isMesvToday();
   const ref      = type === 'bday' ? SPECIAL_BDAY_DOC : SPECIAL_MESV_DOC;
+  if (!ref) { // APP-9: Firebase falhou, mostra estado padrão
+    const lockedEl = document.getElementById(`special-${type}-locked`);
+    const openEl   = document.getElementById(`special-${type}-open`);
+    if (openEl) openEl.style.display = 'none';
+    if (lockedEl) lockedEl.style.display = 'block';
+    return;
+  }
   const cycleKey = getCurrentCycleKey(type);
   const snap     = await getDoc(ref).catch(() => null);
   const data     = snap?.exists() ? snap.data() : null;
@@ -1111,6 +1126,7 @@ function isBirthday(y, m, d) {
 }
 
 async function getCalDay(key) {
+  if (!db) return { text: '', media: [], comments: [] };
   try {
     const ref  = doc(db, 'calendar', key);
     const snap = await getDoc(ref);
@@ -1120,6 +1136,7 @@ async function getCalDay(key) {
 }
 
 async function saveCalDayData(key, data) {
+  if (!db) { showToast('❌ Banco de dados indisponível.'); return; }
   await setDoc(doc(db, 'calendar', key), data);
 }
 
@@ -1160,6 +1177,7 @@ async function renderCal() {
 }
 
 async function loadCalMonth() {
+  if (!db) { renderCal(); return; } // APP-6: guard db null
   calDayData = {};
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const promises = [];
@@ -1541,7 +1559,7 @@ async function shareLocation(person) {
       await setDoc(LOC_DOC, curr);
       if (btn) { btn.disabled = false; btn.textContent = '📍 Atualizar localização'; }
       showToast(`📍 Localização de ${person === 'pietro' ? 'Pietro' : 'Emilly'} atualizada!`);
-      try { window.awardCoins('location', 8); } catch(e) {}
+      try { window.awardCoins('location', 8, person); } catch(e) {}
     },
     (err) => {
       if (btn) { btn.disabled = false; btn.textContent = '📍 Compartilhar minha localização'; }
