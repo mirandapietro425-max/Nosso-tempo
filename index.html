@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="css/modals.css?v=20">
   <link rel="stylesheet" href="css/animations.css?v=20">
   <link rel="stylesheet" href="css/stickers.css?v=20">
+  <link rel="stylesheet" href="css/home.css?v=20">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -725,6 +726,134 @@
     </div>
     <div id="location-map" style="position:absolute;inset:0;opacity:0;pointer-events:none"></div>
   </div>
+</section>
+
+<!-- ── NOSSA CASINHA ── -->
+<section id="sec-casinha" aria-labelledby="sec-casinha-title">
+  <div class="section-label">Nosso mundinho</div>
+  <h2 class="section-title" id="sec-casinha-title">Nossa <em>Casinha</em> 🏡</h2>
+
+  <!-- Moedas -->
+  <div class="home-coins-bar">
+    <span class="home-coin-icon">🪙</span>
+    <span class="home-coin-amount">0</span>
+    <span class="home-coin-label">moedas</span>
+  </div>
+
+  <!-- Como ganhar moedas -->
+  <div class="earn-rewards-wrap">
+    <div class="earn-title">Como ganhar moedas hoje</div>
+    <div class="earn-list" id="home-earn-list">
+      <!-- preenchido por JS -->
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="home-tabs">
+    <button class="home-tab active" data-tab="pet"  onclick="window._homeTab('pet')">🐱 Bolinha</button>
+    <button class="home-tab"        data-tab="casa" onclick="window._homeTab('casa')">🏠 Casinha</button>
+    <button class="home-tab"        data-tab="loja" onclick="window._homeTab('loja')">🛒 Loja</button>
+    <button class="home-tab"        data-tab="quiz" onclick="window._homeTab('quiz')">📝 Quiz</button>
+  </div>
+
+  <!-- PANEL: PET -->
+  <div class="home-panel active" id="home-panel-pet">
+    <div class="pet-scene">
+      <div class="pet-bg-glow"></div>
+      <div class="pet-bubble" id="pet-bubble"></div>
+      <button class="pet-sprite" id="pet-sprite-btn" aria-label="Fazer carinho no Bolinha">
+        <div class="pet-pixel-cat state-idle" id="pet-svg-container">
+          <!-- SVG injected by JS -->
+        </div>
+      </button>
+      <div class="pet-name-label">✦ Bolinha ✦</div>
+    </div>
+
+    <div class="pet-mood-badge" id="pet-mood-badge">🐾 Querendo atenção</div>
+
+    <div class="pet-stats">
+      <div class="pet-stat">
+        <div class="pet-stat-header">
+          <span class="pet-stat-label">🍖 Fome</span>
+          <span class="pet-stat-val" id="pet-bar-hunger-val">80%</span>
+        </div>
+        <div class="pet-stat-bar"><div class="pet-stat-fill hunger-fill" id="pet-bar-hunger" style="width:80%"></div></div>
+      </div>
+      <div class="pet-stat">
+        <div class="pet-stat-header">
+          <span class="pet-stat-label">⚡ Energia</span>
+          <span class="pet-stat-val" id="pet-bar-energy-val">80%</span>
+        </div>
+        <div class="pet-stat-bar"><div class="pet-stat-fill energy-fill" id="pet-bar-energy" style="width:80%"></div></div>
+      </div>
+      <div class="pet-stat">
+        <div class="pet-stat-header">
+          <span class="pet-stat-label">😸 Humor</span>
+          <span class="pet-stat-val" id="pet-bar-happy-val">80%</span>
+        </div>
+        <div class="pet-stat-bar"><div class="pet-stat-fill happy-fill" id="pet-bar-happy" style="width:80%"></div></div>
+      </div>
+      <div class="pet-stat">
+        <div class="pet-stat-header">
+          <span class="pet-stat-label">💖 Amor</span>
+          <span class="pet-stat-val" id="pet-bar-love-val">80%</span>
+        </div>
+        <div class="pet-stat-bar"><div class="pet-stat-fill love-fill" id="pet-bar-love" style="width:80%"></div></div>
+      </div>
+    </div>
+
+    <div class="pet-actions">
+      <button class="pet-action-btn" onclick="window._homeFeedPet(event)">
+        <span>🍖</span><span>Alimentar</span>
+      </button>
+      <button class="pet-action-btn" onclick="window._homePetPet(event)">
+        <span>🤗</span><span>Carinho</span>
+      </button>
+      <button class="pet-action-btn" onclick="window._homePlayPet(event)">
+        <span>🎾</span><span>Brincar</span>
+      </button>
+      <button class="pet-action-btn" onclick="window._homeSleepPet()">
+        <span>💤</span><span>Dormir</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANEL: CASA -->
+  <div class="home-panel" id="home-panel-casa">
+    <div class="house-scene-wrap">
+      <div class="house-sky"></div>
+      <div class="house-stars" id="house-stars-container"></div>
+      <div class="house-canvas">
+        <svg class="house-svg" id="house-svg-wrap" viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg">
+          <!-- injected by JS -->
+        </svg>
+      </div>
+      <div class="house-ground"></div>
+      <div class="house-garden" id="house-garden-wrap">
+        <!-- garden items injected by JS -->
+      </div>
+    </div>
+    <p style="text-align:center;font-size:0.78rem;color:#c9a9b0;font-style:italic;margin-top:0.5rem;">
+      Compre itens na Loja para personalizar a casinha 🏡
+    </p>
+  </div>
+
+  <!-- PANEL: LOJA -->
+  <div class="home-panel" id="home-panel-loja">
+    <div class="home-shop-grid" id="home-shop-grid">
+      <!-- injected by JS -->
+    </div>
+  </div>
+
+  <!-- PANEL: QUIZ -->
+  <div class="home-panel" id="home-panel-quiz">
+    <div class="quiz-wrap">
+      <div id="quiz-content">
+        <!-- injected by JS -->
+      </div>
+    </div>
+  </div>
+
 </section>
 
 <!-- ── FOOTER ── -->

@@ -39,6 +39,10 @@ import { initExperience } from './experience.js';
 import { STICKERS as _STICKERS_DATA } from './stickers.js';
 window._STICKERS = _STICKERS_DATA;
 
+// ── Home (casinha + pet + quiz) ──
+import { initHome, awardCoins as _awardCoins } from './home.js';
+window.awardCoins = _awardCoins;
+
 /* ════════════════════════════════════════════
    FIREBASE INIT
    ════════════════════════════════════════════ */
@@ -112,6 +116,9 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
   // Partículas iniciam DEPOIS do experience para garantir que canvas.dataset.eventId já está setado
   try { initParticles(); } catch(e) { console.error('initParticles:', e); }
 })();
+
+// ── Casinha + Pet + Quiz ──
+try { initHome(db); } catch(e) { console.error('initHome:', e); }
 
 /* ════════════════════════════════════════════
    MUSIC
@@ -523,6 +530,7 @@ async function addMural() {
   if (input) input.value = '';
   renderMural();
   showToast('💌 Recado enviado com amor!');
+  try { window.awardCoins('mural', 5); } catch(e) {}
 }
 
 async function deleteMural(i) {
@@ -729,6 +737,8 @@ async function confirmMood() {
   closeMoodPicker();
   showToast(`${moodPickerSelected.emoji} Humor de ${moodPickerTarget} atualizado!`);
   initMoodDisplay();
+  // Moedas pela casinha
+  try { window.awardCoins('mood', 5); } catch(e) {}
 }
 
 async function initMoodDisplay() {
@@ -1356,6 +1366,7 @@ async function shareLocation(person) {
       await setDoc(LOC_DOC, curr);
       if (btn) { btn.disabled = false; btn.textContent = '📍 Atualizar localização'; }
       showToast(`📍 Localização de ${person === 'pietro' ? 'Pietro' : 'Emilly'} atualizada!`);
+      try { window.awardCoins('location', 8); } catch(e) {}
     },
     (err) => {
       if (btn) { btn.disabled = false; btn.textContent = '📍 Compartilhar minha localização'; }
