@@ -101,11 +101,11 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
   if (month === BDAY_MONTH && day === BDAY_DAY)               activeEventId = 'aniv-pietro';
   else if (month === EMILLY_BDAY_MONTH && day === EMILLY_BDAY_DAY) activeEventId = 'aniv-emilly';
   else if (day === ANNIVERSARY_DAY)                           activeEventId = 'mesversario';
-  else if (month === 11 && day >= 24 && day <= 26)            activeEventId = 'natal';
-  else if (month === 1 && day === 14)                         activeEventId = 'dia-namorados';
-  else if (month === 5 && day === 12)                         activeEventId = 'dia-namorados'; // junho, PT
+  else if (month === 11 && day === 25)                        activeEventId = 'natal';
+  else if (month === 11 && day === 24)                        activeEventId = 'vespera-natal';
+  else if (month === 5 && day === 12)                         activeEventId = 'dia-namorados'; // 12 de junho — Dia dos Namorados BR
   else if (month === 9 && day === 31)                         activeEventId = 'halloween';
-  else if (month === 5 && (day >= 20 && day <= 24))           activeEventId = 'sao-joao';
+  else if (month === 5 && (day >= 13 && day <= 24))           activeEventId = 'sao-joao';
   else if (isPascoa(now))                                     activeEventId = 'pascoa';
   else if (isCarnaval(now))                                   activeEventId = 'carnaval';
 

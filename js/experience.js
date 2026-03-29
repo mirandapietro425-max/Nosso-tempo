@@ -144,6 +144,13 @@ const EVENT_PARTICLES = {
     speed: [6, 10],
     canvas: { color: 'rgba(200,230,255,', shape: 'snowflake' },
   },
+  'vespera-natal': {
+    elements: ['❄️', '🎄', '⛄', '✨', '🎁', '❤️', '⭐'],
+    rate: 600,
+    size: [14, 22],
+    speed: [6, 10],
+    canvas: { color: 'rgba(200,230,255,', shape: 'snowflake' },
+  },
   'dia-namorados': {
     elements: ['💕', '❤️', '💗', '💝', '🌹', '💌', '✨'],
     rate: 400,
@@ -310,6 +317,19 @@ const EASTER_EGGS = {
       selector: '.hero-title',
       tripleClick: true,
       message: '⭐ Você descobriu o segredo de Natal! "A estrela no topo da árvore sempre me lembra dos seus olhos, Emilly. Brilhantes, lindos e cheios de vida." — Pietro 🌟',
+      animation: 'starburst',
+    },
+  ],
+  'vespera-natal': [
+    {
+      selector: '.letter-card',
+      message: '🎄 A véspera de Natal chegou! Esta noite é mágica — e mais mágica ainda por poder vivê-la ao teu lado. Feliz Natal, Emilly! ❄️',
+      animation: 'snowfall',
+    },
+    {
+      selector: '.hero-title',
+      tripleClick: true,
+      message: '⭐ Segredo da véspera: o Pietro já está ansioso pelo Natal amanhã, mas a melhor parte não é o presente — é acordar do seu lado. 🎁',
       animation: 'starburst',
     },
   ],
@@ -568,6 +588,11 @@ const ROMANTIC_MESSAGES = {
     { text: 'Cada estrela da nossa árvore de Natal brilha por amor a você. ⭐', from: 'Pietro' },
     { text: 'Feliz Natal, meu amor! Você é o melhor presente que a vida já me deu. 🎁', from: 'Pietro' },
   ],
+  'vespera-natal': [
+    { text: 'A véspera chegou! Esta noite é mágica — e você a torna ainda mais especial. 🎄', from: 'Pietro' },
+    { text: 'Amanhã é Natal, mas já me sinto o homem mais presenteado do mundo por te ter. ⭐', from: 'Pietro' },
+    { text: 'Feliz véspera, meu amor! O melhor presente debaixo da árvore é o seu sorriso. 🎁', from: 'Pietro' },
+  ],
   pascoa: [
     { text: 'Na Páscoa, celebro a renovação. E o nosso amor se renova a cada amanhecer. 🕊️', from: 'Pietro' },
     { text: 'Você é a minha esperança mais bonita, minha Emilly. Feliz Páscoa! 🌷', from: 'Pietro' },
@@ -668,11 +693,12 @@ function _showRomanticMessage(msgs) {
 
 export function openEventGame(eventId) {
   const games = {
-    pascoa:         () => _gamePascoaHunt(),
-    natal:          () => _gameNatalQuiz(),
+    pascoa:          () => _gamePascoaHunt(),
+    natal:           () => _gameNatalQuiz(),
+    'vespera-natal': () => _gameNatalQuiz(),
     'dia-namorados': () => _gameLoveQuiz(),
-    carnaval:       () => _gameCarnavalMatch(),
-    mesversario:    () => _gameMesversarioMemory(),
+    carnaval:        () => _gameCarnavalMatch(),
+    mesversario:     () => _gameMesversarioMemory(),
     halloween:      () => _gameHalloweenHunt(),
   };
 
@@ -1111,7 +1137,7 @@ function _setupGameClose(overlay) {
 export function injectGameButton(eventId) {
   if (!eventId) return;
 
-  const gameEvents = ['pascoa', 'natal', 'dia-namorados', 'carnaval', 'mesversario', 'halloween', 'sao-joao'];
+  const gameEvents = ['pascoa', 'natal', 'vespera-natal', 'dia-namorados', 'carnaval', 'mesversario', 'halloween', 'sao-joao'];
   if (!gameEvents.includes(eventId)) return;
 
   // Evita duplicar
