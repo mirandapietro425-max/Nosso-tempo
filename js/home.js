@@ -243,8 +243,10 @@ function showToastNativo(msg){ import("./ui.js").then(m=>m.showToast(msg)); }
 export function awardCoins(reason,amount,playerName){
   // Se playerName fornecido, usa ele diretamente; senão usa o jogador ativo
   const resolvedName = playerName ? playerName.toLowerCase() : _activePlayer;
-  const ps = resolvedName ? (_state[resolvedName] || null) : null;
-  if(!ps)return;
+  if(!resolvedName || !['pietro','emilly'].includes(resolvedName)) return;
+  // Inicializa jogador lazily se ainda não existir (ex: mood/mural chamados sem abrir a casinha)
+  if(!_state[resolvedName]) _state[resolvedName]=JSON.parse(JSON.stringify(DEFAULT_PLAYER));
+  const ps = _state[resolvedName];
   const today=todayStr();
   if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
   if(ps.earnedToday[reason])return;
@@ -777,7 +779,7 @@ function renderQuiz(){
   const isPietro=_activePlayer==="pietro"; const seed=today.replace(/-/g,""); const off=isPietro?0:Math.floor(QUIZ_QUESTIONS.length/2);
   const qIdx=(parseInt(seed.slice(-4))+off)%QUIZ_QUESTIONS.length; _currentQ=QUIZ_QUESTIONS[qIdx]; _answered=false;
   _quizPerson=_activePlayer;
-  wrap.innerHTML=`<div class="quiz-who-row"><div class="quiz-player-badge">${isPietro?"💙 Pietro":"💗 Emilly"} jogando</div></div><div class="quiz-cat-badge">${_currentQ.cat}</div><div class="quiz-question">${_currentQ.q}</div><div class="quiz-options">${_currentQ.opts.map((opt,i)=>`<button class="quiz-option" onclick="window._homeAnswerQuiz(${i},this)">${opt}</button>`).join("")}</div><div class="quiz-feedback" id="quiz-feedback"></div>`;
+  wrap.innerHTML=`<div class="quiz-who-row"><div class="quiz-player-badge">${isPietro?"💙 Pietro":"💗 Emilly"} jogando</div></div><div class="quiz-category-badge">${_currentQ.cat}</div><div class="quiz-question-text">${_currentQ.q}</div><div class="quiz-options">${_currentQ.opts.map((opt,i)=>`<button class="quiz-option" onclick="window._homeAnswerQuiz(${i},this)"><span class="quiz-option-letter">${String.fromCharCode(65+i)}</span>${opt}</button>`).join("")}</div><div class="quiz-feedback" id="quiz-feedback"></div>`;
 }
 
 window._homeSetQuizPerson=function(p){ _quizPerson=p; renderQuiz(); };
@@ -895,6 +897,8 @@ export function initHome(db){
         }
       }
       petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList();
+      // Atualiza quiz se aba estiver ativa (ex: snapshot chega enquanto quiz está aberto)
+      if(!_selecting){ const qp=document.getElementById('home-panel-quiz'); if(qp?.classList.contains('active')) renderQuiz(); }
       // FIX: não re-renderiza o RPG se:
       //   1. um diálogo está em andamento (evita interromper a intro)
       //   2. o usuário está no meio de uma seleção (_selecting) — evita o botão morto
