@@ -232,6 +232,15 @@ export function renderMiniPlayerList() {
   });
 }
 
+export function closeMusicBar() {
+  const bar = document.getElementById('mini-player-bar');
+  if (bar) bar.style.display = 'none';
+  // Pausa a música ao fechar
+  if (ytPlayer && ytReady) {
+    try { ytPlayer.pauseVideo(); } catch(e) {}
+  }
+}
+
 export function toggleMiniPlayer() {
   miniPlayerOpen = !miniPlayerOpen;
   document.getElementById('mini-player-panel')?.classList.toggle('open', miniPlayerOpen);
@@ -256,4 +265,5 @@ export function exposeGlobals() {
   window.togglePlayPause = togglePlayPause;
   window.playCustomYT    = playCustomYT;
   window.toggleMiniPlayer = toggleMiniPlayer;
+  window.closeMusicBar   = closeMusicBar;
 }

@@ -971,7 +971,29 @@ async function confirmMood() {
   await setDoc(MOOD_DOC, current);
   closeMoodPicker();
   showToast(`${moodPickerSelected.emoji} Humor de ${moodPickerTarget} atualizado!`);
+
+  // FIX Bug 1: atualiza UI imediatamente com os dados locais — sem esperar novo getDoc
+  const _p = person; // já é lowercase
+  const _d = current[_p];
+  if (_d) {
+    const box      = document.getElementById(`mood-box-${_p}`);
+    const emojiEl  = document.getElementById(`mood-emoji-${_p}`);
+    const labelEl  = document.getElementById(`mood-label-${_p}`);
+    const timeEl   = document.getElementById(`mood-time-${_p}`);
+    if (box)     box.classList.add('active-mood');
+    if (emojiEl) {
+      if (_d.isSticker && _d.file) {
+        emojiEl.innerHTML = `<img src="${_d.file}" alt="${_d.label}" style="width:52px;height:52px;object-fit:contain;">`;
+      } else {
+        emojiEl.textContent = _d.emoji;
+      }
+    }
+    if (labelEl) labelEl.textContent = _d.label;
+    if (timeEl)  timeEl.textContent  = _d.time ? `às ${_d.time}` : '';
+  }
+  // Atualiza histórico em background (não bloqueia a UI)
   initMoodDisplay();
+
   // Moedas pela casinha
   try { window.awardCoins('mood', 5, moodPickerTarget); } catch(e) {}
   } finally {

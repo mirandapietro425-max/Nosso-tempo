@@ -233,6 +233,7 @@
     <button class="mini-bar-btn"      onclick="playPrev()">⏮</button>
     <button class="mini-bar-btn main" id="mini-play-icon" onclick="togglePlayPause()">⏸</button>
     <button class="mini-bar-btn"      onclick="playNext()">⏭</button>
+    <button class="mini-bar-btn mini-bar-close" onclick="closeMusicBar()" aria-label="Fechar player" title="Fechar">✕</button>
   </div>
 </div>
 
@@ -868,18 +869,21 @@
     });
 
     // FIX: recarrega quando SW assume controle (novo deploy)
-    // Proteção contra loop: sessionStorage garante no máximo 1 reload por navegação
+    // Proteção contra loop: sessionStorage NÃO é limpo no load — persiste a sessão inteira
     // Proteção contra first-install: só recarrega se já havia um controller antes
     let _hadController = !!navigator.serviceWorker.controller;
+    // Limpa flag antiga com mais de 60s (segurança extra contra loop entre abas)
+    const _swTs = sessionStorage.getItem('sw-reloaded-ts');
+    if (_swTs && Date.now() - Number(_swTs) > 60000) {
+      sessionStorage.removeItem('sw-reloaded');
+      sessionStorage.removeItem('sw-reloaded-ts');
+    }
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if(!_hadController){ _hadController = true; return; } // primeiro install → não recarrega
       if(sessionStorage.getItem('sw-reloaded')){ return; }  // já recarregou → não faz loop
       sessionStorage.setItem('sw-reloaded', '1');
+      sessionStorage.setItem('sw-reloaded-ts', String(Date.now()));
       window.location.reload();
-    });
-    // Limpa flag após carregamento bem-sucedido
-    window.addEventListener('load', () => {
-      sessionStorage.removeItem('sw-reloaded');
     });
   }
 </script>
