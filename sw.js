@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v27
+   PIETRO & EMILLY — sw.js v28
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
 // Versão do cache — altere este valor ao fazer deploy para invalidar o cache antigo
-const CACHE_VERSION  = 'v39';
+const CACHE_VERSION  = 'v40';
 const CACHE_STATIC   = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC  = `pe-dynamic-${CACHE_VERSION}`;
 

@@ -1960,8 +1960,8 @@ window.shareLocation = shareLocation;
 
   // Mensagem muda dependendo do dia
   const isMesv  = day === 11;
-  const isAnivP = month === 0  && day === 9;
-  const isAnivE = month === 3  && day === 24;
+  const isAnivP = month === BDAY_MONTH       && day === BDAY_DAY;
+  const isAnivE = month === EMILLY_BDAY_MONTH && day === EMILLY_BDAY_DAY;
 
   let titulo, corpo, emoji, cor;
 

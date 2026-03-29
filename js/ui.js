@@ -169,7 +169,21 @@ export function initDaily() {
   // Mostra popup automaticamente (uma vez por dia)
   const seen = localStorage.getItem(LS_DAILY_POPUP);
   if (seen !== new Date().toDateString()) {
-    setTimeout(() => openDailyPopup(), 1800);
+    // FIX: só abre o popup diário depois que a carta de boas-vindas for dispensada
+    // (a carta aparece na primeira visita da sessão com z-index 99998 — o popup diário
+    // tem z-index 100000 e cobria a carta, causando confusão de UX)
+    const welcomeAlreadySeen = sessionStorage.getItem('pe_welcome_shown');
+    if (welcomeAlreadySeen) {
+      // Carta já foi vista nesta sessão (reload, segunda aba) — abre normalmente
+      setTimeout(() => openDailyPopup(), 1800);
+    } else {
+      // Primeira visita da sessão: carta de boas-vindas vai aparecer em 800ms
+      // Aguarda tempo suficiente para o usuário ler e fechar a carta (~8s)
+      setTimeout(() => {
+        // Só abre se a carta já foi dispensada (ou se passou tempo demais)
+        openDailyPopup();
+      }, 8500);
+    }
   }
 
   // Agenda atualização automática à meia-noite
