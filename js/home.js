@@ -196,23 +196,26 @@ export function awardCoins(reason,amount){
 }
 
 function addXp(amount){
-  _state.xp+=amount;
+  const sv=currentSave(); if(!sv)return;
+  sv.xp=(sv.xp||0)+amount;
   spawnXpPop(amount,window.innerWidth/2+40,window.innerHeight/2);
   checkLevelUp();
 }
 
 function checkLevelUp(){
+  const sv=currentSave(); if(!sv)return;
   const LEVELS=[
-    {level:1,nome:"Fundação",        xpNeeded:0},
-    {level:2,nome:"Fachada",         xpNeeded:200, unlocks:["cat"]},
-    {level:3,nome:"Jardim & Entrada",xpNeeded:500, unlocks:["interior_hint"]},
-    {level:4,nome:"Interior — Sala", xpNeeded:900},
+    {level:1,nome:"Fundação",         xpNeeded:0},
+    {level:2,nome:"Fachada",          xpNeeded:200, unlocks:["cat"]},
+    {level:3,nome:"Jardim & Entrada", xpNeeded:500, unlocks:["interior_hint"]},
+    {level:4,nome:"Interior — Sala",  xpNeeded:900},
     {level:5,nome:"Interior — Quarto",xpNeeded:1400},
-    {level:6,nome:"Lar Completo 🏡", xpNeeded:2000},
+    {level:6,nome:"Lar Completo 🏡",  xpNeeded:2000},
   ];
+  sv.level=sv.level||1;
   for(const lv of LEVELS){
-    if(_state.xp>=lv.xpNeeded && _state.level<lv.level){
-      _state.level=lv.level; saveState(); renderLevel();
+    if(sv.xp>=lv.xpNeeded && sv.level<lv.level){
+      sv.level=lv.level; saveState(); renderLevel();
       showLevelUpModal(lv);
       if(lv.unlocks?.includes("cat")) showToastNativo("🐱 Adoção de gato desbloqueada! Aba Pet!");
     }
@@ -222,22 +225,17 @@ function checkLevelUp(){
 function renderCoins(){ document.querySelectorAll(".home-coin-amount").forEach(el=>el.textContent=_state.coins); }
 
 function renderLevel(){
-  const LEVELS=[
-    {level:0,nome:"Início"},
-    {level:1,nome:"Fundação"},
-    {level:2,nome:"Fachada"},
-    {level:3,nome:"Jardim & Entrada"},
-    {level:4,nome:"Interior — Sala"},
-    {level:5,nome:"Interior — Quarto"},
-    {level:6,nome:"Lar Completo 🏡"},
-  ];
-  const XP_NEXT=[0,0,200,500,900,1400,2000];
-  const lvl=_state.level||0;
-  document.querySelectorAll(".home-level-label").forEach(el=>el.textContent=`Nível ${lvl} — ${LEVELS[lvl]?.nome||""}`);
-  const nextXp=XP_NEXT[lvl+1]||2000;
-  const pct=lvl>=6?100:Math.min(100,Math.round((_state.xp/nextXp)*100));
+  const sv=currentSave();
+  const LEVEL_NAMES=["Início","Fundação","Fachada","Jardim & Entrada","Interior — Sala","Interior — Quarto","Lar Completo 🏡"];
+  // XP thresholds indexed by level (level 1→2 needs 200 XP, etc.)
+  const XP_NEXT=[200,200,500,900,1400,2000,2000];
+  const lvl=sv?(sv.level||1):0;
+  const xp=sv?(sv.xp||0):0;
+  document.querySelectorAll(".home-level-label").forEach(el=>el.textContent=`Nível ${lvl} — ${LEVEL_NAMES[lvl]||""}`);
+  const nextXp=XP_NEXT[lvl]||2000;
+  const pct=lvl>=6?100:Math.min(100,Math.round((xp/nextXp)*100));
   document.querySelectorAll(".home-xp-fill").forEach(el=>el.style.width=pct+"%");
-  document.querySelectorAll(".home-xp-label").forEach(el=>el.textContent=lvl>=6?"Nível máximo! 🏆":`${_state.xp} / ${nextXp} XP`);
+  document.querySelectorAll(".home-xp-label").forEach(el=>el.textContent=lvl>=6?"Nível máximo! 🏆":`${xp} / ${nextXp} XP`);
 }
 
 function showLevelUpModal(lv){
@@ -335,7 +333,7 @@ function renderCasinha(wrap){
   if(sv?.fase==="exterior" && doneItems>=4) avancarBtn=`<button class="avancar-btn" onclick="window._homeAvancarFase()">🌳 Avançar para o Jardim</button>`;
   else if(sv?.fase==="jardim" && doneItems>=4) avancarBtn=`<button class="avancar-btn" onclick="window._homeAvancarFase()">🏠 Avançar para o Interior</button>`;
   else if(sv?.fase==="interior" && doneItems>=6) avancarBtn=`<button class="avancar-btn" onclick="window._homeCompletarCasa()">🎉 Casa Completa!</button>`;
-  else avancarBtn=`<div class="avancar-hint">Compre mais itens para avançar de fase (${doneItems} de ${Math.max(4,6)} necessários)</div>`;
+  else avancarBtn=`<div class="avancar-hint">Compre mais itens para avançar de fase (${doneItems} de ${sv?.fase==="interior"?6:4} necessários)</div>`;
 
   wrap.innerHTML=`${eventoDiario}
   <div class="casinha-header"><span class="casinha-bairro">${terreno?.emoji||"🏠"} ${terreno?.nome||""} — Santa Maria</span><span class="casinha-fase">${sv?.fase==="interior"?"🏠 Interior":sv?.fase==="jardim"?"🌳 Jardim":"🔨 Exterior"}</span></div>
@@ -369,15 +367,15 @@ function getCasaSVG(owned,fase){
   let portaFill="#795548"; let portaArco=owned.has("porta_arco");
   if(owned.has("porta_vidro")) portaFill="#90caf9";
   if(portaArco) portaFill="#a5745b";
-  const janArco=owned.has("janela_arco"); const janFr=owned.has("janela_francesa");
+  const janArco=owned.has("janela_arco"); const janSimples=owned.has("janela_simples");
   let calcada="#9e9e9e";
   if(owned.has("calcada_pedra")) calcada="#78909c";
   if(owned.has("calcada_tijolo")) calcada="#bf360c";
   const portaSVG=portaArco
     ?`<path d="M126 140 Q140 120 154 140 L154 165 L126 165 Z" fill="${portaFill}"/><rect x="126" y="145" width="28" height="20" fill="${portaFill}"/>`
     :`<rect x="126" y="128" width="28" height="37" rx="${owned.has("porta_vidro")?2:3}" fill="${portaFill}"/>`;
-  const janSVG=(x,y)=>janFr
-    ?`<rect x="${x}" y="${y}" width="30" height="36" rx="2" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/><line x1="${x+15}" y1="${y}" x2="${x+15}" y2="${y+36}" stroke="#90caf9" stroke-width="1"/><line x1="${x}" y1="${y+18}" x2="${x+30}" y2="${y+18}" stroke="#90caf9" stroke-width="1"/>`
+  const janSVG=(x,y)=>janSimples
+    ?`<rect x="${x}" y="${y}" width="30" height="28" rx="3" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/><line x1="${x+15}" y1="${y}" x2="${x+15}" y2="${y+28}" stroke="#90caf9" stroke-width="1"/><line x1="${x}" y1="${y+14}" x2="${x+30}" y2="${y+14}" stroke="#90caf9" stroke-width="1"/>`
     :janArco
     ?`<path d="M${x} ${y+16} Q${x} ${y} ${x+15} ${y} Q${x+30} ${y} ${x+30} ${y+16} L${x+30} ${y+36} L${x} ${y+36} Z" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/>`
     :`<rect x="${x}" y="${y}" width="30" height="28" rx="3" fill="#e3f2fd" stroke="#90caf9" stroke-width="1.5"/><line x1="${x+15}" y1="${y}" x2="${x+15}" y2="${y+28}" stroke="#90caf9" stroke-width="1"/><line x1="${x}" y1="${y+14}" x2="${x+30}" y2="${y+14}" stroke="#90caf9" stroke-width="1"/>`;
@@ -421,9 +419,9 @@ window._homeEscolherTerreno=function(terrenoId){
   const t=TERRENOS.find(t=>t.id===terrenoId); if(!t)return;
   if(_state.coins<t.preco){ showToastNativo(`Precisa de mais 🪙 ${t.preco-_state.coins}`); return; }
   _state.coins-=t.preco;
-  const sv={ id:Date.now(), terrenoId, nome:`Casinha em ${t.nome}`, criadoEm:new Date().toISOString(), fase:"exterior", items:[] };
+  const sv={ id:Date.now(), terrenoId, nome:`Casinha em ${t.nome}`, criadoEm:new Date().toISOString(), fase:"exterior", items:[], xp:0, level:1 };
   _state.saves=_state.saves||[]; _state.saves.push(sv);
-  _state.currentSave=_state.saves.length-1; _state.gamePhase="building"; _state.level=1; _state.xp=0;
+  _state.currentSave=_state.saves.length-1; _state.gamePhase="building";
   saveState(); triggerDialogo("terreno_escolhido",()=>renderRPG());
 };
 
@@ -484,7 +482,7 @@ function renderPet(){
   const adopted=_state.pet?.adopted;
   document.querySelectorAll(".pet-stats,.pet-actions").forEach(el=>el.style.display=adopted?"":"none");
   if(!adopted){
-    if((_state.level||0)>=2){
+    if((currentSave()?.level||0)>=2){
       petWrap.innerHTML=`<div class="adocao-wrap"><div class="adocao-titulo">🐱 Escolha seu gatinho!</div><div class="adocao-subtitulo">Adoção gratuita 🏡</div><div class="adocao-grid">${GATOS_ADOCAO.map(g=>`<div class="adocao-card" onclick="window._homeAdotarGato('${g.id}')"><div class="adocao-emoji">${g.emoji}</div><div class="adocao-nome">${g.nome}</div><div class="adocao-raca">${g.raca}</div><div class="adocao-personalidade">${g.personalidade}</div><button class="adocao-btn">Adotar 🐾</button></div>`).join("")}</div></div>`;
     } else {
       petWrap.innerHTML=`<div class="pet-locked"><div style="font-size:3rem">🔒</div><div style="font-size:.9rem;margin-top:.5rem;color:#c9a9b0">Alcance o <strong>Nível 2</strong><br>para adotar um gatinho!</div></div>`;
@@ -557,7 +555,16 @@ window._homeTab=function(tab){
 export function initHome(db){
   _db=db; _doc=doc(db,"home","shared");
   onSnapshot(_doc,snap=>{
-    if(snap.exists()){ const data=snap.data(); _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data}; if(!_state.pet)_state.pet=DEFAULT_HOME.pet; if(!_state.quiz)_state.quiz=DEFAULT_HOME.quiz; if(!_state.saves)_state.saves=[]; if(!_state.dialogoVisto)_state.dialogoVisto={}; }
+    if(snap.exists()){
+      const data=snap.data();
+      _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
+      if(!_state.pet)_state.pet=DEFAULT_HOME.pet;
+      if(!_state.quiz)_state.quiz=DEFAULT_HOME.quiz;
+      if(!_state.saves)_state.saves=[];
+      if(!_state.dialogoVisto)_state.dialogoVisto={};
+      // Migração: saves antigos sem xp/level por save
+      _state.saves=_state.saves.map(sv=>({xp:0,level:1,...sv}));
+    }
     petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG();
   });
   document.getElementById("pet-sprite-btn")?.addEventListener("click",e=>petPet(e));
