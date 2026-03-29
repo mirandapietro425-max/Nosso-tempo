@@ -620,18 +620,34 @@ let moodPickerTarget   = null;
 let moodPickerSelected = null;
 let moodActiveTab      = 'emojis';
 
+const STICKER_CATS = ['princesas','princes','crepusculo','marvel'];
+
 function renderMoodGrid() {
   const grid = document.getElementById('mood-grid');
   if (!grid) return;
-  const options = moodActiveTab === 'emojis'
-    ? MOOD_OPTIONS
-    : (moodPickerTarget === 'Emilly' ? DISNEY_EMILLY : DISNEY_PIETRO);
 
-  grid.innerHTML = options.map((m, i) => `
-    <div class="mood-option" onclick="selectMoodOption(${i})" id="mood-opt-${i}">
-      <span class="mood-option-emoji">${m.emoji}</span>
-      <span class="mood-option-label">${m.label}</span>
-    </div>`).join('');
+  if (moodActiveTab === 'emojis') {
+    grid.innerHTML = MOOD_OPTIONS.map((m, i) => `
+      <div class="mood-option" onclick="selectMoodOption(${i})" id="mood-opt-${i}">
+        <span class="mood-option-emoji">${m.emoji}</span>
+        <span class="mood-option-label">${m.label}</span>
+      </div>`).join('');
+    return;
+  }
+
+  // Abas de figurinhas por universo
+  if (STICKER_CATS.includes(moodActiveTab)) {
+    import('./stickers.js').then(({ STICKERS }) => {
+      const list = STICKERS[moodActiveTab] || [];
+      grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s, i) => `
+        <div class="mood-sticker-pick" onclick="selectStickerOption(${i}, '${moodActiveTab}')" id="mood-sopt-${moodActiveTab}-${i}">
+          <img src="${s.file}" alt="${s.label}" loading="lazy" class="mood-sticker-pick-img">
+          <div class="mood-sticker-pick-label">${s.name}</div>
+        </div>`).join('')}
+      </div>`;
+    });
+    return;
+  }
 }
 
 function openMoodPicker(person) {
@@ -640,12 +656,8 @@ function openMoodPicker(person) {
   moodActiveTab      = 'emojis';
 
   document.getElementById('mood-picker-title').textContent = `${person}, como você está hoje?`;
+  document.querySelectorAll('.mood-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('mood-tab-emojis')?.classList.add('active');
-  document.getElementById('mood-tab-disney')?.classList.remove('active');
-
-  const disneyTab = document.getElementById('mood-tab-disney');
-  if (disneyTab) disneyTab.textContent = person === 'Emilly' ? '👸 Princesas' : '🤴 Príncipes';
-
   renderMoodGrid();
   document.getElementById('mood-picker-overlay')?.classList.add('show');
 }
@@ -658,18 +670,24 @@ function closeMoodPicker() {
 function switchMoodTab(tab) {
   moodActiveTab      = tab;
   moodPickerSelected = null;
-  document.getElementById('mood-tab-emojis')?.classList.toggle('active', tab === 'emojis');
-  document.getElementById('mood-tab-disney')?.classList.toggle('active', tab === 'disney');
+  document.querySelectorAll('.mood-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(`mood-tab-${tab}`)?.classList.add('active');
   renderMoodGrid();
 }
 
 function selectMoodOption(i) {
   document.querySelectorAll('.mood-option').forEach(el => el.classList.remove('selected'));
   document.getElementById(`mood-opt-${i}`)?.classList.add('selected');
-  const options = moodActiveTab === 'emojis'
-    ? MOOD_OPTIONS
-    : (moodPickerTarget === 'Emilly' ? DISNEY_EMILLY : DISNEY_PIETRO);
-  moodPickerSelected = options[i];
+  moodPickerSelected = MOOD_OPTIONS[i];
+}
+
+function selectStickerOption(i, cat) {
+  document.querySelectorAll('.mood-sticker-pick').forEach(el => el.classList.remove('selected'));
+  document.getElementById(`mood-sopt-${cat}-${i}`)?.classList.add('selected');
+  import('./stickers.js').then(({ STICKERS }) => {
+    const s = (STICKERS[cat] || [])[i];
+    if (s) moodPickerSelected = { emoji: '🎭', label: s.label, file: s.file, isSticker: true };
+  });
 }
 
 async function confirmMood() {

@@ -166,8 +166,11 @@
     <div class="mood-picker-title" id="mood-picker-title">Como você está hoje?</div>
     <div class="mood-picker-sub">Escolha a carinha que melhor descreve seu sentimento 💕</div>
     <div class="mood-tabs" id="mood-tabs">
-      <button class="mood-tab active" id="mood-tab-emojis" onclick="switchMoodTab('emojis')">😊 Emojis</button>
-      <button class="mood-tab"        id="mood-tab-disney" onclick="switchMoodTab('disney')">✨ Disney</button>
+      <button class="mood-tab active" id="mood-tab-emojis"     onclick="switchMoodTab('emojis')">😊 Emojis</button>
+      <button class="mood-tab"        id="mood-tab-princesas"  onclick="switchMoodTab('princesas')">👑 Princesas</button>
+      <button class="mood-tab"        id="mood-tab-princes"    onclick="switchMoodTab('princes')">🤴 Príncipes</button>
+      <button class="mood-tab"        id="mood-tab-crepusculo" onclick="switchMoodTab('crepusculo')">🌙 Crepúsculo</button>
+      <button class="mood-tab"        id="mood-tab-marvel"     onclick="switchMoodTab('marvel')">🕷️ Marvel</button>
     </div>
     <div class="mood-grid" id="mood-grid"></div>
     <button class="mood-confirm-btn" onclick="confirmMood()">Confirmar 💕</button>
@@ -447,17 +450,7 @@
     </div>
   </div>
 
-  <!-- ── FIGURINHAS DO HUMOR ── -->
-  <div class="mood-sticker-panel">
-    <div class="mood-sticker-panel-title">
-      <span>🎭</span> Escolha sua figurinha do momento
-    </div>
-    <div class="mood-sticker-author-row">
-      <button class="mood-sticker-author-btn active" id="mood-sticker-btn-pietro" onclick="selectMoodStickerAuthor('Pietro')">Pietro 💙</button>
-      <button class="mood-sticker-author-btn"        id="mood-sticker-btn-emilly" onclick="selectMoodStickerAuthor('Emilly')">Emilly 💗</button>
-    </div>
-    <div id="mood-sticker-container"></div>
-  </div>
+
 </section>
 
 

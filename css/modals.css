@@ -295,3 +295,64 @@
 .mood-history-emojis { font-size: 1.2rem; flex: 1; display: flex; gap: 0.5rem; }
 .mood-history-pair { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
 .mood-history-pair-name { font-size: 0.55rem; color: #c9a9b0; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ── Figurinhas dentro do mood picker ── */
+.mood-sticker-grid-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.mood-sticker-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.2rem;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: rgba(255,255,255,0.7);
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.2s;
+}
+
+.mood-sticker-pick:hover {
+  transform: scale(1.07);
+  border-color: #f72585;
+}
+
+.mood-sticker-pick.selected {
+  border-color: #f72585;
+  background: rgba(247,37,133,0.08);
+  box-shadow: 0 0 0 3px rgba(247,37,133,0.2);
+}
+
+.mood-sticker-pick-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.mood-sticker-pick-label {
+  font-size: 0.65rem;
+  color: #7a4060;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Tabs menores para caber as 5 abas */
+.mood-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.mood-tab {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+}
