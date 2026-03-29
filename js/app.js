@@ -17,6 +17,16 @@ import {
   START_DATE, ANNIVERSARY_DAY, BDAY_MONTH, BDAY_DAY, EMILLY_BDAY_MONTH, EMILLY_BDAY_DAY,
 } from './config.js';
 
+// Escapa caracteres HTML para evitar XSS ao inserir texto do usuário via innerHTML
+function sanitizeHTML(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── UI utilities ──
 import {
   showToast, initGreeting, initCounter, initAnniversary,
@@ -46,18 +56,28 @@ window.awardCoins = _awardCoins;
 /* ════════════════════════════════════════════
    FIREBASE INIT
    ════════════════════════════════════════════ */
-const app = initializeApp(FIREBASE_CONFIG);
-const db  = getFirestore(app);
+let app, db;
+try {
+  app = initializeApp(FIREBASE_CONFIG);
+  db  = getFirestore(app);
+} catch (e) {
+  console.error('[Firebase] Falha ao inicializar:', e);
+  // Mostra aviso discreto no topo da página sem travar o app
+  const warn = document.createElement('div');
+  warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;font-size:12px;padding:6px 12px;z-index:99999;text-align:center;';
+  warn.textContent = '⚠️ Erro de conexão com o banco de dados. Algumas funções podem não funcionar.';
+  document.body?.appendChild(warn);
+}
 
-/* ── Document refs ── */
-const GALLERY_DOC      = doc(db, 'gallery',       'shared');
-const MOVIES_DOC       = doc(db, 'movies',        'shared');
-const DREAMS_DOC       = doc(db, 'dreams',        'shared');
-const MURAL_DOC        = doc(db, 'mural',         'shared');
-const MOOD_DOC         = doc(db, 'mood',          'shared');
-const LOC_DOC          = doc(db, 'location',      'shared');
-const SPECIAL_BDAY_DOC = doc(db, 'special_bday',  'shared');
-const SPECIAL_MESV_DOC = doc(db, 'special_mesv',  'shared');
+/* ── Document refs (só criados se db foi inicializado com sucesso) ── */
+const GALLERY_DOC      = db ? doc(db, 'gallery',       'shared') : null;
+const MOVIES_DOC       = db ? doc(db, 'movies',        'shared') : null;
+const DREAMS_DOC       = db ? doc(db, 'dreams',        'shared') : null;
+const MURAL_DOC        = db ? doc(db, 'mural',         'shared') : null;
+const MOOD_DOC         = db ? doc(db, 'mood',          'shared') : null;
+const LOC_DOC          = db ? doc(db, 'location',      'shared') : null;
+const SPECIAL_BDAY_DOC = db ? doc(db, 'special_bday',  'shared') : null;
+const SPECIAL_MESV_DOC = db ? doc(db, 'special_mesv',  'shared') : null;
 
 /* ════════════════════════════════════════════
    UI INIT
@@ -286,23 +306,30 @@ async function renderMovies() {
     item.className = 'movie-item' + (m.watched ? ' watched' : '');
     item.innerHTML = `
       <div class="movie-icon">${m.watched ? '✅' : '🎬'}</div>
-      <div class="movie-name" onclick="openMovieModal(${i})">${m.name}</div>
+      <div class="movie-name" onclick="openMovieModal(${i})">${sanitizeHTML(m.name)}</div>
       <button class="movie-check" onclick="toggleMovie(${i})">${m.watched ? '✓' : ''}</button>
       <button class="movie-del" onclick="deleteMovie(${i})">✕</button>`;
     list.appendChild(item);
   });
 }
 
+let _addingMovie = false;
 async function addMovie() {
+  if (_addingMovie) return;
   const input = document.getElementById('movie-input');
   const name  = input?.value.trim();
   if (!name) { showToast('✏️ Escreve o nome do filme!'); return; }
-  const movies = await getMovies();
-  movies.push({ name, watched: false, comments: [] });
-  await saveMovies(movies);
-  if (input) input.value = '';
-  renderMovies();
-  showToast('🎬 Filme adicionado!');
+  _addingMovie = true;
+  try {
+    const movies = await getMovies();
+    movies.push({ name, watched: false, comments: [] });
+    await saveMovies(movies);
+    if (input) input.value = '';
+    renderMovies();
+    showToast('🎬 Filme adicionado!');
+  } finally {
+    _addingMovie = false;
+  }
 }
 
 async function toggleMovie(i) {
@@ -326,7 +353,11 @@ let movieModalIndex  = null;
 let movieModalAuthor = 'Pietro';
 
 async function openMovieModal(i) {
-  movieModalIndex = i;
+  movieModalIndex  = i;
+  // Reset author para Pietro a cada abertura
+  movieModalAuthor = 'Pietro';
+  document.getElementById('movie-btn-pietro')?.classList.add('active');
+  document.getElementById('movie-btn-emilly')?.classList.remove('active');
   const movies = await getMovies();
   const m = movies[i];
   document.getElementById('movie-modal-title').textContent = m.name;
@@ -393,23 +424,30 @@ function renderMovieComments(comments) {
     div.className = 'movie-modal-comment ' + c.author.toLowerCase();
     div.innerHTML = `
       <button class="movie-modal-comment-del" onclick="deleteMovieComment(${i})">✕</button>
-      <div class="movie-modal-comment-author">${c.author} ${c.author === 'Pietro' ? '💙' : '💗'}</div>
-      <div class="movie-modal-comment-text">${c.text}</div>`;
+      <div class="movie-modal-comment-author">${sanitizeHTML(c.author)} ${c.author === 'Pietro' ? '💙' : '💗'}</div>
+      <div class="movie-modal-comment-text">${sanitizeHTML(c.text)}</div>`;
     list.appendChild(div);
   });
 }
 
+let _addingMovieComment = false;
 async function addMovieComment() {
+  if (_addingMovieComment) return;
   const input = document.getElementById('movie-modal-comment-input');
   const text  = input?.value.trim();
   if (!text || movieModalIndex === null) return;
-  const movies = await getMovies();
-  if (!movies[movieModalIndex].comments) movies[movieModalIndex].comments = [];
-  movies[movieModalIndex].comments.push({ author: movieModalAuthor, text });
-  await saveMovies(movies);
-  if (input) input.value = '';
-  renderMovieComments(movies[movieModalIndex].comments);
-  showToast('💬 Comentário adicionado!');
+  _addingMovieComment = true;
+  try {
+    const movies = await getMovies();
+    if (!movies[movieModalIndex].comments) movies[movieModalIndex].comments = [];
+    movies[movieModalIndex].comments.push({ author: movieModalAuthor, text });
+    await saveMovies(movies);
+    if (input) input.value = '';
+    renderMovieComments(movies[movieModalIndex].comments);
+    showToast('💬 Comentário adicionado!');
+  } finally {
+    _addingMovieComment = false;
+  }
 }
 
 async function deleteMovieComment(i) {
@@ -462,6 +500,10 @@ function verificarSenha() {
     document.getElementById('mural-locked').style.display   = 'none';
     document.getElementById('mural-conteudo').style.display = 'block';
     muralDesbloqueado = true;
+    // Reset author para Pietro ao desbloquear
+    muralAuthor = 'Pietro';
+    document.getElementById('btn-pietro')?.classList.add('active');
+    document.getElementById('btn-emilly')?.classList.remove('active');
     renderMural();
     showToast('🔓 Recados desbloqueados! 💕');
   } else {
@@ -515,28 +557,36 @@ async function renderMural() {
     div.className = 'mural-msg ' + m.author.toLowerCase();
     div.innerHTML = `
       <button class="mural-msg-del" onclick="deleteMural(${i})">✕</button>
-      <div class="mural-msg-author">${m.author} ${m.author === 'Pietro' ? '💙' : '💗'}</div>
-      <div class="mural-msg-text">${m.text}</div>
+      <div class="mural-msg-author">${sanitizeHTML(m.author)} ${m.author === 'Pietro' ? '💙' : '💗'}</div>
+      <div class="mural-msg-text">${sanitizeHTML(m.text)}</div>
       <div class="mural-msg-date">${m.date || ''}</div>`;
     list.appendChild(div);
   });
 }
 
+let _addingMural = false;
 async function addMural() {
+  if (_addingMural) return;
   const input = document.getElementById('mural-input');
   const text  = input?.value.trim();
   if (!text) { showToast('✏️ Escreve um recado!'); return; }
-  const msgs = await getMural();
-  const date = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
-  msgs.push({ author: muralAuthor, text, date });
-  await saveMural(msgs);
-  if (input) input.value = '';
-  renderMural();
-  showToast('💌 Recado enviado com amor!');
-  try { window.awardCoins('mural', 5); } catch(e) {}
+  _addingMural = true;
+  try {
+    const msgs = await getMural();
+    const date = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    msgs.push({ author: muralAuthor, text, date });
+    await saveMural(msgs);
+    if (input) input.value = '';
+    renderMural();
+    showToast('💌 Recado enviado com amor!');
+    try { window.awardCoins('mural', 5); } catch(e) {}
+  } finally {
+    _addingMural = false;
+  }
 }
 
 async function deleteMural(i) {
+  if (!confirm('Remover este recado?')) return;
   const msgs = await getMural();
   msgs.splice(i, 1);
   await saveMural(msgs);
@@ -588,22 +638,29 @@ async function renderDreams() {
     item.className = 'dream-item' + (dream.done ? ' done' : '');
     item.innerHTML = `
       <div class="dream-check" onclick="toggleDream(${i})">${dream.done ? '✓' : ''}</div>
-      <div class="dream-text">${dream.text}</div>
+      <div class="dream-text">${sanitizeHTML(dream.text)}</div>
       <button class="dream-del" onclick="deleteDream(${i})">✕</button>`;
     list.appendChild(item);
   });
 }
 
+let _addingDream = false;
 async function addDream() {
+  if (_addingDream) return;
   const input = document.getElementById('dream-input');
   const text  = input?.value.trim();
   if (!text) { showToast('✏️ Escreve um sonho!'); return; }
-  const dreams = await getDreams();
-  dreams.push({ text, done: false });
-  await saveDreams(dreams);
-  if (input) input.value = '';
-  renderDreams();
-  showToast('🌟 Sonho adicionado!');
+  _addingDream = true;
+  try {
+    const dreams = await getDreams();
+    dreams.push({ text, done: false });
+    await saveDreams(dreams);
+    if (input) input.value = '';
+    renderDreams();
+    showToast('🌟 Sonho adicionado!');
+  } finally {
+    _addingDream = false;
+  }
 }
 
 async function toggleDream(i) {
@@ -639,7 +696,7 @@ let moodPickerTarget   = null;
 let moodPickerSelected = null;
 let moodActiveTab      = 'emojis';
 
-const STICKER_CATS = ['princesas','princes','crepusculo','marvel'];
+const STICKER_CATS = ['princesas','marvel'];
 
 function renderMoodGrid() {
   const grid = document.getElementById('mood-grid');
@@ -708,10 +765,14 @@ function selectStickerOption(i, cat) {
   if (s) moodPickerSelected = { emoji: '🎭', label: s.label, file: s.file, isSticker: true };
 }
 
+let _savingMood = false;
 async function confirmMood() {
   if (!moodPickerSelected || !moodPickerTarget) {
     showToast('😊 Escolhe uma opção primeiro!'); return;
   }
+  if (_savingMood) return;
+  _savingMood = true;
+  try {
   const person = moodPickerTarget.toLowerCase();
   const now    = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const snap   = await getDoc(MOOD_DOC).catch(() => null);
@@ -742,6 +803,9 @@ async function confirmMood() {
   initMoodDisplay();
   // Moedas pela casinha
   try { window.awardCoins('mood', 5); } catch(e) {}
+  } finally {
+    _savingMood = false;
+  }
 }
 
 async function initMoodDisplay() {
@@ -759,7 +823,7 @@ async function initMoodDisplay() {
         const timeEl  = document.getElementById(`mood-time-${p}`);
         if (emojiEl) {
           if (d.isSticker && d.file) {
-            emojiEl.innerHTML = `<img src="${d.file}" alt="${d.label}" style="width:52px;height:52px;object-fit:contain;">`;
+            emojiEl.innerHTML = `<img src="${d.file}" alt="${sanitizeHTML(d.label)}" style="width:52px;height:52px;object-fit:contain;">`;
           } else {
             emojiEl.textContent = d.emoji;
           }
@@ -777,10 +841,10 @@ async function initMoodDisplay() {
         const pLabel = h.pietro?.label || '';
         const eLabel = h.emilly?.label || '';
         return `<div class="mood-history-item">
-          <div class="mood-history-date">${h.date}</div>
+          <div class="mood-history-date">${sanitizeHTML(h.date)}</div>
           <div class="mood-history-emojis">
-            <div class="mood-history-pair"><div class="mood-history-pair-name">Pietro</div><span title="${pLabel}">${pEmoji}</span></div>
-            <div class="mood-history-pair"><div class="mood-history-pair-name">Emilly</div><span title="${eLabel}">${eEmoji}</span></div>
+            <div class="mood-history-pair"><div class="mood-history-pair-name">Pietro</div><span title="${sanitizeHTML(pLabel)}">${pEmoji}</span></div>
+            <div class="mood-history-pair"><div class="mood-history-pair-name">Emilly</div><span title="${sanitizeHTML(eLabel)}">${eEmoji}</span></div>
           </div>
         </div>`;
       }).join('');
@@ -860,7 +924,7 @@ async function initSpecial(type) {
     const content = document.getElementById(`special-${type}-content`);
     if (content) {
       content.innerHTML = '';
-      if (data.text)     content.innerHTML += `<div class="special-content-text">${data.text}</div>`;
+      if (data.text)     content.innerHTML += `<div class="special-content-text">${sanitizeHTML(data.text)}</div>`;
       if (data.photoUrl) content.innerHTML += `<img src="${data.photoUrl}" alt="Foto especial">`;
       if (data.audioUrl) content.innerHTML += `<audio controls src="${data.audioUrl}"></audio>`;
     }
@@ -884,19 +948,33 @@ function toggleSpecialSend(type) {
 async function uploadSpecialFile(file, type) {
   const status = document.getElementById(`special-${type}-status`);
   if (status) status.textContent = '⏳ Enviando...';
-  const form = new FormData();
-  form.append('file', file);
-  form.append('upload_preset', CLOUDINARY_PRESET);
-  const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method: 'POST', body: form });
-  const data = await res.json();
-  if (status) {
-    status.textContent = data.secure_url ? '✅ Enviado!' : '❌ Erro no upload';
-    setTimeout(() => { status.textContent = ''; }, 2500);
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('upload_preset', CLOUDINARY_PRESET);
+    const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method: 'POST', body: form });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (status) {
+      status.textContent = data.secure_url ? '✅ Enviado!' : '❌ Erro no upload';
+      setTimeout(() => { status.textContent = ''; }, 2500);
+    }
+    return data.secure_url || null;
+  } catch (err) {
+    console.warn('[uploadSpecialFile] Erro:', err.message);
+    if (status) {
+      status.textContent = '❌ Falha no envio. Tente novamente.';
+      setTimeout(() => { status.textContent = ''; }, 3000);
+    }
+    return null;
   }
-  return data.secure_url || null;
 }
 
+const _savingSpecial = { bday: false, mesv: false };
 async function saveSpecial(type) {
+  if (_savingSpecial[type]) return;
+  _savingSpecial[type] = true;
+  try {
   const ref      = type === 'bday' ? SPECIAL_BDAY_DOC : SPECIAL_MESV_DOC;
   const text     = document.getElementById(`special-${type}-text`)?.value.trim();
   const status   = document.getElementById(`special-${type}-status`);
@@ -917,6 +995,9 @@ async function saveSpecial(type) {
   showToast('💕 Mensagem guardada com amor!');
   if (status) status.textContent = '';
   initSpecial(type);
+  } finally {
+    _savingSpecial[type] = false;
+  }
 }
 
 ['bday', 'mesv'].forEach(type => {
@@ -1024,6 +1105,10 @@ function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0;  calYear++; 
 
 async function openCalModal(d) {
   calCurrentKey = calKey(calYear, calMonth, d);
+  // Reset autor para Pietro a cada abertura
+  calAuthor = 'Pietro';
+  document.getElementById('cal-btn-pietro')?.classList.add('active');
+  document.getElementById('cal-btn-emilly')?.classList.remove('active');
   const dateStr = new Date(calYear, calMonth, d).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const dateEl  = document.getElementById('cal-modal-date');
   if (dateEl) {
@@ -1077,8 +1162,8 @@ function renderCalComments() {
     div.className = 'cal-comment ' + c.author.toLowerCase();
     div.innerHTML = `
       <button class="cal-comment-del" onclick="removeCalComment(${i})">✕</button>
-      <div class="cal-comment-author">${c.author} ${c.author === 'Pietro' ? '💙' : '💗'}</div>
-      <div class="cal-comment-text">${c.text}</div>`;
+      <div class="cal-comment-author">${sanitizeHTML(c.author)} ${c.author === 'Pietro' ? '💙' : '💗'}</div>
+      <div class="cal-comment-text">${sanitizeHTML(c.text)}</div>`;
     list.appendChild(div);
   });
 }
@@ -1135,14 +1220,20 @@ document.getElementById('cal-file-input')?.addEventListener('change', async func
   }
 });
 
+let _savingCalDay = false;
 async function saveCalDay() {
-  if (!calCurrentKey) return;
+  if (!calCurrentKey || _savingCalDay) return;
+  _savingCalDay = true;
+  try {
   calModalData.text = document.getElementById('cal-text')?.value.trim() || '';
   await saveCalDayData(calCurrentKey, calModalData);
   calDayData[calCurrentKey] = !!(calModalData.text || calModalData.media?.length || calModalData.comments?.length);
   renderCal();
   closeCalModal();
   showToast('💕 Dia salvo com carinho!');
+  } finally {
+    _savingCalDay = false;
+  }
 }
 
 window.calPrev        = calPrev;
@@ -1226,12 +1317,12 @@ function renderEmbedMap() {
       if (_leafletMarkers[person]) {
         _leafletMarkers[person].setLatLng(pos);
         _leafletMarkers[person].getPopup()?.setContent(
-          `<div style="font-family:'DM Sans',sans-serif;font-size:0.9rem;color:#590d22;"><strong>${cfg.name}</strong><br>${d.city || ''}</div>`
+          `<div style="font-family:'DM Sans',sans-serif;font-size:0.9rem;color:#590d22;"><strong>${cfg.name}</strong><br>${sanitizeHTML(d.city || '')}</div>`
         );
       } else {
         _leafletMarkers[person] = L.marker(pos, { icon: makeIcon(cfg.color, cfg.label) })
           .addTo(_leafletMap)
-          .bindPopup(`<div style="font-family:'DM Sans',sans-serif;font-size:0.9rem;color:#590d22;"><strong>${cfg.name}</strong><br>${d.city || ''}</div>`);
+          .bindPopup(`<div style="font-family:'DM Sans',sans-serif;font-size:0.9rem;color:#590d22;"><strong>${cfg.name}</strong><br>${sanitizeHTML(d.city || '')}</div>`);
       }
     });
 
@@ -1337,14 +1428,18 @@ function updateLocUI() {
 }
 
 // ── Escuta Firebase em tempo real ──
-onSnapshot(LOC_DOC, (snap) => {
-  if (snap.exists()) {
-    const data     = snap.data();
-    locData.pietro = data.pietro || null;
-    locData.emilly = data.emilly || null;
-    updateLocUI();
-  }
-});
+if (LOC_DOC) onSnapshot(
+  LOC_DOC,
+  (snap) => {
+    if (snap.exists()) {
+      const data     = snap.data();
+      locData.pietro = data.pietro || null;
+      locData.emilly = data.emilly || null;
+      updateLocUI();
+    }
+  },
+  (err) => console.warn('[Firebase] onSnapshot localização:', err.message)
+);
 
 // ── Compartilhar localização ──
 async function shareLocation(person) {

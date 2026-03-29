@@ -100,6 +100,7 @@ export function initAnniversary() {
 }
 
 // ── CARTA SURPRESA ──────────────────────────────
+let _surpriseTimer = null;
 export function initSurprise() {
   const now   = new Date();
   const day   = now.getDate();
@@ -123,16 +124,20 @@ export function initSurprise() {
     const h    = Math.floor((diff % 86400000) / 3600000);
     const m    = Math.floor((diff % 3600000) / 60000);
     countdown.textContent = `Faltam ${d} dia${d !== 1 ? 's' : ''}, ${h}h e ${m}min`;
-    setTimeout(initSurprise, 60000);
+    // Bug F fix: cancela timer anterior antes de criar novo para evitar acúmulo
+    clearTimeout(_surpriseTimer);
+    _surpriseTimer = setTimeout(initSurprise, 60000);
   }
 }
 
 // ── RECADINHO DIÁRIO ────────────────────────────
 export function getDailyMessage() {
   const start = new Date(START_DATE);
+  start.setHours(0, 0, 0, 0);
+  // Usa data local (não UTC) para calcular o dia correto no fuso horário do Brasil
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.floor((today - start) / 86400000);
+  const localToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diff = Math.floor((localToday - start) / 86400000);
   return RECADINHOS[((diff % RECADINHOS.length) + RECADINHOS.length) % RECADINHOS.length];
 }
 

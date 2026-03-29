@@ -6,6 +6,16 @@
 import { doc, setDoc, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// Escapa HTML para evitar XSS ao inserir dados do usuário/Firebase via innerHTML
+function sanitizeHTML(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /* ════════════════════════════════════════════
    TERRENOS DE SANTA MARIA
    ════════════════════════════════════════════ */
@@ -185,7 +195,14 @@ let _dialogRunning=false,_dialogQueue=[];
 function playerState(){ return _activePlayer?(_state[_activePlayer]||null):null; }
 
 async function saveState(){ if(!_doc)return; try{ await setDoc(_doc,_state); }catch(e){ console.warn("home save:",e); } }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function todayStr(){
+  // Usa data local (não UTC) para evitar bug das 21h-meia-noite no fuso UTC-3 (Brasil)
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 function currentSave(){ const ps=playerState(); return ps?ps.saves[ps.currentSave]||null:null; }
 function currentTerreno(){ const sv=currentSave(); return sv?TERRENOS.find(t=>t.id===sv.terrenoId)||null:null; }
 function ownedItems(){ const sv=currentSave(); return new Set(sv?sv.items:[]); }
@@ -227,13 +244,16 @@ function checkLevelUp(){
     {level:6,nome:"Lar Completo 🏡",  xpNeeded:2000},
   ];
   sv.level=sv.level||1;
+  let leveled=false;
   for(const lv of LEVELS){
     if(sv.xp>=lv.xpNeeded && sv.level<lv.level){
-      sv.level=lv.level; saveState(); renderLevel();
+      sv.level=lv.level; leveled=true;
+      renderLevel();
       showLevelUpModal(lv);
       if(lv.unlocks?.includes("cat")) showToastNativo("🐱 Adoção de gato desbloqueada! Aba Pet!");
     }
   }
+  if(leveled) saveState();
 }
 
 function renderCoins(){
@@ -250,15 +270,21 @@ function renderLevel(){
   }
   const sv=currentSave();
   const LEVEL_NAMES=["Início","Fundação","Fachada","Jardim & Entrada","Interior — Sala","Interior — Quarto","Lar Completo 🏡"];
-  // XP thresholds indexed by level (level 1→2 needs 200 XP, etc.)
-  const XP_NEXT=[200,200,500,900,1400,2000,2000];
+  // XP total necessário para ESTAR em cada nível (índice = nível)
+  const XP_THRESHOLD=[0,0,200,500,900,1400,2000];
   const lvl=sv?(sv.level||1):1;
   const xp=sv?(sv.xp||0):0;
   document.querySelectorAll(".home-level-label").forEach(el=>el.textContent=`Nível ${lvl} — ${LEVEL_NAMES[lvl]||""}`);
-  const nextXp=XP_NEXT[lvl]||2000;
-  const pct=lvl>=6?100:Math.min(100,Math.round((xp/nextXp)*100));
-  document.querySelectorAll(".home-xp-fill").forEach(el=>el.style.width=pct+"%");
-  document.querySelectorAll(".home-xp-label").forEach(el=>el.textContent=lvl>=6?"Nível máximo! 🏆":`${xp} / ${nextXp} XP`);
+  if(lvl>=6){
+    document.querySelectorAll(".home-xp-fill").forEach(el=>el.style.width="100%");
+    document.querySelectorAll(".home-xp-label").forEach(el=>el.textContent="Nível máximo! 🏆");
+  } else {
+    const xpAtual=xp-XP_THRESHOLD[lvl];
+    const xpNeeded=XP_THRESHOLD[lvl+1]-XP_THRESHOLD[lvl];
+    const pct=Math.min(100,Math.round((xpAtual/xpNeeded)*100));
+    document.querySelectorAll(".home-xp-fill").forEach(el=>el.style.width=pct+"%");
+    document.querySelectorAll(".home-xp-label").forEach(el=>el.textContent=`${xpAtual} / ${xpNeeded} XP`);
+  }
 }
 
 function showLevelUpModal(lv){
@@ -349,6 +375,7 @@ function renderPlayerSelect(wrap){
 
 window._homeSelectPlayer=function(player){
   _activePlayer=player;
+  _state.selectedPlayer=player;
   const ps=playerState();
   // Se o jogador ainda não tem dados, cria um DEFAULT_PLAYER
   if(!ps){
@@ -383,7 +410,7 @@ function renderEscolhaTerreno(wrap){
   const isPietro=_activePlayer==="pietro"; const emoji=isPietro?"💙":"💗";
   const savesHtml=saves.length>0?`<div class="saves-wrap">
     <div class="saves-titulo">📁 Saves de ${isPietro?"Pietro":"Emilly"}</div>
-    ${saves.map((sv,i)=>{ const t=TERRENOS.find(t=>t.id===sv.terrenoId); return `<div class="save-card${i===currentSaveIdx?" active":""}" onclick="window._homeSwitchSave(${i})">${t?.emoji||"🏠"} ${sv.nome} <span class="save-bairro">${t?.nome||""}</span></div>`; }).join("")}
+    ${saves.map((sv,i)=>{ const t=TERRENOS.find(t=>t.id===sv.terrenoId); return `<div class="save-card${i===currentSaveIdx?" active":""}" onclick="window._homeSwitchSave(${i})">${t?.emoji||"🏠"} ${sanitizeHTML(sv.nome)} <span class="save-bairro">${t?.nome||""}</span></div>`; }).join("")}
     ${saves.length<3?`<button class="save-novo-btn" onclick="window._homeNovoSave()">+ Novo terreno</button>`:""}
   </div>`:"";
   wrap.innerHTML=`
@@ -538,12 +565,16 @@ window._homeComprar=function(itemId){
 
 window._homeAvancarFase=function(){
   const ps=playerState(); const sv=currentSave(); if(!sv||!ps)return;
-  if(sv.fase==="exterior"){ sv.fase="jardim"; triggerDialogo("level3_jardim",()=>renderRPG()); }
-  else if(sv.fase==="jardim"){ sv.fase="interior"; triggerDialogo("level4_sala",()=>renderRPG()); }
-  saveState();
+  if(sv.fase==="exterior"){ sv.fase="jardim"; saveState(); triggerDialogo("level3_jardim",()=>renderRPG()); }
+  else if(sv.fase==="jardim"){ sv.fase="interior"; saveState(); triggerDialogo("level4_sala",()=>renderRPG()); }
 };
 
-window._homeCompletarCasa=function(){ triggerDialogo("level6_completo",()=>{ showToastNativo("🏆 Parabéns! A casinha está completa!"); renderRPG(); }); };
+window._homeCompletarCasa=function(){
+  const sv=currentSave();
+  if(sv) sv.completa=true;
+  saveState();
+  triggerDialogo("level6_completo",()=>{ showToastNativo("🏆 Parabéns! A casinha está completa!"); renderRPG(); });
+};
 
 /* ════ PET ════ */
 function getCatSVG(mood){
@@ -598,14 +629,36 @@ window._homeAdotarGato=function(gatoId){
   const ps=playerState(); if(!ps)return;
   const gato=GATOS_ADOCAO.find(g=>g.id===gatoId); if(!gato)return;
   triggerDialogo("adocao_gato",()=>{
-    const nome=prompt(`Que nome para o ${gato.raca}?`,gato.nome)||gato.nome;
-    ps.pet={...ps.pet,adopted:true,gatoId,nome,hunger:80,energy:80,happy:80,love:80,lastFed:new Date().toISOString()};
-    saveState(); renderPet(); showToastNativo(`🐱 ${nome} foi adotado!`);
-    spawnHearts(window.innerWidth/2,window.innerHeight/3,10);
+    // Mostra mini-modal inline para nome em vez de prompt() (pode ser bloqueado)
+    const overlay=document.createElement("div");
+    overlay.style.cssText="position:fixed;inset:0;background:rgba(89,13,34,.7);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;";
+    overlay.innerHTML=`<div style="background:white;border-radius:24px;padding:2rem 1.5rem;max-width:300px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(89,13,34,.3)">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">${gato.emoji}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:#590d22;margin-bottom:.3rem">Que nome pra ele?</div>
+      <div style="font-size:.8rem;color:#c9a9b0;margin-bottom:1rem">${gato.raca}</div>
+      <input id="_pet-nome-input" type="text" value="${gato.nome}" maxlength="20"
+        style="width:100%;padding:.7rem 1rem;border:1.5px solid #ffd6de;border-radius:50px;font-size:1rem;text-align:center;outline:none;color:#590d22;box-sizing:border-box;margin-bottom:1rem"
+        onfocus="this.select()"/>
+      <button onclick="window._homeConfirmarAdocao('${gatoId}')" style="background:#e8536f;color:white;border:none;padding:.8rem 2rem;border-radius:50px;font-size:1rem;font-weight:700;cursor:pointer;width:100%">Adotar! 🐾</button>
+    </div>`;
+    document.body.appendChild(overlay);
+    window._petAdocaoOverlay=overlay;
+    setTimeout(()=>document.getElementById("_pet-nome-input")?.focus(),100);
   });
 };
 
-function petDecay(){ const ps=playerState(); if(!ps?.pet)return; const last=ps.pet.lastFed?new Date(ps.pet.lastFed):null; if(last){ const h=(Date.now()-last.getTime())/3600000; ps.pet.hunger=Math.max(0,ps.pet.hunger-Math.min(h*8,40)); ps.pet.energy=Math.max(0,ps.pet.energy-Math.min(h*5,30)); } }
+window._homeConfirmarAdocao=function(gatoId){
+  const ps=playerState(); if(!ps)return;
+  const gato=GATOS_ADOCAO.find(g=>g.id===gatoId); if(!gato)return;
+  const input=document.getElementById("_pet-nome-input");
+  const nome=(input?.value?.trim())||gato.nome;
+  window._petAdocaoOverlay?.remove();
+  ps.pet={...ps.pet,adopted:true,gatoId,nome,hunger:80,energy:80,happy:80,love:80,lastFed:new Date().toISOString()};
+  saveState(); renderPet(); showToastNativo(`🐱 ${nome} foi adotado!`);
+  spawnHearts(window.innerWidth/2,window.innerHeight/3,10);
+};
+
+function petDecay(){ const ps=playerState(); if(!ps?.pet?.adopted)return; const last=ps.pet.lastFed?new Date(ps.pet.lastFed):null; if(last){ const h=(Date.now()-last.getTime())/3600000; ps.pet.hunger=Math.max(0,ps.pet.hunger-Math.min(h*8,40)); ps.pet.energy=Math.max(0,ps.pet.energy-Math.min(h*5,30)); ps.pet.happy=Math.max(0,ps.pet.happy-Math.min(h*4,25)); } }
 function startPetDecayInterval(){ setInterval(()=>{ const ps=playerState(); if(!ps?.pet?.adopted)return; ps.pet.hunger=Math.max(0,ps.pet.hunger-2); ps.pet.energy=Math.max(0,ps.pet.energy-1); ps.pet.happy=Math.max(0,ps.pet.happy-1); renderPet(); if(ps.pet.hunger===0||ps.pet.energy===0)saveState(); },5*60*1000); }
 
 function feedPet(e){ const ps=playerState(); if(!ps?.pet?.adopted)return; if(ps.pet.hunger>=95){ showPetBubble("Estou cheio! 😸"); return; } ps.pet.hunger=Math.min(100,ps.pet.hunger+25); ps.pet.happy=Math.min(100,ps.pet.happy+10); ps.pet.lastFed=new Date().toISOString(); saveState(); renderPet(); showPetBubble(PET_MSG.happy[Math.floor(Math.random()*PET_MSG.happy.length)]); spawnHearts(e.clientX,e.clientY,4); }
@@ -622,6 +675,7 @@ function renderQuiz(){
   if(done){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎉</span><div class="quiz-done-title">Quiz de hoje concluído!</div><div class="quiz-done-sub">Volte amanhã para uma nova pergunta.<br>As moedas já estão na conta! 🪙</div></div>`; return; }
   const isPietro=_activePlayer==="pietro"; const seed=today.replace(/-/g,""); const off=isPietro?0:Math.floor(QUIZ_QUESTIONS.length/2);
   const qIdx=(parseInt(seed.slice(-4))+off)%QUIZ_QUESTIONS.length; _currentQ=QUIZ_QUESTIONS[qIdx]; _answered=false;
+  _quizPerson=_activePlayer;
   wrap.innerHTML=`<div class="quiz-who-row"><div class="quiz-player-badge">${isPietro?"💙 Pietro":"💗 Emilly"} jogando</div></div><div class="quiz-cat-badge">${_currentQ.cat}</div><div class="quiz-question">${_currentQ.q}</div><div class="quiz-options">${_currentQ.opts.map((opt,i)=>`<button class="quiz-option" onclick="window._homeAnswerQuiz(${i},this)">${opt}</button>`).join("")}</div><div class="quiz-feedback" id="quiz-feedback"></div>`;
 }
 
@@ -653,40 +707,48 @@ window._homeTab=function(tab){
 /* ════ INIT ════ */
 export function initHome(db){
   _db=db; _doc=doc(db,"home","shared");
-  onSnapshot(_doc,snap=>{
-    if(snap.exists()){
-      const data=snap.data();
-      // Migração: se dados antigos (sem pietro/emilly), migra pra novo formato
-      if(data.gamePhase!==undefined && !data.pietro && !data.emilly){
-        // Dados legados: migra tudo pro Pietro por padrão
-        const legacyPlayer={
-          gamePhase:data.gamePhase||"intro", currentSave:data.currentSave||0,
-          saves:(data.saves||[]).map(sv=>({xp:0,level:1,...sv})),
-          coins:data.coins||200,
-          pet:data.pet||JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet)),
-          quiz:{ lastDate:data.quiz?.pietro?.lastDate||null },
-          earnedToday:data.earnedToday||{date:null,mood:false,location:false,mural:false},
-          dialogoVisto:data.dialogoVisto||{}, eventoDiarioVisto:data.eventoDiarioVisto||null,
-        };
-        _state={ selectedPlayer:null, pietro:legacyPlayer, emilly:null };
-      } else {
-        _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
-        // Garante estrutura de cada jogador
-        ["pietro","emilly"].forEach(p=>{
-          if(_state[p]){
-            if(!_state[p].pet) _state[p].pet=JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet));
-            if(!_state[p].quiz) _state[p].quiz={lastDate:null};
-            if(!_state[p].saves) _state[p].saves=[];
-            if(!_state[p].dialogoVisto) _state[p].dialogoVisto={};
-            if(!_state[p].earnedToday) _state[p].earnedToday={date:null,mood:false,location:false,mural:false};
-            // Migração de saves antigos sem xp/level
-            _state[p].saves=_state[p].saves.map(sv=>({xp:0,level:1,...sv}));
+  onSnapshot(
+    _doc,
+    snap=>{
+      if(snap.exists()){
+        const data=snap.data();
+        // Migração: se dados antigos (sem pietro/emilly), migra pra novo formato
+        if(data.gamePhase!==undefined && !data.pietro && !data.emilly){
+          // Dados legados: migra tudo pro Pietro por padrão
+          const legacyPlayer={
+            gamePhase:data.gamePhase||"intro", currentSave:data.currentSave||0,
+            saves:(data.saves||[]).map(sv=>({xp:0,level:1,...sv})),
+            coins:data.coins||200,
+            pet:data.pet||JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet)),
+            quiz:{ lastDate:data.quiz?.pietro?.lastDate||null },
+            earnedToday:data.earnedToday||{date:null,mood:false,location:false,mural:false},
+            dialogoVisto:data.dialogoVisto||{}, eventoDiarioVisto:data.eventoDiarioVisto||null,
+          };
+          _state={ selectedPlayer:null, pietro:legacyPlayer, emilly:null };
+        } else {
+          _state={...JSON.parse(JSON.stringify(DEFAULT_HOME)),...data};
+          // Restaura jogador ativo da sessão salva (se ainda não foi escolhido nesta sessão)
+          if(!_activePlayer && _state.selectedPlayer){
+            _activePlayer=_state.selectedPlayer;
           }
-        });
+          // Garante estrutura de cada jogador
+          ["pietro","emilly"].forEach(p=>{
+            if(_state[p]){
+              if(!_state[p].pet) _state[p].pet=JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet));
+              if(!_state[p].quiz) _state[p].quiz={lastDate:null};
+              if(!_state[p].saves) _state[p].saves=[];
+              if(!_state[p].dialogoVisto) _state[p].dialogoVisto={};
+              if(!_state[p].earnedToday) _state[p].earnedToday={date:null,mood:false,location:false,mural:false};
+              // Migração de saves antigos sem xp/level
+              _state[p].saves=_state[p].saves.map(sv=>({xp:0,level:1,...sv}));
+            }
+          });
+        }
       }
-    }
-    petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG();
-  });
+      petDecay(); renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG();
+    },
+    err=>console.warn('[Firebase] onSnapshot home:', err.message)
+  );
   document.getElementById("pet-sprite-btn")?.addEventListener("click",e=>petPet(e));
   window._homeFeedPet=e=>feedPet(e); window._homePetPet=e=>petPet(e);
   window._homePlayPet=e=>playWithPet(e); window._homeSleepPet=()=>sleepPet();

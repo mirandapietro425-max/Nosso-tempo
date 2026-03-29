@@ -63,6 +63,13 @@ window.onYouTubeIframeAPIReady = function () {
         isPlaying = false;
         const icon = document.getElementById('mini-play-icon');
         if (icon) icon.textContent = '▶';
+        // Bug I fix: avança para próxima e garante que a classe ativa fica correta
+        const nextIdx = (currentIdx + 1) % activePlaylist.length;
+        if (activePlaylist.length > 1) {
+          playTrack(nextIdx);
+        } else {
+          _updateActiveClass(currentIdx);
+        }
       }
     }
   });
@@ -162,7 +169,7 @@ export function playCustomYT() {
   }
 
   ytPlayer.loadVideoById(id);
-  isPlaying  = true;
+  // Bug H fix: não setar isPlaying=true prematuramente — o onStateChange cuida disso
   currentIdx = -1;
 
   const nameEl   = document.getElementById('mini-track-name');
@@ -173,7 +180,7 @@ export function playCustomYT() {
   if (nameEl)   nameEl.textContent   = 'Música personalizada';
   if (artistEl) artistEl.textContent = '';
   if (barEl)    barEl.style.display  = 'flex';
-  if (iconEl)   iconEl.textContent   = '⏸';
+  if (iconEl)   iconEl.textContent   = '▶'; // neutro até onStateChange confirmar PLAYING
 
   document.querySelectorAll('.playlist-item').forEach(el => el.classList.remove('active'));
   showToast('🎵 Música carregada!');
