@@ -192,6 +192,8 @@ let _quizPerson="pietro",_currentQ=null,_answered=false;
 let _dialogRunning=false,_dialogQueue=[];
 let _selecting=false;     // trava: impede re-render durante seleção de jogador
 let _renderPending=false; // debounce: agrupa múltiplos snapshots num único renderRPG
+let _hasPendingSave=false; // FIX-BUG3: sinaliza que awardCoins foi chamado antes de _doc existir
+let _quizLastDateLocal={}; // FIX-BUG2: cache local de lastDate por jogador, evita snapshot sobrescrever antes do debounce salvar
 
 // Atalhos para o jogador ativo
 function playerState(){ return _activePlayer?(_state[_activePlayer]||null):null; }
@@ -251,6 +253,7 @@ export function awardCoins(reason,amount,playerName){
   if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
   if(ps.earnedToday[reason])return;
   ps.earnedToday[reason]=true; ps.coins+=amount;
+  if(!_doc) _hasPendingSave=true; // FIX-BUG3: _doc ainda null (casinha não aberta) — salva quando initHome conectar
   saveState();
   // Só re-renderiza a UI de moedas/ganhos se for o jogador ativo
   if(!_activePlayer || resolvedName===_activePlayer){
@@ -781,12 +784,21 @@ function renderQuiz(){
       </div>`;
     return;
   }
-  const done=ps.quiz?.lastDate===today;
+  // FIX-BUG2: usa _quizLastDateLocal como fonte de verdade durante a sessão,
+  // evitando que o snapshot do Firebase (que chega antes do debounce salvar)
+  // sobrescreva o lastDate e deixe o quiz em branco ou com botões desabilitados
+  const localDone = _quizLastDateLocal[_activePlayer] === today;
+  const done = localDone || ps.quiz?.lastDate===today;
   if(done){ wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">🎉</span><div class="quiz-done-title">Quiz de hoje concluído!</div><div class="quiz-done-sub">Volte amanhã para uma nova pergunta.<br>As moedas já estão na conta! 🪙</div></div>`; return; }
-  const isPietro=_activePlayer==="pietro"; const seed=today.replace(/-/g,""); const off=isPietro?0:Math.floor(QUIZ_QUESTIONS.length/2);
-  const qIdx=(parseInt(seed.slice(-4))+off)%QUIZ_QUESTIONS.length; _currentQ=QUIZ_QUESTIONS[qIdx]; _answered=false;
-  _quizPerson=_activePlayer;
-  wrap.innerHTML=`<div class="quiz-who-row"><div class="quiz-player-badge">${isPietro?"💙 Pietro":"💗 Emilly"} jogando</div></div><div class="quiz-category-badge">${_currentQ.cat}</div><div class="quiz-question-text">${_currentQ.q}</div><div class="quiz-options">${_currentQ.opts.map((opt,i)=>`<button class="quiz-option" onclick="window._homeAnswerQuiz(${i},this)"><span class="quiz-option-letter">${String.fromCharCode(65+i)}</span>${opt}</button>`).join("")}</div><div class="quiz-feedback" id="quiz-feedback"></div>`;
+  try {
+    const isPietro=_activePlayer==="pietro"; const seed=today.replace(/-/g,""); const off=isPietro?0:Math.floor(QUIZ_QUESTIONS.length/2);
+    const qIdx=(parseInt(seed.slice(-4))+off)%QUIZ_QUESTIONS.length; _currentQ=QUIZ_QUESTIONS[qIdx]; _answered=false;
+    _quizPerson=_activePlayer;
+    wrap.innerHTML=`<div class="quiz-who-row"><div class="quiz-player-badge">${isPietro?"💙 Pietro":"💗 Emilly"} jogando</div></div><div class="quiz-category-badge">${_currentQ.cat}</div><div class="quiz-question-text">${_currentQ.q}</div><div class="quiz-options">${_currentQ.opts.map((opt,i)=>`<button class="quiz-option" onclick="window._homeAnswerQuiz(${i},this)"><span class="quiz-option-letter">${String.fromCharCode(65+i)}</span>${opt}</button>`).join("")}</div><div class="quiz-feedback" id="quiz-feedback"></div>`;
+  } catch(e) {
+    wrap.innerHTML=`<div class="quiz-done-msg"><span class="quiz-done-icon">😕</span><div class="quiz-done-title">Erro ao carregar o quiz</div><div class="quiz-done-sub">Recarregue a página para tentar novamente.</div></div>`;
+    console.warn('[Quiz] renderQuiz error:', e);
+  }
 }
 
 window._homeSetQuizPerson=function(p){ _quizPerson=p; renderQuiz(); };
@@ -813,6 +825,7 @@ window._homeAnswerQuiz=function(idx,btn){
   if(!correct)btn.classList.add("wrong");
   const fb=document.getElementById("quiz-feedback"); if(fb){ fb.className=`quiz-feedback show ${correct?"correct":"wrong"}`; fb.textContent=correct?`✓ Correto! +15 🪙 para a casinha!`:`✗ Era "${_currentQ.opts[_currentQ.ans]}" — mas tudo bem!`; }
   if(!ps.quiz)ps.quiz={}; ps.quiz.lastDate=today;
+  _quizLastDateLocal[_quizPerson]=today; // FIX-BUG2: cache local — sobrevive ao snapshot do Firebase
   // Marca quiz como feito hoje independente de acertar ou errar
   if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
   ps.earnedToday.quiz=true;
@@ -843,6 +856,14 @@ export function initHome(db){
   if(_unsubscribeHome){ _unsubscribeHome(); _unsubscribeHome=null; }
   if(!db){ renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG(); return; }
   _doc=doc(db,"home","shared");
+
+  // FIX-BUG3: se awardCoins foi chamado antes de _doc existir, salva o estado acumulado
+  // ANTES do primeiro snapshot chegar — assim o merge inteligente preserva as moedas
+  if(_hasPendingSave){
+    _hasPendingSave=false;
+    saveState(); // dispara imediatamente agora que _doc existe
+  }
+
   _unsubscribeHome = onSnapshot(
     _doc,
     snap=>{
@@ -854,7 +875,7 @@ export function initHome(db){
           const legacyPlayer={
             gamePhase:data.gamePhase||"intro", currentSave:data.currentSave||0,
             saves:(data.saves||[]).map(sv=>({xp:0,level:1,...sv})),
-            coins:data.coins||200,
+            coins:data.coins||300, // FIX: mínimo 300 para poder comprar terreno mais barato (240🪙)
             pet:data.pet||JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet)),
             quiz:{ lastDate:data.quiz?.pietro?.lastDate||null },
             earnedToday:data.earnedToday||{date:null,mood:false,location:false,mural:false,quiz:false},
@@ -899,6 +920,8 @@ export function initHome(db){
               else if(_state[p].earnedToday.quiz===undefined) _state[p].earnedToday.quiz=false;
               // Migração de saves antigos sem xp/level
               _state[p].saves=_state[p].saves.map(sv=>({xp:0,level:1,...sv}));
+              // FIX-BUG2: sincroniza cache local com o Firebase — mas nunca desfaz o cache se já está feito
+              if(_state[p].quiz?.lastDate) _quizLastDateLocal[p]=_quizLastDateLocal[p]||_state[p].quiz.lastDate;
             }
           });
         }

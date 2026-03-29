@@ -303,7 +303,14 @@ export function initParticles() {
     return 'heart';
   }
 
+  let _rafId = null;
+
   function animate() {
+    // Não roda enquanto a aba está oculta — economiza CPU e bateria
+    if (document.hidden) {
+      _rafId = null;
+      return;
+    }
     ctx.clearRect(0, 0, W, H);
     const color = getCanvasColor();
     const shape = getDrawFn();
@@ -320,9 +327,17 @@ export function initParticles() {
       else if (shape === 'star') drawStar(h.x, h.y, h.size, h.rot);
       else drawHeart(h.x, h.y, h.size, h.rot);
     });
-    requestAnimationFrame(animate);
+    _rafId = requestAnimationFrame(animate);
   }
-  animate();
+
+  // Retoma a animação quando o usuário volta para a aba
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !_rafId) {
+      _rafId = requestAnimationFrame(animate);
+    }
+  });
+
+  _rafId = requestAnimationFrame(animate);
 }
 
 // ── TIMELINE OBSERVER ───────────────────────────

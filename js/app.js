@@ -589,10 +589,22 @@ async function getMural() {
 
 async function saveMural(msgs, lastClean) {
   if (!MURAL_DOC) return; // db null guard
-  const snap = await getDoc(MURAL_DOC).catch(() => null);
-  const existing = snap?.exists() ? snap.data() : {};
-  const payload = { msgs, lastClean: lastClean !== undefined ? lastClean : (existing.lastClean || null) };
+  // FIX: não faz segundo getDoc — recebe lastClean como parâmetro explícito
+  // Quando lastClean é undefined (ex: addMural não quer mudar), lê do estado em cache
+  const payload = {
+    msgs,
+    lastClean: lastClean !== undefined ? lastClean : (_muralLastCleanCache || null),
+  };
   await setDoc(MURAL_DOC, payload);
+}
+
+// Cache do lastClean para evitar race condition entre addMural e renderMural
+let _muralLastCleanCache = null;
+
+function _muralTodayStr() {
+  // Sempre usa horário LOCAL do dispositivo (não UTC) — importante para Brasil UTC-3
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 // APP-2: limpeza diária integrada ao render — uma única chamada getMural()
@@ -601,14 +613,21 @@ async function renderMural() {
   if (!list) return;
 
   let { msgs, lastClean } = await getMural();
-  // FIX: usar ISO YYYY-MM-DD em vez de toLocaleDateString('pt-BR') para garantir
-  // comparação consistente independente do locale do dispositivo
-  const d = new Date();
-  const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  if (lastClean !== today) {
+  _muralLastCleanCache = lastClean; // atualiza cache
+
+  const today = _muralTodayStr();
+  // FIX: só limpa se lastClean for de um dia ANTERIOR (não apenas diferente de today)
+  // Isso evita limpar quando lastClean é null (primeiro acesso) mas há mensagens novas
+  // O mural só deve ser limpo na virada real do dia
+  if (lastClean !== null && lastClean !== today) {
+    _muralLastCleanCache = today;
     await saveMural([], today);
     if (msgs.length > 0) showToast('🧹 Mural limpo! Novo dia, novos recados 💕');
     msgs = [];
+  } else if (lastClean === null) {
+    // Primeiro acesso: registra o dia atual sem limpar mensagens existentes
+    _muralLastCleanCache = today;
+    await saveMural(msgs, today);
   }
   list.innerHTML = '';
 
