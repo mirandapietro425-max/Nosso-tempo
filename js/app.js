@@ -13,7 +13,7 @@ import { getFirestore, doc, getDoc, setDoc, onSnapshot }
 import {
   FIREBASE_CONFIG, CLOUDINARY_CLOUD, CLOUDINARY_PRESET, IMGBB_KEY,
   TMDB_KEY, SENHA_MURAL, GALLERY_SLOTS, LS_DAILY_POPUP,
-  PLAYLIST, RECADINHOS, MOOD_OPTIONS, DISNEY_EMILLY, DISNEY_PIETRO, EVENTOS,
+  PLAYLIST, RECADINHOS, MOOD_OPTIONS, EVENTOS,
   START_DATE, ANNIVERSARY_DAY, BDAY_MONTH, BDAY_DAY, EMILLY_BDAY_MONTH, EMILLY_BDAY_DAY,
 } from './config.js';
 
@@ -71,7 +71,6 @@ try { initCounter(); } catch(e) { console.error('initCounter:', e); }
 try { initAnniversary(); } catch(e) { console.error('initAnniversary:', e); }
 try { initSurprise(); } catch(e) { console.error('initSurprise:', e); }
 try { initDaily(); } catch(e) { console.error('initDaily:', e); }
-try { initParticles(); } catch(e) { console.error('initParticles:', e); }
 try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
 
 /* ════════════════════════════════════════════
@@ -110,6 +109,8 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
   else if (isCarnaval(now))                                   activeEventId = 'carnaval';
 
   try { initExperience(activeEventId); } catch(e) { console.error('initExperience:', e); }
+  // Partículas iniciam DEPOIS do experience para garantir que canvas.dataset.eventId já está setado
+  try { initParticles(); } catch(e) { console.error('initParticles:', e); }
 })();
 
 /* ════════════════════════════════════════════
@@ -1450,24 +1451,34 @@ window.shareLocation = shareLocation;
     banner.style.background = `linear-gradient(90deg, ${evento.accent}cc, ${evento.accent}, ${evento.accent}cc)`;
   }
 
-  setTimeout(() => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeIn .4s ease;';
-    overlay.innerHTML = `
-      <div style="background:#fff8f9;border-radius:28px;padding:2.2rem 2rem;max-width:420px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.25);position:relative;animation:popIn .4s cubic-bezier(.32,1.2,.5,1)">
-        <div style="font-size:3rem;margin-bottom:0.8rem">${evento.elements[0]}</div>
-        <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:#590d22;margin-bottom:1rem;line-height:1.3">${evento.banner.replace(/^[^\s]+ /, '')}</div>
-        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:#7a3045;line-height:1.7;margin-bottom:1.5rem">${evento.popup}</p>
-        <button onclick="this.closest('div[style]').remove()" style="background:${evento.accent};color:white;border:none;padding:0.75rem 2rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer">Com amor 💕</button>
-      </div>`;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  // Popup do evento só aparece para eventos que a carta de boas-vindas não cobre.
+  // Aniversários e mesversário já têm popup personalizado no showWelcomeLetter.
+  const skipPopup = ['aniv-pietro', 'aniv-emilly', 'mesversario'].includes(evento.id);
 
-    // ── Toca música temática do evento ──
+  if (!skipPopup) {
+    setTimeout(() => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeIn .4s ease;';
+      overlay.innerHTML = `
+        <div style="background:#fff8f9;border-radius:28px;padding:2.2rem 2rem;max-width:420px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.25);position:relative;animation:popIn .4s cubic-bezier(.32,1.2,.5,1)">
+          <div style="font-size:3rem;margin-bottom:0.8rem">${evento.elements[0]}</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:#590d22;margin-bottom:1rem;line-height:1.3">${evento.banner.replace(/^[^\s]+ /, '')}</div>
+          <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:#7a3045;line-height:1.7;margin-bottom:1.5rem">${evento.popup}</p>
+          <button onclick="this.closest('div[style]').remove()" style="background:${evento.accent};color:white;border:none;padding:0.75rem 2rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer">Com amor 💕</button>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+      // ── Toca música temática do evento ──
+      const trackIdx = evento.musicIdx ?? 0;
+      setTimeout(() => { try { window.playTrack(trackIdx); } catch(e) {} }, 1800);
+
+    }, 1200);
+  } else {
+    // Mesmo sem popup, toca a música temática após a carta de boas-vindas fechar (~2.5s)
     const trackIdx = evento.musicIdx ?? 0;
-    setTimeout(() => { try { window.playTrack(trackIdx); } catch(e) {} }, 1800);
-
-  }, 1200);
+    setTimeout(() => { try { window.playTrack(trackIdx); } catch(e) {} }, 2500);
+  }
 
   // ── Efeitos especiais por tipo de evento ──
   function spawnElement() {
