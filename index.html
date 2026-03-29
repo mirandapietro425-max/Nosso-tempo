@@ -879,11 +879,19 @@
         .catch(err => console.warn('[SW] Falha:', err));
     });
 
-    // FIX: quando um novo SW assume controle (após deploy), recarrega a aba
-    // para garantir que todos os assets JS/CSS são a versão mais recente
+    // FIX: recarrega quando SW assume controle (novo deploy)
+    // Proteção contra loop: sessionStorage garante no máximo 1 reload por navegação
+    // Proteção contra first-install: só recarrega se já havia um controller antes
+    let _hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('[SW] Novo service worker ativado — recarregando para atualizar assets...');
+      if(!_hadController){ _hadController = true; return; } // primeiro install → não recarrega
+      if(sessionStorage.getItem('sw-reloaded')){ return; }  // já recarregou → não faz loop
+      sessionStorage.setItem('sw-reloaded', '1');
       window.location.reload();
+    });
+    // Limpa flag após carregamento bem-sucedido
+    window.addEventListener('load', () => {
+      sessionStorage.removeItem('sw-reloaded');
     });
   }
 </script>

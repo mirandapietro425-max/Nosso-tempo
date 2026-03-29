@@ -196,7 +196,29 @@ let _renderPending=false; // debounce: agrupa múltiplos snapshots num único re
 // Atalhos para o jogador ativo
 function playerState(){ return _activePlayer?(_state[_activePlayer]||null):null; }
 
-async function saveState(){ if(!_doc)return; try{ await setDoc(_doc,_state); }catch(e){ console.warn("home save:",e); } }
+// saveState: debounce 400ms + promise compartilhada (não cria promises órfãs)
+// Múltiplas chamadas dentro de 400ms reusam a mesma Promise — .finally() sempre dispara
+let _saveTimer = null;
+let _savePending = null;
+let _saveResolve = null;
+function saveState(){
+  if(!_doc) return Promise.resolve();
+  clearTimeout(_saveTimer);
+  // Reusa a Promise existente se já houver um save pendente
+  if(!_savePending){
+    _savePending = new Promise(res => { _saveResolve = res; });
+  }
+  _saveTimer = setTimeout(async ()=>{
+    const resolve = _saveResolve;
+    _savePending = null;
+    _saveResolve = null;
+    _saveTimer = null;
+    try{ await setDoc(_doc, _state); }
+    catch(e){ console.warn("home save:", e); }
+    resolve();
+  }, 400);
+  return _savePending;
+}
 function todayStr(){
   // Usa data local (não UTC) para evitar bug das 21h-meia-noite no fuso UTC-3 (Brasil)
   const d = new Date();
@@ -676,7 +698,22 @@ window._homeConfirmarAdocao=function(gatoId){
 };
 
 function petDecay(){ const ps=playerState(); if(!ps?.pet?.adopted)return; const last=ps.pet.lastFed?new Date(ps.pet.lastFed):null; if(last){ const h=(Date.now()-last.getTime())/3600000; ps.pet.hunger=Math.max(0,ps.pet.hunger-Math.min(h*8,40)); ps.pet.energy=Math.max(0,ps.pet.energy-Math.min(h*5,30)); ps.pet.happy=Math.max(0,ps.pet.happy-Math.min(h*4,25)); } }
-function startPetDecayInterval(){ setInterval(()=>{ const ps=playerState(); if(!ps?.pet?.adopted)return; ps.pet.hunger=Math.max(0,ps.pet.hunger-2); ps.pet.energy=Math.max(0,ps.pet.energy-1); ps.pet.happy=Math.max(0,ps.pet.happy-1); renderPet(); if(ps.pet.hunger===0||ps.pet.energy===0)saveState(); },5*60*1000); }
+// Bug #3 fix: flag impede múltiplos intervalos empilhados (causava decay acelerado e writes duplicados)
+let _petDecayStarted = false;
+function startPetDecayInterval(){
+  if(_petDecayStarted) return;
+  _petDecayStarted = true;
+  setInterval(()=>{
+    if(document.hidden) return; // Bug #4 fix: não roda enquanto aba está oculta
+    const ps=playerState();
+    if(!ps?.pet?.adopted) return;
+    ps.pet.hunger=Math.max(0,ps.pet.hunger-2);
+    ps.pet.energy=Math.max(0,ps.pet.energy-1);
+    ps.pet.happy=Math.max(0,ps.pet.happy-1);
+    renderPet();
+    if(ps.pet.hunger===0||ps.pet.energy===0) saveState();
+  }, 5*60*1000);
+}
 
 function feedPet(e){ const ps=playerState(); if(!ps?.pet?.adopted)return; if(ps.pet.hunger>=95){ showPetBubble("Estou cheio! 😸"); return; } ps.pet.hunger=Math.min(100,ps.pet.hunger+25); ps.pet.happy=Math.min(100,ps.pet.happy+10); ps.pet.lastFed=new Date().toISOString(); saveState(); renderPet(); showPetBubble(PET_MSG.happy[Math.floor(Math.random()*PET_MSG.happy.length)]); spawnHearts(e.clientX,e.clientY,4); }
 function petPet(e){ const ps=playerState(); if(!ps?.pet?.adopted)return; ps.pet.love=Math.min(100,ps.pet.love+15); ps.pet.happy=Math.min(100,ps.pet.happy+12); ps.pet.lastPet=new Date().toISOString(); const c=document.getElementById("pet-svg-container"); if(c){ c.className="pet-pixel-cat state-loved"; setTimeout(()=>renderPet(),1200); } saveState(); renderPet(); showPetBubble(PET_MSG.loved[Math.floor(Math.random()*PET_MSG.loved.length)]); spawnHearts(e.clientX,e.clientY,6); }
@@ -722,11 +759,14 @@ window._homeTab=function(tab){
 };
 
 /* ════ INIT ════ */
+let _unsubscribeHome = null;
 export function initHome(db){
   _db=db;
+  // Guard: cancela listener anterior para evitar múltiplos onSnapshot em paralelo
+  if(_unsubscribeHome){ _unsubscribeHome(); _unsubscribeHome=null; }
   if(!db){ renderCoins(); renderLevel(); renderPet(); renderEarnList(); renderRPG(); return; }
   _doc=doc(db,"home","shared");
-  onSnapshot(
+  _unsubscribeHome = onSnapshot(
     _doc,
     snap=>{
       if(snap.exists()){
