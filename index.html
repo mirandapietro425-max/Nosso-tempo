@@ -20,11 +20,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=19">
-  <link rel="stylesheet" href="css/components.css?v=19">
-  <link rel="stylesheet" href="css/modals.css?v=19">
-  <link rel="stylesheet" href="css/animations.css?v=19">
-  <link rel="stylesheet" href="css/stickers.css?v=19">
+  <link rel="stylesheet" href="css/main.css?v=20">
+  <link rel="stylesheet" href="css/components.css?v=20">
+  <link rel="stylesheet" href="css/modals.css?v=20">
+  <link rel="stylesheet" href="css/animations.css?v=20">
+  <link rel="stylesheet" href="css/stickers.css?v=20">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -723,7 +723,7 @@
     <div class="location-map-placeholder" id="location-map-placeholder">
       📍 Quando um de vocês compartilhar a localização,<br>ela aparecerá aqui no mapa 🗺️
     </div>
-    <div id="location-map" style="display:none"></div>
+    <div id="location-map" style="position:absolute;inset:0;opacity:0;pointer-events:none"></div>
   </div>
 </section>
 
@@ -749,7 +749,7 @@
 </script>
 
 <!-- ── APP (módulo ES) ── -->
-<script type="module" src="js/app.js?v=19"></script>
+<script type="module" src="js/app.js?v=20"></script>
 
 </body>
 </html>

@@ -1175,7 +1175,9 @@ function renderEmbedMap() {
   if (!mapDiv) return;
   if (!pietro?.lat && !emilly?.lat) return;
 
-  mapDiv.style.display = 'block';
+  // Mostra o mapa (sem usar display:none — preserva dimensões para o Leaflet)
+  mapDiv.style.opacity = '1';
+  mapDiv.style.pointerEvents = 'auto';
   if (ph) ph.style.display = 'none';
 
   _loadLeaflet(() => {
@@ -1210,6 +1212,9 @@ function renderEmbedMap() {
       const cfg = configs[person];
       if (_leafletMarkers[person]) {
         _leafletMarkers[person].setLatLng(pos);
+        _leafletMarkers[person].getPopup()?.setContent(
+          `<div style="font-family:'DM Sans',sans-serif;font-size:0.9rem;color:#590d22;"><strong>${cfg.name}</strong><br>${d.city || ''}</div>`
+        );
       } else {
         _leafletMarkers[person] = L.marker(pos, { icon: makeIcon(cfg.color, cfg.label) })
           .addTo(_leafletMap)
@@ -1217,15 +1222,20 @@ function renderEmbedMap() {
       }
     });
 
-    if (positions.length === 2) {
-      _leafletMap.fitBounds(positions, { padding: [40, 40] });
-    } else if (positions.length === 1) {
-      _leafletMap.setView(positions[0], 13);
+    function fitMap() {
+      if (positions.length === 2) {
+        _leafletMap.fitBounds(positions, { padding: [40, 40] });
+      } else if (positions.length === 1) {
+        _leafletMap.setView(positions[0], 13);
+      }
     }
 
-    // Garante que o Leaflet recalcula o tamanho após o container ser exibido
-    setTimeout(() => _leafletMap.invalidateSize(), 150);
-    setTimeout(() => _leafletMap.invalidateSize(), 500);
+    // Força recálculo de tamanho em múltiplos momentos para garantir renderização
+    // (o container pode estar em transição CSS ou dentro de modal ainda animando)
+    fitMap();
+    setTimeout(() => { _leafletMap.invalidateSize(true); fitMap(); }, 100);
+    setTimeout(() => { _leafletMap.invalidateSize(true); fitMap(); }, 400);
+    setTimeout(() => { _leafletMap.invalidateSize(true); fitMap(); }, 900);
   });
 }
 
