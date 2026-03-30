@@ -743,23 +743,78 @@ body.dark-event .dreams-input:focus {
   .letter-card { padding: 2rem 1.5rem; }
 }
 
-/* ── Localização: badge de distância ── */
-.location-distance-badge {
+/* ── Localização: barra de botões acima do mapa ── */
+.loc-btn-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+  padding: 0.9rem 1rem;
+  background: linear-gradient(135deg, #fff0f3, #fff8f9);
+  border: 1px solid #ffd6de;
+  border-radius: 18px;
+}
+
+.loc-btn-bar-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.loc-btn-bar-name {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #590d22;
+}
+
+.loc-btn-bar-city {
+  font-size: 0.68rem;
+  font-style: italic;
+  color: #b06070;
+  text-align: center;
+  min-height: 0.9rem;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loc-btn-bar-btn {
+  background: var(--rose);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.loc-btn-bar-btn:hover  { background: var(--velvet); transform: scale(1.04); }
+.loc-btn-bar-btn:disabled { background: #c9a9b0; cursor: default; transform: none; }
+
+/* Badge de distância — fica no centro da barra */
+.loc-btn-bar .location-distance-badge {
   display: none;
   flex-direction: column;
   align-items: center;
   background: white;
   border: 1.5px solid #ffd6de;
   border-radius: 50px;
-  padding: 0.4rem 1rem;
+  padding: 0.3rem 0.7rem;
   box-shadow: 0 2px 8px rgba(232,83,111,0.15);
-  margin: 0.8rem auto;
-  width: fit-content;
+  flex-shrink: 0;
 }
-.location-distance-badge.show { display: flex; }
+.loc-btn-bar .location-distance-badge.show { display: flex; }
 .location-distance-badge #loc-dist-num {
   font-family: var(--font-serif);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #590d22;
   line-height: 1.2;
@@ -773,5 +828,5 @@ body.dark-event .dreams-input:focus {
 /* Mapa com altura fixa */
 .location-map-wrap { height: 320px; overflow: hidden; }
 
-/* Cards com botão abaixo do mapa */
+/* Cards de detalhe abaixo do mapa */
 .location-wrapper { margin-top: 1rem; }

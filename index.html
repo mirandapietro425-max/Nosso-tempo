@@ -736,6 +736,24 @@
 
   <div id="location-key-tip"></div>
 
+  <!-- Barra de botões — ACIMA do mapa, sempre visível -->
+  <div class="loc-btn-bar">
+    <div class="loc-btn-bar-person">
+      <span class="loc-btn-bar-name">Pietro 💙</span>
+      <div class="loc-btn-bar-city" id="loc-city-pietro">Sem localização</div>
+      <button class="loc-btn-bar-btn" onclick="shareLocation('pietro')" id="loc-btn-pietro">📍 Atualizar Pietro</button>
+    </div>
+    <div class="location-distance-badge" id="location-distance">
+      <span id="loc-dist-num">—</span>
+      <span class="loc-dist-label">💕</span>
+    </div>
+    <div class="loc-btn-bar-person">
+      <span class="loc-btn-bar-name">Emilly 💗</span>
+      <div class="loc-btn-bar-city" id="loc-city-emilly">Sem localização</div>
+      <button class="loc-btn-bar-btn" onclick="shareLocation('emilly')" id="loc-btn-emilly">📍 Atualizar Emilly</button>
+    </div>
+  </div>
+
   <!-- Mapa -->
   <div class="location-map-wrap" id="location-map-wrap">
     <div class="location-map-placeholder" id="location-map-placeholder">
@@ -744,29 +762,21 @@
     <div id="location-map" style="position:absolute;inset:0;opacity:0;pointer-events:none"></div>
   </div>
 
-  <!-- Badge de distância -->
-  <div class="location-distance-badge" id="location-distance">
-    <span id="loc-dist-num">—</span>
-    <span class="loc-dist-label">entre vocês 💕</span>
-  </div>
-
-  <!-- Cards com botões abaixo do mapa -->
+  <!-- Cards de detalhe abaixo do mapa (cidade + horário) -->
   <div class="location-wrapper">
     <div class="location-card" id="loc-card-pietro">
       <div class="location-card-name">Pietro 💙</div>
       <div class="location-card-avatar">👨</div>
       <div class="location-card-city" id="loc-city-pietro-card">Sem localização ainda</div>
-      <span class="loc-city-sm" id="loc-city-pietro" style="display:none"></span>
+      <span style="display:none" id="loc-city-sm-pietro"></span>
       <div class="location-card-time" id="loc-time-pietro"></div>
-      <button class="location-share-btn" onclick="shareLocation('pietro')" id="loc-btn-pietro">📍 Atualizar Pietro</button>
     </div>
     <div class="location-card" id="loc-card-emilly">
       <div class="location-card-name">Emilly 💗</div>
       <div class="location-card-avatar">👩</div>
       <div class="location-card-city" id="loc-city-emilly-card">Sem localização ainda</div>
-      <span class="loc-city-sm" id="loc-city-emilly" style="display:none"></span>
+      <span style="display:none" id="loc-city-sm-emilly"></span>
       <div class="location-card-time" id="loc-time-emilly"></div>
-      <button class="location-share-btn" onclick="shareLocation('emilly')" id="loc-btn-emilly">📍 Atualizar Emilly</button>
     </div>
   </div>
 </section>
