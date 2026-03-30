@@ -1718,7 +1718,7 @@ async function shareLocation(person) {
 
   if (!navigator.geolocation) {
     showToast('❌ Geolocalização não suportada neste navegador.');
-    if (btn) { btn.disabled = false; btn.textContent = '📍 Compartilhar minha localização'; }
+    if (btn) { btn.disabled = false; btn.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`; }
     return;
   }
 
@@ -1737,7 +1737,7 @@ async function shareLocation(person) {
       try { window.awardCoins('location', 8, person); } catch(e) {}
     },
     (err) => {
-      if (btn) { btn.disabled = false; btn.textContent = '📍 Compartilhar minha localização'; }
+      if (btn) { btn.disabled = false; btn.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`; }
       if (err.code === 1) showToast('❌ Permissão de localização negada.');
       else                showToast('❌ Não foi possível obter a localização.');
     },

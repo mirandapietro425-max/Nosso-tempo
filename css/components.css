@@ -719,6 +719,7 @@ body.dark-event .dreams-input:focus {
 .location-card-avatar { font-size: 2.2rem; line-height: 1; }
 .location-card-city { font-family: var(--font-italic); font-size: 1rem; font-style: italic; color: var(--velvet); min-height: 1.4em; }
 .location-card-time { font-size: 0.65rem; color: #c9a9b0; }
+.location-card .location-share-btn { margin-top: 0.8rem; font-size: 0.8rem !important; padding: 0.45rem 1rem !important; }
 .location-share-btn { margin-top: 0.4rem; background: var(--rose); color: white; border: none; padding: 0.45rem 1.1rem; border-radius: var(--radius-pill); cursor: pointer; font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; transition: background var(--transition-fast), transform var(--transition-fast); }
 .location-share-btn:hover { background: var(--velvet); transform: scale(1.04); }
 .location-share-btn:disabled { background: #c9a9b0; cursor: default; transform: none; }
@@ -742,47 +743,7 @@ body.dark-event .dreams-input:focus {
   .letter-card { padding: 2rem 1.5rem; }
 }
 
-/* ── Localização: botões flutuantes sobre o mapa ── */
-.location-map-wrap { height: 340px; }
-
-.loc-btns-overlay {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 0.8rem 1rem;
-  background: linear-gradient(to top, rgba(255,240,243,0.97) 60%, rgba(255,240,243,0) 100%);
-  pointer-events: none;
-}
-
-.loc-btn-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
-  pointer-events: all;
-}
-.loc-btn-wrap-right { align-items: flex-end; }
-
-.loc-city-sm {
-  font-size: 0.72rem !important;
-  font-style: italic;
-  color: #590d22;
-  min-height: unset;
-  max-width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.loc-share-btn-sm {
-  font-size: 0.78rem !important;
-  padding: 0.4rem 1rem !important;
-  pointer-events: all;
-}
-
+/* ── Localização: badge de distância ── */
 .location-distance-badge {
   display: none;
   flex-direction: column;
@@ -790,9 +751,10 @@ body.dark-event .dreams-input:focus {
   background: white;
   border: 1.5px solid #ffd6de;
   border-radius: 50px;
-  padding: 0.3rem 0.8rem;
-  pointer-events: none;
+  padding: 0.4rem 1rem;
   box-shadow: 0 2px 8px rgba(232,83,111,0.15);
+  margin: 0.8rem auto;
+  width: fit-content;
 }
 .location-distance-badge.show { display: flex; }
 .location-distance-badge #loc-dist-num {
@@ -808,106 +770,8 @@ body.dark-event .dreams-input:focus {
   letter-spacing: 0.05em;
 }
 
-/* Cards abaixo do mapa ficam sem botão (botão está no overlay) */
+/* Mapa com altura fixa */
+.location-map-wrap { height: 320px; overflow: hidden; }
+
+/* Cards com botão abaixo do mapa */
 .location-wrapper { margin-top: 1rem; }
-
-/* ── v15: Garante que botões de localização são SEMPRE visíveis ── */
-.loc-btns-overlay {
-  z-index: 1200 !important;
-  background: linear-gradient(to top, rgba(255,240,243,0.98) 70%, rgba(255,240,243,0) 100%) !important;
-  padding: 1rem 1rem 0.9rem !important;
-}
-
-.loc-share-btn-sm {
-  background: #e8536f !important;
-  color: white !important;
-  border: none !important;
-  padding: 0.55rem 1.2rem !important;
-  border-radius: 50px !important;
-  font-size: 0.85rem !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-  box-shadow: 0 3px 12px rgba(232,83,111,0.4) !important;
-  pointer-events: all !important;
-  white-space: nowrap !important;
-}
-
-.loc-share-btn-sm:active {
-  transform: scale(0.96) !important;
-}
-
-.loc-city-sm {
-  font-size: 0.7rem !important;
-  color: #590d22 !important;
-  font-style: italic !important;
-  max-width: 130px !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  text-align: left !important;
-}
-
-.loc-btn-wrap-right .loc-city-sm {
-  text-align: right !important;
-}
-
-/* Garante que o mapa não ultrapasse a área */
-.location-map-wrap {
-  height: 360px !important;
-  overflow: hidden !important;
-}
-
-/* ── Localização: botões FORA do mapa (sem conflito de z-index) ── */
-.loc-action-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  margin-bottom: 1rem;
-  padding: 1rem 1.2rem;
-  background: linear-gradient(135deg, #fff0f3, #fff8f9);
-  border: 1px solid #ffd6de;
-  border-radius: 20px;
-}
-
-.loc-action-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  flex: 1;
-}
-
-.loc-action-name {
-  font-family: var(--font-serif);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #590d22;
-}
-
-.loc-action-row .loc-city-sm {
-  font-size: 0.72rem !important;
-  font-style: italic;
-  color: #b06070;
-  text-align: center;
-  min-height: 1rem;
-}
-
-.loc-action-row .location-share-btn {
-  font-size: 0.82rem !important;
-  padding: 0.5rem 1.1rem !important;
-  white-space: nowrap;
-}
-
-.loc-action-row .location-distance-badge {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  background: white;
-  border: 1.5px solid #ffd6de;
-  border-radius: 50px;
-  padding: 0.4rem 0.8rem;
-  box-shadow: 0 2px 8px rgba(232,83,111,0.15);
-  flex-shrink: 0;
-}
-.loc-action-row .location-distance-badge.show { display: flex; }
