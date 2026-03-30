@@ -1537,12 +1537,14 @@ function _loadLeaflet(cb) {
 // ── Renderiza mapa OpenStreetMap via Leaflet ──
 function renderEmbedMap() {
   const { pietro, emilly } = locData;
-  const mapDiv = document.getElementById('location-map');
-  const ph     = document.getElementById('location-map-placeholder');
-  if (!mapDiv) return;
+  const mapWrap = document.getElementById('location-map-wrap');
+  const mapDiv  = document.getElementById('location-map');
+  const ph      = document.getElementById('location-map-placeholder');
+  if (!mapDiv || !mapWrap) return;
   if (!pietro?.lat && !emilly?.lat) return;
 
-  // Mostra o mapa (sem usar display:none — preserva dimensões para o Leaflet)
+  // Mostra o mapa — garantir que o wrap tem height definido antes do Leaflet iniciar
+  mapWrap.style.height = '280px';
   mapDiv.style.opacity = '1';
   mapDiv.style.pointerEvents = 'auto';
   if (ph) ph.style.display = 'none';
