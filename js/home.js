@@ -354,7 +354,11 @@ function renderEarnList(){
   ];
   const wrap=document.getElementById("home-earn-list"); if(!wrap)return;
   wrap.innerHTML=list.map(item=>{
-    const done=item.key==="quiz"?quizDone:earned[item.key];
+    // FIX: localização usa chaves separadas por pessoa (location_pietro / location_emilly)
+    // Considera feito se qualquer uma das duas foi registrada hoje pelo jogador ativo
+    const done=item.key==="quiz"?quizDone
+      :item.key==="location"?(earned["location_pietro"]||earned["location_emilly"])
+      :earned[item.key];
     return `<div class="earn-row"><span class="earn-row-left">${item.label}</span><span class="earn-row-right">${done?'<span class="done-check">✓ Feito</span>':`+${item.amt} 🪙`}</span></div>`;
   }).join("");
 }
@@ -735,14 +739,18 @@ function petDecay(){
   const last=ps.pet.lastDecay?new Date(ps.pet.lastDecay):(ps.pet.lastFed?new Date(ps.pet.lastFed):null);
   if(last){
     const h=Math.min((Date.now()-last.getTime())/3600000, 8); // máx 8h de decay acumulado
-    if(h>0.1){ // só aplica se passou mais de 6 minutos
+    // FIX: guard de 2 minutos — evita aplicar decay duplo em snapshots rápidos consecutivos
+    if(h>0.033){ // 2 minutos mínimo entre decays (0.033h = 2min)
       ps.pet.hunger=Math.max(0,ps.pet.hunger-Math.round(h*8));
       ps.pet.energy=Math.max(0,ps.pet.energy-Math.round(h*5));
       ps.pet.happy=Math.max(0,ps.pet.happy-Math.round(h*4));
+      // Atualiza lastDecay só se realmente aplicou decay — evita avançar o relógio sem mudança
+      ps.pet.lastDecay=new Date().toISOString();
     }
+  } else {
+    // Primeira vez — registra agora como base
+    ps.pet.lastDecay=new Date().toISOString();
   }
-  // Atualiza lastDecay para agora — evita re-calcular o mesmo intervalo em snapshots futuros
-  ps.pet.lastDecay=new Date().toISOString();
 }
 // Bug #3 fix: flag impede múltiplos intervalos empilhados (causava decay acelerado e writes duplicados)
 let _petDecayStarted = false;

@@ -101,9 +101,13 @@ const STICKERS_DOC     = db ? doc(db, 'stickers',      'shared') : null;
    ════════════════════════════════════════════ */
 // Captura erros globais e mostra no topo da tela para debug
 window.addEventListener('error', e => {
+  // FIX: só exibe 1 overlay de erro — evita cascata de divs vermelhos
+  if (document.getElementById('_js-error-overlay')) return;
   const d = document.createElement('div');
-  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:#fff;font-size:12px;padding:8px;z-index:99999;';
-  d.textContent = '❌ JS ERROR: ' + e.message + ' (' + e.filename?.split('/').pop() + ':' + e.lineno + ')';
+  d.id = '_js-error-overlay';
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:#fff;font-size:12px;padding:8px;z-index:99999;cursor:pointer;';
+  d.textContent = '❌ JS ERROR: ' + e.message + ' (' + e.filename?.split('/').pop() + ':' + e.lineno + ') — toque para fechar';
+  d.onclick = () => d.remove();
   document.body?.appendChild(d);
 });
 
