@@ -20,12 +20,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=24">
-  <link rel="stylesheet" href="css/components.css?v=24">
-  <link rel="stylesheet" href="css/modals.css?v=24">
-  <link rel="stylesheet" href="css/animations.css?v=24">
-  <link rel="stylesheet" href="css/stickers.css?v=24">
-  <link rel="stylesheet" href="css/home.css?v=24">
+  <link rel="stylesheet" href="css/main.css?v=25">
+  <link rel="stylesheet" href="css/components.css?v=25">
+  <link rel="stylesheet" href="css/modals.css?v=25">
+  <link rel="stylesheet" href="css/animations.css?v=25">
+  <link rel="stylesheet" href="css/stickers.css?v=25">
+  <link rel="stylesheet" href="css/home.css?v=25">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -180,6 +180,18 @@
     .mood-player-label{font-size:.82rem;color:#590d22;font-weight:600;margin-bottom:.2rem}
     .mood-player-time{font-size:.7rem;color:#c9a9b0;margin-bottom:.8rem}
     .mood-btn{background:#e8536f;color:white;border:none;padding:.5rem 1rem;border-radius:50px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600}
+
+    /* Localização — fallback inline garante estilo mesmo com cache antigo do SW */
+    .loc-outer-wrap{display:block;width:100%;border-radius:20px;border:1px solid #ffd6de;box-shadow:0 4px 20px rgba(232,83,111,.12);background:#fff3f5;overflow:visible}
+    .location-map-wrap{width:100%;height:280px;position:relative;overflow:hidden;border-radius:20px 20px 0 0;background:#f9f0f2}
+    #location-map{width:100%;height:100%;display:block}
+    .loc-actions-bar{display:flex!important;flex-direction:row;align-items:center;justify-content:space-between;width:100%;min-height:60px;padding:.75rem 1rem;background:#fff3f5;border-top:1px solid #ffd6de;border-radius:0 0 20px 20px;box-sizing:border-box;gap:.5rem}
+    .loc-action-person{display:flex;flex-direction:column;align-items:center;gap:.25rem;flex:1}
+    .loc-action-city{font-size:.65rem;font-style:italic;color:#590d22;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block}
+    .loc-action-btn{display:inline-block;background:#e8536f;color:white;border:none;padding:.5rem 1rem;border-radius:50px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;white-space:nowrap;box-shadow:0 3px 10px rgba(232,83,111,.35)}
+    .loc-action-btn:disabled{background:#c9a9b0;cursor:default;box-shadow:none}
+    .loc-dist-badge{display:none;flex-direction:column;align-items:center;background:white;border:1.5px solid #ffd6de;border-radius:50px;padding:.3rem .7rem;flex-shrink:0}
+    .loc-dist-badge.show{display:flex}
   </style>
 </head>
 <body>
