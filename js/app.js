@@ -1214,7 +1214,7 @@ async function saveSpecial(type) {
   if (_savingSpecial[type]) return;
   _savingSpecial[type] = true;
   try {
-  const ref      = type === 'bday' ? SPECIAL_BDAY_DOC : SPECIAL_MESV_DOC;
+  const ref      = type === 'bday' ? SPECIAL_BDAY_DOC : type === 'bday-emilly' ? SPECIAL_EMILLY_BDAY_DOC : SPECIAL_MESV_DOC;
   const text     = document.getElementById(`special-${type}-text`)?.value.trim();
   const status   = document.getElementById(`special-${type}-status`);
   const cycleKey = getCurrentCycleKey(type);

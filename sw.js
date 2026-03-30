@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════ */
 
 // Versão do cache — altere este valor ao fazer deploy para invalidar o cache antigo
-const CACHE_VERSION  = 'v44';
+const CACHE_VERSION  = 'v45';
 const CACHE_STATIC   = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC  = `pe-dynamic-${CACHE_VERSION}`;
 
@@ -104,8 +104,9 @@ self.addEventListener('install', (event) => {
           )
         )
       )
-      // NÃO chama skipWaiting() no install — evita reload surpresa em abas abertas
-      // SW assume controle só quando não há abas usando a versão anterior
+      // Assume controle imediatamente após instalar — garante que novos deploys
+      // sempre sirvam os arquivos atualizados, sem ficar preso no SW antigo.
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -124,13 +125,10 @@ self.addEventListener('activate', (event) => {
         )
       )
       .then(async () => {
-        // Só assume controle imediatamente se não há abas abertas com versão antiga
-        // Isso evita o reload surpresa quando o usuário está usando o app
+        // Assume controle de todas as abas imediatamente
+        await self.clients.claim();
+        // Notifica as abas que há atualização — elas recarregam suavemente
         const clients = await self.clients.matchAll({ type: 'window' });
-        if (clients.length === 0) {
-          return self.clients.claim();
-        }
-        // Notifica as abas que há atualização disponível (elas mostram toast)
         clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
       })
   );
