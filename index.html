@@ -736,18 +736,20 @@
 
   <div id="location-key-tip"></div>
 
-  <!-- Mapa com botões como overlay interno -->
-  <div class="location-map-wrap" id="location-map-wrap">
-    <div class="location-map-placeholder" id="location-map-placeholder">
-      📍 Quando um de vocês compartilhar a localização,<br>ela aparecerá aqui no mapa 🗺️
+  <!-- Wrapper externo que agrupa mapa + barra de botões -->
+  <div class="loc-outer-wrap">
+    <div class="location-map-wrap" id="location-map-wrap">
+      <div class="location-map-placeholder" id="location-map-placeholder">
+        📍 Quando um de vocês compartilhar a localização,<br>ela aparecerá aqui no mapa 🗺️
+      </div>
+      <div id="location-map" style="position:absolute;inset:0;opacity:0;pointer-events:none"></div>
     </div>
-    <div id="location-map" style="position:absolute;inset:0;opacity:0;pointer-events:none"></div>
 
-    <!-- Overlay com botões — fica colado na borda inferior do mapa, SEMPRE visível -->
+    <!-- Barra de botões FORA do map-wrap (evita overflow:hidden cortá-la) -->
     <div class="loc-map-overlay">
       <div class="loc-map-person">
         <div class="loc-map-city" id="loc-city-pietro">—</div>
-        <button class="loc-map-btn" onclick="shareLocation('pietro')" id="loc-btn-pietro">📍 Pietro</button>
+        <button class="loc-map-btn" onclick="shareLocation('pietro')" id="loc-btn-pietro">📍 Atualizar Pietro</button>
       </div>
       <div class="location-distance-badge" id="location-distance">
         <span id="loc-dist-num">—</span>
@@ -755,7 +757,7 @@
       </div>
       <div class="loc-map-person">
         <div class="loc-map-city" id="loc-city-emilly">—</div>
-        <button class="loc-map-btn" onclick="shareLocation('emilly')" id="loc-btn-emilly">📍 Emilly</button>
+        <button class="loc-map-btn" onclick="shareLocation('emilly')" id="loc-btn-emilly">📍 Atualizar Emilly</button>
       </div>
     </div>
   </div>
