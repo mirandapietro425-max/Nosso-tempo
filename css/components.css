@@ -728,7 +728,7 @@ body.dark-event .dreams-input:focus {
 .location-distance-label { font-size: 0.75rem; opacity: 0.75; margin-top: 0.3rem; letter-spacing: 0.08em; }
 .location-map-wrap { border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-rose-md); border: 1px solid #ffd6de; height: 300px; background: #f9f0f2; position: relative; }
 .location-map-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: #c9a9b0; font-family: var(--font-italic); font-style: italic; font-size: 1rem; padding: 1rem; }
-#location-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+#location-map { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
 .location-key-tip { background: #fff3e0; border: 1px solid #ffcc80; border-radius: var(--radius-md); padding: 1rem 1.2rem; font-size: 0.82rem; color: #7a4f00; line-height: 1.6; margin-bottom: 1.2rem; }
 .location-key-row { display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap; }
 .location-key-input { flex: 1; min-width: 180px; padding: 0.5rem 1rem; border: 1px solid #ffcc80; border-radius: var(--radius-pill); font-size: 0.82rem; outline: none; background: white; color: var(--velvet); }
@@ -856,3 +856,58 @@ body.dark-event .dreams-input:focus {
   height: 360px !important;
   overflow: hidden !important;
 }
+
+/* ── Localização: botões FORA do mapa (sem conflito de z-index) ── */
+.loc-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.2rem;
+  background: linear-gradient(135deg, #fff0f3, #fff8f9);
+  border: 1px solid #ffd6de;
+  border-radius: 20px;
+}
+
+.loc-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.loc-action-name {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #590d22;
+}
+
+.loc-action-row .loc-city-sm {
+  font-size: 0.72rem !important;
+  font-style: italic;
+  color: #b06070;
+  text-align: center;
+  min-height: 1rem;
+}
+
+.loc-action-row .location-share-btn {
+  font-size: 0.82rem !important;
+  padding: 0.5rem 1.1rem !important;
+  white-space: nowrap;
+}
+
+.loc-action-row .location-distance-badge {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+  border: 1.5px solid #ffd6de;
+  border-radius: 50px;
+  padding: 0.4rem 0.8rem;
+  box-shadow: 0 2px 8px rgba(232,83,111,0.15);
+  flex-shrink: 0;
+}
+.loc-action-row .location-distance-badge.show { display: flex; }
