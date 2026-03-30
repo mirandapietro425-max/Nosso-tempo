@@ -429,6 +429,7 @@ window._homeSelectPlayer=function(player){
 
   _activePlayer=player;
   _state.selectedPlayer=player;
+  try { localStorage.setItem('pe_active_player', player); } catch(e) {}
 
   // Garante estrutura do jogador antes de qualquer render
   if(!_state[player]){
@@ -613,7 +614,7 @@ window._homeNovoSave=function(){ const ps=playerState(); if(!ps||(ps.saves||[]).
 window._homeSwitchSave=function(idx){ const ps=playerState(); if(!ps)return; ps.currentSave=idx; ps.gamePhase="building"; saveState(); renderRPG(); };
 window._homeRecomecar=function(){ const ps=playerState(); if(!ps||!confirm("Quer comprar um novo terreno? Seu save atual continua salvo!"))return; ps.gamePhase="terreno"; saveState(); renderRPG(); };
 window._homeFecharEvento=function(){ const ps=playerState(); if(ps)ps.eventoDiarioVisto=todayStr(); saveState(); document.getElementById("evento-diario-card")?.remove(); };
-window._homeTrocarPlayer=function(){ _activePlayer=null; renderCoins(); renderLevel(); renderEarnList(); renderRPG(); };
+window._homeTrocarPlayer=function(){ _activePlayer=null; try{ localStorage.removeItem('pe_active_player'); }catch(e){} renderCoins(); renderLevel(); renderEarnList(); renderRPG(); };
 
 window._homeComprar=function(itemId){
   const ps=playerState(); const sv=currentSave(); if(!sv||!ps)return;
@@ -809,6 +810,7 @@ window._homeSelectPlayerFromQuiz=function(player){
   _selecting=true;
   _activePlayer=player;
   _state.selectedPlayer=player;
+  try { localStorage.setItem('pe_active_player', player); } catch(e) {}
   if(!_state[player]) _state[player]=JSON.parse(JSON.stringify(DEFAULT_PLAYER));
   renderCoins(); renderLevel(); renderEarnList(); renderRPG();
   renderQuiz(); // renderiza imediatamente, não espera o save
@@ -901,12 +903,17 @@ export function initHome(db){
               safeMerge[_activePlayer]=_state[_activePlayer];
             }
             _state=safeMerge;
-            // Sempre pede pra escolher o jogador — nunca restaura automaticamente
+            // Restaura jogador do localStorage se ainda não escolhido nesta sessão
             if(_activePlayer){
               _state.selectedPlayer=_activePlayer;
             } else {
-              _activePlayer=null;
-              _state.selectedPlayer=null;
+              try {
+                const saved = localStorage.getItem('pe_active_player');
+                if(saved && ['pietro','emilly'].includes(saved)){
+                  _activePlayer = saved;
+                  _state.selectedPlayer = saved;
+                }
+              } catch(e) {}
             }
           }
           // Garante estrutura de cada jogador
