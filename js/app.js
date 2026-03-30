@@ -1519,6 +1519,7 @@ loadCalMonth();
 let locData  = { pietro: null, emilly: null };
 let _leafletMap = null;
 let _leafletMarkers = {};
+let _mapTimers = []; // Fix: armazena IDs dos timers para limpar antes de criar novos
 
 // ── Carrega Leaflet (OpenStreetMap) se ainda não carregou ──
 function _loadLeaflet(cb) {
@@ -1572,7 +1573,14 @@ function renderEmbedMap() {
     const positions = [];
     ['pietro', 'emilly'].forEach(person => {
       const d = locData[person];
-      if (!d?.lat) return;
+      if (!d?.lat) {
+        // Remove marker fantasma se localização foi apagada
+        if (_leafletMarkers[person]) {
+          _leafletMap?.removeLayer(_leafletMarkers[person]);
+          delete _leafletMarkers[person];
+        }
+        return;
+      }
       const pos = [d.lat, d.lng];
       positions.push(pos);
       const cfg = configs[person];
@@ -1596,12 +1604,13 @@ function renderEmbedMap() {
       }
     }
 
-    // Força recálculo de tamanho em múltiplos momentos para garantir renderização
-    // (o container pode estar em transição CSS ou dentro de modal ainda animando)
+    // Força recálculo de tamanho — limpa timers anteriores para evitar acúmulo
+    _mapTimers.forEach(id => clearTimeout(id));
+    _mapTimers = [];
     fitMap();
-    setTimeout(() => { _leafletMap.invalidateSize(true); fitMap(); }, 100);
-    setTimeout(() => { _leafletMap.invalidateSize(true); fitMap(); }, 400);
-    setTimeout(() => { _leafletMap.invalidateSize(true); fitMap(); }, 900);
+    _mapTimers.push(setTimeout(() => { if(_leafletMap){ _leafletMap.invalidateSize(true); fitMap(); } }, 120));
+    _mapTimers.push(setTimeout(() => { if(_leafletMap){ _leafletMap.invalidateSize(true); fitMap(); } }, 450));
+    _mapTimers.push(setTimeout(() => { if(_leafletMap){ _leafletMap.invalidateSize(true); fitMap(); } }, 950));
   });
 }
 
@@ -1706,6 +1715,10 @@ if (LOC_DOC) onSnapshot(
       locData.pietro = data.pietro || null;
       locData.emilly = data.emilly || null;
       updateLocUI();
+    } else {
+      // Documento não existe ainda — limpa UI
+      locData = { pietro: null, emilly: null };
+      updateLocUI();
     }
   },
   (err) => console.warn('[Firebase] onSnapshot localização:', err.message)
@@ -1734,7 +1747,7 @@ async function shareLocation(person) {
       await setDoc(LOC_DOC, curr);
       if (btn) { btn.disabled = false; btn.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`; }
       showToast(`📍 Localização de ${person === 'pietro' ? 'Pietro' : 'Emilly'} atualizada!`);
-      try { window.awardCoins('location', 8, person); } catch(e) {}
+      try { window.awardCoins(`location_${person}`, 8, person); } catch(e) {}
     },
     (err) => {
       if (btn) { btn.disabled = false; btn.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`; }

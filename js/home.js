@@ -175,7 +175,7 @@ const DEFAULT_PLAYER = {
   coins:300, // 300 garante que dá pra comprar o terreno mais barato (240🪙) e ainda sobra pra começar
   pet:{ adopted:false, gatoId:null, nome:null, hunger:80, energy:80, happy:80, love:80, lastFed:null, lastPet:null, lastPlayed:null, lastSlept:null },
   quiz:{ lastDate:null },
-  earnedToday:{ date:null, mood:false, location:false, mural:false, quiz:false },
+  earnedToday:{ date:null, mood:false, location_pietro:false, location_emilly:false, mural:false, quiz:false },
   dialogoVisto:{}, eventoDiarioVisto:null,
 };
 
@@ -250,7 +250,7 @@ export function awardCoins(reason,amount,playerName){
   if(!_state[resolvedName]) _state[resolvedName]=JSON.parse(JSON.stringify(DEFAULT_PLAYER));
   const ps = _state[resolvedName];
   const today=todayStr();
-  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
+  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location_pietro:false,location_emilly:false,mural:false,quiz:false};
   if(ps.earnedToday[reason])return;
   ps.earnedToday[reason]=true; ps.coins+=amount;
   if(!_doc) _hasPendingSave=true; // FIX-BUG3: _doc ainda null (casinha não aberta) — salva quando initHome conectar
@@ -827,7 +827,7 @@ window._homeAnswerQuiz=function(idx,btn){
   if(!ps.quiz)ps.quiz={}; ps.quiz.lastDate=today;
   _quizLastDateLocal[_quizPerson]=today; // FIX-BUG2: cache local — sobrevive ao snapshot do Firebase
   // Marca quiz como feito hoje independente de acertar ou errar
-  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location:false,mural:false,quiz:false};
+  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location_pietro:false,location_emilly:false,mural:false,quiz:false};
   ps.earnedToday.quiz=true;
   if(correct){
     ps.coins+=15;
@@ -878,7 +878,7 @@ export function initHome(db){
             coins:data.coins||300, // FIX: mínimo 300 para poder comprar terreno mais barato (240🪙)
             pet:data.pet||JSON.parse(JSON.stringify(DEFAULT_PLAYER.pet)),
             quiz:{ lastDate:data.quiz?.pietro?.lastDate||null },
-            earnedToday:data.earnedToday||{date:null,mood:false,location:false,mural:false,quiz:false},
+            earnedToday:data.earnedToday||{date:null,mood:false,location_pietro:false,location_emilly:false,mural:false,quiz:false},
             dialogoVisto:data.dialogoVisto||{}, eventoDiarioVisto:data.eventoDiarioVisto||null,
           };
           _state={ selectedPlayer:null, pietro:legacyPlayer, emilly:null };
@@ -916,7 +916,7 @@ export function initHome(db){
               if(!_state[p].quiz) _state[p].quiz={lastDate:null};
               if(!_state[p].saves) _state[p].saves=[];
               if(!_state[p].dialogoVisto) _state[p].dialogoVisto={};
-              if(!_state[p].earnedToday) _state[p].earnedToday={date:null,mood:false,location:false,mural:false,quiz:false};
+              if(!_state[p].earnedToday) _state[p].earnedToday={date:null,mood:false,location_pietro:false,location_emilly:false,mural:false,quiz:false};
               else if(_state[p].earnedToday.quiz===undefined) _state[p].earnedToday.quiz=false;
               // Migração de saves antigos sem xp/level
               _state[p].saves=_state[p].saves.map(sv=>({xp:0,level:1,...sv}));
