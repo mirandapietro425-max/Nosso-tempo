@@ -20,12 +20,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=25">
-  <link rel="stylesheet" href="css/components.css?v=25">
-  <link rel="stylesheet" href="css/modals.css?v=25">
-  <link rel="stylesheet" href="css/animations.css?v=25">
-  <link rel="stylesheet" href="css/stickers.css?v=25">
-  <link rel="stylesheet" href="css/home.css?v=25">
+  <link rel="stylesheet" href="css/main.css?v=26">
+  <link rel="stylesheet" href="css/components.css?v=26">
+  <link rel="stylesheet" href="css/modals.css?v=26">
+  <link rel="stylesheet" href="css/animations.css?v=26">
+  <link rel="stylesheet" href="css/stickers.css?v=26">
+  <link rel="stylesheet" href="css/home.css?v=26">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -192,6 +192,16 @@
     .loc-action-btn:disabled{background:#c9a9b0;cursor:default;box-shadow:none}
     .loc-dist-badge{display:none;flex-direction:column;align-items:center;background:white;border:1.5px solid #ffd6de;border-radius:50px;padding:.3rem .7rem;flex-shrink:0}
     .loc-dist-badge.show{display:flex}
+
+    /* Cards de localização — fallback inline */
+    .location-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.4rem;margin-top:1rem}
+    @media(max-width:540px){.location-wrapper{grid-template-columns:1fr}}
+    .location-card{background:white;border:2px solid #ffd6de;border-radius:24px;padding:1.4rem 1.2rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.5rem;transition:border-color .2s,box-shadow .2s}
+    .location-card.active-loc{border-color:#e8536f;box-shadow:0 6px 24px rgba(232,83,111,.18)}
+    .location-card-name{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:#c9a96e;font-weight:700}
+    .location-card-avatar{font-size:2.2rem;line-height:1}
+    .location-card-city{font-family:'Cormorant Garamond',serif;font-size:1rem;font-style:italic;color:#590d22;min-height:1.4em}
+    .location-card-time{font-size:.65rem;color:#c9a9b0}
   </style>
 </head>
 <body>
