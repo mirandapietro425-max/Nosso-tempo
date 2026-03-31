@@ -304,3 +304,6 @@ body.period-madrugada .hero::after {
 
 /* FIX Bug C: empurra o conteúdo para cima quando a barra de música está visível */
 #page-wrap.music-bar-open { padding-bottom: 64px; }
+
+/* FIX Bug Toast: sobe o toast quando a barra de música está visível */
+#page-wrap.music-bar-open .toast { bottom: calc(5rem + 60px); }

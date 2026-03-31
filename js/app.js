@@ -230,7 +230,12 @@ async function setPhotos(p) {
   }
 }
 
+// FIX Bug renderGallery: guard contra execuções paralelas (duplo clique no upload)
+let _renderingGallery = false;
 async function renderGallery() {
+  if (_renderingGallery) return;
+  _renderingGallery = true;
+  try {
   const grid = document.getElementById('gallery-grid');
   if (!grid) return;
   grid.innerHTML = '<div style="text-align:center;padding:2rem;color:#b06070;">⏳ Carregando fotos...</div>';
@@ -262,6 +267,9 @@ async function renderGallery() {
       slot.addEventListener('click', () => startUpload(i));
     }
     grid.appendChild(slot);
+  }
+  } finally {
+    _renderingGallery = false;
   }
 }
 
@@ -579,6 +587,10 @@ window.selectMovieAuthor = selectMovieAuthor;
 window.addMovieComment   = addMovieComment;
 window.deleteMovieComment = deleteMovieComment;
 renderMovies();
+
+// FIX Bug Enter: movie-input e movie-modal-comment-input respondem à tecla Enter
+document.getElementById('movie-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addMovie(); } });
+document.getElementById('movie-modal-comment-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addMovieComment(); } });
 
 /* ════════════════════════════════════════════
    SENHA MURAL
@@ -916,6 +928,9 @@ window.addDream    = addDream;
 window.toggleDream = toggleDream;
 window.deleteDream = deleteDream;
 renderDreams();
+
+// FIX Bug Enter: dream-input responde à tecla Enter
+document.getElementById('dream-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addDream(); } });
 
 /* ════════════════════════════════════════════
    DAILY POPUP
@@ -1358,7 +1373,10 @@ async function renderCal() {
   const firstDay    = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
-  for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
+  // FIX Bug renderCal: acumula HTML em string e faz uma única atribuição ao DOM
+  // (evita re-parse completo do grid a cada iteração — ~42x por mês em mobile)
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-day empty"></div>`;
 
   for (let d = 1; d <= daysInMonth; d++) {
     const key     = calKey(calYear, calMonth, d);
@@ -1374,10 +1392,11 @@ async function renderCal() {
     const dot   = hasData ? '<div class="cal-day-dot"></div>' : '';
     const bIcon = bday   ? '<div class="cal-day-bday">🎂</div>' : '';
 
-    grid.innerHTML += `<div class="${cls}" onclick="openCalModal(${d})">
+    html += `<div class="${cls}" onclick="openCalModal(${d})">
       <div class="cal-day-num">${d}</div>${dot}${bIcon}
     </div>`;
   }
+  grid.innerHTML += html;
 }
 
 async function loadCalMonth() {
@@ -1546,6 +1565,9 @@ window.removeCalComment = removeCalComment;
 window.selectCalAuthor = selectCalAuthor;
 window.addCalComment  = addCalComment;
 window.saveCalDay     = saveCalDay;
+
+// FIX Bug Enter: cal-comment-input responde à tecla Enter
+document.getElementById('cal-comment-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCalComment(); } });
 
 const _now = new Date();
 calYear    = _now.getFullYear();
