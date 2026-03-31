@@ -27,16 +27,19 @@ const PLAYER_SERVERS = [
     name: 'Servidor 1',
     movie : (id)       => `https://vidsrc.to/embed/movie/${id}`,
     tv    : (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,  // URL limpa — usar ? para adicionar parâmetros
   },
   {
     name: 'Servidor 2',
     movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&primaryColor=e8536f`,
     tv    : (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&primaryColor=e8536f`,
+    hasParams: true,   // já tem query string — usar & para adicionar mais parâmetros
   },
   {
     name: 'Servidor 3',
     movie : (id)       => `https://www.2embed.cc/embed/${id}`,
     tv    : (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+    hasParams: false,
   },
 ];
 const PLAYER_TIMEOUT_MS = 12000;
@@ -324,14 +327,17 @@ function _buildPlayerSrc(item, epIdx, serverIdx) {
   const server   = PLAYER_SERVERS[serverIdx];
 
   if (server && item.tmdbId) {
+    // FIX Bug 2: o Servidor 2 (vidlink) já tem query params — usar & em vez de ?
+    const sep = server.hasParams ? '&' : '?';
+
     if (isSeries) {
       const ep     = item.episodes ? item.episodes[epIdx] : null;
       const [s, e] = _parseSeasonEpisode(ep?.title);
       const rt     = getResumeTime(item, epIdx);
-      return server.tv(item.tmdbId, s, e) + (rt > 0 ? `?t=${rt}` : '');
+      return server.tv(item.tmdbId, s, e) + (rt > 0 ? `${sep}t=${rt}` : '');
     } else {
       const rt = getResumeTime(item, 0);
-      return server.movie(item.tmdbId) + (rt > 0 ? `?t=${rt}` : '');
+      return server.movie(item.tmdbId) + (rt > 0 ? `${sep}t=${rt}` : '');
     }
   }
 
@@ -438,8 +444,10 @@ function _showPlayerError(container) {
     </div>`;
 }
 
+// FIX Bug 3: usa PLAYER_SERVERS.length (não .length - 1) para que índice >= length
+// caia no YouTube fallback dentro de _buildPlayerSrc
 window._cinemaNextServer = function () {
-  _serverIdx = Math.min(_serverIdx + 1, PLAYER_SERVERS.length - 1);
+  _serverIdx = Math.min(_serverIdx + 1, PLAYER_SERVERS.length); // permite idx = 3 → YouTube fallback
   if (_currentItem) _buildPlayer(_currentItem, _currentEpIdx);
 };
 
@@ -501,19 +509,23 @@ function _renderCatalog() {
     const totalEps    = !itemIsMovie ? (item.episodes || []).length : 0;
     const pct         = totalEps > 0 ? Math.round((watchedEps / totalEps) * 100) : 0;
 
+    // FIX Bug 4: séries com todos os episódios assistidos também recebem o badge
+    const allEpsDone  = !itemIsMovie && totalEps > 0 && watchedEps === totalEps;
+    const showWatched = isWatched || allEpsDone;
+
     const thumb = item.thumb ||
       (item.tmdbId ? `https://image.tmdb.org/t/p/w500/` : '');
 
     return `
-    <div class="cinema-card ${isWatched ? 'cinema-card--watched' : ''}"
+    <div class="cinema-card ${showWatched ? 'cinema-card--watched' : ''}"
          data-item-id="${item.id}"
          data-item-type="${itemIsMovie ? 'movie' : 'series'}"
-         onclick="window._openCinemaItem('${item.id}','${_activeTab}')">
+         onclick="window._openCinemaItem('${item.id}')">
       <div class="cinema-card-thumb" style="background:${item.color || '#1a1a2e'}">
         <img src="${thumb}" alt="${item.title}" loading="lazy"
              onerror="this.style.display='none'">
         <div class="cinema-card-emoji">${item.emoji || '🎬'}</div>
-        ${isWatched ? '<div class="cinema-card-watched-badge">✓ Assistido</div>' : ''}
+        ${showWatched ? '<div class="cinema-card-watched-badge">✓ Assistido</div>' : ''}
       </div>
       <div class="cinema-card-info">
         <div class="cinema-card-genre">${item.genre} · ${item.year}</div>
@@ -540,7 +552,10 @@ function _renderCatalog() {
 /* ══════════════════════════════════════════════
    MODAL — ABRIR / RENDER / FECHAR
    ══════════════════════════════════════════════ */
-window._openCinemaItem = function (id) {
+// FIX Bug 1: assinatura corrigida — aceita o 2º argumento (tab) que vinha sendo passado
+// em todas as chamadas mas ignorado. O tab não é necessário para abrir o item
+// (o item é buscado em todas as listas), mas aceitamos para compatibilidade.
+window._openCinemaItem = function (id /*, _tabIgnored */) {
   if (_isModalOpen) _destroyPlayer();
 
   const allLists = [

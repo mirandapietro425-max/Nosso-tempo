@@ -95,198 +95,250 @@ function _showResult(body, emoji, title, sub, onRestart) {
 }
 
 /* ══════════════════════════════════════════════
-   🥋 TAEKWONDO
-══════════════════════════════════════════════ */
+   🥋 TAEKWONDO — redesenhado para 2 jogadores no celular
+   · Layout vertical: P1 em cima, P2 embaixo
+   · Botões grandes com touch-action:none para múltiplos toques simultâneos
+   · Canvas escalável (fit na tela)
+   · Sem conflito de teclas entre os dois jogadores
+   ══════════════════════════════════════════════ */
 function openTaekwondo() {
   const body = _createOverlay('🥋 Taekwondo');
 
-  const CANVAS_W = 480, CANVAS_H = 220;
-  const GROUND   = CANVAS_H - 40;
-  const P_W = 32, P_H = 50;
+  const CANVAS_W = 360, CANVAS_H = 180;
+  const GROUND   = CANVAS_H - 35;
+  const P_W = 28, P_H = 44;
   const HP_MAX = 100;
 
-  // Estado
   let animId = null, lastTime = 0;
-  const keys = {};
 
-  const p1 = { x:60,  y:GROUND-P_H, vx:0, vy:0, hp:HP_MAX, dir:1,  onGround:true,
+  // Estado de teclas virtuais — separado por jogador
+  const k1 = { left:false, right:false, jump:false, kick:false, block:false };
+  const k2 = { left:false, right:false, jump:false, kick:false, block:false };
+
+  const p1 = { x:50,  y:GROUND-P_H, vx:0, vy:0, hp:HP_MAX, dir:1,  onGround:true,
                 color:'#4a90d9', name:'Pietro 💙', kick:0, block:0, hitFlash:0, wins:0 };
-  const p2 = { x:380, y:GROUND-P_H, vx:0, vy:0, hp:HP_MAX, dir:-1, onGround:true,
+  const p2 = { x:280, y:GROUND-P_H, vx:0, vy:0, hp:HP_MAX, dir:-1, onGround:true,
                 color:'#e8536f', name:'Emilly 💗', kick:0, block:0, hitFlash:0, wins:0 };
 
   let roundOver = false, roundMsg = '', roundTimer = 0;
 
+  // ── HTML: placar + canvas + controles dos 2 jogadores (layout vertical)
   body.innerHTML = `
-    <div class="tkd-health-bars">
-      <div class="tkd-hp-wrap">
-        <div class="tkd-hp-label" style="color:#4a90d9">Pietro 💙</div>
-        <div class="tkd-hp-track"><div class="tkd-hp-bar p1" id="hp1" style="width:100%"></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:rgba(0,0,0,.4);border-radius:8px;margin-bottom:6px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+        <span style="font-size:.7rem;color:#4a90d9;font-weight:700">Pietro 💙</span>
+        <div style="width:100%;height:10px;background:#222;border-radius:5px;overflow:hidden">
+          <div id="hp1" style="height:100%;width:100%;background:linear-gradient(90deg,#4a90d9,#7ab8f5);transition:width .15s"></div>
+        </div>
+        <span id="wins1" style="font-size:.75rem;color:#4a90d9">🏆 0</span>
       </div>
-      <div class="tkd-vs">VS</div>
-      <div class="tkd-hp-wrap">
-        <div class="tkd-hp-label" style="color:#e8536f;text-align:right">Emilly 💗</div>
-        <div class="tkd-hp-track"><div class="tkd-hp-bar p2" id="hp2" style="width:100%"></div></div>
+      <div style="padding:0 10px;font-size:.8rem;font-weight:700;color:#fff">VS</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+        <span style="font-size:.7rem;color:#e8536f;font-weight:700">Emilly 💗</span>
+        <div style="width:100%;height:10px;background:#222;border-radius:5px;overflow:hidden">
+          <div id="hp2" style="height:100%;width:100%;background:linear-gradient(90deg,#e8536f,#f5a0b0);transition:width .15s"></div>
+        </div>
+        <span id="wins2" style="font-size:.75rem;color:#e8536f">🏆 0</span>
       </div>
     </div>
-    <div class="game-score-bar">
-      <div class="game-score-box"><div class="game-score-label">Pietro</div><div class="game-score-num" id="wins1">0</div></div>
-      <div class="game-score-box" style="min-width:60px"><div class="game-score-label">Rounds</div><div class="game-score-num">💪</div></div>
-      <div class="game-score-box"><div class="game-score-label">Emilly</div><div class="game-score-num" id="wins2">0</div></div>
+
+    <canvas id="tkd-canvas" width="${CANVAS_W}" height="${CANVAS_H}"
+      style="width:100%;max-width:400px;display:block;margin:0 auto;border-radius:8px;touch-action:none"></canvas>
+
+    <div style="display:flex;gap:8px;margin-top:6px">
+
+      <!-- P1: lado esquerdo -->
+      <div style="flex:1;background:rgba(74,144,217,.12);border:1px solid rgba(74,144,217,.3);border-radius:12px;padding:8px;user-select:none">
+        <div style="text-align:center;font-size:.65rem;color:#4a90d9;font-weight:700;margin-bottom:6px">PIETRO (P1)</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
+          <div></div>
+          <button class="tkd-btn" data-p="1" data-a="jump"  style="background:#4a90d9">⬆️</button>
+          <div></div>
+          <button class="tkd-btn" data-p="1" data-a="left"  style="background:#2a6a9a">⬅️</button>
+          <button class="tkd-btn" data-p="1" data-a="kick"  style="background:#e8a020">🥋</button>
+          <button class="tkd-btn" data-p="1" data-a="right" style="background:#2a6a9a">➡️</button>
+          <div></div>
+          <button class="tkd-btn" data-p="1" data-a="block" style="background:#1a5a8a;grid-column:2">🛡️</button>
+          <div></div>
+        </div>
+      </div>
+
+      <!-- P2: lado direito -->
+      <div style="flex:1;background:rgba(232,83,111,.12);border:1px solid rgba(232,83,111,.3);border-radius:12px;padding:8px;user-select:none">
+        <div style="text-align:center;font-size:.65rem;color:#e8536f;font-weight:700;margin-bottom:6px">EMILLY (P2)</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
+          <div></div>
+          <button class="tkd-btn" data-p="2" data-a="jump"  style="background:#e8536f">⬆️</button>
+          <div></div>
+          <button class="tkd-btn" data-p="2" data-a="left"  style="background:#b02a50">⬅️</button>
+          <button class="tkd-btn" data-p="2" data-a="kick"  style="background:#e8a020">🥋</button>
+          <button class="tkd-btn" data-p="2" data-a="right" style="background:#b02a50">➡️</button>
+          <div></div>
+          <button class="tkd-btn" data-p="2" data-a="block" style="background:#8a1a30;grid-column:2">🛡️</button>
+          <div></div>
+        </div>
+      </div>
     </div>
-    <canvas id="tkd-canvas" width="${CANVAS_W}" height="${CANVAS_H}"></canvas>
-    <div class="tkd-controls">
-      <div class="tkd-player-ctrl">
-        <div class="tkd-ctrl-label">Pietro (P1)</div>
-        <div class="tkd-btns">
-          <div></div>
-          <button class="tkd-btn" data-key="w">⬆️</button>
-          <div></div>
-          <button class="tkd-btn" data-key="a">⬅️</button>
-          <button class="tkd-btn" data-key="f">🥋</button>
-          <button class="tkd-btn" data-key="d">➡️</button>
-          <button class="tkd-btn wide" data-key="s">🛡️ Bloquear</button>
-        </div>
-      </div>
-      <div class="tkd-player-ctrl">
-        <div class="tkd-ctrl-label">Emilly (P2)</div>
-        <div class="tkd-btns">
-          <div></div>
-          <button class="tkd-btn" data-key="ArrowUp">⬆️</button>
-          <div></div>
-          <button class="tkd-btn" data-key="ArrowLeft">⬅️</button>
-          <button class="tkd-btn" data-key="l">🥋</button>
-          <button class="tkd-btn" data-key="ArrowRight">➡️</button>
-          <button class="tkd-btn wide" data-key="ArrowDown">🛡️ Bloquear</button>
-        </div>
-      </div>
-    </div>`;
+
+    <style>
+      .tkd-btn {
+        touch-action: none;
+        -webkit-touch-callout: none;
+        user-select: none;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        color: white;
+        min-height: 42px;
+        transition: opacity .1s, transform .1s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .tkd-btn:active { opacity: .7; transform: scale(.93); }
+    </style>`;
 
   const canvas = document.getElementById('tkd-canvas');
   const ctx    = canvas.getContext('2d');
 
-  // Teclado
-  const onKey = e => { keys[e.key] = e.type === 'keydown'; e.preventDefault(); };
+  // ── Mapeamento de ações → objeto de estado
+  function _kObj(p) { return p === '1' ? k1 : k2; }
+  function _kProp(a) {
+    return a === 'jump' ? 'jump' : a === 'left' ? 'left' :
+           a === 'right' ? 'right' : a === 'kick' ? 'kick' : 'block';
+  }
+
+  // ── Listeners touch: suportam múltiplos dedos simultâneos
+  body.querySelectorAll('.tkd-btn').forEach(btn => {
+    const p = btn.dataset.p;
+    const a = btn.dataset.a;
+    const prop = _kProp(a);
+    const kObj = _kObj(p);
+
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      btn.setPointerCapture(e.pointerId);
+      kObj[prop] = true;
+    });
+    btn.addEventListener('pointerup',    e => { e.preventDefault(); kObj[prop] = false; });
+    btn.addEventListener('pointercancel',e => { kObj[prop] = false; });
+    btn.addEventListener('pointerleave', e => { kObj[prop] = false; });
+  });
+
+  // ── Teclado (opcional, para quem usa desktop)
+  const onKey = e => {
+    const down = e.type === 'keydown';
+    switch(e.key) {
+      case 'a': case 'A':          k1.left  = down; break;
+      case 'd': case 'D':          k1.right = down; break;
+      case 'w': case 'W':          k1.jump  = down; break;
+      case 'f': case 'F':          k1.kick  = down; break;
+      case 's': case 'S':          k1.block = down; break;
+      case 'ArrowLeft':            k2.left  = down; break;
+      case 'ArrowRight':           k2.right = down; break;
+      case 'ArrowUp':              k2.jump  = down; break;
+      case 'l': case 'L':          k2.kick  = down; break;
+      case 'ArrowDown':            k2.block = down; break;
+    }
+    e.preventDefault();
+  };
   window.addEventListener('keydown', onKey);
   window.addEventListener('keyup',   onKey);
 
-  // Botões touch
-  body.querySelectorAll('.tkd-btn[data-key]').forEach(btn => {
-    const k = btn.dataset.key;
-    btn.addEventListener('pointerdown', e => { e.preventDefault(); keys[k] = true; });
-    btn.addEventListener('pointerup',   e => { e.preventDefault(); keys[k] = false; });
-    btn.addEventListener('pointerleave',e => { keys[k] = false; });
-  });
-
   function resetRound() {
-    p1.x=60; p1.y=GROUND-P_H; p1.vx=0; p1.vy=0; p1.hp=HP_MAX; p1.dir=1;  p1.kick=0; p1.block=0; p1.hitFlash=0; p1.onGround=true;
-    p2.x=380;p2.y=GROUND-P_H; p2.vx=0; p2.vy=0; p2.hp=HP_MAX; p2.dir=-1; p2.kick=0; p2.block=0; p2.hitFlash=0; p2.onGround=true;
+    p1.x=50;  p1.y=GROUND-P_H; p1.vx=0; p1.vy=0; p1.hp=HP_MAX; p1.dir=1;  p1.kick=0; p1.block=0; p1.hitFlash=0; p1.onGround=true;
+    p2.x=280; p2.y=GROUND-P_H; p2.vx=0; p2.vy=0; p2.hp=HP_MAX; p2.dir=-1; p2.kick=0; p2.block=0; p2.hitFlash=0; p2.onGround=true;
     roundOver=false; roundMsg='';
   }
 
-  function applyPhysics(p, left, right, jump, kick, block, opponent, dt) {
+  function applyPhysics(p, k, opponent) {
     if (roundOver) return;
-    const SPEED=3.5, JUMP=-9, GRAVITY=0.45, KICK_DMG=12, KICK_RANGE=50;
+    const SPEED=3, JUMP=-8, GRAVITY=0.4, KICK_DMG=12, KICK_RANGE=52;
 
-    // Movimento
-    if (left)  { p.vx = -SPEED; p.dir = -1; }
-    else if (right) { p.vx = SPEED; p.dir = 1; }
-    else p.vx *= 0.7;
+    if (k.left)       { p.vx = -SPEED; p.dir = -1; }
+    else if (k.right) { p.vx =  SPEED; p.dir =  1; }
+    else               p.vx *= 0.65;
 
-    // Pulo
-    if (jump && p.onGround) { p.vy = JUMP; p.onGround = false; }
+    if (k.jump && p.onGround) { p.vy = JUMP; p.onGround = false; }
 
-    // Gravidade
     p.vy += GRAVITY;
-    p.x += p.vx;
-    p.y += p.vy;
+    p.x  += p.vx;
+    p.y  += p.vy;
 
-    // Chão
     if (p.y >= GROUND - P_H) { p.y = GROUND - P_H; p.vy = 0; p.onGround = true; }
+    p.x = Math.max(4, Math.min(CANVAS_W - P_W - 4, p.x));
 
-    // Limites do canvas
-    p.x = Math.max(5, Math.min(CANVAS_W - P_W - 5, p.x));
+    p.block = k.block ? 1 : 0;
 
-    // Bloqueio
-    p.block = block ? 1 : 0;
-
-    // Chute
-    if (kick && p.kick <= 0) {
-      p.kick = 18;
+    if (k.kick && p.kick <= 0) {
+      p.kick = 16;
       const dist = Math.abs((p.x + P_W/2) - (opponent.x + P_W/2));
       if (dist < KICK_RANGE) {
-        const dmg = opponent.block ? KICK_DMG * 0.2 : KICK_DMG;
+        const dmg = opponent.block ? KICK_DMG * 0.15 : KICK_DMG;
         opponent.hp = Math.max(0, opponent.hp - dmg);
-        opponent.hitFlash = 8;
-        opponent.vx += p.dir * 4;
+        opponent.hitFlash = 10;
+        opponent.vx += p.dir * 3.5;
       }
     }
-    if (p.kick > 0) p.kick--;
+    if (p.kick    > 0) p.kick--;
     if (p.hitFlash > 0) p.hitFlash--;
   }
 
-  function drawPlayer(p, label) {
+  function drawPlayer(p) {
     const x = p.x, y = p.y;
-    const isKicking  = p.kick > 10;
-    const isBlocking = p.block > 0;
-    const flash = p.hitFlash > 0;
-
     ctx.save();
-    if (flash) { ctx.globalAlpha = 0.5; }
+    if (p.hitFlash > 0) ctx.globalAlpha = 0.45;
 
     // Corpo
-    ctx.fillStyle = isBlocking ? '#aaa' : p.color;
-    ctx.fillRect(x + 8, y + 18, 16, 24);
+    ctx.fillStyle = p.block ? '#aaa' : p.color;
+    ctx.fillRect(x + 7, y + 15, 14, 20);
 
     // Cabeça
     ctx.fillStyle = '#ffd6b0';
     ctx.beginPath();
-    ctx.arc(x + P_W/2, y + 12, 10, 0, Math.PI*2);
+    ctx.arc(x + P_W/2, y + 10, 9, 0, Math.PI*2);
     ctx.fill();
 
-    // Olhos
+    // Olho
     ctx.fillStyle = '#333';
-    const ex = p.dir === 1 ? x + 20 : x + 10;
-    ctx.fillRect(ex, y + 10, 3, 3);
+    ctx.fillRect(p.dir === 1 ? x+17 : x+9, y+8, 3, 3);
 
-    // Perna
+    // Pernas
     ctx.fillStyle = p.color;
-    ctx.fillRect(x + 8, y + 42, 6, 10);
-    ctx.fillRect(x + 18, y + 42, 6, 10);
+    ctx.fillRect(x + 7,  y + 35, 5, 9);
+    ctx.fillRect(x + 16, y + 35, 5, 9);
 
     // Chute
-    if (isKicking) {
+    if (p.kick > 8) {
       ctx.fillStyle = '#ffcc00';
-      const kx = p.dir === 1 ? x + 24 : x - 12;
-      ctx.fillRect(kx, y + 35, 18, 8);
+      const kx = p.dir === 1 ? x + 20 : x - 10;
+      ctx.fillRect(kx, y + 28, 16, 7);
     }
 
-    // Escudo de bloqueio
-    if (isBlocking) {
-      ctx.fillStyle = 'rgba(100,180,255,0.5)';
-      const sx = p.dir === 1 ? x + 20 : x - 10;
-      ctx.fillRect(sx, y + 10, 10, 30);
+    // Escudo
+    if (p.block) {
+      ctx.fillStyle = 'rgba(100,180,255,0.45)';
+      const sx = p.dir === 1 ? x + 18 : x - 8;
+      ctx.fillRect(sx, y + 8, 9, 28);
     }
 
     ctx.restore();
   }
 
   function drawBg() {
-    // Fundo
     const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
     grad.addColorStop(0, '#1a0a1a');
     grad.addColorStop(1, '#3a1a2a');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Chão
     ctx.fillStyle = '#590d22';
     ctx.fillRect(0, GROUND, CANVAS_W, CANVAS_H - GROUND);
     ctx.fillStyle = '#e8536f';
     ctx.fillRect(0, GROUND, CANVAS_W, 3);
 
-    // Luzes de fundo
-    ctx.fillStyle = 'rgba(232,83,111,0.08)';
-    ctx.beginPath(); ctx.arc(CANVAS_W/2, CANVAS_H/2, 120, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(232,83,111,0.07)';
+    ctx.beginPath(); ctx.arc(CANVAS_W/2, CANVAS_H/2, 100, 0, Math.PI*2); ctx.fill();
   }
 
   function updateHP() {
@@ -299,22 +351,20 @@ function openTaekwondo() {
   function loop(ts) {
     const dt = Math.min(ts - lastTime, 32); lastTime = ts;
 
-    applyPhysics(p1, keys['a'],      keys['d'],          keys['w'],        keys['f'],        keys['s'],        p2, dt);
-    applyPhysics(p2, keys['ArrowLeft'],keys['ArrowRight'],keys['ArrowUp'],  keys['l'],        keys['ArrowDown'],p1, dt);
+    applyPhysics(p1, k1, p2);
+    applyPhysics(p2, k2, p1);
 
-    // Checa KO
     if (!roundOver) {
-      if (p1.hp <= 0) { roundOver = true; roundMsg = 'Emilly venceu! 💗'; p2.wins++; roundTimer = 120; document.getElementById('wins2').textContent = p2.wins; }
-      if (p2.hp <= 0) { roundOver = true; roundMsg = 'Pietro venceu! 💙'; p1.wins++; roundTimer = 120; document.getElementById('wins1').textContent = p1.wins; }
+      if (p1.hp <= 0) { roundOver=true; roundMsg='Emilly venceu! 💗'; p2.wins++; roundTimer=110; document.getElementById('wins2').textContent='🏆 '+p2.wins; }
+      if (p2.hp <= 0) { roundOver=true; roundMsg='Pietro venceu! 💙'; p1.wins++; roundTimer=110; document.getElementById('wins1').textContent='🏆 '+p1.wins; }
     }
 
     if (roundOver && roundTimer > 0) {
       roundTimer--;
       if (roundTimer === 0) {
         if (p1.wins >= 3 || p2.wins >= 3) {
-          // Fim de jogo
-          const winner = p1.wins >= 3 ? 'Pietro 💙' : 'Emilly 💗';
           if (animId) cancelAnimationFrame(animId);
+          const winner = p1.wins >= 3 ? 'Pietro 💙' : 'Emilly 💗';
           _showResult(body, '🥋', `${winner} é campeão!`, `Placar: Pietro ${p1.wins} × ${p2.wins} Emilly`, openTaekwondo);
           return;
         }
@@ -324,17 +374,16 @@ function openTaekwondo() {
 
     updateHP();
     drawBg();
-    drawPlayer(p1, 'P1');
-    drawPlayer(p2, 'P2');
+    drawPlayer(p1);
+    drawPlayer(p2);
 
-    // Placar no canvas
     if (roundOver && roundMsg) {
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(CANVAS_W/2-100, CANVAS_H/2-24, 200, 48);
+      ctx.fillStyle = 'rgba(0,0,0,.55)';
+      ctx.fillRect(CANVAS_W/2-85, CANVAS_H/2-18, 170, 36);
       ctx.fillStyle = 'white';
-      ctx.font = 'bold 18px "Playfair Display", serif';
+      ctx.font = 'bold 15px "Playfair Display",serif';
       ctx.textAlign = 'center';
-      ctx.fillText(roundMsg, CANVAS_W/2, CANVAS_H/2+6);
+      ctx.fillText(roundMsg, CANVAS_W/2, CANVAS_H/2+5);
       ctx.textAlign = 'left';
     }
 
@@ -346,7 +395,9 @@ function openTaekwondo() {
     if (animId) cancelAnimationFrame(animId);
     window.removeEventListener('keydown', onKey);
     window.removeEventListener('keyup',   onKey);
-    Object.keys(keys).forEach(k => delete keys[k]);
+    // Limpa todos os estados de tecla
+    Object.keys(k1).forEach(k => k1[k] = false);
+    Object.keys(k2).forEach(k => k2[k] = false);
   };
 }
 
