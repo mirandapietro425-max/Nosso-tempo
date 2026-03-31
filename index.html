@@ -813,6 +813,21 @@
   <div class="section-label">Nosso cantinho literário</div>
   <h2 class="section-title" id="sec-biblioteca-title">Nossa <em>biblioteca</em> 📚</h2>
 
+  <!-- Seletor de perfil da biblioteca -->
+  <div class="lib-player-selector" id="lib-player-selector">
+    <div class="lib-player-label">Quem está lendo agora?</div>
+    <div class="lib-player-btns">
+      <button class="lib-player-btn" id="lib-btn-pietro" onclick="window._libSetPlayer('pietro')">
+        <span class="lib-player-avatar">💙</span>
+        <span class="lib-player-name">Pietro</span>
+      </button>
+      <button class="lib-player-btn" id="lib-btn-emilly" onclick="window._libSetPlayer('emilly')">
+        <span class="lib-player-avatar">💗</span>
+        <span class="lib-player-name">Emilly</span>
+      </button>
+    </div>
+  </div>
+
   <div id="library-filters" class="library-filters"></div>
   <div id="library-grid" class="library-grid">
     <div style="text-align:center;padding:2rem;color:#c9a9b0;font-style:italic;grid-column:1/-1;">⏳ Carregando livros...</div>

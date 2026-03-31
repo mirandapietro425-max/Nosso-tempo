@@ -882,9 +882,37 @@ let _activeFilter = 'todos';
 let _unsubscribeLib = null; // FIX: guarda referência para cancelar onSnapshot anterior
 let _saveTimer = null;      // FIX: debounce de 600ms para não escrever no Firebase a cada capítulo
 
+// Chave própria da biblioteca — independente do jogador da casinha
+const LS_LIB_PLAYER = 'pe_lib_player';
+
 function _getPlayer() {
+  // Prioridade: jogador selecionado na própria biblioteca
+  try {
+    const libPlayer = localStorage.getItem(LS_LIB_PLAYER);
+    if (libPlayer) return libPlayer;
+  } catch {}
+  // Fallback: jogador ativo na casinha
   if (_activePlayer) return _activePlayer;
   try { return localStorage.getItem('pe_active_player') || null; } catch { return null; }
+}
+
+// Expõe globalmente para ser chamado pelos botões do HTML
+window._libSetPlayer = function(player) {
+  try { localStorage.setItem(LS_LIB_PLAYER, player); } catch {}
+  _activePlayer = player;
+  _updateLibPlayerUI(player);
+  _activeFilter = 'todos';
+  _renderLibrary();
+  if (typeof window.showToast === 'function') {
+    window.showToast(player === 'pietro' ? '💙 Lendo como Pietro!' : '💗 Lendo como Emilly!');
+  }
+};
+
+function _updateLibPlayerUI(player) {
+  const btnPietro = document.getElementById('lib-btn-pietro');
+  const btnEmilly = document.getElementById('lib-btn-emilly');
+  if (btnPietro) btnPietro.classList.toggle('active', player === 'pietro');
+  if (btnEmilly) btnEmilly.classList.toggle('active', player === 'emilly');
 }
 
 function _playerData() {
@@ -907,6 +935,12 @@ function _saveLibData() {
 export function initLibrary(db, activePlayerGetter) {
   _db = db;
   _activePlayer = activePlayerGetter ? activePlayerGetter() : null;
+
+  // Sincroniza o seletor de perfil da biblioteca ao iniciar
+  const savedLibPlayer = (() => { try { return localStorage.getItem(LS_LIB_PLAYER); } catch { return null; } })();
+  if (savedLibPlayer) { _activePlayer = savedLibPlayer; }
+  // Aguarda DOM estar pronto para atualizar o UI
+  requestAnimationFrame(() => _updateLibPlayerUI(_getPlayer() || ''));
 
   if (!db) { _renderLibrary(); return; }
 
@@ -955,6 +989,9 @@ function _renderLibrary() {
   const grid = document.getElementById('library-grid');
   const filtersEl = document.getElementById('library-filters');
   if (!grid) return;
+
+  // Atualiza seletor de perfil
+  _updateLibPlayerUI(_getPlayer() || '');
 
   // Filtros
   if (filtersEl) {
