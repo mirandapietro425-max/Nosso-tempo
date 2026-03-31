@@ -72,6 +72,9 @@ import { initHome, awardCoins as _awardCoins } from './home.js';
 // ── Biblioteca ──
 import { initLibrary } from './library.js';
 
+// ── Cinema ──
+import { initCinema } from './cinema.js';
+
 // ── Jogos / Arcade ──
 import { initGames } from './games.js';
 window.awardCoins = _awardCoins;
@@ -172,6 +175,7 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
 try { initHome(db); } catch(e) { console.error('initHome:', e); }
 try { initGames(db); } catch(e) { console.error('initGames:', e); }
 try { initLibrary(db, () => { try { return localStorage.getItem('pe_active_player'); } catch { return null; } }); } catch(e) { console.error('initLibrary:', e); }
+try { initCinema(db); } catch(e) { console.error('initCinema:', e); }
 
 /* ════════════════════════════════════════════
    MUSIC

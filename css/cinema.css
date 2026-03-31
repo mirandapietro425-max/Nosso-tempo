@@ -1,0 +1,384 @@
+/* ═══════════════════════════════════════════════
+   PIETRO & EMILLY — cinema.css
+   Nosso Cinema 🎬
+   ═══════════════════════════════════════════════ */
+
+/* ── TABS ── */
+.cinema-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.4rem;
+  background: #fff0f3;
+  border-radius: 50px;
+  padding: 0.3rem;
+}
+
+.cinema-tab {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 50px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #b06070;
+  transition: all 0.22s;
+}
+
+.cinema-tab.active {
+  background: linear-gradient(135deg, #e8536f, #590d22);
+  color: white;
+  box-shadow: 0 4px 14px rgba(232, 83, 111, 0.35);
+}
+
+/* ── CATÁLOGO GRID ── */
+.cinema-catalog {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 380px) {
+  .cinema-catalog {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── CARD ── */
+.cinema-card {
+  background: white;
+  border-radius: 20px;
+  border: 1.5px solid #ffd6de;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.22s, box-shadow 0.22s;
+  position: relative;
+}
+
+.cinema-card:active {
+  transform: scale(0.97);
+}
+
+.cinema-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(232, 83, 111, 0.18);
+}
+
+.cinema-card--watched {
+  opacity: 0.7;
+}
+
+.cinema-card-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cinema-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+
+.cinema-card-emoji {
+  font-size: 2.4rem;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.cinema-card-watched-badge {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  background: rgba(0,0,0,0.65);
+  color: #7be87b;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 20px;
+  z-index: 2;
+}
+
+.cinema-card-info {
+  padding: 0.8rem 0.9rem 1rem;
+}
+
+.cinema-card-genre {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #e8536f;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.cinema-card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: #590d22;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+}
+
+.cinema-card-desc {
+  font-size: 0.72rem;
+  color: #9a6070;
+  line-height: 1.45;
+  margin-bottom: 0.6rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── PROGRESSO EPISÓDIOS ── */
+.cinema-ep-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.cinema-ep-bar {
+  flex: 1;
+  height: 4px;
+  background: #ffd6de;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cinema-ep-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e8536f, #590d22);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.cinema-ep-label {
+  font-size: 0.62rem;
+  color: #b06070;
+  white-space: nowrap;
+}
+
+/* ── BOTÃO PLAY ── */
+.cinema-play-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #fce4ec, #fff0f3);
+  border: 1.5px solid #ffd6de;
+  border-radius: 12px;
+  color: #e8536f;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cinema-play-btn:hover {
+  background: linear-gradient(135deg, #e8536f, #590d22);
+  border-color: transparent;
+  color: white;
+}
+
+/* ═══════════════════════════════════════════════
+   MODAL DO PLAYER
+   ═══════════════════════════════════════════════ */
+.cinema-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 0, 15, 0.92);
+  backdrop-filter: blur(12px);
+  z-index: 10050;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  overflow-y: auto;
+}
+
+.cinema-modal-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.cinema-modal {
+  width: 100%;
+  max-width: 640px;
+  background: #0f0a14;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 2rem;
+}
+
+.cinema-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.2rem 0.8rem;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+}
+
+.cinema-modal-back {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.cinema-modal-back:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.cinema-modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: white;
+  font-weight: 700;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── PLAYER ── */
+.cinema-modal-player {
+  width: 100%;
+  background: black;
+}
+
+.cinema-modal-player iframe {
+  border-radius: 0 !important;
+}
+
+/* ── MARCA ASSISTIDO ── */
+.cinema-modal-mark {
+  margin: 1rem 1.2rem 0.2rem;
+}
+
+.cinema-modal-markbtn {
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 12px;
+  border: 1.5px solid rgba(232,83,111,0.4);
+  background: rgba(232,83,111,0.08);
+  color: #f4879c;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cinema-modal-markbtn.done {
+  background: rgba(123,232,123,0.12);
+  border-color: rgba(123,232,123,0.4);
+  color: #7be87b;
+}
+
+/* ── LISTA DE EPISÓDIOS ── */
+.cinema-modal-eplist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.8rem 1.2rem 0;
+  margin-top: 0.4rem;
+}
+
+.cinema-modal-eplabel {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  padding: 0 1.2rem;
+  margin-top: 0.6rem;
+}
+
+.cinema-ep-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  transition: all 0.18s;
+}
+
+.cinema-ep-item:hover {
+  background: rgba(232,83,111,0.12);
+  border-color: rgba(232,83,111,0.3);
+}
+
+.cinema-ep-item.active {
+  background: rgba(232,83,111,0.18);
+  border-color: rgba(232,83,111,0.5);
+}
+
+.cinema-ep-item.ep-done .cinema-ep-check {
+  color: #7be87b;
+  background: rgba(123,232,123,0.15);
+}
+
+.cinema-ep-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.cinema-ep-item.active .cinema-ep-check {
+  background: #e8536f;
+  color: white;
+}
+
+.cinema-ep-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.3;
+}
+
+.cinema-ep-item.active .cinema-ep-name {
+  color: white;
+  font-weight: 600;
+}
