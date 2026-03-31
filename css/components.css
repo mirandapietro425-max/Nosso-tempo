@@ -938,7 +938,8 @@ body.dark-event .dreams-input:focus {
   font-family: 'Playfair Display', serif;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #590d22;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
   line-height: 1.3;
   word-break: break-word;
 }
@@ -946,7 +947,8 @@ body.dark-event .dreams-input:focus {
   font-family: 'Cormorant Garamond', serif;
   font-size: 0.65rem;
   font-style: italic;
-  color: #c9a9b0;
+  color: rgba(255,255,255,0.75);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 /* Badge de progresso na capa */
@@ -971,6 +973,16 @@ body.dark-event .dreams-input:focus {
   font-size: 0.9rem;
   z-index: 3;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
+}
+
+/* Capa com fundo escuro — força texto branco */
+.book-cover-dark .book-cover-default-title {
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.7);
+}
+.book-cover-dark .book-cover-default-author {
+  color: rgba(255,255,255,0.8);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
 }
 
 .book-card-title {

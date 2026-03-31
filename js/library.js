@@ -989,8 +989,15 @@ function _renderLibrary() {
     card.className = 'book-card';
     card.onclick = () => _openBookDetail(book.id);
 
+    // Detecta fundo escuro para usar texto branco na capa
+    const _bgColor = book.color || 'linear-gradient(135deg,#fff0f3,#fce4ec)';
+    const _hexes   = _bgColor.match(/#([0-9a-fA-F]{6})/g) || [];
+    const _isDark  = _hexes.length > 0 && _hexes.every(h => {
+      const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+      return (0.299*r + 0.587*g + 0.114*b) < 128;
+    });
     const coverHTML = `
-      <div class="book-cover-wrap" style="background:${book.color || 'linear-gradient(135deg,#fff0f3,#fce4ec)'}">
+      <div class="book-cover-wrap${_isDark ? ' book-cover-dark' : ''}" style="background:${_bgColor}">
         <div class="book-cover-default">
           <div class="book-cover-default-icon">${book.icon || '📖'}</div>
           <div class="book-cover-default-title">${book.title}</div>
