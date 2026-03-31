@@ -198,7 +198,9 @@ export function initDaily() {
   const now       = new Date();
   const meianoite = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
   const msAte     = meianoite - now;
-  setTimeout(() => { initDaily(); setInterval(initDaily, 86400000); }, msAte);
+  // FIX: setTimeout recursivo em vez de setInterval — evita acúmulo de intervalos
+  // se a página ficar aberta múltiplos dias (cada reinvocação de initDaily agenda o próximo)
+  setTimeout(() => { initDaily(); }, msAte);
 }
 
 // ── PARTICLES (canvas) ──────────────────────────

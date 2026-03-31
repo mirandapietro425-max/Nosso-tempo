@@ -656,13 +656,16 @@ function openAlvo() {
     hitTest(x, y);
   };
   canvas.addEventListener('click', onClick);
-  canvas.addEventListener('touchend', e => {
+
+  // FIX Bug: touchend definido como named function para poder ser removido no cleanup
+  const onTouchAlvo = e => {
     e.preventDefault();
     const br = rect();
     const t  = e.changedTouches[0];
     hitTest((t.clientX - br.left) * canvas.width / br.width,
             (t.clientY - br.top)  * canvas.height / br.height);
-  });
+  };
+  canvas.addEventListener('touchend', onTouchAlvo);
 
   let lastSpawn = 0, lastSecond = Date.now();
 
@@ -727,6 +730,7 @@ function openAlvo() {
     running3 = false;
     if (animId3) cancelAnimationFrame(animId3);
     canvas.removeEventListener('click', onClick);
+    canvas.removeEventListener('touchend', onTouchAlvo); // FIX: remove listener nomeado
     document.querySelectorAll('.target-hit-fx').forEach(el => el.remove());
   };
 }

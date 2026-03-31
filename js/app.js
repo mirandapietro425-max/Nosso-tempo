@@ -320,9 +320,14 @@ document.getElementById('file-input')?.addEventListener('change', async function
   if (!file || uploadSlot === null) return;
   this.value = '';
 
+  // FIX: captura o slot localmente — evita race condition se startUpload for chamado
+  // novamente enquanto este upload ainda está em andamento (await compressImage / fetch)
+  const localSlot = uploadSlot;
+  uploadSlot = null;
+
   // Mostra spinner no slot correto
   const grid   = document.getElementById('gallery-grid');
-  const slotEl = grid?.children[uploadSlot];
+  const slotEl = grid?.children[localSlot];
   if (slotEl) {
     const sp = document.createElement('div');
     sp.className = 'upload-spinner';
@@ -340,7 +345,7 @@ document.getElementById('file-input')?.addEventListener('change', async function
 
     if (data.success) {
       const p = await getPhotos();
-      p[uploadSlot] = data.data.url;
+      p[localSlot] = data.data.url;
       await setPhotos(p);
       showToast('📸 Foto adicionada! 🥰');
     } else {
@@ -352,7 +357,6 @@ document.getElementById('file-input')?.addEventListener('change', async function
     showToast('❌ Erro de rede. Tente novamente.', 4000);
   }
 
-  uploadSlot = null;
   renderGallery();
 });
 
@@ -787,6 +791,8 @@ async function addMural() {
     const msg = { id: msgId, author: muralAuthor, text: text || '', date };
     if (_muralPhotoUrl) msg.photo = _muralPhotoUrl;
     msgs.push(msg);
+    // FIX: limita a 50 mensagens por dia para não estourar o Firestore
+    if (msgs.length > 50) msgs.splice(0, msgs.length - 50);
     await saveMural(msgs);
     if (input) input.value = '';
     _muralPhotoUrl = null;
