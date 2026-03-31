@@ -209,7 +209,7 @@ function openTaekwondo() {
       if(p1.hp<=0){rOver=true;rMsg='Emilly venceu! 💗';p2.wins++;rTimer=110;document.getElementById('wins2').textContent='🏆 '+p2.wins;}
       if(p2.hp<=0){rOver=true;rMsg='Pietro venceu! 💙';p1.wins++;rTimer=110;document.getElementById('wins1').textContent='🏆 '+p1.wins;}
     }
-    if(rOver&&rTimer>0){rTimer--;if(rTimer===0){if(p1.wins>=3||p2.wins>=3){cancelAnimationFrame(animId);_showResult(body,'🥋',`${p1.wins>=3?'Pietro 💙':'Emilly 💗'} é campeão!`,`Pietro ${p1.wins} × ${p2.wins} Emilly`,openTaekwondo);return;}resetRound();}}
+    if(rOver&&rTimer>0){rTimer--;if(rTimer===0){if(p1.wins>=3||p2.wins>=3){cancelAnimationFrame(animId);animId=null;_showResult(body,'🥋',`${p1.wins>=3?'Pietro 💙':'Emilly 💗'} é campeão!`,`Pietro ${p1.wins} × ${p2.wins} Emilly`,openTaekwondo);return;}resetRound();}}
     const h1=document.getElementById('hp1'),h2=document.getElementById('hp2');
     if(h1)h1.style.width=(p1.hp/HP_MAX*100)+'%';if(h2)h2.style.width=(p2.hp/HP_MAX*100)+'%';
     const g=ctx.createLinearGradient(0,0,0,CH);g.addColorStop(0,'#1a0a1a');g.addColorStop(1,'#3a1a2a');
@@ -578,7 +578,7 @@ function openCorrida(){
       document.getElementById('cr-w2').textContent='🏆 '+w2;
       document.getElementById('cr-round').textContent='Round '+round;
     }
-    if(raceOver&&raceTimer>0){raceTimer--;if(raceTimer===0){if(w1>=3||w2>=3){cancelAnimationFrame(animId4);_showResult(body,'🏃',`${w1>=3?'Pietro 💙':'Emilly 💗'} venceu a corrida!`,`Pietro ${w1} × ${w2} Emilly`,openCorrida);return;}resetRace();}}
+    if(raceOver&&raceTimer>0){raceTimer--;if(raceTimer===0){if(w1>=3||w2>=3){cancelAnimationFrame(animId4);animId4=null;_showResult(body,'🏃',`${w1>=3?'Pietro 💙':'Emilly 💗'} venceu a corrida!`,`Pietro ${w1} × ${w2} Emilly`,openCorrida);return;}resetRace();}}
     const bg=ctx4.createLinearGradient(0,0,0,CH);bg.addColorStop(0,'#0a1520');bg.addColorStop(1,'#1a2a3a');
     ctx4.fillStyle=bg;ctx4.fillRect(0,0,CW,CH);
     ctx4.fillStyle='#1a3a5c';ctx4.fillRect(0,GND,CW,CH-GND);ctx4.fillStyle='#4a90d9';ctx4.fillRect(0,GND,CW,2);

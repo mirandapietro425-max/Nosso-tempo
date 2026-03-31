@@ -505,7 +505,7 @@ async function openMovieModal(i) {
       }
 
       document.getElementById('movie-modal-trailer').innerHTML = trailer
-        ? `<iframe width="100%" height="220" src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen style="border-radius:16px;display:block;"></iframe>`
+        ? `<iframe width="100%" height="220" src="https://www.youtube.com/embed/${trailer.key}?autoplay=0&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:16px;display:block;"></iframe>`
         : '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Trailer não encontrado 😕</p>';
     } else {
       document.getElementById('movie-modal-trailer').innerHTML =
@@ -839,6 +839,9 @@ document.getElementById('mural-photo-input')?.addEventListener('change', functio
 window.addMural     = addMural;
 window.deleteMural  = deleteMural;
 window.selectAuthor = selectAuthor;
+
+// FIX Bug Enter: mural-input responde à tecla Enter (Ctrl+Enter para não conflitar com quebras de linha)
+document.getElementById('mural-input')?.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addMural(); } });
 
 /* ════════════════════════════════════════════
    SONHOS

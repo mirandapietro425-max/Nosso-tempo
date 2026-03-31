@@ -25,9 +25,9 @@ import {
 const PLAYER_SERVERS = [
   {
     name: 'Servidor 1',
-    movie : (id)       => `https://vidsrc.to/embed/movie/${id}`,
-    tv    : (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
-    hasParams: false,  // URL limpa — usar ? para adicionar parâmetros
+    movie : (id)       => `https://vidsrc.me/embed/movie?tmdb=${id}`,
+    tv    : (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+    hasParams: true,
   },
   {
     name: 'Servidor 2',
@@ -327,7 +327,7 @@ function _buildPlayerSrc(item, epIdx, serverIdx) {
   const server   = PLAYER_SERVERS[serverIdx];
 
   if (server && item.tmdbId) {
-    // FIX Bug 2: o Servidor 2 (vidlink) já tem query params — usar & em vez de ?
+    // Servidor 2 (vidlink) e Servidor 1 (vidsrc.me) já têm query params — usar & em vez de ?
     const sep = server.hasParams ? '&' : '?';
 
     if (isSeries) {
@@ -378,7 +378,7 @@ function _buildPlayer(item, epIdx) {
   skeleton.innerHTML = `
     <div class="cinema-player-loading">
       <div class="cinema-player-spinner"></div>
-      <span class="cinema-player-loading-text">Carregando ${PLAYER_SERVERS[_serverIdx]?.name || ''}…</span>
+      <span class="cinema-player-loading-text">Carregando ${PLAYER_SERVERS[_serverIdx]?.name || 'YouTube'}…</span>
     </div>`;
   playerEl.appendChild(skeleton);
 
@@ -412,19 +412,23 @@ function _buildPlayer(item, epIdx) {
 }
 
 function _showServerRetryButton(container, item, epIdx) {
-  const nextIdx  = _serverIdx + 1;
-  const hasNext  = nextIdx < PLAYER_SERVERS.length;
-  const nextName = hasNext ? PLAYER_SERVERS[nextIdx].name : 'YouTube';
+  const nextIdx    = _serverIdx + 1;
+  const hasNext    = nextIdx <= PLAYER_SERVERS.length; // inclui YouTube como próximo
+  const nextName   = nextIdx < PLAYER_SERVERS.length
+    ? PLAYER_SERVERS[nextIdx].name
+    : nextIdx === PLAYER_SERVERS.length ? 'YouTube' : null;
+  const currentName = PLAYER_SERVERS[_serverIdx]?.name || 'YouTube';
+
   container.innerHTML = `
     <div class="cinema-server-overlay">
       <div class="cinema-server-msg">
         <div class="cinema-server-icon">⚡</div>
-        <div class="cinema-server-title">${PLAYER_SERVERS[_serverIdx]?.name || 'Servidor'} demorou para responder</div>
+        <div class="cinema-server-title">${currentName} demorou para responder</div>
         <div class="cinema-server-sub">Tente outro servidor ou aguarde</div>
         <div class="cinema-server-btns">
-          <button class="cinema-server-btn cinema-server-btn--primary" onclick="window._cinemaNextServer()">
+          ${nextName ? `<button class="cinema-server-btn cinema-server-btn--primary" onclick="window._cinemaNextServer()">
             Trocar para ${nextName}
-          </button>
+          </button>` : ''}
           <button class="cinema-server-btn cinema-server-btn--secondary" onclick="window._cinemaRetryServer()">
             Tentar novamente
           </button>
@@ -513,8 +517,7 @@ function _renderCatalog() {
     const allEpsDone  = !itemIsMovie && totalEps > 0 && watchedEps === totalEps;
     const showWatched = isWatched || allEpsDone;
 
-    const thumb = item.thumb ||
-      (item.tmdbId ? `https://image.tmdb.org/t/p/w500/` : '');
+    const thumb = item.thumb || '';
 
     return `
     <div class="cinema-card ${showWatched ? 'cinema-card--watched' : ''}"
