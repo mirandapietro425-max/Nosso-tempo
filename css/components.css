@@ -1423,3 +1423,5 @@ body.dark-event .dreams-input:focus {
   .library-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
   .reader-text { font-size: 1.02rem; line-height: 1.85; }
 }
+
+}

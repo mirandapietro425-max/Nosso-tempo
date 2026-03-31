@@ -367,6 +367,7 @@ const QUIZ_QUESTIONS = [
 ];
 
 function openQuiz() {
+  _activeCleanup = null;
   const body = _createOverlay('💘 Quiz do Casal');
   let qi = 0, score = 0;
   const questions = [...QUIZ_QUESTIONS].sort(() => Math.random() - .5).slice(0, 7);
@@ -418,6 +419,7 @@ function openQuiz() {
    🃏 JOGO DA MEMÓRIA
 ══════════════════════════════════════════════ */
 function openMemoria() {
+  _activeCleanup = null;
   const body = _createOverlay('🃏 Jogo da Memória');
   const EMOJIS = ['💕','🌹','💙','🌸','🥰','✨','💫','🎵','🏡','📚','🌙','💎'];
   let moves = 0, matches = 0, flipped = [], locked = false, startTime = Date.now();
@@ -529,12 +531,14 @@ function openSnake() {
 
   // Swipe
   let tx=0,ty=0;
-  canvas.addEventListener('touchstart', e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
-  canvas.addEventListener('touchend', e=>{
+  const onTouchStart = e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;};
+  const onTouchEnd = e=>{
     const dx=e.changedTouches[0].clientX-tx, dy=e.changedTouches[0].clientY-ty;
     if(Math.abs(dx)>Math.abs(dy)) setDir(dx>0?1:-1,0);
     else setDir(0,dy>0?1:-1);
-  },{passive:true});
+  };
+  canvas.addEventListener('touchstart', onTouchStart, {passive:true});
+  canvas.addEventListener('touchend', onTouchEnd, {passive:true});
 
   function draw() {
     ctx2.fillStyle = '#0f0f1a'; ctx2.fillRect(0,0,W,H);
@@ -583,6 +587,8 @@ function openSnake() {
     running = false;
     if(animId2) cancelAnimationFrame(animId2);
     window.removeEventListener('keydown', onKeySnake);
+    canvas.removeEventListener('touchstart', onTouchStart);
+    canvas.removeEventListener('touchend', onTouchEnd);
   };
 }
 
