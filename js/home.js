@@ -357,7 +357,7 @@ function renderEarnList(){
     // FIX: localização usa chaves separadas por pessoa (location_pietro / location_emilly)
     // Considera feito se qualquer uma das duas foi registrada hoje pelo jogador ativo
     const done=item.key==="quiz"?quizDone
-      :item.key==="location"?(earned["location_pietro"]||earned["location_emilly"])
+      :item.key==="location"?!!(earned[`location_${_activePlayer}`])
       :earned[item.key];
     return `<div class="earn-row"><span class="earn-row-left">${item.label}</span><span class="earn-row-right">${done?'<span class="done-check">✓ Feito</span>':`+${item.amt} 🪙`}</span></div>`;
   }).join("");

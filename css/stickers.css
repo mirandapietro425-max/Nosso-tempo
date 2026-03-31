@@ -4,10 +4,6 @@
    ═══════════════════════════════════════════════ */
 
 /* ── SEÇÃO WRAPPER (dentro do Mural de Humor) ── */
-.mood-sticker-panel {
-  padding-bottom: 0.5rem;
-}
-
 /* ── BUSCA ── */
 .sticker-search-wrap {
   position: relative;
@@ -118,6 +114,7 @@
 
 /* Badge de contagem de favoritos */
 .sticker-fav-badge {
+  display: none;
   position: absolute;
   top: -6px; right: -6px;
   min-width: 18px; height: 18px;
@@ -641,49 +638,15 @@
   .mood-univ-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* Cartão de figurinha no humor */
-.mood-sticker-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.5rem 0.3rem;
-  border-radius: 12px;
-  border: 2px solid transparent;
-  background: rgba(255,255,255,0.7);
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
-}
-
-.mood-sticker-card:hover {
-  transform: scale(1.06);
-  border-color: #f72585;
-}
-
-/* Selecionado por Pietro */
+/* Seleção de humor por pessoa */
 .mood-sticker-card.selected-pietro {
   border-color: #4a90d9;
   background: rgba(74,144,217,0.1);
   box-shadow: 0 0 0 3px rgba(74,144,217,0.25);
 }
 
-/* Selecionado por Emilly */
 .mood-sticker-card.selected-emilly {
   border-color: #f72585;
   background: rgba(247,37,133,0.08);
   box-shadow: 0 0 0 3px rgba(247,37,133,0.2);
-}
-
-.mood-sticker-img {
-  width: 54px;
-  height: 54px;
-  object-fit: contain;
-}
-
-.mood-sticker-card-label {
-  font-size: 0.7rem;
-  color: #7a4060;
-  text-align: center;
-  font-weight: 500;
-  line-height: 1.2;
 }

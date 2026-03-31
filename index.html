@@ -20,12 +20,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=27">
-  <link rel="stylesheet" href="css/components.css?v=27">
-  <link rel="stylesheet" href="css/modals.css?v=27">
-  <link rel="stylesheet" href="css/animations.css?v=27">
-  <link rel="stylesheet" href="css/stickers.css?v=27">
-  <link rel="stylesheet" href="css/home.css?v=27">
+  <link rel="stylesheet" href="css/main.css?v=36">
+  <link rel="stylesheet" href="css/components.css?v=36">
+  <link rel="stylesheet" href="css/modals.css?v=36">
+  <link rel="stylesheet" href="css/animations.css?v=36">
+  <link rel="stylesheet" href="css/stickers.css?v=36">
+  <link rel="stylesheet" href="css/home.css?v=36">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -301,7 +301,7 @@
 </div>
 
 <!-- ── OVERLAY CALENDÁRIO ── -->
-<div class="cal-overlay" id="cal-overlay">
+<div class="cal-overlay" id="cal-overlay" onclick="if(event.target===this)closeCalModal()">
   <div class="cal-modal">
     <button class="cal-modal-close" onclick="closeCalModal()">✕</button>
     <div class="cal-modal-date" id="cal-modal-date"></div>
@@ -339,7 +339,7 @@
 </div>
 
 <!-- ── OVERLAY HUMOR ── -->
-<div class="mood-picker-overlay" id="mood-picker-overlay">
+<div class="mood-picker-overlay" id="mood-picker-overlay" onclick="if(event.target===this)closeMoodPicker()">
   <div class="mood-picker-sheet" style="position:relative">
     <button class="mood-picker-close" onclick="closeMoodPicker()">✕</button>
     <div class="mood-picker-title" id="mood-picker-title">Como você está hoje?</div>
@@ -388,6 +388,7 @@
     <a class="hero-nav-btn" href="#sec-sonhos">     <span class="hero-nav-icon">🌟</span><span class="hero-nav-label">Sonhos</span></a>
     <a class="hero-nav-btn" href="#sec-mural">      <span class="hero-nav-icon">💬</span><span class="hero-nav-label">Recados</span></a>
     <a class="hero-nav-btn" href="#sec-localizacao"><span class="hero-nav-icon">📍</span><span class="hero-nav-label">Localização</span></a>
+    <a class="hero-nav-btn" href="#sec-biblioteca"><span class="hero-nav-icon">📚</span><span class="hero-nav-label">Biblioteca</span></a>
     <a class="hero-nav-btn" href="#sec-casinha">    <span class="hero-nav-icon">🏡</span><span class="hero-nav-label">Casinha</span></a>
   </nav>
 
@@ -801,6 +802,18 @@
       <div class="location-card-city" id="loc-city-emilly-card">Sem localização ainda</div>
       <div class="location-card-time" id="loc-time-emilly"></div>
     </div>
+  </div>
+</section>
+
+<!-- ── BIBLIOTECA ── -->
+<section id="sec-biblioteca" aria-labelledby="sec-biblioteca-title">
+  <div class="divider"><span class="divider-icon">📚</span></div>
+  <div class="section-label">Nosso cantinho literário</div>
+  <h2 class="section-title" id="sec-biblioteca-title">Nossa <em>biblioteca</em> 📚</h2>
+
+  <div id="library-filters" class="library-filters"></div>
+  <div id="library-grid" class="library-grid">
+    <div style="text-align:center;padding:2rem;color:#c9a9b0;font-style:italic;grid-column:1/-1;">⏳ Carregando livros...</div>
   </div>
 </section>
 

@@ -33,6 +33,8 @@ import {
   initSurprise, initDaily, openDailyPopup, closeDailyPopup,
   initParticles, initTimeline,
 } from './ui.js';
+// FIX: expõe showToast globalmente para módulos como library.js
+window.showToast = showToast;
 
 // ── Music ──
 import {
@@ -66,6 +68,9 @@ window.addEventListener('load', () => {
 
 // ── Home (casinha + pet + quiz) ──
 import { initHome, awardCoins as _awardCoins } from './home.js';
+
+// ── Biblioteca ──
+import { initLibrary } from './library.js';
 window.awardCoins = _awardCoins;
 
 /* ════════════════════════════════════════════
@@ -162,6 +167,7 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
 
 // ── Casinha + Pet + Quiz ──
 try { initHome(db); } catch(e) { console.error('initHome:', e); }
+try { initLibrary(db, () => { try { return localStorage.getItem('pe_active_player'); } catch { return null; } }); } catch(e) { console.error('initLibrary:', e); }
 
 /* ════════════════════════════════════════════
    MUSIC
@@ -663,6 +669,7 @@ async function renderMural() {
     _muralLastCleanCache = today;
     await saveMural(msgs, today);
   }
+  // Se lastClean === today: mural já está atualizado, sem escrita desnecessária no Firebase
   list.innerHTML = '';
 
   if (msgs.length === 0) {
@@ -1943,7 +1950,8 @@ window.shareLocation = shareLocation;
   const qty    = isAniv ? 30 : 18;
   const rate   = isAniv ? 300 : 700;
   for (let i = 0; i < qty; i++) setTimeout(spawnElement, i * 200);
-  setInterval(spawnElement, rate);
+  // FIX: armazena ID para poder limpar (evita acúmulo infinito de elementos ao ficar horas na página)
+  const _spawnInterval = setInterval(spawnElement, rate);
 
   // Fogos para aniversários — bolhas coloridas subindo
   if (isAniv) {
@@ -1974,8 +1982,18 @@ window.shareLocation = shareLocation;
       }
     }
     for (let i = 0; i < 6; i++) setTimeout(spawnFirework, i * 400);
-    setInterval(spawnFirework, 2500);
+    // FIX: armazena ID para poder limpar
+    const _fireworkInterval = setInterval(spawnFirework, 2500);
+    // Limpa fogos quando a página fica oculta (aba minimizada)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { clearInterval(_fireworkInterval); }
+    }, { once: true });
   }
+
+  // Limpa elementos quando página fica oculta
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { clearInterval(_spawnInterval); }
+  }, { once: true });
 })();
 
 /* ════════════════════════════════════════════

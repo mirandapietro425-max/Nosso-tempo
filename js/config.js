@@ -154,7 +154,7 @@ export const EVENTOS = [
     bg: 'radial-gradient(ellipse at 50% 60%, #ddeeff 0%, #eef6ff 55%, #f0f8ff 100%)',
     accent: '#4a90d9',
     playlist: [
-      { name: 'Parabéns pra Você', artist: 'Tradicional', ytId: 'dQw4w9WgXcQ' },
+      { name: 'Parabéns pra Você', artist: 'Tradicional', ytId: 'ZR3Tlu0G_zM' },
       { name: 'Skyfall', artist: 'Adele', ytId: 'DeumyOzKqgI' },
       { name: 'Home', artist: 'Michael Bublé', ytId: 'MCFIEkz9nNQ' },
       { name: 'Sailor Song', artist: 'Gigi Perez', ytId: '1lrFsXkT_rM' },

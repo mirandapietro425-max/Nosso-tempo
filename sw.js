@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v29
+   PIETRO & EMILLY — sw.js v36
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
 // Versão do cache — altere este valor ao fazer deploy para invalidar o cache antigo
-const CACHE_VERSION  = 'v57';
+const CACHE_VERSION  = 'v36';
 const CACHE_STATIC   = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC  = `pe-dynamic-${CACHE_VERSION}`;
 
@@ -26,6 +26,7 @@ const STATIC_ASSETS = [
   '/js/stickers.js',
   '/js/experience.js',
   '/js/home.js',
+  '/js/library.js',
   '/assets/favicon.png',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
@@ -91,6 +92,9 @@ const STATIC_ASSETS = [
   '/emojis/Princesas/Tiana_Happy_2.png',
   '/emojis/Princesas/Tiana_Sad.png',
   '/emojis/Rapunzel/Rapunzel_Scared.png',
+  '/emojis/Merida/Merida_Happy.png',
+  '/emojis/Rapunzel/Rapunzel_Angry.png',
+  '/emojis/Rapunzel/Rapunzel_Happy.png',
 ];
 
 // ── INSTALL: pré-cacheia assets estáticos ──

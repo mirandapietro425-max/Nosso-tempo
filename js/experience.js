@@ -690,9 +690,13 @@ function _showRomanticMessage(msgs) {
 
   const msg = msgs[idx];
   const toast = document.createElement('div');
+  // FIX: bottom:88px para ficar acima da mini-player-bar (60px) + margem (8px)
+  // e não colidir com o botão de mini-jogo nem ser cortado pela barra de música
+  const _bar = document.getElementById('mini-player-bar');
+  const _barH = (_bar && _bar.style.display === 'flex') ? 68 : 8;
   toast.style.cssText = `
     position:fixed;
-    bottom:80px; right:1rem;
+    bottom:${_barH + 20}px; right:1rem;
     background:linear-gradient(145deg,#fff0f3,#fff8f9);
     border:1px solid rgba(232,83,111,0.2);
     border-radius:20px;
@@ -1318,9 +1322,18 @@ export function injectGameButton(eventId) {
   const btn = document.createElement('button');
   btn.id = 'pe-game-btn';
   btn.innerHTML = '🎮 Mini-Jogo';
+
+  // FIX: posiciona o botão acima da mini-player-bar (60px) + margem (8px) + espaço extra (70px)
+  // para não colidir com a mensagem romântica que aparece em bottom:80px
+  // Se a mini-player-bar estiver visível, o botão já está acima dela (bottom:148px)
+  // Se não estiver, fica em bottom:88px — ainda acima das mensagens românticas (bottom:80px)
+  const barEl = document.getElementById('mini-player-bar');
+  const barVisible = barEl && barEl.style.display === 'flex';
+  const bottomPos = barVisible ? '148px' : '88px';
+
   btn.style.cssText = `
     position:fixed;
-    bottom:80px; right:1rem;
+    bottom:${bottomPos}; right:1rem;
     background:linear-gradient(135deg,#c44dff,#e8536f);
     color:white; border:none;
     padding:0.6rem 1.1rem;
@@ -1331,11 +1344,21 @@ export function injectGameButton(eventId) {
     box-shadow:0 4px 20px rgba(196,77,255,0.4);
     z-index:9990;
     animation:popIn 0.5s 2s cubic-bezier(.32,1.2,.5,1) both;
-    transition:transform 0.2s ease;
+    transition:transform 0.2s ease, bottom 0.3s ease;
   `;
   btn.addEventListener('mouseenter', () => { btn.style.transform = 'scale(1.05)'; });
   btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
   btn.addEventListener('click', () => openEventGame(eventId));
+
+  // Ajusta posição dinamicamente quando a barra de música aparece/some
+  const _observer = new MutationObserver(() => {
+    // FIX: desconecta se o botão saiu do DOM (evita memory leak)
+    if (!document.body.contains(btn)) { _observer.disconnect(); return; }
+    const visible = barEl && barEl.style.display === 'flex';
+    btn.style.bottom = visible ? '148px' : '88px';
+  });
+  if (barEl) _observer.observe(barEl, { attributes: true, attributeFilter: ['style'] });
+
   document.body.appendChild(btn);
 }
 
