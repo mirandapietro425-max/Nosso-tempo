@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — cinema.js  v39
+   PIETRO & EMILLY — cinema.js  v40
    Nosso Cinema 🎬
    · 5 abas: Séries · Filmes · Romance · Doramas · Animação
    · Player multi-servidor com fallback automático
-   · Sandbox iframe — bloqueia redirect de ads e popups
+   · iframe sem sandbox (compatível com vidsrc, vidlink, 2embed, YouTube)
    · Timeout 12s + botão trocar servidor
    · Continue Assistindo (progress.js)
    · Firebase sync de assistidos
@@ -355,10 +355,10 @@ function _createIframe(src, title) {
   iframe.title           = title || 'Player';
   iframe.frameBorder     = '0';
   iframe.allowFullscreen  = true;
-  // SANDBOX: bloqueia redirect de ads e abertura de popups
-  iframe.sandbox         = 'allow-scripts allow-same-origin allow-presentation allow-forms';
-  iframe.referrerPolicy  = 'no-referrer';
-  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
+  // Sem sandbox — os servidores de embed (vidsrc, vidlink, 2embed) precisam
+  // de allow-top-navigation e allow-popups para funcionar corretamente.
+  // O YouTube também não aceita sandbox restritivo.
+  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');
   iframe.style.cssText   = 'width:100%;aspect-ratio:16/9;display:block;';
   return iframe;
 }
