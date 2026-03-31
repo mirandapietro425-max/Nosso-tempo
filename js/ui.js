@@ -146,14 +146,18 @@ export function getDailyDate() {
 }
 
 export function openDailyPopup() {
-  document.getElementById('daily-popup-text').textContent = getDailyMessage();
-  document.getElementById('daily-popup-date').textContent = getDailyDate();
-  document.getElementById('daily-overlay').classList.add('show');
+  const pt = document.getElementById('daily-popup-text');
+  const pd = document.getElementById('daily-popup-date');
+  const ov = document.getElementById('daily-overlay');
+  if (pt) pt.textContent = getDailyMessage();
+  if (pd) pd.textContent = getDailyDate();
+  if (ov) ov.classList.add('show');
 }
 
 export function closeDailyPopup() {
-  document.getElementById('daily-overlay').classList.remove('show');
-  localStorage.setItem(LS_DAILY_POPUP, new Date().toDateString());
+  const ov = document.getElementById('daily-overlay');
+  if (ov) ov.classList.remove('show');
+  try { localStorage.setItem(LS_DAILY_POPUP, new Date().toDateString()); } catch(e) {}
 }
 
 export function initDaily() {
