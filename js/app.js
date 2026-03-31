@@ -285,6 +285,28 @@ async function deletePhoto(i, e) {
   }
 }
 
+// ── Compressão de imagem para upload mobile ──
+// Reduz fotos de câmera (até 12MP) para no máximo 1200px — evita erro de memória no celular
+async function compressImage(file, maxSize = 1200, quality = 0.82) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width <= maxSize && height <= maxSize) { resolve(file); return; }
+      if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
+      else                { width  = Math.round(width  * maxSize / height); height = maxSize; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 document.getElementById('file-input')?.addEventListener('change', async function () {
   const file = this.files[0];
   if (!file || uploadSlot === null) return;
@@ -301,8 +323,9 @@ document.getElementById('file-input')?.addEventListener('change', async function
   }
 
   try {
+    const compressed = await compressImage(file);
     const form = new FormData();
-    form.append('image', file);
+    form.append('image', compressed);
     form.append('key', IMGBB_KEY);
     const res  = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
     const data = await res.json();
@@ -706,8 +729,9 @@ async function uploadMuralPhoto(file) {
   const previewEl = document.getElementById('mural-photo-preview');
   if (statusEl) statusEl.textContent = '⏳ Enviando foto...';
   try {
+    const compressed = await compressImage(file);
     const form = new FormData();
-    form.append('image', file);
+    form.append('image', compressed);
     form.append('key', IMGBB_KEY);
     const res  = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
     const data = await res.json();
@@ -757,7 +781,7 @@ async function addMural() {
     window.removeMuralPhoto();
     renderMural();
     showToast('💌 Recado enviado com amor!');
-    try { window.awardCoins('mural', 5, muralAuthor); } catch(e) {}
+    try { window.awardCoins('mural', 15, muralAuthor); } catch(e) {}
   } finally {
     _addingMural = false;
   }
@@ -1047,7 +1071,7 @@ async function confirmMood() {
 
   // Moedas pela casinha — usa `person` (já é lowercase) em vez de moodPickerTarget
   // (closeMoodPicker() zeraria moodPickerTarget antes desta linha)
-  try { window.awardCoins('mood', 5, person); } catch(e) {}
+  try { window.awardCoins('mood', 15, person); } catch(e) {}
   } finally {
     _savingMood = false;
   }
@@ -1764,7 +1788,7 @@ async function shareLocation(person) {
       await setDoc(LOC_DOC, curr);
       if (btn) { btn.disabled = false; btn.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`; }
       showToast(`📍 Localização de ${person === 'pietro' ? 'Pietro' : 'Emilly'} atualizada!`);
-      try { window.awardCoins(`location_${person}`, 8, person); } catch(e) {}
+      try { window.awardCoins(`location_${person}`, 20, person); } catch(e) {}
     },
     (err) => {
       if (btn) { btn.disabled = false; btn.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`; }

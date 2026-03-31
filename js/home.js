@@ -29,50 +29,50 @@ const TERRENOS = [
 ];
 
 const LOJA_EXTERIOR = [
-  { id:"casa_branca",   cat:"cor",     icon:"🏠", nome:"Casa Branca",     desc:"Clássica e elegante",        preco:80,  xp:30, exclusivo:"cor" },
-  { id:"casa_rosa",     cat:"cor",     icon:"🏠", nome:"Casa Rosa",       desc:"Romântica e delicada",       preco:80,  xp:30, exclusivo:"cor" },
-  { id:"casa_azul",     cat:"cor",     icon:"🏠", nome:"Casa Azul",       desc:"Calma como o céu",           preco:80,  xp:30, exclusivo:"cor" },
-  { id:"casa_amarela",  cat:"cor",     icon:"🏠", nome:"Casa Amarela",    desc:"Alegre e acolhedora",        preco:80,  xp:30, exclusivo:"cor" },
-  { id:"casa_verde",    cat:"cor",     icon:"🏠", nome:"Casa Verde",      desc:"Harmonia com a natureza",    preco:80,  xp:30, exclusivo:"cor" },
-  { id:"telhado_telha", cat:"telhado", icon:"🏘️", nome:"Telha Cerâmica",  desc:"Tradicional gaúcho",         preco:60,  xp:20, exclusivo:"telhado" },
-  { id:"telhado_metal", cat:"telhado", icon:"🏚️", nome:"Telhado Metálico",desc:"Moderno e resistente",       preco:90,  xp:25, exclusivo:"telhado" },
-  { id:"telhado_verde", cat:"telhado", icon:"🌱", nome:"Telhado Verde",   desc:"Ecológico e charmoso",       preco:130, xp:40, exclusivo:"telhado" },
-  { id:"janela_simples",cat:"janela",  icon:"🪟", nome:"Janela Simples",  desc:"Clean e funcional",          preco:40,  xp:15 },
-  { id:"janela_arco",   cat:"janela",  icon:"🪟", nome:"Janela Arco",     desc:"Arquitetura clássica",       preco:70,  xp:20 },
-  { id:"porta_madeira", cat:"porta",   icon:"🚪", nome:"Porta de Madeira",desc:"Calorosa e rústica",         preco:50,  xp:15, exclusivo:"porta" },
-  { id:"porta_vidro",   cat:"porta",   icon:"🚪", nome:"Porta de Vidro",  desc:"Moderna e iluminada",        preco:90,  xp:25, exclusivo:"porta" },
-  { id:"porta_arco",    cat:"porta",   icon:"🚪", nome:"Porta em Arco",   desc:"Romântica e encantada",      preco:110, xp:35, exclusivo:"porta" },
-  { id:"calcada_pedra", cat:"entrada", icon:"🪨", nome:"Calçada de Pedra",desc:"Charme natural",             preco:45,  xp:15, exclusivo:"entrada" },
-  { id:"calcada_tijolo",cat:"entrada", icon:"🧱", nome:"Calçada de Tijolo",desc:"Estilo colonial gaúcho",    preco:55,  xp:18, exclusivo:"entrada" },
+  { id:"casa_branca",   cat:"cor",     icon:"🏠", nome:"Casa Branca",     desc:"Clássica e elegante",        preco:40,  xp:30, exclusivo:"cor" },
+  { id:"casa_rosa",     cat:"cor",     icon:"🏠", nome:"Casa Rosa",       desc:"Romântica e delicada",       preco:40,  xp:30, exclusivo:"cor" },
+  { id:"casa_azul",     cat:"cor",     icon:"🏠", nome:"Casa Azul",       desc:"Calma como o céu",           preco:40,  xp:30, exclusivo:"cor" },
+  { id:"casa_amarela",  cat:"cor",     icon:"🏠", nome:"Casa Amarela",    desc:"Alegre e acolhedora",        preco:40,  xp:30, exclusivo:"cor" },
+  { id:"casa_verde",    cat:"cor",     icon:"🏠", nome:"Casa Verde",      desc:"Harmonia com a natureza",    preco:40,  xp:30, exclusivo:"cor" },
+  { id:"telhado_telha", cat:"telhado", icon:"🏘️", nome:"Telha Cerâmica",  desc:"Tradicional gaúcho",         preco:30,  xp:20, exclusivo:"telhado" },
+  { id:"telhado_metal", cat:"telhado", icon:"🏚️", nome:"Telhado Metálico",desc:"Moderno e resistente",       preco:45,  xp:25, exclusivo:"telhado" },
+  { id:"telhado_verde", cat:"telhado", icon:"🌱", nome:"Telhado Verde",   desc:"Ecológico e charmoso",       preco:65,  xp:40, exclusivo:"telhado" },
+  { id:"janela_simples",cat:"janela",  icon:"🪟", nome:"Janela Simples",  desc:"Clean e funcional",          preco:20,  xp:15 },
+  { id:"janela_arco",   cat:"janela",  icon:"🪟", nome:"Janela Arco",     desc:"Arquitetura clássica",       preco:35,  xp:20 },
+  { id:"porta_madeira", cat:"porta",   icon:"🚪", nome:"Porta de Madeira",desc:"Calorosa e rústica",         preco:25,  xp:15, exclusivo:"porta" },
+  { id:"porta_vidro",   cat:"porta",   icon:"🚪", nome:"Porta de Vidro",  desc:"Moderna e iluminada",        preco:45,  xp:25, exclusivo:"porta" },
+  { id:"porta_arco",    cat:"porta",   icon:"🚪", nome:"Porta em Arco",   desc:"Romântica e encantada",      preco:55,  xp:35, exclusivo:"porta" },
+  { id:"calcada_pedra", cat:"entrada", icon:"🪨", nome:"Calçada de Pedra",desc:"Charme natural",             preco:20,  xp:15, exclusivo:"entrada" },
+  { id:"calcada_tijolo",cat:"entrada", icon:"🧱", nome:"Calçada de Tijolo",desc:"Estilo colonial gaúcho",    preco:25,  xp:18, exclusivo:"entrada" },
 ];
 
 const LOJA_JARDIM = [
-  { id:"cerca_madeira", cat:"cerca",  icon:"🪵", nome:"Cerca de Madeira",  desc:"Simples e charmosa",        preco:35, xp:12, exclusivo:"cerca" },
-  { id:"cerca_ferro",   cat:"cerca",  icon:"⚙️", nome:"Cerca de Ferro",    desc:"Elegante e segura",         preco:65, xp:20, exclusivo:"cerca" },
-  { id:"cerca_viva",    cat:"cerca",  icon:"🌿", nome:"Cerca Viva",        desc:"Verde e natural",           preco:50, xp:18, exclusivo:"cerca" },
-  { id:"roseiras",      cat:"planta", icon:"🌹", nome:"Roseiras",          desc:"Jardim romântico",          preco:30, xp:10 },
-  { id:"girassois",     cat:"planta", icon:"🌻", nome:"Girassóis",         desc:"Alegria e calor",           preco:20, xp:8  },
-  { id:"lavanda",       cat:"planta", icon:"💜", nome:"Lavanda",           desc:"Cheiro maravilhoso",        preco:25, xp:9  },
-  { id:"arvorezinha",   cat:"planta", icon:"🌳", nome:"Arvorezinha",       desc:"Sombra e frescor",          preco:55, xp:20 },
-  { id:"fonte",         cat:"detalhe",icon:"⛲", nome:"Fontezinha",        desc:"Som da água no jardim",     preco:80, xp:28 },
-  { id:"banco",         cat:"detalhe",icon:"🪑", nome:"Banco de Jardim",   desc:"Pra sentar juntos",         preco:40, xp:14 },
-  { id:"iluminacao",    cat:"detalhe",icon:"🪔", nome:"Luminárias",        desc:"Casa iluminada à noite",    preco:45, xp:15 },
+  { id:"cerca_madeira", cat:"cerca",  icon:"🪵", nome:"Cerca de Madeira",  desc:"Simples e charmosa",        preco:15, xp:12, exclusivo:"cerca" },
+  { id:"cerca_ferro",   cat:"cerca",  icon:"⚙️", nome:"Cerca de Ferro",    desc:"Elegante e segura",         preco:30, xp:20, exclusivo:"cerca" },
+  { id:"cerca_viva",    cat:"cerca",  icon:"🌿", nome:"Cerca Viva",        desc:"Verde e natural",           preco:25, xp:18, exclusivo:"cerca" },
+  { id:"roseiras",      cat:"planta", icon:"🌹", nome:"Roseiras",          desc:"Jardim romântico",          preco:15, xp:10 },
+  { id:"girassois",     cat:"planta", icon:"🌻", nome:"Girassóis",         desc:"Alegria e calor",           preco:10, xp:8  },
+  { id:"lavanda",       cat:"planta", icon:"💜", nome:"Lavanda",           desc:"Cheiro maravilhoso",        preco:12, xp:9  },
+  { id:"arvorezinha",   cat:"planta", icon:"🌳", nome:"Arvorezinha",       desc:"Sombra e frescor",          preco:25, xp:20 },
+  { id:"fonte",         cat:"detalhe",icon:"⛲", nome:"Fontezinha",        desc:"Som da água no jardim",     preco:40, xp:28 },
+  { id:"banco",         cat:"detalhe",icon:"🪑", nome:"Banco de Jardim",   desc:"Pra sentar juntos",         preco:20, xp:14 },
+  { id:"iluminacao",    cat:"detalhe",icon:"🪔", nome:"Luminárias",        desc:"Casa iluminada à noite",    preco:20, xp:15 },
 ];
 
 const LOJA_INTERIOR = [
-  { id:"sofa",           cat:"sala",    icon:"🛋️", nome:"Sofá do Casal",      desc:"Pra ver séries juntos",    preco:90,  xp:30 },
-  { id:"tv",             cat:"sala",    icon:"📺", nome:"TV na parede",        desc:"Filmes e maratonas",       preco:120, xp:35 },
-  { id:"tapete",         cat:"sala",    icon:"🟫", nome:"Tapete Persa",        desc:"Aconchego no chão",        preco:50,  xp:18 },
-  { id:"quadros",        cat:"sala",    icon:"🖼️", nome:"Quadros de Arte",     desc:"Emilly escolheu cada um",  preco:60,  xp:20 },
-  { id:"plantas_sala",   cat:"sala",    icon:"🪴", nome:"Plantas na Sala",     desc:"Verde dentro de casa",     preco:35,  xp:12 },
-  { id:"cozinha_moveis", cat:"cozinha", icon:"🍳", nome:"Armários & Bancada",  desc:"Projeto de Emilly",        preco:200, xp:60 },
-  { id:"mesa_jantar",    cat:"cozinha", icon:"🍽️", nome:"Mesa de Jantar",      desc:"Café da manhã todo dia",   preco:80,  xp:25 },
-  { id:"cama_casal",     cat:"quarto",  icon:"🛏️", nome:"Cama de Casal",       desc:"O cantinho de vocês",      preco:150, xp:45 },
-  { id:"guarda_roupa",   cat:"quarto",  icon:"🪞", nome:"Guarda-Roupa",        desc:"Espaço pra tudo",          preco:100, xp:30 },
-  { id:"escrivaninha",   cat:"quarto",  icon:"💻", nome:"Escrivaninha",         desc:"Pietro programa daqui",    preco:70,  xp:22 },
-  { id:"home_office",    cat:"especial",icon:"🖥️", nome:"Home Office",         desc:"Pietro trabalha de casa",  preco:180, xp:55 },
-  { id:"studio_emilly",  cat:"especial",icon:"📐", nome:"Studio de Design",    desc:"O ateliê da Emilly",       preco:180, xp:55 },
-  { id:"banheira",       cat:"especial",icon:"🛁", nome:"Banheira",            desc:"Fim de semana especial",   preco:160, xp:48 },
+  { id:"sofa",           cat:"sala",    icon:"🛋️", nome:"Sofá do Casal",      desc:"Pra ver séries juntos",    preco:45,  xp:30 },
+  { id:"tv",             cat:"sala",    icon:"📺", nome:"TV na parede",        desc:"Filmes e maratonas",       preco:60,  xp:35 },
+  { id:"tapete",         cat:"sala",    icon:"🟫", nome:"Tapete Persa",        desc:"Aconchego no chão",        preco:25,  xp:18 },
+  { id:"quadros",        cat:"sala",    icon:"🖼️", nome:"Quadros de Arte",     desc:"Emilly escolheu cada um",  preco:30,  xp:20 },
+  { id:"plantas_sala",   cat:"sala",    icon:"🪴", nome:"Plantas na Sala",     desc:"Verde dentro de casa",     preco:15,  xp:12 },
+  { id:"cozinha_moveis", cat:"cozinha", icon:"🍳", nome:"Armários & Bancada",  desc:"Projeto de Emilly",        preco:100, xp:60 },
+  { id:"mesa_jantar",    cat:"cozinha", icon:"🍽️", nome:"Mesa de Jantar",      desc:"Café da manhã todo dia",   preco:40,  xp:25 },
+  { id:"cama_casal",     cat:"quarto",  icon:"🛏️", nome:"Cama de Casal",       desc:"O cantinho de vocês",      preco:75,  xp:45 },
+  { id:"guarda_roupa",   cat:"quarto",  icon:"🪞", nome:"Guarda-Roupa",        desc:"Espaço pra tudo",          preco:50,  xp:30 },
+  { id:"escrivaninha",   cat:"quarto",  icon:"💻", nome:"Escrivaninha",         desc:"Pietro programa daqui",    preco:35,  xp:22 },
+  { id:"home_office",    cat:"especial",icon:"🖥️", nome:"Home Office",         desc:"Pietro trabalha de casa",  preco:90,  xp:55 },
+  { id:"studio_emilly",  cat:"especial",icon:"📐", nome:"Studio de Design",    desc:"O ateliê da Emilly",       preco:90,  xp:55 },
+  { id:"banheira",       cat:"especial",icon:"🛁", nome:"Banheira",            desc:"Fim de semana especial",   preco:80,  xp:48 },
 ];
 
 const GATOS_ADOCAO = [
@@ -347,10 +347,10 @@ function renderEarnList(){
   const today=todayStr(); const earned=ps.earnedToday?.date===today?ps.earnedToday:{};
   const quizDone=ps.quiz?.lastDate===today;
   const list=[
-    {key:"quiz",label:"📝 Quiz diário",amt:15},
-    {key:"mood",label:"😊 Registrar humor",amt:5},
-    {key:"location",label:"📍 Compartilhar localização",amt:8},
-    {key:"mural",label:"💌 Mensagem no mural",amt:5}
+    {key:"quiz",label:"📝 Quiz diário",amt:30},
+    {key:"mood",label:"😊 Registrar humor",amt:15},
+    {key:"location",label:"📍 Compartilhar localização",amt:20},
+    {key:"mural",label:"💌 Mensagem no mural",amt:15}
   ];
   const wrap=document.getElementById("home-earn-list"); if(!wrap)return;
   wrap.innerHTML=list.map(item=>{
@@ -833,15 +833,15 @@ window._homeAnswerQuiz=function(idx,btn){
   document.querySelectorAll(".quiz-option").forEach(b=>b.disabled=true);
   document.querySelectorAll(".quiz-option")[_currentQ.ans].classList.add("correct");
   if(!correct)btn.classList.add("wrong");
-  const fb=document.getElementById("quiz-feedback"); if(fb){ fb.className=`quiz-feedback show ${correct?"correct":"wrong"}`; fb.textContent=correct?`✓ Correto! +15 🪙 para a casinha!`:`✗ Era "${_currentQ.opts[_currentQ.ans]}" — mas tudo bem!`; }
+  const fb=document.getElementById("quiz-feedback"); if(fb){ fb.className=`quiz-feedback show ${correct?"correct":"wrong"}`; fb.textContent=correct?`✓ Correto! +30 🪙 para a casinha!`:`✗ Era "${_currentQ.opts[_currentQ.ans]}" — mas tudo bem!`; }
   if(!ps.quiz)ps.quiz={}; ps.quiz.lastDate=today;
   _quizLastDateLocal[_quizPerson]=today; // FIX-BUG2: cache local — sobrevive ao snapshot do Firebase
   // Marca quiz como feito hoje independente de acertar ou errar
   if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location_pietro:false,location_emilly:false,mural:false,quiz:false};
   ps.earnedToday.quiz=true;
   if(correct){
-    ps.coins+=15;
-    spawnCoinPop(15,window.innerWidth/2-30,window.innerHeight/3);
+    ps.coins+=30;
+    spawnCoinPop(30,window.innerWidth/2-30,window.innerHeight/3);
     if(ps.pet?.adopted){ ps.pet.happy=Math.min(100,ps.pet.happy+10); renderPet(); }
   }
   saveState(); renderCoins(); renderEarnList();
