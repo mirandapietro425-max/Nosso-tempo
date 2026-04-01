@@ -34,7 +34,7 @@ function _renderGameCards() {
   const grid = document.getElementById('games-grid');
   if (!grid) return;
   grid.innerHTML = CATALOG.map(g => `
-    <div class="game-card" onclick="window._openGame('${g.id}')">
+    <div class="game-card" data-game-id="${g.id}" onclick="window._openGame(this.dataset.gameId)">
       <span class="game-badge duo">👥 Dupla</span>
       <span class="game-card-icon">${g.icon}</span>
       <div class="game-card-title">${g.title}</div>

@@ -26,11 +26,15 @@ let _myName      = null;       // 'pietro' | 'emilly'
 let _rtcPeer     = null;       // RTCPeerConnection
 let _localStream = null;       // getUserMedia stream
 let _chatInput   = null;       // ref ao input
-let _emojiOpen   = false;
-let _camOn       = false;
-let _micOn       = false;
-let _isHost      = false;
-let _sessionId   = null;
+let _emojiOpen          = false;
+let _camOn              = false;
+let _micOn              = false;
+let _isHost             = false;
+let _sessionId          = null;
+let _inviteDismissTimer = null;  // FIX BUG-5: timer como variável de módulo (não como prop de função)
+let _lastKnownStatus   = null;  // BUG-W1/W3 FIX: rastreia transição de status (evita msg "entrou" repetida)
+let _lastReactionTs    = 0;     // BUG-W2 FIX: rastreia timestamp da última reação (evita floating loop)
+let _lastSyncTs        = 0;     // rastreia timestamp do último videoSync processado
 
 const EMOJIS_CINEMA = [
   '😂','😭','😱','🥹','❤️','💙','💗','🔥','👏','😍',
@@ -71,6 +75,41 @@ export function initWatchParty(db, myName) {
   window._wpToggleEmoji = _toggleEmojiPicker;
   window._wpSendPhoto = _triggerPhotoUpload;
   window._wpEndSession = _endSession;
+
+  // FIX BUG-8: para câmera/mic ao fechar a aba (sem isso a câmera fica ligada indefinidamente)
+  window.addEventListener('beforeunload', () => {
+    _localStream?.getTracks().forEach(t => t.stop());
+  });
+
+  // ── HOOKS DE SINCRONIZAÇÃO DE VÍDEO ──────────────────────────────────────
+  // Recebe evento do cinema.js quando o host abre/troca conteúdo.
+  // cinema.js chama estes hooks após _renderModal() / _buildPlayer().
+  window._wpOnCinemaOpen = async function (itemId, epIdx, serverIdx) {
+    if (!_db || !_isHost || !_sessionId) return;
+    try {
+      await setDoc(_wpDoc, {
+        videoSync: { action: 'open', itemId, epIdx, serverIdx, updatedAt: Date.now() },
+      }, { merge: true });
+    } catch(e) {}
+  };
+
+  window._wpOnCinemaEpSwitch = async function (epIdx) {
+    if (!_db || !_isHost || !_sessionId) return;
+    try {
+      await setDoc(_wpDoc, {
+        videoSync: { action: 'ep', epIdx, updatedAt: Date.now() },
+      }, { merge: true });
+    } catch(e) {}
+  };
+
+  window._wpOnServerChange = async function (serverIdx) {
+    if (!_db || !_isHost || !_sessionId) return;
+    try {
+      await setDoc(_wpDoc, {
+        videoSync: { action: 'server', serverIdx, updatedAt: Date.now() },
+      }, { merge: true });
+    } catch(e) {}
+  };
 }
 
 /* ────────────────────────────────────────────
@@ -522,6 +561,8 @@ async function _checkExistingSession() {
       const data = snap.data();
       _sessionId = data.sessionId;
       _isHost    = data.host === _myName;
+      // FIX: pré-popula _lastKnownStatus para evitar mensagem "entrou!" espúria ao reconectar
+      _lastKnownStatus = 'active';
       _showChatUI();
       _subscribeSession();
       _renderMessages(data.messages || []);
@@ -595,7 +636,13 @@ function _listenForInvite() {
     const data = snap.data();
     // Só exibe se for para MIM (i.e. eu NÃO sou quem enviou)
     if (data.status !== 'pending') return;
-    if (data.from === _myName) return; // não notifica quem convidou
+    // FIX BUG-1: _myName pode ser null se pe_active_player não estava no localStorage no boot.
+    // Tenta resolver aqui antes de descartar — o usuário pode ter feito login depois do init.
+    if (!_myName) {
+      try { _myName = localStorage.getItem('pe_active_player') || null; } catch {}
+    }
+    if (!_myName) return;               // ainda null → não sabemos quem somos, ignora
+    if (data.from === _myName) return;  // não notifica quem convidou
 
     const notif = document.getElementById('wp-notif');
     if (!notif) return;
@@ -608,15 +655,17 @@ function _listenForInvite() {
 
     notif.classList.add('show');
 
-    // FIX Bug WP1: armazena o timer para poder cancelar ao aceitar/recusar
-    clearTimeout(_listenForInvite._dismissTimer);
-    _listenForInvite._dismissTimer = setTimeout(() => notif.classList.remove('show'), 30000);
+    // FIX BUG-5: usa variável de módulo _inviteDismissTimer (não prop de função)
+    clearTimeout(_inviteDismissTimer);
+    _inviteDismissTimer = setTimeout(() => notif.classList.remove('show'), 30000);
   }, () => {});
 }
 
 async function _acceptInvite() {
   const notif = document.getElementById('wp-notif');
   notif?.classList.remove('show');
+  clearTimeout(_inviteDismissTimer);   // FIX BUG-5
+  _inviteDismissTimer = null;
 
   _isHost = false;
   try {
@@ -628,6 +677,8 @@ async function _acceptInvite() {
     await setDoc(_wpDoc, { status: 'active', guest: _myName }, { merge: true });
     await setDoc(_notifDoc, { status: 'accepted' }, { merge: true });
 
+    // FIX: pré-popula _lastKnownStatus — o guest mesmo acaba de entrar, não precisa de notificação de transição
+    _lastKnownStatus = 'active';
     _openPanel();
     _showChatUI();
     _subscribeSession();
@@ -639,6 +690,8 @@ async function _acceptInvite() {
 
 async function _declineInvite() {
   document.getElementById('wp-notif')?.classList.remove('show');
+  clearTimeout(_inviteDismissTimer);   // FIX BUG-5
+  _inviteDismissTimer = null;
   try {
     await setDoc(_notifDoc, { status: 'declined' }, { merge: true });
   } catch(e) {}
@@ -655,8 +708,13 @@ function _subscribeSession() {
     if (!snap.exists()) return;
     const data = snap.data();
 
-    // Parceiro entrou
-    if (data.status === 'active' && _isHost) {
+    // BUG-W1/W3 FIX: só executa ações de transição quando o status MUDA, não a cada snapshot.
+    // Sem isso: toda mensagem do chat dispara "entrou!" de novo e chama _showChatUI repetidamente.
+    const prevStatus = _lastKnownStatus;
+    _lastKnownStatus = data.status;
+
+    if (data.status === 'active' && _isHost && prevStatus !== 'active') {
+      // Transição waiting → active: parceiro acabou de entrar
       _showChatUI();
       const dot = document.getElementById('wp-status-dot');
       if (dot) dot.className = 'wp-status-dot connected';
@@ -666,9 +724,25 @@ function _subscribeSession() {
 
     _renderMessages(data.messages || []);
 
-    // Reações recentes
+    // BUG-W2 FIX: usa timestamp da reação para evitar re-flutuar a mesma em cada snapshot.
+    // Sem isso: cada nova mensagem do chat re-dispara a última reação do parceiro.
     if (data.lastReaction && data.lastReaction.from !== _myName) {
-      _spawnFloatingReaction(data.lastReaction.emoji);
+      const reactionTs = data.lastReaction.ts || 0;
+      if (reactionTs > _lastReactionTs) {
+        _lastReactionTs = reactionTs;
+        _spawnFloatingReaction(data.lastReaction.emoji);
+      }
+    }
+
+    // ── SINCRONIZAÇÃO DE VÍDEO (para o guest) ────────────────────────────
+    if (!_isHost && data.videoSync) {
+      const vs = data.videoSync;
+      const lastSyncTs = _lastSyncTs;
+      // Evita processar o mesmo evento duas vezes
+      if (vs.updatedAt && vs.updatedAt > lastSyncTs) {
+        _lastSyncTs = vs.updatedAt;
+        _handleVideoSync(vs);
+      }
     }
 
     // Sessão encerrada pelo outro
@@ -676,6 +750,65 @@ function _subscribeSession() {
       _onSessionEnded(false);
     }
   }, () => {});
+}
+
+/* ────────────────────────────────────────────
+   SINCRONIZAÇÃO DE VÍDEO (guest recebe, host envia via cinema.js hooks)
+──────────────────────────────────────────── */
+function _handleVideoSync(vs) {
+  if (vs.action === 'open' && vs.itemId) {
+    // Mostra notificação no chat + toast com botão de sincronizar
+    _appendStatusMsg(`🎬 ${_myName === 'pietro' ? 'Emilly' : 'Pietro'} abriu um conteúdo novo`);
+    _showSyncToast(vs);
+  } else if (vs.action === 'ep' && vs.epIdx != null) {
+    _appendStatusMsg(`▶ Episódio ${vs.epIdx + 1} selecionado pelo host`);
+    _showSyncToast(vs);
+  } else if (vs.action === 'server') {
+    // Troca de servidor é silenciosa — aplica direto se o modal estiver aberto
+    if (typeof window._cinemaSelectServer === 'function' && vs.serverIdx != null) {
+      window._cinemaSelectServer(vs.serverIdx);
+    }
+  }
+}
+
+function _showSyncToast(vs) {
+  // Remove toast anterior se existir
+  document.getElementById('wp-sync-toast')?.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'wp-sync-toast';
+  toast.style.cssText = `
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+    background:linear-gradient(135deg,#1a0510,#2d0a1a);
+    border:1px solid rgba(232,83,111,0.4); border-radius:16px;
+    padding:10px 16px; display:flex; align-items:center; gap:10px;
+    z-index:10600; font-family:'DM Sans',sans-serif; font-size:0.8rem;
+    color:white; box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    animation:wpMsgIn 0.3s ease;
+  `;
+  toast.innerHTML = `
+    <span>🎬 Sincronizar com o host?</span>
+    <button style="background:linear-gradient(135deg,#e8536f,#c73a57);color:white;border:none;
+      border-radius:12px;padding:5px 12px;font-size:0.75rem;font-weight:700;cursor:pointer;"
+      id="wp-sync-btn">Sincronizar</button>
+    <button style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);border:none;
+      border-radius:12px;padding:5px 10px;font-size:0.75rem;cursor:pointer;"
+      id="wp-sync-dismiss">✕</button>
+  `;
+  document.body.appendChild(toast);
+
+  document.getElementById('wp-sync-btn').addEventListener('click', () => {
+    toast.remove();
+    if (vs.action === 'open' && vs.itemId && typeof window._openCinemaItem === 'function') {
+      window._openCinemaItem(vs.itemId);
+    } else if (vs.action === 'ep' && vs.epIdx != null && typeof window._cinemaSwitchEp === 'function') {
+      window._cinemaSwitchEp(vs.epIdx);
+    }
+  });
+  document.getElementById('wp-sync-dismiss').addEventListener('click', () => toast.remove());
+
+  // Auto-remove após 20s
+  setTimeout(() => toast.remove(), 20000);
 }
 
 /* ────────────────────────────────────────────
@@ -790,7 +923,10 @@ function _renderMessages(messages) {
   // Renderiza apenas mensagens novas (evita re-render total)
   const rendered = new Set(Array.from(chat.querySelectorAll('[data-msg-id]')).map(el => el.dataset.msgId));
 
-  messages.forEach(msg => {
+  // FIX BUG-6: ordena por timestamp antes de renderizar (evita mensagens fora de ordem por race condition)
+  const sorted = [...messages].sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
+  sorted.forEach(msg => {
     if (rendered.has(msg.id)) return;
     const isMine = msg.from === _myName;
     const div = document.createElement('div');
@@ -801,11 +937,17 @@ function _renderMessages(messages) {
       div.innerHTML = `<div class="wp-msg-bubble">${msg.text}</div>`;
     } else if (msg.type === 'photo') {
       div.className = `wp-msg wp-msg--${isMine ? 'mine' : 'other'}`;
+      // FIX BUG-7: URL do usuário não pode ser interpolada em atributos HTML (XSS).
+      // Usa setAttribute + addEventListener para isolar o valor da URL.
+      const safeUrl = _escapeHtml(msg.text);
       div.innerHTML = `
         <div class="wp-msg-author">${isMine ? 'Você' : (msg.from === 'pietro' ? 'Pietro 💙' : 'Emilly 💗')}</div>
-        <img src="${msg.text}" class="wp-msg-photo" onclick="window.open('${msg.text}','_blank')" loading="lazy">
+        <img src="${safeUrl}" class="wp-msg-photo" loading="lazy">
         <div class="wp-msg-time">${_formatTime(msg.ts)}</div>
       `;
+      div.querySelector('img').addEventListener('click', function () {
+        window.open(msg.text, '_blank', 'noopener,noreferrer');
+      });
     } else {
       div.className = `wp-msg wp-msg--${isMine ? 'mine' : 'other'}`;
       div.innerHTML = `
@@ -851,8 +993,8 @@ async function _toggleCam() {
   const btn = document.getElementById('wp-cam-btn');
 
   if (_camOn) {
-    // Desliga
-    _localStream?.getTracks().filter(t => t.kind === 'video').forEach(t => t.stop());
+    // FIX BUG-13/14: para tracks de vídeo com .stop() (libera hardware), não só .enabled=false
+    _localStream?.getVideoTracks().forEach(t => { t.stop(); _localStream.removeTrack(t); });
     _camOn = false;
     if (btn) { btn.classList.remove('active'); btn.textContent = '📷'; }
     const vid = document.getElementById('wp-video-mine');
@@ -862,6 +1004,11 @@ async function _toggleCam() {
   }
 
   try {
+    // FIX BUG-13: para stream anterior completo antes de criar novo
+    if (_localStream) {
+      _localStream.getTracks().forEach(t => t.stop());
+      _localStream = null;
+    }
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: _micOn });
     _localStream = stream;
     _camOn = true;
@@ -879,7 +1026,8 @@ async function _toggleMic() {
   const btn = document.getElementById('wp-mic-btn');
 
   if (_micOn) {
-    _localStream?.getTracks().filter(t => t.kind === 'audio').forEach(t => { t.enabled = false; });
+    // FIX BUG-14: track.stop() libera o hardware; track.enabled=false apenas silencia mas mantém a câmera acesa
+    _localStream?.getAudioTracks().forEach(t => { t.stop(); _localStream?.removeTrack(t); });
     _micOn = false;
     if (btn) { btn.classList.remove('active'); btn.classList.add('muted'); btn.textContent = '🔇'; }
     return;
@@ -971,7 +1119,12 @@ async function _endSession() {
 }
 
 function _onSessionEnded(byMe) {
-  if (_unsub) { _unsub(); _unsub = null; }
+  if (_unsub)      { _unsub();      _unsub      = null; }
+  if (_unsubNotif) { _unsubNotif(); _unsubNotif = null; }  // FIX BUG-15: limpa listener de convite
+  _lastSyncTs      = 0;  // reseta para não bloquear eventos da próxima sessão
+  _lastKnownStatus = null;
+  _lastReactionTs  = 0;
+
   _localStream?.getTracks().forEach(t => t.stop());
   _localStream = null;
   _camOn = false; _micOn = false;
@@ -981,6 +1134,9 @@ function _onSessionEnded(byMe) {
     _closePanel();
   }
   _resetUI();
+
+  // Reativa listener de convite para próxima sessão (com pequeno delay para evitar loop)
+  if (_db) setTimeout(() => _listenForInvite(), 600);
 }
 
 function _resetUI() {

@@ -36,34 +36,34 @@ const PLAYER_SERVERS = [
   },
   {
     name: '🇧🇷 Dub 2', label: 'SuperFlixAPI .run — Dublado PT-BR', type: 'dub',
-    // Espelho oficial mais estável da SuperFlixAPI
     movie : (id)       => `https://superflixapi.run/filme/${id}/`,
     tv    : (id, s, e) => `https://superflixapi.run/serie/${id}/${s}/${e}/`,
     hasParams: false,
   },
   {
-    name: '🇧🇷 Dub 3', label: 'SuperFlixAPI .my — Dublado PT-BR', type: 'dub',
+    name: '🇧🇷 Dub 3', label: 'SuperFlixAPI .top — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://superflixapi.top/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.top/serie/${id}/${s}/${e}/`,
+    hasParams: false,
+  },
+  {
+    name: '🇧🇷 Dub 4', label: 'SuperFlixAPI .my — Dublado PT-BR', type: 'dub',
     movie : (id)       => `https://superflixapi.my/filme/${id}/`,
     tv    : (id, s, e) => `https://superflixapi.my/serie/${id}/${s}/${e}/`,
     hasParams: false,
   },
   {
-    name: '🇧🇷 Dub 4', label: 'WarezCDN — Dublado PT-BR', type: 'dub',
-    // CDN BR com +250k vídeos, aceita TMDB ID
-    movie : (id)       => `https://warezcdn.site/filme/${id}/`,
-    tv    : (id, s, e) => `https://warezcdn.site/serie/${id}/${s}/${e}/`,
+    // BUG-P4 FIX: warezcdn.site estava morto → domínio ativo
+    name: '🇧🇷 Dub 5', label: 'WarezCDN — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://warezcdn.com.br/filme/${id}/`,
+    tv    : (id, s, e) => `https://warezcdn.com.br/serie/${id}/${s}/${e}/`,
     hasParams: false,
   },
   {
-    name: '🇧🇷 Dub 5', label: 'UltraEmbed — Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://ultraembed.com/filme/${id}`,
-    tv    : (id, s, e) => `https://ultraembed.com/serie/${id}/${s}/${e}`,
-    hasParams: false,
-  },
-  {
-    name: '🇧🇷 Dub 6', label: 'SuperFlixAPI .top — Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://superflixapi.top/filme/${id}/`,
-    tv    : (id, s, e) => `https://superflixapi.top/serie/${id}/${s}/${e}/`,
+    // BUG-P4 FIX: ultraembed.com era instável → substituído por embedder BR estável
+    name: '🇧🇷 Dub 6', label: 'CineEmbed — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://cineembed.com/embed/${id}`,
+    tv    : (id, s, e) => `https://cineembed.com/embed/${id}/${s}/${e}`,
     hasParams: false,
   },
   // ── LEGENDADO PT-BR ───────────────────────────────────────────────────────
@@ -74,13 +74,18 @@ const PLAYER_SERVERS = [
     hasParams: true,
   },
   {
+    // BUG-P5 FIX: vidsrc.me está fora do ar — domínio correto atual é vidsrc.cc
     name: '🔤 Leg 2', label: 'VidSrc — Legendado', type: 'sub',
-    movie : (id)       => `https://vidsrc.me/embed/movie/${id}`,
-    tv    : (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
+    movie : (id)       => `https://vidsrc.cc/v2/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
 ];
-const PLAYER_TIMEOUT_MS = 12000;
+// Timeout por tipo de servidor:
+// Servidores dublados PT-BR têm 8s (são muitos, auto-fallback rápido)
+// Servidores legendados e YouTube têm 15s (mais tempo para CDN carregar)
+const PLAYER_TIMEOUT_DUB_MS = 8_000;
+const PLAYER_TIMEOUT_SUB_MS = 15_000;
 
 /* ══════════════════════════════════════════════
    CATÁLOGO
@@ -608,9 +613,11 @@ function _buildPlayerSrc(item, epIdx, serverIdx) {
       // Usa episódios dinâmicos do TMDB se disponíveis, senão cai no estático
       const episodes = _dynamicEpisodes || item.episodes;
       const ep       = episodes ? episodes[epIdx] : null;
-      const s        = ep?.season   || null;
-      const e        = ep?.episode  || null;
-      const [sf, ef] = (s && e) ? [s, e] : _parseSeasonEpisode(ep?.title);
+      // BUG-P1 FIX: ep?.episode || null falha quando episode=0 (episódio piloto).
+      // Usar ?? null em vez de || null para não tratar 0 como falsy.
+      const s        = ep?.season   ?? null;
+      const e        = ep?.episode  ?? null;
+      const [sf, ef] = (s != null && e != null) ? [s, e] : _parseSeasonEpisode(ep?.title);
       // BUG FIX: passa dynEp para getResumeTime para doramas/animações sem episodes[]
       const dynEp = (ep?.season != null && ep?.episode != null) ? { season: ep.season, episode: ep.episode } : null;
       const rt    = getResumeTime(item, epIdx, dynEp);
@@ -650,8 +657,9 @@ function _buildPlayer(item, epIdx) {
   const src = _buildPlayerSrc(item, epIdx, _serverIdx);
   if (!src) { _showPlayerError(playerEl, item); return; }
 
-  const isDubServer = PLAYER_SERVERS[_serverIdx]?.type === 'dub';
-  const serverName  = PLAYER_SERVERS[_serverIdx]?.name || 'YouTube';
+  const isDubServer  = PLAYER_SERVERS[_serverIdx]?.type === 'dub';
+  const serverName   = PLAYER_SERVERS[_serverIdx]?.name || 'YouTube';
+  const isLastServer = _serverIdx >= PLAYER_SERVERS.length; // YouTube é o fallback final
 
   // Loading skeleton
   const skeleton = document.createElement('div');
@@ -667,10 +675,14 @@ function _buildPlayer(item, epIdx) {
   playerEl.appendChild(skeleton);
 
   const iframe = _createIframe(src, item.title);
+
+  // BUG-P2 FIX: iframe.onload em iframes cross-origin dispara SEMPRE — mesmo quando o
+  // servidor retorna erro, página em branco ou redireciona. Não é confiável para detectar
+  // sucesso real. Usamos apenas para remover o skeleton visual; o timeout cuida do fallback.
+  // BUG-P3 FIX: onload NÃO cancela mais o timeout — servidor pode retornar HTML vazio/quebrado.
   iframe.onload = () => {
     const sk = document.getElementById('cinema-player-skeleton');
     if (sk) sk.remove();
-    if (_playerTimeout) { clearTimeout(_playerTimeout); _playerTimeout = null; }
 
     // Badge PT-BR aparece por 4s após carregar
     if (isDubServer) {
@@ -682,12 +694,22 @@ function _buildPlayer(item, epIdx) {
     }
   };
 
-  // Timeout de 12s → botão trocar servidor
+  // BUG-P6 FIX: timeout avança AUTOMATICAMENTE para o próximo servidor (auto-fallback)
+  // em vez de exigir clique manual do usuário. Se já está no último (YouTube), mostra retry.
   _playerTimeout = setTimeout(() => {
     const sk = document.getElementById('cinema-player-skeleton');
     if (sk) sk.remove();
-    _showServerRetryButton(playerEl, item, epIdx);
-  }, PLAYER_TIMEOUT_MS);
+
+    if (!isLastServer) {
+      // Auto-avança para o próximo servidor silenciosamente
+      _serverIdx = Math.min(_serverIdx + 1, PLAYER_SERVERS.length);
+      _renderServerPanel(); // atualiza botões de servidor na UI
+      _buildPlayer(item, epIdx);
+    } else {
+      // Chegou ao último fallback — mostra overlay manual
+      _showServerRetryButton(playerEl, item, epIdx);
+    }
+  }, isDubServer ? PLAYER_TIMEOUT_DUB_MS : PLAYER_TIMEOUT_SUB_MS);
 
   playerEl.appendChild(iframe);
 
@@ -712,29 +734,22 @@ function _buildPlayer(item, epIdx) {
 }
 
 function _showServerRetryButton(container, item, epIdx) {
-  const nextIdx = _serverIdx + 1;
-  // FIX: corrigido — inclui YouTube como fallback final após todos os servidores
-  const hasNext    = nextIdx <= PLAYER_SERVERS.length; // <= length permite YouTube como próximo
-  const nextName   = nextIdx < PLAYER_SERVERS.length
-    ? PLAYER_SERVERS[nextIdx].name
-    : nextIdx === PLAYER_SERVERS.length ? 'YouTube' : null;
+  // BUG-P6 FIX: esta função agora só é chamada quando chegamos ao último fallback (YouTube)
+  // ou quando o usuário clica em "tentar novamente". O auto-fallback cuida dos servidores anteriores.
   const currentName = PLAYER_SERVERS[_serverIdx]?.name || 'YouTube';
-
-  // Não mostra botão se já está no YouTube (fallback final)
-  const isAtLastServer = _serverIdx >= PLAYER_SERVERS.length;
 
   container.innerHTML = `
     <div class="cinema-server-overlay">
       <div class="cinema-server-msg">
         <div class="cinema-server-icon">⚡</div>
-        <div class="cinema-server-title">${currentName} demorou para responder</div>
-        <div class="cinema-server-sub">Tente outro servidor ou aguarde</div>
+        <div class="cinema-server-title">Nenhum servidor respondeu</div>
+        <div class="cinema-server-sub">Todos os servidores foram testados automaticamente</div>
         <div class="cinema-server-btns">
-        ${!isAtLastServer && hasNext && nextName ? `<button class="cinema-server-btn cinema-server-btn--primary" onclick="window._cinemaNextServer()">
-            Trocar para ${nextName}
-          </button>` : ''}
+          <button class="cinema-server-btn cinema-server-btn--primary" onclick="window._cinemaResetServers()">
+            🔄 Tentar do início
+          </button>
           <button class="cinema-server-btn cinema-server-btn--secondary" onclick="window._cinemaRetryServer()">
-            Tentar novamente
+            Tentar novamente (${currentName})
           </button>
         </div>
       </div>
@@ -755,6 +770,12 @@ function _showPlayerError(container, item) {
 // índice >= PLAYER_SERVERS.length cai no YouTube fallback dentro de _buildPlayerSrc
 window._cinemaNextServer = function () {
   _serverIdx = Math.min(_serverIdx + 1, PLAYER_SERVERS.length);
+  if (_currentItem) _buildPlayer(_currentItem, _currentEpIdx);
+};
+
+// Reinicia a tentativa do primeiro servidor (após todos falharem)
+window._cinemaResetServers = function () {
+  _serverIdx = 0;
   if (_currentItem) _buildPlayer(_currentItem, _currentEpIdx);
 };
 
@@ -916,6 +937,11 @@ window._openCinemaItem = async function (id /*, _tabIgnored */) {
   // Abre modal imediatamente
   _renderModal();
 
+  // HOOK Watch Party — notifica host que abriu novo conteúdo
+  if (typeof window._wpOnCinemaOpen === 'function') {
+    window._wpOnCinemaOpen(item.id, _currentEpIdx, _serverIdx);
+  }
+
   // Busca metadados TMDB em paralelo para todos (filmes e séries)
   if (item.tmdbId) {
     // Snapshot do item para detectar race condition (usuário abriu outro título durante o fetch)
@@ -1012,6 +1038,10 @@ window._cinemaSelectServer = function (idx) {
     _renderServerPanel();
     // BUG FIX: se ainda carregando episódios, mantém o spinner visível
     if (_loadingEpisodes) _renderEpisodeList();
+    // HOOK Watch Party — notifica troca de servidor
+    if (typeof window._wpOnServerChange === 'function') {
+      window._wpOnServerChange(idx);
+    }
   }
 };
 
@@ -1051,7 +1081,8 @@ function _renderEpisodeList() {
     // Agrupa por temporada
     const byseason = {};
     episodes.forEach((ep, i) => {
-      const s = ep.season || 1;
+      // BUG-P7 FIX: ep.season || 1 tratava season=0 (especiais) como temporada 1
+      const s = ep.season ?? 1;
       if (!byseason[s]) byseason[s] = [];
       byseason[s].push({ ep, i });
     });
@@ -1110,6 +1141,10 @@ window._cinemaSwitchEp = function (idx) {
   _serverIdx    = 0;
   _currentEpIdx = idx;
   _renderModal(); // _renderModal já chama _renderServerPanel internamente
+  // HOOK Watch Party — notifica troca de episódio
+  if (typeof window._wpOnCinemaEpSwitch === 'function') {
+    window._wpOnCinemaEpSwitch(idx);
+  }
 };
 
 window._closeCinemaModal = function () {

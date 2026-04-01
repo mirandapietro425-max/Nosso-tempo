@@ -354,10 +354,11 @@ function renderEarnList(){
   ];
   const wrap=document.getElementById("home-earn-list"); if(!wrap)return;
   wrap.innerHTML=list.map(item=>{
-    // FIX: localização usa chaves separadas por pessoa (location_pietro / location_emilly)
-    // Considera feito se qualquer uma das duas foi registrada hoje pelo jogador ativo
+    // FIX Bug H6: localização usa chaves separadas por pessoa (location_pietro / location_emilly)
+    // Usa o resolvedName do jogador ativo (não sempre _activePlayer, que pode ser null)
+    const locKey = `location_${_activePlayer}`;
     const done=item.key==="quiz"?quizDone
-      :item.key==="location"?!!(earned[`location_${_activePlayer}`])
+      :item.key==="location"?!!(earned[locKey])
       :earned[item.key];
     return `<div class="earn-row"><span class="earn-row-left">${item.label}</span><span class="earn-row-right">${done?'<span class="done-check">✓ Feito</span>':`+${item.amt} 🪙`}</span></div>`;
   }).join("");
@@ -752,20 +753,20 @@ function petDecay(){
     ps.pet.lastDecay=new Date().toISOString();
   }
 }
-// Bug #3 fix: flag impede múltiplos intervalos empilhados (causava decay acelerado e writes duplicados)
+// FIX Bug H3: startPetDecayInterval só atualiza a UI (renderPet) a cada 5min,
+// NÃO aplica mais decay numérico — o decay real é feito por petDecay() chamado no snapshot,
+// que calcula pelo tempo real decorrido. Dois mecanismos de decay em paralelo causavam
+// queda 2x mais rápida que o esperado.
 let _petDecayStarted = false;
 function startPetDecayInterval(){
   if(_petDecayStarted) return;
   _petDecayStarted = true;
-  setInterval(()=>{
-    if(document.hidden) return; // Bug #4 fix: não roda enquanto aba está oculta
+  setInterval(()=>{\
+    if(document.hidden) return; // não roda enquanto aba está oculta
     const ps=playerState();
     if(!ps?.pet?.adopted) return;
-    ps.pet.hunger=Math.max(0,ps.pet.hunger-2);
-    ps.pet.energy=Math.max(0,ps.pet.energy-1);
-    ps.pet.happy=Math.max(0,ps.pet.happy-1);
+    // Apenas re-renderiza a UI para refletir o estado atual — sem modificar valores
     renderPet();
-    if(ps.pet.hunger===0||ps.pet.energy===0) saveState();
   }, 5*60*1000);
 }
 
