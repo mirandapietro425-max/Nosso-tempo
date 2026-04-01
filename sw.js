@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v38
+   PIETRO & EMILLY — sw.js v43
    Service Worker · Cache · Offline Support
    ═══════════════════════════════════════════════ */
 
 // Versão do cache — altere este valor ao fazer deploy para invalidar o cache antigo
-const CACHE_VERSION  = 'v38';
+const CACHE_VERSION  = 'v44';
 const CACHE_STATIC   = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC  = `pe-dynamic-${CACHE_VERSION}`;
 
@@ -28,7 +28,10 @@ const STATIC_ASSETS = [
   '/js/home.js',
   '/js/library.js',
   '/js/games.js',
+  '/js/cinema.js',
+  '/js/progress.js',
   '/css/games.css',
+  '/css/cinema.css',
   '/assets/favicon.png',
   '/assets/icon-192.png',
   '/assets/icon-512.png',

@@ -7,6 +7,7 @@
 .overlay-base {
   position: fixed; inset: 0;
   background: var(--velvet-alpha-55);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   padding: 1rem;
@@ -20,6 +21,7 @@
 .senha-overlay {
   position: fixed; inset: 0;
   background: var(--velvet-alpha-60);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   z-index: 20000;
   display: flex; align-items: center; justify-content: center; padding: 1.5rem;
@@ -72,6 +74,7 @@
 .cal-overlay {
   position: fixed; inset: 0;
   background: var(--velvet-alpha-55);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   z-index: 10001;
   display: flex; align-items: flex-start; justify-content: center; /* FIX: flex-start evita modal cortado em iOS */
@@ -137,6 +140,7 @@
 .movie-modal-overlay {
   position: fixed; inset: 0;
   background: var(--velvet-alpha-60);
+  -webkit-backdrop-filter: blur(5px);
   backdrop-filter: blur(5px);
   z-index: 10002;
   display: flex; align-items: center; justify-content: center;
@@ -243,6 +247,7 @@
 .mood-picker-overlay {
   position: fixed; inset: 0;
   background: var(--velvet-alpha-55);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   z-index: 10003;
   display: flex; align-items: flex-end; justify-content: center;

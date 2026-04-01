@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — cinema.js  v40
+   PIETRO & EMILLY — cinema.js  v42
    Nosso Cinema 🎬
    · 5 abas: Séries · Filmes · Romance · Doramas · Animação
-   · Player multi-servidor com fallback automático
-   · iframe sem sandbox (compatível com vidsrc, vidlink, 2embed, YouTube)
+   · Player multi-servidor com fallback automático — áudio/legenda PT-BR
+   · 6 servidores (prioridade PT-BR dublado)
+   · iframe sem sandbox (compatível com todos os servidores)
    · Timeout 12s + botão trocar servidor
    · Continue Assistindo (progress.js)
    · Firebase sync de assistidos
@@ -19,27 +20,51 @@ import {
 } from './progress.js';
 
 /* ══════════════════════════════════════════════
-   PLAYER — SERVIDORES MULTI-FONTE
-   Ordem: vidsrc → vidlink → 2embed → YouTube (fallback)
+   PLAYER — SERVIDORES MULTI-FONTE (PT-BR)
+   Todos configurados para priorizar áudio/legenda em português
    ══════════════════════════════════════════════ */
 const PLAYER_SERVERS = [
   {
+    // vidsrc.me — excelente cobertura de dublagem PT-BR, muito estável
     name: 'Servidor 1',
-    movie : (id)       => `https://vidsrc.me/embed/movie?tmdb=${id}`,
-    tv    : (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+    movie : (id)       => `https://vidsrc.me/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    // vidlink.pro — permite forçar idioma PT-BR no player com lang param
+    name: 'Servidor 2',
+    movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=pt-BR&primaryColor=e8536f`,
+    tv    : (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=pt-BR&primaryColor=e8536f`,
     hasParams: true,
   },
   {
-    name: 'Servidor 2',
-    movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&primaryColor=e8536f`,
-    tv    : (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&primaryColor=e8536f`,
-    hasParams: true,   // já tem query string — usar & para adicionar mais parâmetros
+    // autoembed.cc — detecta idioma do navegador automaticamente (PT-BR preferido)
+    name: 'Servidor 3',
+    movie : (id)       => `https://autoembed.cc/movie/tmdb-${id}`,
+    tv    : (id, s, e) => `https://autoembed.cc/tv/tmdb-${id}-${s}-${e}`,
+    hasParams: false,
   },
   {
-    name: 'Servidor 3',
-    movie : (id)       => `https://www.2embed.cc/embed/${id}`,
-    tv    : (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+    // embed.su — player com seletor de áudio/legenda, inclui PT-BR em muitos títulos
+    name: 'Servidor 4',
+    movie : (id)       => `https://embed.su/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
+  },
+  {
+    // vidsrc.cc — fonte extra com boa cobertura brasileira
+    name: 'Servidor 5',
+    movie : (id)       => `https://vidsrc.cc/v2/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    // multiembed.mov (SuperEmbed) — múltiplas fontes, player com seleção de legenda
+    name: 'Servidor 6',
+    movie : (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    tv    : (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+    hasParams: true,
   },
 ];
 const PLAYER_TIMEOUT_MS = 12000;
@@ -52,9 +77,87 @@ export const CINEMA_CATALOG = {
   /* ─── SÉRIES ─── */
   series: [
     {
+      id: 'game_of_thrones', title: 'Game of Thrones', genre: 'Fantasia / Drama', year: '2011–2019',
+      desc: 'Famílias nobres lutam pelo Trono de Ferro em Westeros enquanto uma ameaça gelada avança.',
+      thumb: 'https://image.tmdb.org/t/p/w500/7WUHnWGx5OrhZUsD6eABpciTp3C.jpg',
+      emoji: '👑', color: '#1a1a2e', tmdbId: 1399,
+      episodes: [
+        { title: 'T1E1 — O Inverno se Aproxima',  ytId: 'bjqUM5SLGzc' },
+        { title: 'T1E2 — A Coroa Real',            ytId: 'GgvQLbAMDjE' },
+        { title: 'T1E3 — O Caminho Real',          ytId: 'GgvQLbAMDjE' },
+        { title: 'T1E4 — A Mão do Rei',            ytId: 'GgvQLbAMDjE' },
+        { title: 'T1E5 — O Lobo e o Leão',         ytId: 'GgvQLbAMDjE' },
+      ],
+    },
+    {
+      id: 'house_dragon', title: 'A Casa do Dragão', genre: 'Fantasia / Drama', year: '2022–presente',
+      desc: 'A prequel de Game of Thrones conta a história da Casa Targaryen e a guerra civil que rasgou Westeros.',
+      thumb: 'https://image.tmdb.org/t/p/w500/z2yahl2uefxDCl0nogcRBstwruJ.jpg',
+      emoji: '🐉', color: '#8b1a1a', tmdbId: 94997,
+      episodes: [
+        { title: 'T1E1 — Herdeiros do Dragão',       ytId: 'DotnJ7tTA34' },
+        { title: 'T1E2 — O Príncipe Vadio',          ytId: 'DotnJ7tTA34' },
+        { title: 'T1E3 — Segundo de Seu Nome',       ytId: 'DotnJ7tTA34' },
+        { title: 'T1E4 — O Rei do Estreito e o Mar' ,ytId: 'DotnJ7tTA34' },
+        { title: 'T1E5 — Casamos em Segredo',        ytId: 'DotnJ7tTA34' },
+      ],
+    },
+    {
+      id: 'arcane', title: 'Arcane', genre: 'Animação / Ação', year: '2021–2024',
+      desc: 'As irmãs Vi e Jinx lutam em lados opostos de um conflito que divide a cidade utópica de Piltover.',
+      thumb: 'https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg',
+      emoji: '⚡', color: '#4a2a7a', tmdbId: 94605,
+      episodes: [
+        { title: 'T1E1 — Bem-vindo a Piltover',         ytId: 'zrPnBG33nvY' },
+        { title: 'T1E2 — Algum Mistério',               ytId: 'zrPnBG33nvY' },
+        { title: 'T1E3 — The Base Violence Necessary',  ytId: 'zrPnBG33nvY' },
+        { title: 'T1E4 — Adie o Inevitável',            ytId: 'zrPnBG33nvY' },
+        { title: 'T1E5 — Problemas Cada Vez Maiores',   ytId: 'zrPnBG33nvY' },
+      ],
+    },
+    {
+      id: 'last_of_us', title: 'The Last of Us', genre: 'Drama / Pós-Apocalíptico', year: '2023–presente',
+      desc: 'Joel escolta Ellie por uma América devastada por uma infecção fúngica que transformou humanos em monstros.',
+      thumb: 'https://image.tmdb.org/t/p/w500/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',
+      emoji: '🍄', color: '#2a3a1a', tmdbId: 100088,
+      episodes: [
+        { title: 'T1E1 — Quando Estamos em Necessidade',  ytId: 'uLtkt8BonwM' },
+        { title: 'T1E2 — Infectados',                     ytId: 'uLtkt8BonwM' },
+        { title: 'T1E3 — Há Muito Tempo',                 ytId: 'uLtkt8BonwM' },
+        { title: 'T1E4 — Por Favor, Segure a Minha Mão', ytId: 'uLtkt8BonwM' },
+        { title: 'T1E5 — Resistir e Sobreviver',          ytId: 'uLtkt8BonwM' },
+      ],
+    },
+    {
+      id: 'peaky_blinders', title: 'Peaky Blinders', genre: 'Drama / Crime', year: '2013–2022',
+      desc: 'A saga da família Shelby, liderada por Tommy Shelby, no submundo criminal da Birmingham pós-Primeira Guerra.',
+      thumb: 'https://image.tmdb.org/t/p/w500/vUUqzWa2LnHIVqkaKVn3nyfVpqT.jpg',
+      emoji: '🎩', color: '#0a0a14', tmdbId: 60574,
+      episodes: [
+        { title: 'T1E1 — Episódio 1', ytId: 'oVzOlOekRhI' },
+        { title: 'T1E2 — Episódio 2', ytId: 'oVzOlOekRhI' },
+        { title: 'T1E3 — Episódio 3', ytId: 'oVzOlOekRhI' },
+        { title: 'T1E4 — Episódio 4', ytId: 'oVzOlOekRhI' },
+        { title: 'T1E5 — Episódio 5', ytId: 'oVzOlOekRhI' },
+      ],
+    },
+    {
+      id: 'severance', title: 'Ruptura', genre: 'Ficção Científica / Suspense', year: '2022–presente',
+      desc: 'Funcionários de uma empresa submetem-se a um procedimento que separa completamente as memórias do trabalho das da vida pessoal.',
+      thumb: 'https://image.tmdb.org/t/p/w500/sJvZE7OhEYPCQVWA7mKDCnLdcD5.jpg',
+      emoji: '🧠', color: '#1a2a3a', tmdbId: 95396,
+      episodes: [
+        { title: 'T1E1 — Boas-Vindas, Sra. Cobel', ytId: 'xEQP4VVuyrY' },
+        { title: 'T1E2 — O Grande Problema',        ytId: 'xEQP4VVuyrY' },
+        { title: 'T1E3 — Em Cada Pessoa, um Deus',  ytId: 'xEQP4VVuyrY' },
+        { title: 'T1E4 — O Senhor Terrível',         ytId: 'xEQP4VVuyrY' },
+        { title: 'T1E5 — Os Caprichos de Cobel',     ytId: 'xEQP4VVuyrY' },
+      ],
+    },
+    {
       id: 'friends', title: 'Friends', genre: 'Comédia', year: '1994–2004',
       desc: 'Seis amigos em Nova York — amor, amizade e muitas risadas.',
-      thumb: 'https://img.youtube.com/vi/hDNNmeeJs1Q/hqdefault.jpg',
+      thumb: 'https://image.tmdb.org/t/p/w500/f496cm9enuEsZkSPzCwnTESEK5s.jpg',
       emoji: '☕', color: '#f4a94e', tmdbId: 1668,
       episodes: [
         { title: 'T1E1 — O Pilot',                 ytId: 'hDNNmeeJs1Q' },
@@ -67,7 +170,7 @@ export const CINEMA_CATALOG = {
     {
       id: 'black_mirror', title: 'Black Mirror', genre: 'Ficção Científica', year: '2011–presente',
       desc: 'Episódios independentes sobre o lado sombrio da tecnologia.',
-      thumb: 'https://img.youtube.com/vi/HoHFGEr3gkA/hqdefault.jpg',
+      thumb: 'https://image.tmdb.org/t/p/w500/7PRddO7z7mcPi21nZTCMGShAyy1.jpg',
       emoji: '📱', color: '#1a1a2e', tmdbId: 42009,
       episodes: [
         { title: 'T1E1 — Hino Nacional',              ytId: 'HoHFGEr3gkA' },
@@ -80,7 +183,7 @@ export const CINEMA_CATALOG = {
     {
       id: 'the_office', title: 'The Office', genre: 'Comédia', year: '2005–2013',
       desc: 'O cotidiano hilário de uma empresa de papel em Scranton, Pennsylvania.',
-      thumb: 'https://img.youtube.com/vi/LHOtME2DL4g/hqdefault.jpg',
+      thumb: 'https://image.tmdb.org/t/p/w500/qWnJzyZhyy74gjpSjIXWmuk0ifX.jpg',
       emoji: '📋', color: '#5b8dd9', tmdbId: 2316,
       episodes: [
         { title: 'T1E1 — Piloto',                ytId: 'LHOtME2DL4g' },
@@ -93,7 +196,7 @@ export const CINEMA_CATALOG = {
     {
       id: 'breaking_bad', title: 'Breaking Bad', genre: 'Drama / Suspense', year: '2008–2013',
       desc: 'Um professor de química transforma-se no maior fabricante de metanfetamina.',
-      thumb: 'https://img.youtube.com/vi/HhesaQXLuRY/hqdefault.jpg',
+      thumb: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
       emoji: '🧪', color: '#2d5a27', tmdbId: 1396,
       episodes: [
         { title: 'T1E1 — Piloto',                     ytId: 'HhesaQXLuRY' },
@@ -106,7 +209,7 @@ export const CINEMA_CATALOG = {
     {
       id: 'stranger_things_br', title: 'Stranger Things', genre: 'Ficção / Terror', year: '2016–presente',
       desc: 'Crianças enfrentam forças sobrenaturais numa cidade americana dos anos 80.',
-      thumb: 'https://img.youtube.com/vi/sj9J2ecsSpo/hqdefault.jpg',
+      thumb: 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
       emoji: '🌀', color: '#c0392b', tmdbId: 66732,
       episodes: [
         { title: 'T1E1 — O Desaparecimento de Will Byers', ytId: 'sj9J2ecsSpo' },
@@ -119,7 +222,7 @@ export const CINEMA_CATALOG = {
     {
       id: 'dark', title: 'Dark', genre: 'Ficção Científica', year: '2017–2020',
       desc: 'Viagem no tempo, paradoxos e segredos de família numa cidade alemã.',
-      thumb: 'https://img.youtube.com/vi/rrwycJ08PSQ/hqdefault.jpg',
+      thumb: 'https://image.tmdb.org/t/p/w500/apbrbWs5wheR0KSh60WPee3DoMB.jpg',
       emoji: '🌑', color: '#0d0d1a', tmdbId: 70523,
       episodes: [
         { title: 'T1E1 — Segredos',           ytId: 'rrwycJ08PSQ' },
@@ -132,7 +235,7 @@ export const CINEMA_CATALOG = {
     {
       id: 'wednesday', title: 'Wednesday', genre: 'Comédia / Terror', year: '2022–presente',
       desc: 'Wednesday Addams investiga crimes sobrenaturais na Academia Nevermore.',
-      thumb: 'https://img.youtube.com/vi/Di310WS8zLk/hqdefault.jpg',
+      thumb: 'https://image.tmdb.org/t/p/w500/9PFonBhy4cQy7Q51uActe8M0aR7.jpg',
       emoji: '🖤', color: '#1a0a1a', tmdbId: 119051,
       episodes: [
         { title: 'T1E1 — Filho de Quarta-Feira',              ytId: 'Di310WS8zLk' },
@@ -145,7 +248,7 @@ export const CINEMA_CATALOG = {
     {
       id: 'squid_game', title: 'Round 6', genre: 'Drama / Suspense', year: '2021–presente',
       desc: 'Pessoas endividadas competem em jogos infantis mortais por um prêmio enorme.',
-      thumb: 'https://img.youtube.com/vi/oqxAJKy0ii4/hqdefault.jpg',
+      thumb: 'https://image.tmdb.org/t/p/w500/dDlEmu3EZ0Pgg93K2SVNLCjCSvE.jpg',
       emoji: '🦑', color: '#e8536f', tmdbId: 93405,
       episodes: [
         { title: 'T1E1 — Luz Vermelha, Luz Verde',        ytId: 'oqxAJKy0ii4' },
@@ -155,140 +258,173 @@ export const CINEMA_CATALOG = {
         { title: 'T1E5 — Um Mundo Justo',                 ytId: '5dpFM1SWGgU' },
       ],
     },
+    {
+      id: 'euphoria', title: 'Euphoria', genre: 'Drama', year: '2019–presente',
+      desc: 'A vida turbulenta de um grupo de adolescentes lidando com drogas, relacionamentos e identidade.',
+      thumb: 'https://image.tmdb.org/t/p/w500/jtnfNzqZwN4E32FYePieblpg2bk.jpg',
+      emoji: '💊', color: '#4a1a6e', tmdbId: 85552,
+      episodes: [
+        { title: 'T1E1 — Piloto', ytId: '4GOKKRxKlqo' },
+        { title: 'T1E2 — Stuntin\' Like My Daddy', ytId: '4GOKKRxKlqo' },
+        { title: 'T1E3 — Made You Look', ytId: '4GOKKRxKlqo' },
+        { title: 'T1E4 — Shook Ones Pt. II', ytId: '4GOKKRxKlqo' },
+        { title: 'T1E5 — \'03 Bonnie & Clyde', ytId: '4GOKKRxKlqo' },
+      ],
+    },
+    {
+      id: 'succession', title: 'Succession', genre: 'Drama / Comédia', year: '2018–2023',
+      desc: 'A família Roy batalha pelo controle do maior conglomerado de mídia do mundo.',
+      thumb: 'https://image.tmdb.org/t/p/w500/7HW47XbkNQ5fiwQFYGWdw9gs144.jpg',
+      emoji: '💼', color: '#1a1a14', tmdbId: 76331,
+      episodes: [
+        { title: 'T1E1 — Piloto', ytId: 'OqPBz6GIJAM' },
+        { title: 'T1E2 — Masculinidade Frágil', ytId: 'OqPBz6GIJAM' },
+        { title: 'T1E3 — Lifeboats', ytId: 'OqPBz6GIJAM' },
+        { title: 'T1E4 — Qual é a Situação?', ytId: 'OqPBz6GIJAM' },
+        { title: 'T1E5 — I Went to Market', ytId: 'OqPBz6GIJAM' },
+      ],
+    },
   ],
 
   /* ─── FILMES ─── */
   filmes: [
-    {
-      id: 'titanic', title: 'Titanic', genre: 'Romance / Drama', year: '1997',
-      desc: 'Um amor impossível entre Jack e Rose no naufrágio do Titanic.',
-      thumb: 'https://img.youtube.com/vi/2e-eXJ6HgkQ/hqdefault.jpg',
-      emoji: '🚢', color: '#1a3a5c', tmdbId: 597, type: 'movie', ytId: '2e-eXJ6HgkQ',
-    },
-    {
-      id: 'la_la_land', title: 'La La Land: Cantando Estações', genre: 'Romance / Musical', year: '2016',
-      desc: 'Mia e Sebastian sonham com seus futuros enquanto se apaixonam em Los Angeles.',
-      thumb: 'https://img.youtube.com/vi/0pdqf4P9MB8/hqdefault.jpg',
-      emoji: '🌟', color: '#590d22', tmdbId: 313369, type: 'movie', ytId: '0pdqf4P9MB8',
-    },
-    {
-      id: 'diario_paixao', title: 'Diário de uma Paixão', genre: 'Romance / Drama', year: '2004',
-      desc: 'Noah e Allie vivem um amor que resiste ao tempo e às diferenças sociais.',
-      thumb: 'https://img.youtube.com/vi/lo7tpYBp_Fk/hqdefault.jpg',
-      emoji: '📖', color: '#7a3045', tmdbId: 11036, type: 'movie', ytId: 'lo7tpYBp_Fk',
-    },
-    {
-      id: 'interstellar', title: 'Interestelar', genre: 'Ficção Científica / Drama', year: '2014',
-      desc: 'Um ex-piloto viaja além da galáxia para salvar a humanidade.',
-      thumb: 'https://img.youtube.com/vi/zSWdZVtXT7E/hqdefault.jpg',
-      emoji: '🪐', color: '#0a0a2e', tmdbId: 157336, type: 'movie', ytId: 'zSWdZVtXT7E',
-    },
-    {
-      id: 'inception', title: 'A Origem', genre: 'Ficção Científica / Ação', year: '2010',
-      desc: 'Um ladrão especializado em roubar segredos dos sonhos recebe uma missão impossível.',
-      thumb: 'https://img.youtube.com/vi/YoHD9XEInc0/hqdefault.jpg',
-      emoji: '🌀', color: '#1a2a4a', tmdbId: 27205, type: 'movie', ytId: 'YoHD9XEInc0',
-    },
-    {
-      id: 'forrest_gump', title: 'Forrest Gump', genre: 'Drama / Comédia', year: '1994',
-      desc: 'A vida extraordinária de um homem simples que cruza momentos históricos dos EUA.',
-      thumb: 'https://img.youtube.com/vi/bLvqoHBptjg/hqdefault.jpg',
-      emoji: '🏃', color: '#4a6741', tmdbId: 13, type: 'movie', ytId: 'bLvqoHBptjg',
-    },
-    {
-      id: 'frozen', title: 'Frozen: Uma Aventura Congelante', genre: 'Animação / Fantasia', year: '2013',
-      desc: 'Anna embarca numa jornada épica para encontrar sua irmã Elsa e descongelar o reino.',
-      thumb: 'https://img.youtube.com/vi/TbQm5doF_Uc/hqdefault.jpg',
-      emoji: '❄️', color: '#2980b9', tmdbId: 109445, type: 'movie', ytId: 'TbQm5doF_Uc',
-    },
-    {
-      id: 'top_gun', title: 'Top Gun: Maverick', genre: 'Ação / Drama', year: '2022',
-      desc: 'Maverick retorna para treinar uma nova geração de pilotos de elite da Marinha.',
-      thumb: 'https://img.youtube.com/vi/qSqVVswa420/hqdefault.jpg',
-      emoji: '✈️', color: '#1c3a5e', tmdbId: 361743, type: 'movie', ytId: 'qSqVVswa420',
-    },
+    /* — Lançamentos 2025 — */
+    { id:'f_capitao5',      title:'Capitão América: Admirável Mundo Novo', genre:'Ação / Ficção Científica', year:'2025', desc:'Sam Wilson assume o escudo e enfrenta ameaças globais como o novo Capitão América.',                    emoji:'🛡️', color:'#1a3a6e', tmdbId:822119,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/pzIddUEMWhWzfvLI3TwxUG2wGoi.jpg` },
+    { id:'f_quarteto',      title:'Quarteto Fantástico: Primeiros Passos', genre:'Ação / Ficção Científica', year:'2025', desc:'Os Quatro Fantásticos surgem como os maiores heróis do planeta.',                                    emoji:'🔥', color:'#1a3a6e', tmdbId:1411196, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/ngl2FKBlU4fhbdsrtdom9LVLBXw.jpg` },
+    { id:'f_jwrecomeço',    title:'Jurassic World: Recomeço',              genre:'Aventura / Ficção',        year:'2025', desc:'Uma nova era de dinossauros começa quando a humanidade tenta recolonizar seu território.',             emoji:'🦕', color:'#1a4a1a', tmdbId:1157750, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/oAiL7XpMTHiKdSBqR9HMWUQ8jJD.jpg` },
+    { id:'f_bailarina',     title:'Bailarina',                             genre:'Ação / Thriller',          year:'2025', desc:'Uma assassina do universo de John Wick busca vingança por sua família.',                             emoji:'💃', color:'#1a1a2e', tmdbId:573435,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/lgqSZCUYkiDSLVJcqWdPQHQgDjn.jpg` },
+    { id:'f_mi_final',      title:'Missão: Impossível – O Acerto Final',   genre:'Ação / Espionagem',        year:'2025', desc:'Ethan Hunt enfrenta sua missão mais perigosa e pessoal de toda a carreira.',                         emoji:'💣', color:'#0a0a1a', tmdbId:575265,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/z53D72EAOxGRqdr7KXXWp9dJiDe.jpg` },
+    { id:'f_panico7',       title:'Pânico 7',                              genre:'Terror / Suspense',        year:'2025', desc:'O legado de Ghostface retorna com novos sustos e reviravoltas inesperadas.',                         emoji:'👻', color:'#8b0000', tmdbId:1100782, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/2zmTngn1tYC1AvfnrFLhxeD82hz.jpg` },
+    { id:'f_branca_neve',   title:'Branca de Neve',                        genre:'Fantasia / Aventura',      year:'2025', desc:'A clássica princesa Disney em uma aventura live-action mágica e cheia de cor.',                     emoji:'🍎', color:'#8b0000', tmdbId:698687,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/okBrIDMkEXjQ9xK4pLfm3cHkXXr.jpg` },
+    { id:'f_comotreinar',   title:'Como Treinar o Seu Dragão',             genre:'Aventura / Fantasia',      year:'2025', desc:'A história épica de Soluço e Banguela reimaginada em live-action deslumbrante.',                  emoji:'🐉', color:'#2a3a5c', tmdbId:1184918, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/q8eejQcg1bAqImEV8jh2RtFF3sT.jpg` },
+    /* — Lançamentos 2024 — */
+    { id:'f_wicked',        title:'Wicked',                                genre:'Musical / Fantasia',       year:'2024', desc:'Elphaba e Glinda se encontram na Universidade de Shiz e vivem uma amizade improvável.',              emoji:'🧹', color:'#2a0a3a', tmdbId:402431,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/xszTbOuTKhVm3Lm0sQjMbPpMjOR.jpg` },
+    { id:'f_moana2',        title:'Moana 2',                               genre:'Animação / Aventura',      year:'2024', desc:'Moana parte em uma nova jornada oceânica para encontrar um reino perdido de Maui.',                emoji:'🌊', color:'#1a4a6e', tmdbId:1241982, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/aLVkiINlIeCkcZIzb7XHzPYgO6L.jpg` },
+    { id:'f_gladiador2',    title:'Gladiador II',                          genre:'Ação / Drama',             year:'2024', desc:'Lúcio luta para sobreviver em Roma enquanto dois tiranos controlam o Império.',                    emoji:'⚔️', color:'#6e3a1a', tmdbId:558449,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/2cxhvwyE0RYfnm5YXH8YPUXM2AC.jpg` },
+    { id:'f_sonic3',        title:'Sonic 3: O Filme',                      genre:'Ação / Aventura',          year:'2024', desc:'Sonic, Tails e Knuckles enfrentam Shadow, um adversário misterioso e poderoso.',                   emoji:'💨', color:'#1a3a7a', tmdbId:939243,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/d8Ryb8AunYAuycVKDp5HpdWPKgC.jpg` },
+    { id:'f_mufasa',        title:'Mufasa: O Rei Leão',                    genre:'Animação / Aventura',      year:'2024', desc:'A história de origem de Mufasa, pai de Simba, revelada em uma saga épica.',                       emoji:'🦁', color:'#8b6914', tmdbId:762441,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/lurEK87kukWNaHd0zYnsi3yzJrs.jpg` },
+    { id:'f_robo_selvagem', title:'O Robô Selvagem',                       genre:'Animação / Drama',         year:'2024', desc:'Um robô náufrago aprende a sobreviver na natureza selvagem e cria um filhote de ganso.',          emoji:'🤖', color:'#2a4a2a', tmdbId:1091273, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg` },
+    { id:'f_alien_romulus', title:'Alien: Romulus',                        genre:'Terror / Ficção',          year:'2024', desc:'Jovens colonizadores exploram uma estação espacial abandonada e encontram um horror antigo.',      emoji:'👾', color:'#0a1a0a', tmdbId:945961,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/b33nnKl1GSFbao4l3fZDDqsMx0F.jpg` },
+    { id:'f_beetlejuice2',  title:'Beetlejuice Beetlejuice',               genre:'Comédia / Terror',         year:'2024', desc:'A família Deetz retorna à casa assombrada e acidentalmente invoca Beetlejuice novamente.',          emoji:'🕷️', color:'#1a3a1a', tmdbId:917496,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/bAg8AnPQFBGAhWGZDJnV9B5CJKN.jpg` },
+    { id:'f_venom3',        title:'Venom: A Última Rodada',                genre:'Ação / Ficção Científica', year:'2024', desc:'Eddie Brock e Venom enfrentam sua batalha final contra forças além da compreensão.',                emoji:'🕷️', color:'#1a1a1a', tmdbId:912649,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/aosm8NMQ3UyoBVpSxyimorCQykC.jpg` },
+    { id:'f_substancia',    title:'A Substância',                          genre:'Terror / Drama',           year:'2024', desc:'Uma mulher usa uma substância misteriosa para criar uma versão mais jovem de si mesma.',            emoji:'💉', color:'#8b0000', tmdbId:933260,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/lqoMzCcZYEFK729d6qzt349fB4o.jpg` },
+    { id:'f_deadpool3',     title:'Deadpool & Wolverine',                  genre:'Ação / Comédia',           year:'2024', desc:'Deadpool recruta Wolverine para uma missão multiversal caótica e hilarante.',                       emoji:'⚔️', color:'#8b0000', tmdbId:533535,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg` },
+    { id:'f_malvado4',      title:'Meu Malvado Favorito 4',                genre:'Animação / Comédia',       year:'2024', desc:'Gru enfrenta um novo vilão enquanto tenta equilibrar sua vida de pai e espião.',                   emoji:'🍌', color:'#f4c430', tmdbId:969492,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/wWba3TaojhK7NdycyUk1i5CaxEg.jpg` },
+    { id:'f_divertida2',    title:'Divertida Mente 2',                     genre:'Animação / Drama',         year:'2024', desc:'Riley cresce e novas emoções chegam para complicar tudo na Sala de Controle.',                    emoji:'😊', color:'#ff6b35', tmdbId:1022789, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/oxxniUBjOOPBTVJMJVXHSFGCmwr.jpg` },
+    { id:'f_badboys4',      title:'Bad Boys: Até o Fim',                   genre:'Ação / Comédia',           year:'2024', desc:'Mike e Marcus voltam para mais uma missão cheia de adrenalina e humor.',                         emoji:'🚔', color:'#1a1a3a', tmdbId:615656,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/oGythE98MYleE6mZlTs5NeF9So3.jpg` },
+    { id:'f_furiosa',       title:'Furiosa: Uma Saga Mad Max',             genre:'Ação / Aventura',          year:'2024', desc:'A origem da guerreira Furiosa em um mundo pós-apocalíptico implacável.',                          emoji:'🏜️', color:'#8b4513', tmdbId:786892,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/iADOJ8Zymht2JPMoy3R7xceZprc.jpg` },
+    { id:'f_planetamac',    title:'Planeta dos Macacos: O Reinado',        genre:'Ficção Científica / Ação', year:'2024', desc:'Uma nova geração de macacos constrói sua civilização enquanto humanos sobrevivem na sombra.',      emoji:'🦍', color:'#2a4a2a', tmdbId:653346,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/gKkl37BQuKTanygYQG1pyYgLVgf.jpg` },
+    { id:'f_godzilla',      title:'Godzilla e Kong: O Novo Império',       genre:'Ação / Ficção Científica', year:'2024', desc:'Dois titãs se unem para enfrentar uma ameaça colossal que surge das profundezas da Terra.',        emoji:'🦖', color:'#1a3a1a', tmdbId:823464,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/z1p34vh7dEOnLDmyCrlUVLuoDzd.jpg` },
+    { id:'f_kungfu4',       title:'Kung Fu Panda 4',                       genre:'Animação / Aventura',      year:'2024', desc:'Po precisa encontrar um novo Guerreiro Dragão enquanto enfrenta uma vilã chamada Camaleoa.',      emoji:'🐼', color:'#2a2a1a', tmdbId:1011985, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/kDp1vUBnMpe8ak4rjgl3cLELqjU.jpg` },
+    { id:'f_duna2',         title:'Duna: Parte Dois',                      genre:'Ficção Científica / Épico',year:'2024', desc:'Paul Atreides une-se aos Fremen para vingar sua família e garantir o futuro de Arrakis.',          emoji:'🏜️', color:'#8b6914', tmdbId:693134,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg` },
+    { id:'f_ghostbusters',  title:'Ghostbusters: Apocalipse de Gelo',      genre:'Comédia / Aventura',       year:'2024', desc:'Os Caça-Fantasmas enfrentam uma ameaça gelada que pode congelar o mundo.',                       emoji:'👻', color:'#2a5c8e', tmdbId:967847,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/sg4xJaufDiQl7caFEskBtQXfD4x.jpg` },
+    /* — Clássicos — */
+    { id:'f_coringa2',      title:'Coringa: Delírio a Dois',               genre:'Drama / Musical',          year:'2024', desc:'Arthur Fleck encontra o amor e sua própria loucura em Arkham Asylum.',                             emoji:'🃏', color:'#1a1a2e', tmdbId:1058694, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/wqnLdwVXoBjKibFRR5U3y0aDUhs.jpg` },
+    { id:'titanic',         title:'Titanic',                               genre:'Romance / Drama',          year:'1997', desc:'Um amor impossível entre Jack e Rose no naufrágio do Titanic.',                                 emoji:'🚢', color:'#1a3a5c', tmdbId:597,     type:'movie', thumb:`https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg` },
+    { id:'interstellar',    title:'Interestelar',                          genre:'Ficção Científica / Drama', year:'2014', desc:'Um ex-piloto viaja além da galáxia para salvar a humanidade.',                                emoji:'🪐', color:'#0a0a2e', tmdbId:157336,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg` },
+    { id:'inception',       title:'A Origem',                              genre:'Ficção Científica / Ação', year:'2010', desc:'Um ladrão especializado em roubar segredos dos sonhos recebe uma missão impossível.',           emoji:'🌀', color:'#1a2a4a', tmdbId:27205,   type:'movie', thumb:`https://image.tmdb.org/t/p/w500/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg` },
+    { id:'forrest_gump',    title:'Forrest Gump',                          genre:'Drama / Comédia',          year:'1994', desc:'A vida extraordinária de um homem simples que cruza momentos históricos dos EUA.',             emoji:'🏃', color:'#4a6741', tmdbId:13,      type:'movie', thumb:`https://image.tmdb.org/t/p/w500/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg` },
+    { id:'top_gun',         title:'Top Gun: Maverick',                     genre:'Ação / Drama',             year:'2022', desc:'Maverick retorna para treinar uma nova geração de pilotos de elite da Marinha.',               emoji:'✈️', color:'#1c3a5e', tmdbId:361743,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg` },
+    { id:'la_la_land',      title:'La La Land: Cantando Estações',         genre:'Romance / Musical',        year:'2016', desc:'Mia e Sebastian sonham com seus futuros enquanto se apaixonam em Los Angeles.',                 emoji:'🌟', color:'#590d22', tmdbId:313369,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg` },
+    { id:'frozen',          title:'Frozen: Uma Aventura Congelante',       genre:'Animação / Fantasia',      year:'2013', desc:'Anna embarca numa jornada épica para encontrar sua irmã Elsa e descongelar o reino.',           emoji:'❄️', color:'#2980b9', tmdbId:109445,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/kgwjIb2JDHRhNk13lmSxiClFjVk.jpg` },
+    { id:'f_poor_things',   title:'Pobres Criaturas',                      genre:'Drama / Fantasia',         year:'2023', desc:'Bella Baxter é ressuscitada com o cérebro de sua filha e explora o mundo sem inibições.',         emoji:'⚗️', color:'#5c2a4a', tmdbId:792307,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/kCGlIMHnOm8JPXIf6bRg5tFiQSx.jpg` },
+    { id:'f_oppenheimer',   title:'Oppenheimer',                           genre:'Drama / Biografia',        year:'2023', desc:'A história do físico que liderou o projeto que criou a primeira bomba atômica.',                   emoji:'☢️', color:'#1a1a0a', tmdbId:872585,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg` },
+    { id:'f_barbie',        title:'Barbie',                                genre:'Comédia / Fantasia',       year:'2023', desc:'Barbie parte para o mundo real após existencial crise no mundo perfeito de Barbieland.',          emoji:'💗', color:'#ff69b4', tmdbId:346698,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/iuFNMS8vlzsOrz4G1uNoia5YXIW.jpg` },
+    { id:'f_guardioes3',    title:'Guardiões da Galáxia Vol. 3',           genre:'Ação / Ficção',            year:'2023', desc:'Peter Quill e os Guardiões partem para proteger Rocket e enfrentar seu passado.',                 emoji:'🦝', color:'#2a1a5c', tmdbId:447277,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/r2J02Z6HecO8mLxbOMVbIBKHMdR.jpg` },
   ],
 
   /* ─── ROMANCE (30) ─── */
   romance: [
-    { id:'r_orgulho',      title:'Orgulho e Preconceito',                  genre:'Romance / Drama',    year:'2005', desc:'Elizabeth Bennet e o orgulhoso Sr. Darcy num clássico do amor de época.',                           emoji:'🌹', color:'#5c3d2e', tmdbId:4348,   type:'movie' },
-    { id:'r_culpa',        title:'A Culpa é das Estrelas',                  genre:'Romance / Drama',    year:'2014', desc:'Dois jovens com câncer se apaixonam e embarcam numa jornada especial.',                             emoji:'⭐', color:'#2a5a7c', tmdbId:222935, type:'movie' },
-    { id:'r_era_antes',    title:'Como Eu Era Antes de Você',               genre:'Romance / Drama',    year:'2016', desc:'Louisa Clark e Will Traynor: um amor que muda tudo e deixa marcas para sempre.',                   emoji:'💛', color:'#e8a020', tmdbId:296096, type:'movie' },
-    { id:'r_simon',        title:'Com Amor, Simon',                         genre:'Romance / Comédia',  year:'2018', desc:'Simon guarda um segredo enorme e se apaixona por alguém que não conhece.',                         emoji:'💌', color:'#e8536f', tmdbId:449176, type:'movie' },
-    { id:'r_garotos',      title:'Para Todos os Garotos que Já Amei',       genre:'Romance',            year:'2018', desc:'Lara Jean vê suas cartas secretas serem enviadas para todos os seus amores.',                     emoji:'💝', color:'#c0392b', tmdbId:466282, type:'movie' },
-    { id:'r_500dias',      title:'500 Dias com Ela',                        genre:'Romance / Comédia',  year:'2009', desc:'Tom narra os 500 dias do seu relacionamento com a imprevisível Summer.',                          emoji:'📅', color:'#4a6fa5', tmdbId:19913,  type:'movie' },
-    { id:'r_antes_aman',   title:'Antes do Amanhecer',                      genre:'Romance',            year:'1995', desc:'Jesse e Céline se conhecem num trem e passam uma noite inesquecível em Viena.',                   emoji:'🌅', color:'#e8a060', tmdbId:76,     type:'movie' },
-    { id:'r_antes_sol',    title:'Antes do Pôr do Sol',                     genre:'Romance',            year:'2004', desc:'Jesse e Céline se reencontram em Paris nove anos depois de sua noite em Viena.',                 emoji:'🌇', color:'#b05a20', tmdbId:80,     type:'movie' },
-    { id:'r_antes_meia',   title:'Antes da Meia-Noite',                     genre:'Romance / Drama',    year:'2013', desc:'Jesse e Céline, agora juntos, enfrentam a realidade de um amor maduro.',                         emoji:'🌙', color:'#1a3a5c', tmdbId:132344, type:'movie' },
-    { id:'r_questao',      title:'Questão de Tempo',                        genre:'Romance / Fantasia', year:'2013', desc:'Tim descobre que pode viajar no tempo e decide usar o poder para encontrar o amor.',              emoji:'⏰', color:'#2a7a5c', tmdbId:122906, type:'movie' },
-    { id:'r_amor_rec',     title:'Um Amor para Recordar',                   genre:'Romance / Drama',    year:'2002', desc:'Landon, um rebelde, muda de vida ao se apaixonar pela filha do pastor.',                         emoji:'🕊️', color:'#5c4a2e', tmdbId:10229,  type:'movie' },
-    { id:'r_10coisas',     title:'10 Coisas que Odeio em Você',             genre:'Romance / Comédia',  year:'1999', desc:'Patrick precisa conquistar a antipática Kat para que o irmão possa namorar.',                    emoji:'😤', color:'#7a5c2e', tmdbId:4951,   type:'movie' },
-    { id:'r_brilho',       title:'Brilho Eterno de uma Mente sem Lembranças', genre:'Romance / Drama',  year:'2004', desc:'Joel e Clementine apagam as memórias um do outro — mas o coração não esquece.',                  emoji:'🧠', color:'#1a3a6e', tmdbId:38,     type:'movie' },
-    { id:'r_lado_bom',     title:'O Lado Bom da Vida',                      genre:'Romance / Comédia',  year:'2012', desc:'Pat e Tiffany encontram um ao outro enquanto lidam com seus problemas.',                         emoji:'☀️', color:'#c07820', tmdbId:82693,  type:'movie' },
-    { id:'r_ela',          title:'Ela',                                     genre:'Romance / Drama',    year:'2013', desc:'Theodore se apaixona por Samantha, uma inteligência artificial com voz sedutora.',               emoji:'🤖', color:'#c04a20', tmdbId:152601, type:'movie' },
-    { id:'r_teoria',       title:'A Teoria de Tudo',                        genre:'Biografia / Romance', year:'2014', desc:'A história de amor entre Stephen Hawking e Jane Wilde contra todas as adversidades.',            emoji:'🌌', color:'#0a2a5c', tmdbId:266856, type:'movie' },
-    { id:'r_sol_meia',     title:'Sol da Meia-Noite',                       genre:'Romance / Drama',    year:'2018', desc:'Katie tem uma doença rara que a impede de sair ao sol — até conhecer Charlie.',                  emoji:'🌞', color:'#e8a820', tmdbId:400650, type:'movie' },
-    { id:'r_se_ficar',     title:'Se Eu Ficar',                             genre:'Romance / Drama',    year:'2014', desc:'Mia tem uma escolha impossível: partir ou ficar por tudo que ama.',                             emoji:'🎻', color:'#3a5a6e', tmdbId:102651, type:'movie' },
-    { id:'r_5passos',      title:'A Cinco Passos de Você',                  genre:'Romance / Drama',    year:'2019', desc:'Stella e Will se apaixonam no hospital, mas a regra dos 5 passos os separa.',                   emoji:'👣', color:'#5c7a8e', tmdbId:527641, type:'movie' },
-    { id:'r_viajante',     title:'A Mulher do Viajante do Tempo',           genre:'Romance / Ficção',   year:'2009', desc:'Henry viaja no tempo involuntariamente — mas seu amor por Clare é constante.',                  emoji:'⏳', color:'#4a2a6e', tmdbId:2493,   type:'movie' },
-    { id:'r_amor_prova',   title:'Amor a Toda Prova',                       genre:'Romance / Comédia',  year:'2011', desc:'Cal aprende a conquistar mulheres, mas o amor verdadeiro está mais perto do que imagina.',      emoji:'😎', color:'#2a4a5c', tmdbId:50646,  type:'movie' },
-    { id:'r_ferias',       title:'O Amor Não Tira Férias',                  genre:'Romance / Comédia',  year:'2006', desc:'Duas mulheres trocam de casa e encontram o amor inesperadamente.',                              emoji:'🏠', color:'#7a5c3e', tmdbId:1581,   type:'movie' },
-    { id:'r_notting',      title:'Um Lugar Chamado Notting Hill',           genre:'Romance / Comédia',  year:'1999', desc:'Um livreiro comum se apaixona pela maior estrela de Hollywood.',                                emoji:'🎭', color:'#4a3a2e', tmdbId:509,    type:'movie' },
-    { id:'r_linda',        title:'Uma Linda Mulher',                        genre:'Romance / Comédia',  year:'1990', desc:'Um milionário contrata uma garota de programa e acaba se apaixonando por ela.',                 emoji:'💎', color:'#8e2a5c', tmdbId:114,    type:'movie' },
-    { id:'r_simplesmente', title:'Simplesmente Amor',                       genre:'Romance / Comédia',  year:'2003', desc:'Dez histórias de amor entrelaçadas em Londres nas vésperas do Natal.',                          emoji:'❤️', color:'#c0392b', tmdbId:508,    type:'movie' },
-    { id:'r_bridget',      title:'O Diário de Bridget Jones',               genre:'Romance / Comédia',  year:'2001', desc:'Bridget Jones documenta sua vida amorosa e suas tentativas de encontrar o homem certo.',       emoji:'📓', color:'#7a3a5c', tmdbId:19585,  type:'movie' },
-    { id:'r_para_sempre',  title:'Para Sempre',                             genre:'Romance / Fantasia', year:'1998', desc:'Uma jovem se comunica com a alma de um policial morto e se apaixona por ele.',                 emoji:'👻', color:'#5c3d7a', tmdbId:80278,  type:'movie' },
-    { id:'r_chame_nome',   title:'Me Chame pelo Seu Nome',                  genre:'Romance / Drama',    year:'2017', desc:'No verão de 1983 na Itália, Elio e Oliver vivem um amor intenso e inesquecível.',              emoji:'☀️', color:'#c07820', tmdbId:398818, type:'movie' },
-    { id:'r_val_dia',      title:'Dia dos Namorados',                       genre:'Romance / Comédia',  year:'2010', desc:'Muitas histórias de amor que se cruzam em Los Angeles no Dia dos Namorados.',                 emoji:'💖', color:'#c06080', tmdbId:32657,  type:'movie' },
-    { id:'r_padrao',       title:'O Destino de Uma Nação',                  genre:'Romance / Fantasia', year:'2004', desc:'Tristan viaja ao passado e tudo o que ele encontra é Anna, um amor impossível.',              emoji:'🌿', color:'#2a5c3a', tmdbId:11252,  type:'movie' },
+    { id:'r_orgulho',      title:'Orgulho e Preconceito',                    genre:'Romance / Drama',     year:'2005', desc:'Elizabeth Bennet e o orgulhoso Sr. Darcy num clássico do amor de época.',                        emoji:'🌹', color:'#5c3d2e', tmdbId:4348,   type:'movie', thumb:'https://image.tmdb.org/t/p/w500/hQ4pYsIbP22TMXOUdSfC2mjWrO0.jpg' },
+    { id:'r_culpa',        title:'A Culpa é das Estrelas',                   genre:'Romance / Drama',     year:'2014', desc:'Dois jovens com câncer se apaixonam e embarcam numa jornada especial.',                          emoji:'⭐', color:'#2a5a7c', tmdbId:222935, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/gGmNQJeHZQsQvHBmtYBPO4GQD1v.jpg' },
+    { id:'r_era_antes',    title:'Como Eu Era Antes de Você',                genre:'Romance / Drama',     year:'2016', desc:'Louisa Clark e Will Traynor: um amor que muda tudo e deixa marcas para sempre.',                 emoji:'💛', color:'#e8a020', tmdbId:296096, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/8vSGCvJ7ByT8AG5YDFAurm5XAOL.jpg' },
+    { id:'r_simon',        title:'Com Amor, Simon',                          genre:'Romance / Comédia',   year:'2018', desc:'Simon guarda um segredo enorme e se apaixona por alguém que não conhece.',                       emoji:'💌', color:'#e8536f', tmdbId:449176, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/n5JoCHmiuGnbHWbm56hB4nLHSSA.jpg' },
+    { id:'r_garotos',      title:'Para Todos os Garotos que Já Amei',        genre:'Romance',             year:'2018', desc:'Lara Jean vê suas cartas secretas serem enviadas para todos os seus amores.',                   emoji:'💝', color:'#c0392b', tmdbId:466282, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/vfLkSEHjJ4eGpXGZFGAqrLGJBqb.jpg' },
+    { id:'r_500dias',      title:'500 Dias com Ela',                         genre:'Romance / Comédia',   year:'2009', desc:'Tom narra os 500 dias do seu relacionamento com a imprevisível Summer.',                        emoji:'📅', color:'#4a6fa5', tmdbId:19913,  type:'movie', thumb:'https://image.tmdb.org/t/p/w500/5WJnpYDsM5fgbepSh4CfLqSjmLJ.jpg' },
+    { id:'r_antes_aman',   title:'Antes do Amanhecer',                       genre:'Romance',             year:'1995', desc:'Jesse e Céline se conhecem num trem e passam uma noite inesquecível em Viena.',                 emoji:'🌅', color:'#e8a060', tmdbId:76,     type:'movie', thumb:'https://image.tmdb.org/t/p/w500/aUXM7WoRimFrCmurZvnV2T7xOXM.jpg' },
+    { id:'r_antes_sol',    title:'Antes do Pôr do Sol',                      genre:'Romance',             year:'2004', desc:'Jesse e Céline se reencontram em Paris nove anos depois de sua noite em Viena.',               emoji:'🌇', color:'#b05a20', tmdbId:80,     type:'movie', thumb:'https://image.tmdb.org/t/p/w500/hhSTwq8CpecshJnBnMzCoRWKG0C.jpg' },
+    { id:'r_antes_meia',   title:'Antes da Meia-Noite',                      genre:'Romance / Drama',     year:'2013', desc:'Jesse e Céline, agora juntos, enfrentam a realidade de um amor maduro.',                       emoji:'🌙', color:'#1a3a5c', tmdbId:132344, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/r9UpQtFCiMnxfhJDlhFLKh0nAfP.jpg' },
+    { id:'r_questao',      title:'Questão de Tempo',                         genre:'Romance / Fantasia',  year:'2013', desc:'Tim descobre que pode viajar no tempo e decide usar o poder para encontrar o amor.',            emoji:'⏰', color:'#2a7a5c', tmdbId:122906, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/1ziDBVBthJkMOXXNmCJVlsRkxR8.jpg' },
+    { id:'r_amor_rec',     title:'Um Amor para Recordar',                    genre:'Romance / Drama',     year:'2002', desc:'Landon, um rebelde, muda de vida ao se apaixonar pela filha do pastor.',                       emoji:'🕊️', color:'#5c4a2e', tmdbId:10229,  type:'movie', thumb:'https://image.tmdb.org/t/p/w500/75KHQeHcRDEFjLVMWBWzFRyI8IE.jpg' },
+    { id:'r_10coisas',     title:'10 Coisas que Odeio em Você',              genre:'Romance / Comédia',   year:'1999', desc:'Patrick precisa conquistar a antipática Kat para que o irmão possa namorar.',                  emoji:'😤', color:'#7a5c2e', tmdbId:4951,   type:'movie', thumb:'https://image.tmdb.org/t/p/w500/xnGWFbJQXnDSaDCRNriDxJN6Dfl.jpg' },
+    { id:'r_brilho',       title:'Brilho Eterno de uma Mente sem Lembranças',genre:'Romance / Drama',     year:'2004', desc:'Joel e Clementine apagam as memórias um do outro — mas o coração não esquece.',                emoji:'🧠', color:'#1a3a6e', tmdbId:38,     type:'movie', thumb:'https://image.tmdb.org/t/p/w500/5MwkWH9tYHv3oWtXOX7mHQD5lsV.jpg' },
+    { id:'r_lado_bom',     title:'O Lado Bom da Vida',                       genre:'Romance / Comédia',   year:'2012', desc:'Pat e Tiffany encontram um ao outro enquanto lidam com seus problemas.',                       emoji:'☀️', color:'#c07820', tmdbId:82693,  type:'movie', thumb:'https://image.tmdb.org/t/p/w500/lMkKHB0MVHB2hBHhJjDhpwYvG2p.jpg' },
+    { id:'r_ela',          title:'Ela',                                      genre:'Romance / Drama',     year:'2013', desc:'Theodore se apaixona por Samantha, uma inteligência artificial com voz sedutora.',             emoji:'🤖', color:'#c04a20', tmdbId:152601, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/eCOtqtfvn7mxGaoDfGZLBBgkczg.jpg' },
+    { id:'r_teoria',       title:'A Teoria de Tudo',                         genre:'Biografia / Romance', year:'2014', desc:'A história de amor entre Stephen Hawking e Jane Wilde contra todas as adversidades.',          emoji:'🌌', color:'#0a2a5c', tmdbId:266856, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/6mFpPVBHJCZBBv1O6OmGLEi4WBv.jpg' },
+    { id:'r_sol_meia',     title:'Sol da Meia-Noite',                        genre:'Romance / Drama',     year:'2018', desc:'Katie tem uma doença rara que a impede de sair ao sol — até conhecer Charlie.',                emoji:'🌞', color:'#e8a820', tmdbId:400650, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/hU0QnMRVoJXlVEBBnFHPe9ykZaD.jpg' },
+    { id:'r_se_ficar',     title:'Se Eu Ficar',                              genre:'Romance / Drama',     year:'2014', desc:'Mia tem uma escolha impossível: partir ou ficar por tudo que ama.',                           emoji:'🎻', color:'#3a5a6e', tmdbId:102651, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/1Sqw7WDEBzUBZKJWvnMsKPMN2jx.jpg' },
+    { id:'r_5passos',      title:'A Cinco Passos de Você',                   genre:'Romance / Drama',     year:'2019', desc:'Stella e Will se apaixonam no hospital, mas a regra dos 5 passos os separa.',                 emoji:'👣', color:'#5c7a8e', tmdbId:527641, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/5WxSCFCMqGMoAMPzHtWFqAkS3HM.jpg' },
+    { id:'r_viajante',     title:'A Mulher do Viajante do Tempo',            genre:'Romance / Ficção',    year:'2009', desc:'Henry viaja no tempo involuntariamente — mas seu amor por Clare é constante.',                emoji:'⏳', color:'#4a2a6e', tmdbId:2493,   type:'movie', thumb:'https://image.tmdb.org/t/p/w500/ytf0uJKOsoOXAGOqU0MpFvEEtmB.jpg' },
+    { id:'r_amor_prova',   title:'Amor a Toda Prova',                        genre:'Romance / Comédia',   year:'2011', desc:'Cal aprende a conquistar mulheres, mas o amor verdadeiro está mais perto do que imagina.',    emoji:'😎', color:'#2a4a5c', tmdbId:50646,  type:'movie', thumb:'https://image.tmdb.org/t/p/w500/1qB4qiAONIImikTTbIZHJvT3qVi.jpg' },
+    { id:'r_ferias',       title:'O Amor Não Tira Férias',                   genre:'Romance / Comédia',   year:'2006', desc:'Duas mulheres trocam de casa e encontram o amor inesperadamente.',                            emoji:'🏠', color:'#7a5c3e', tmdbId:1581,   type:'movie', thumb:'https://image.tmdb.org/t/p/w500/rFoJeWNLCMzFbzUIWVBXkFMzNlF.jpg' },
+    { id:'r_notting',      title:'Um Lugar Chamado Notting Hill',            genre:'Romance / Comédia',   year:'1999', desc:'Um livreiro comum se apaixona pela maior estrela de Hollywood.',                              emoji:'🎭', color:'#4a3a2e', tmdbId:509,    type:'movie', thumb:'https://image.tmdb.org/t/p/w500/aGCqDCgmBNEoP0g9dlyLarxSJd1.jpg' },
+    { id:'r_linda',        title:'Uma Linda Mulher',                         genre:'Romance / Comédia',   year:'1990', desc:'Um milionário contrata uma garota de programa e acaba se apaixonando por ela.',               emoji:'💎', color:'#8e2a5c', tmdbId:114,    type:'movie', thumb:'https://image.tmdb.org/t/p/w500/ggAtGQwDIjzKFgKQkKxDnlMlOiH.jpg' },
+    { id:'r_simplesmente', title:'Simplesmente Amor',                        genre:'Romance / Comédia',   year:'2003', desc:'Dez histórias de amor entrelaçadas em Londres nas vésperas do Natal.',                        emoji:'❤️', color:'#c0392b', tmdbId:508,    type:'movie', thumb:'https://image.tmdb.org/t/p/w500/w0nBMoXnWGnMTGaqiVTVGmiMbAv.jpg' },
+    { id:'r_bridget',      title:'O Diário de Bridget Jones',                genre:'Romance / Comédia',   year:'2001', desc:'Bridget Jones documenta sua vida amorosa e suas tentativas de encontrar o homem certo.',     emoji:'📓', color:'#7a3a5c', tmdbId:19585,  type:'movie', thumb:'https://image.tmdb.org/t/p/w500/5KPQUqEa3fZkLpAh2FVivNQUaGX.jpg' },
+    { id:'r_chame_nome',   title:'Me Chame pelo Seu Nome',                   genre:'Romance / Drama',     year:'2017', desc:'No verão de 1983 na Itália, Elio e Oliver vivem um amor intenso e inesquecível.',            emoji:'☀️', color:'#c07820', tmdbId:398818, type:'movie', thumb:'https://image.tmdb.org/t/p/w500/4dKF0xRYaZSmWC45BCJ3aFXP8tX.jpg' },
+    { id:'r_diario',       title:'Diário de uma Paixão',                     genre:'Romance / Drama',     year:'2004', desc:'Noah e Allie vivem um amor que resiste ao tempo e às diferenças sociais.',                   emoji:'📖', color:'#7a3045', tmdbId:11036,  type:'movie', thumb:'https://image.tmdb.org/t/p/w500/qom1SZSENdmHFNZBXbtLqUFbn3s.jpg' },
+    { id:'r_val_dia',      title:'Dia dos Namorados',                        genre:'Romance / Comédia',   year:'2010', desc:'Muitas histórias de amor que se cruzam em Los Angeles no Dia dos Namorados.',               emoji:'💖', color:'#c06080', tmdbId:32657,  type:'movie', thumb:'https://image.tmdb.org/t/p/w500/vEfAxRYgOC0KLFkXHJLBPHqFB22.jpg' },
+    { id:'r_para_sempre',  title:'Para Sempre',                              genre:'Romance / Fantasia',  year:'2010', desc:'Um casal separado pela morte encontra uma forma de reencontro além do mundo físico.',         emoji:'👻', color:'#5c3d7a', tmdbId:80278,  type:'movie', thumb:'https://image.tmdb.org/t/p/w500/wJJkmbRPXQcYiVf8JJuGiHQPEUG.jpg' },
+    { id:'r_padrao',       title:'A Lenda de Tristão e Isolda',              genre:'Romance / Aventura',  year:'2006', desc:'Um cavaleiro e uma princesa vivem um amor proibido na Inglaterra medieval.',                  emoji:'🌿', color:'#2a5c3a', tmdbId:8265,   type:'movie', thumb:'https://image.tmdb.org/t/p/w500/tvDRr2fywOvpH2QGsHXHvI39OEXI.jpg' },
   ],
 
-  /* ─── DORAMAS (20) ─── */
+  /* ─── DORAMAS (25) ─── */
   doramas: [
-    { id:'d_pousando',   title:'Pousando no Amor',                  genre:'Romance / Drama',   year:'2019–2020', desc:'Uma herdeira sul-coreana pousa de paraquedas na Coreia do Norte e se apaixona por um oficial.',  emoji:'🪂', color:'#2a5c8e', tmdbId:94796,  type:'series' },
-    { id:'d_pretendente', title:'Pretendente Surpresa',              genre:'Romance / Comédia', year:'2023',      desc:'Uma CEO exigente aceita participar de um reality de casamento por acidente.',                    emoji:'💍', color:'#8e4a5c', tmdbId:154825, type:'series' },
-    { id:'d_beleza',     title:'Beleza Verdadeira',                  genre:'Romance / Comédia', year:'2020–2021', desc:'Jugyeong usa maquiagem para esconder inseguranças e vive um triângulo amoroso.',               emoji:'💄', color:'#c06080', tmdbId:112470, type:'series' },
-    { id:'d_goblin',     title:'Goblin: O Solitário e Grande Deus',  genre:'Romance / Fantasia', year:'2016–2017', desc:'Um goblin imortal busca uma noiva que ponha fim à sua vida e encontra o amor.',               emoji:'🕯️', color:'#3a2a5c', tmdbId:67915,  type:'series' },
-    { id:'d_mesmo',      title:'Mesmo Assim',                        genre:'Romance / Drama',   year:'2021',      desc:'Yoo Na-bi e Park Jae-eon vivem uma atração complicada entre amizade e amor.',                 emoji:'🌸', color:'#c07890', tmdbId:125910, type:'series' },
-    { id:'d_descendentes', title:'Descendentes do Sol',              genre:'Romance / Ação',    year:'2016',      desc:'Um capitão do exército se apaixona por uma médica no meio de uma zona de conflito.',           emoji:'🪖', color:'#4a6a3a', tmdbId:66330,  type:'series' },
-    { id:'d_estrelas',   title:'Meu Amor das Estrelas',              genre:'Romance / Ficção',  year:'2013–2014', desc:'Um alienígena que viveu na Terra por 400 anos se apaixona por uma atriz famosa.',             emoji:'🌠', color:'#1a2a4e', tmdbId:60783,  type:'series' },
-    { id:'d_vinte',      title:'Vinte e Cinco Vinte e Um',           genre:'Romance / Drama',   year:'2022',      desc:'Uma esgrimista e um jornalista se encontram em momentos diferentes de suas vidas.',           emoji:'🤺', color:'#2a5a7c', tmdbId:156933, type:'series' },
-    { id:'d_verao',      title:'Nosso Eterno Verão',                 genre:'Romance',           year:'2021',      desc:'Dois jovens se reconectam após anos e redescobrem os sentimentos que tinham.',               emoji:'🌻', color:'#e8a020', tmdbId:135655, type:'series' },
-    { id:'d_hometown',   title:'Hometown Cha-Cha-Cha',               genre:'Romance / Comédia', year:'2021',      desc:'Uma dentista se muda para uma cidade litorânea e se apaixona pelo faz-tudo da vila.',          emoji:'🌊', color:'#2a7a8e', tmdbId:130392, type:'series' },
-    { id:'d_startup',    title:'Start-Up',                           genre:'Romance / Drama',   year:'2020',      desc:'Jovens perseguem seus sonhos no Vale do Silício coreano e se apaixonam.',                      emoji:'💻', color:'#4a3a7a', tmdbId:111453, type:'series' },
-    { id:'d_hotel',      title:'Hotel Del Luna',                     genre:'Romance / Fantasia', year:'2019',     desc:'Um hotel para espíritos é gerenciado por uma mulher presa lá por séculos.',                   emoji:'🌙', color:'#3a1a5c', tmdbId:90447,  type:'series' },
-    { id:'d_vincenzo',   title:'Vincenzo',                           genre:'Comédia / Ação',    year:'2021',      desc:'Um advogado mafioso coreano-italiano retorna ao país natal e encontra amor e caos.',           emoji:'🎩', color:'#2a2a2a', tmdbId:120168, type:'series' },
-    { id:'d_okay',       title:'Tudo Bem Não Ser Normal',            genre:'Romance / Drama',   year:'2020',      desc:'Um cuidador de saúde mental e uma escritora excêntrica se encontram e se curam.',             emoji:'📚', color:'#5c2a3a', tmdbId:96162,  type:'series' },
-    { id:'d_advogada',   title:'Uma Advogada Extraordinária',        genre:'Drama / Comédia',   year:'2022',      desc:'Woo Young-woo, autista e brilhante, enfrenta o mundo jurídico com seu jeito único.',           emoji:'🐋', color:'#1a5c7a', tmdbId:197067, type:'series' },
-    { id:'d_bong',       title:'Mulher Forte Do Bong-soon',          genre:'Romance / Comédia', year:'2017',      desc:'Bong-soon tem força sobre-humana e é contratada como guarda-costas de um CEO.',               emoji:'💪', color:'#c04a7a', tmdbId:70593,  type:'series' },
-    { id:'d_levant',     title:'A Fada do Levantamento de Peso',     genre:'Romance / Esporte', year:'2016',      desc:'Uma atleta de levantamento de peso luta por seus sonhos e encontra o amor.',                  emoji:'🏋️', color:'#7a5c3e', tmdbId:68330,  type:'series' },
-    { id:'d_lua',        title:'Amantes da Lua',                     genre:'Romance / Histórico', year:'2016',    desc:'Uma garota moderna cai no tempo e se envolve com os filhos do rei Goryeo.',                  emoji:'🌕', color:'#5c3a1a', tmdbId:67089,  type:'series' },
-    { id:'d_herdeiros',  title:'Os Herdeiros',                       genre:'Romance / Drama',   year:'2013',      desc:'Jovens de famílias ricas vivem rivalidades e amores num colégio de elite.',                   emoji:'👑', color:'#1a3a5c', tmdbId:60572,  type:'series' },
-    { id:'d_bof',        title:'Meninos Antes de Flores',            genre:'Romance / Drama',   year:'2009',      desc:'Jan-di enfrenta os poderosos F4 num colégio de elite e se apaixona por Gu Jun-pyo.',         emoji:'🌺', color:'#8e5c3a', tmdbId:35942,  type:'series' },
+    { id:'d_pousando',    title:'Pousando no Amor',                   genre:'Romance / Drama',    year:'2019–2020', desc:'Uma herdeira sul-coreana pousa de paraquedas na Coreia do Norte e se apaixona por um oficial.',  emoji:'🪂', color:'#2a5c8e', tmdbId:94796,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/0JiVFF6EXDntTdGiCMv2WHaHMOY.jpg' },
+    { id:'d_pretendente', title:'Pretendente Surpresa',               genre:'Romance / Comédia',  year:'2023',      desc:'Uma CEO exigente aceita participar de um reality de casamento por acidente.',                    emoji:'💍', color:'#8e4a5c', tmdbId:154825, type:'series', thumb:'https://image.tmdb.org/t/p/w500/mVn7WiLo2VXIniKMlGRvLEPDxjt.jpg' },
+    { id:'d_my_demon',    title:'Meu Demônio',                        genre:'Romance / Fantasia', year:'2023',      desc:'Uma mulher poderosa estabelece um contrato com um demônio e os dois descobrem algo inesperado.',  emoji:'😈', color:'#2a0a3a', tmdbId:225796, type:'series', thumb:'https://image.tmdb.org/t/p/w500/9vLiOJBHdX4K8r4Lc2H1wOH4JDo.jpg' },
+    { id:'d_beleza',      title:'Beleza Verdadeira',                  genre:'Romance / Comédia',  year:'2020–2021', desc:'Jugyeong usa maquiagem para esconder inseguranças e vive um triângulo amoroso.',               emoji:'💄', color:'#c06080', tmdbId:112470, type:'series', thumb:'https://image.tmdb.org/t/p/w500/hA6KH04pZKiEfOkMqRGVSJhIVW2.jpg' },
+    { id:'d_goblin',      title:'Goblin: O Solitário e Grande Deus',  genre:'Romance / Fantasia', year:'2016–2017', desc:'Um goblin imortal busca uma noiva que ponha fim à sua vida e encontra o amor.',               emoji:'🕯️', color:'#3a2a5c', tmdbId:67915,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/mYsOdnCONHHUGgBDrGADwJhKV6c.jpg' },
+    { id:'d_mesmo',       title:'Mesmo Assim',                        genre:'Romance / Drama',    year:'2021',      desc:'Yoo Na-bi e Park Jae-eon vivem uma atração complicada entre amizade e amor.',                 emoji:'🌸', color:'#c07890', tmdbId:125910, type:'series', thumb:'https://image.tmdb.org/t/p/w500/8xQs6LhYP56pPFKBYKZQ6VpHqVb.jpg' },
+    { id:'d_descendentes',title:'Descendentes do Sol',                genre:'Romance / Ação',     year:'2016',      desc:'Um capitão do exército se apaixona por uma médica no meio de uma zona de conflito.',           emoji:'🪖', color:'#4a6a3a', tmdbId:66330,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/3FxKOxzG6JeHAJm5x4EMZN7LgvO.jpg' },
+    { id:'d_estrelas',    title:'Meu Amor das Estrelas',              genre:'Romance / Ficção',   year:'2013–2014', desc:'Um alienígena que viveu na Terra por 400 anos se apaixona por uma atriz famosa.',             emoji:'🌠', color:'#1a2a4e', tmdbId:60783,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/tBIiJ0G0xkuqMpNMKKxq8I1C7IW.jpg' },
+    { id:'d_vinte',       title:'Vinte e Cinco Vinte e Um',           genre:'Romance / Drama',    year:'2022',      desc:'Uma esgrimista e um jornalista se encontram em momentos diferentes de suas vidas.',           emoji:'🤺', color:'#2a5a7c', tmdbId:156933, type:'series', thumb:'https://image.tmdb.org/t/p/w500/8pOK63vGIL3pjVQVuTVmEPqgbf9.jpg' },
+    { id:'d_verao',       title:'Nosso Eterno Verão',                 genre:'Romance',            year:'2021',      desc:'Dois jovens se reconectam após anos e redescobrem os sentimentos que tinham.',               emoji:'🌻', color:'#e8a020', tmdbId:135655, type:'series', thumb:'https://image.tmdb.org/t/p/w500/oSTnQG95M4NJDwKCfOhAJFMsKUi.jpg' },
+    { id:'d_hometown',    title:'Hometown Cha-Cha-Cha',               genre:'Romance / Comédia',  year:'2021',      desc:'Uma dentista se muda para uma cidade litorânea e se apaixona pelo faz-tudo da vila.',          emoji:'🌊', color:'#2a7a8e', tmdbId:130392, type:'series', thumb:'https://image.tmdb.org/t/p/w500/mMKCIGFoJRpSFOWMDMWJBpJQ7UF.jpg' },
+    { id:'d_startup',     title:'Start-Up',                           genre:'Romance / Drama',    year:'2020',      desc:'Jovens perseguem seus sonhos no Vale do Silício coreano e se apaixonam.',                      emoji:'💻', color:'#4a3a7a', tmdbId:111453, type:'series', thumb:'https://image.tmdb.org/t/p/w500/m1cJNqxOhxLtlzaVIXB3TMHzHQ.jpg' },
+    { id:'d_hotel',       title:'Hotel Del Luna',                     genre:'Romance / Fantasia', year:'2019',      desc:'Um hotel para espíritos é gerenciado por uma mulher presa lá por séculos.',                   emoji:'🌙', color:'#3a1a5c', tmdbId:90447,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/3rkFmF0qjUv2MiZFt8jP5rCHqpL.jpg' },
+    { id:'d_vincenzo',    title:'Vincenzo',                           genre:'Comédia / Ação',     year:'2021',      desc:'Um advogado mafioso coreano-italiano retorna ao país natal e encontra amor e caos.',           emoji:'🎩', color:'#2a2a2a', tmdbId:120168, type:'series', thumb:'https://image.tmdb.org/t/p/w500/aSXRO4bOcGjSfFqVRFPaEt8qL18.jpg' },
+    { id:'d_okay',        title:'Tudo Bem Não Ser Normal',            genre:'Romance / Drama',    year:'2020',      desc:'Um cuidador de saúde mental e uma escritora excêntrica se encontram e se curam.',             emoji:'📚', color:'#5c2a3a', tmdbId:96162,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/3RIV4yCEbmxe2y1pn5FGGZJnBWd.jpg' },
+    { id:'d_advogada',    title:'Uma Advogada Extraordinária',        genre:'Drama / Comédia',    year:'2022',      desc:'Woo Young-woo, autista e brilhante, enfrenta o mundo jurídico com seu jeito único.',           emoji:'🐋', color:'#1a5c7a', tmdbId:197067, type:'series', thumb:'https://image.tmdb.org/t/p/w500/r9SAy3ZSTtXVJPCpzCOGmf5P9E5.jpg' },
+    { id:'d_bong',        title:'Mulher Forte Do Bong-soon',          genre:'Romance / Comédia',  year:'2017',      desc:'Bong-soon tem força sobre-humana e é contratada como guarda-costas de um CEO.',               emoji:'💪', color:'#c04a7a', tmdbId:70593,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/sMivNiLJhxnU9r0lQyXzVUjLaDt.jpg' },
+    { id:'d_levant',      title:'A Fada do Levantamento de Peso',     genre:'Romance / Esporte',  year:'2016',      desc:'Uma atleta de levantamento de peso luta por seus sonhos e encontra o amor.',                  emoji:'🏋️', color:'#7a5c3e', tmdbId:68330,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/vRXeAJ6USj4PnkHhHJeHDWW1QGc.jpg' },
+    { id:'d_lua',         title:'Amantes da Lua',                     genre:'Romance / Histórico',year:'2016',      desc:'Uma garota moderna cai no tempo e se envolve com os filhos do rei Goryeo.',                  emoji:'🌕', color:'#5c3a1a', tmdbId:67089,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/7CbkBlUzW82sEpLFEhFqPiPpRYL.jpg' },
+    { id:'d_herdeiros',   title:'Os Herdeiros',                       genre:'Romance / Drama',    year:'2013',      desc:'Jovens de famílias ricas vivem rivalidades e amores num colégio de elite.',                   emoji:'👑', color:'#1a3a5c', tmdbId:60572,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/ue0vK6lSYGrJNzMYQBWCBiFJpLg.jpg' },
+    { id:'d_bof',         title:'Meninos Antes de Flores',            genre:'Romance / Drama',    year:'2009',      desc:'Jan-di enfrenta os poderosos F4 num colégio de elite e se apaixona por Gu Jun-pyo.',         emoji:'🌺', color:'#8e5c3a', tmdbId:35942,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/e8hO4MnCU3aDJRniKUYKi9oV7Yj.jpg' },
+    { id:'d_business',    title:'Business Proposal',                  genre:'Romance / Comédia',  year:'2022',      desc:'Uma mulher vai a um encontro com nome falso e descobre que ele é seu chefe.',                  emoji:'🍵', color:'#2a4a6e', tmdbId:150117, type:'series', thumb:'https://image.tmdb.org/t/p/w500/tGFOBObVGLiE0UlMF6c5Nh5Lciy.jpg' },
+    { id:'d_reencarnacao',title:'Recordações de uma Assassina',        genre:'Suspense / Drama',   year:'2022',      desc:'Um policial investiga assassinatos e descobre que a principal suspeita tem amnésia.',          emoji:'🔍', color:'#1a0a2a', tmdbId:130396, type:'series', thumb:'https://image.tmdb.org/t/p/w500/4Dpo8suxVvgM4gQxgcWJFHbfqAh.jpg' },
+    { id:'d_doona',       title:'Doona!',                             genre:'Romance / Drama',    year:'2023',      desc:'Um universitário começa a morar com uma ex-idol e os dois se aproximam lentamente.',          emoji:'🎤', color:'#3a2a5c', tmdbId:222326, type:'series', thumb:'https://image.tmdb.org/t/p/w500/nk1kYqCHjE9fIAmfVrxrAblXGZL.jpg' },
+    { id:'d_crash',       title:'Crash',                              genre:'Romance / Ação',     year:'2024',      desc:'Uma policial de trânsito e um policial secreto se envolvem em crimes e em um romance inesperado.',emoji:'🚗', color:'#1a3a5c', tmdbId:246628, type:'series', thumb:'https://image.tmdb.org/t/p/w500/7LMEFEGOFHKnMI5s7ECLgVGVStF.jpg' },
   ],
 
-  /* ─── ANIMAÇÕES (20) ─── */
+  /* ─── ANIMAÇÕES ─── */
   animacoes: [
-    { id:'a_hora',       title:'Hora de Aventura',                   genre:'Animação / Fantasia', year:'2010–2018', desc:'Finn e Jake exploram a Terra de Ooo em aventuras mágicas e emocionantes.',                    emoji:'⚔️', color:'#5c8e3a', tmdbId:15260,  type:'series' },
-    { id:'a_show',       title:'Apenas um Show',                     genre:'Animação / Comédia',  year:'2010–2017', desc:'Mordecai e Rigby são preguiçosos e cometem desastres no parque onde trabalham.',              emoji:'🐦', color:'#4a7a2a', tmdbId:31132,  type:'series' },
-    { id:'a_steven',     title:'Steven Universo',                    genre:'Animação / Aventura', year:'2013–2019', desc:'Steven, meio humano meio Gema, aprende a usar poderes e protege a Terra com amor.',           emoji:'💎', color:'#e8536f', tmdbId:61175,  type:'series' },
-    { id:'a_gumball',    title:'O Incrível Mundo de Gumball',        genre:'Animação / Comédia',  year:'2011–2019', desc:'Gumball e Darwin se metem em confusões absurdas e hilárias em Elmore.',                      emoji:'🐱', color:'#2a8ec0', tmdbId:37606,  type:'series' },
-    { id:'a_ben10',      title:'Ben 10',                             genre:'Animação / Ação',     year:'2005–2008', desc:'Ben encontra o Omnitrix e pode se transformar em 10 alienígenas diferentes.',                emoji:'👽', color:'#4a7a2a', tmdbId:4686,   type:'series' },
-    { id:'a_ppg',        title:'As Meninas Superpoderosas',          genre:'Animação / Ação',     year:'1998–2005', desc:'Florzinha, Lindinha e Docinho protegem Townsville de vilões com seus superpoderes.',          emoji:'👧', color:'#c04a7a', tmdbId:607,    type:'series' },
-    { id:'a_dexter',     title:'O Laboratório de Dexter',            genre:'Animação / Comédia',  year:'1996–2003', desc:'Dexter é um gênio científico cuja irmã Dee Dee sempre atrapalha seus planos.',               emoji:'🔬', color:'#4a2a7a', tmdbId:2024,   type:'series' },
-    { id:'a_johnny',     title:'Johnny Bravo',                       genre:'Animação / Comédia',  year:'1997–2004', desc:'Johnny, vaidoso e musculoso, tenta conquistar as mulheres com péssimo sucesso.',             emoji:'💪', color:'#e8a020', tmdbId:1705,   type:'series' },
-    { id:'a_coragem',    title:'Coragem o Cão Covarde',              genre:'Animação / Terror',   year:'1999–2002', desc:'Coragem vive no meio do nada com seus donos e enfrenta monstros horríveis.',                 emoji:'👻', color:'#5c2a7a', tmdbId:954,    type:'series' },
-    { id:'a_samurai',    title:'Samurai Jack',                       genre:'Animação / Ação',     year:'2001–2017', desc:'Um samurai viaja no tempo e luta contra o demônio Aku para voltar ao passado.',              emoji:'⚔️', color:'#2a2a3a', tmdbId:30984,  type:'series' },
-    { id:'a_trem',       title:'Trem Infinito',                      genre:'Animação / Aventura', year:'2019–2021', desc:'Passageiros embarcam num trem misterioso e precisam resolver seus problemas internos.',       emoji:'🚂', color:'#1a3a5c', tmdbId:93134,  type:'series' },
-    { id:'a_greg',       title:'O Mundo de Greg',                   genre:'Animação / Comédia',  year:'2018–presente', desc:'Greg e seu amigo Wirt vivem aventuras hilárias numa cidade pequena.',                    emoji:'🦎', color:'#4a7a2a', tmdbId:79008,  type:'series' },
-    { id:'a_ursos',      title:'Ursos sem Curso',                    genre:'Animação / Comédia',  year:'2015–2019', desc:'Três irmãos ursos tentam se encaixar no mundo humano com resultados caóticos.',              emoji:'🐻', color:'#5c4a3a', tmdbId:62643,  type:'series' },
-    { id:'a_titãs',      title:'Jovens Titãs',                       genre:'Animação / Ação',     year:'2003–2006', desc:'Robin, Estelar, Aresta, Cyborg e Mutante formam um time de heróis jovens.',                 emoji:'🦸', color:'#3a2a5c', tmdbId:604,    type:'series' },
-    { id:'a_titãs_ac',   title:'Jovens Titãs em Ação!',              genre:'Animação / Comédia',  year:'2013–presente', desc:'A versão cômica dos Jovens Titãs, com aventuras leves e muito humor nonsense.',          emoji:'😂', color:'#c04a2a', tmdbId:45140,  type:'series' },
-    { id:'a_batman',     title:'Batman: A Série Animada',            genre:'Animação / Ação',     year:'1992–1995', desc:'A versão mais aclamada do Batman em animação — sombria, épica e inesquecível.',              emoji:'🦇', color:'#1a1a2e', tmdbId:2098,   type:'series' },
-    { id:'a_liga',       title:'Liga da Justiça Sem Limites',        genre:'Animação / Ação',     year:'2004–2006', desc:'Os maiores heróis do DC se unem para defender a Terra de ameaças colossais.',               emoji:'🌟', color:'#2a3a6e', tmdbId:1639,   type:'series' },
-    { id:'a_jjovem',     title:'Justiça Jovem',                      genre:'Animação / Ação',     year:'2010–presente', desc:'A equipe de sidekicks dos grandes heróis opera missões secretas para a Liga.',           emoji:'⚡', color:'#3a5c7a', tmdbId:33217,  type:'series' },
-    { id:'a_harley',     title:'Harley Quinn',                       genre:'Animação / Comédia',  year:'2019–presente', desc:'Harley Quinn deixa o Coringa e tenta se tornar uma vilã por conta própria.',            emoji:'🃏', color:'#c0207a', tmdbId:74440,  type:'series' },
-    { id:'a_rick',       title:'Rick e Morty',                       genre:'Animação / Ficção',   year:'2013–presente', desc:'Um cientista bêbado e genial viaja pelo cosmos com seu neto inseguro.',                 emoji:'🧪', color:'#2a8e3a', tmdbId:60625,  type:'series' },
+    /* — Cartoons clássicos e modernos — */
+    { id:'a_hora',        title:'Hora de Aventura',               genre:'Animação / Fantasia', year:'2010–2018', desc:'Finn e Jake exploram a Terra de Ooo em aventuras mágicas e emocionantes.',             emoji:'⚔️', color:'#5c8e3a', tmdbId:15260,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/casOSrXJAkJ4AHpqpzZ9WKZM8Y9.jpg' },
+    { id:'a_show',        title:'Apenas um Show',                 genre:'Animação / Comédia',  year:'2010–2017', desc:'Mordecai e Rigby são preguiçosos e cometem desastres no parque onde trabalham.',      emoji:'🐦', color:'#4a7a2a', tmdbId:31132,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/h4JMCMEGQxJe7OQTOpWaLQRVvVW.jpg' },
+    { id:'a_steven',      title:'Steven Universo',               genre:'Animação / Aventura', year:'2013–2019', desc:'Steven, meio humano meio Gema, aprende a usar poderes e protege a Terra com amor.',   emoji:'💎', color:'#e8536f', tmdbId:61175,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/oW4jxPGu96TJpRCgGLW58hUP0Cf.jpg' },
+    { id:'a_gumball',     title:'O Incrível Mundo de Gumball',   genre:'Animação / Comédia',  year:'2011–2019', desc:'Gumball e Darwin se metem em confusões absurdas e hilárias em Elmore.',              emoji:'🐱', color:'#2a8ec0', tmdbId:37606,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/jGNBFqkAoJaTlnFnvB21GSGQ4c3.jpg' },
+    { id:'a_ben10',       title:'Ben 10',                         genre:'Animação / Ação',     year:'2005–2008', desc:'Ben encontra o Omnitrix e pode se transformar em 10 alienígenas diferentes.',        emoji:'👽', color:'#4a7a2a', tmdbId:4686,   type:'series', thumb:'https://image.tmdb.org/t/p/w500/xyuiZsqKNLFX7tPCT5iqwrXEEv2.jpg' },
+    { id:'a_ppg',         title:'As Meninas Superpoderosas',      genre:'Animação / Ação',     year:'1998–2005', desc:'Florzinha, Lindinha e Docinho protegem Townsville de vilões com seus superpoderes.', emoji:'👧', color:'#c04a7a', tmdbId:607,    type:'series', thumb:'https://image.tmdb.org/t/p/w500/z1G9m0Cq3qT1lz9I6cIRQzfXC9g.jpg' },
+    { id:'a_dexter',      title:'O Laboratório de Dexter',        genre:'Animação / Comédia',  year:'1996–2003', desc:'Dexter é um gênio científico cuja irmã Dee Dee sempre atrapalha seus planos.',       emoji:'🔬', color:'#4a2a7a', tmdbId:2024,   type:'series', thumb:'https://image.tmdb.org/t/p/w500/vC1LPBpPOlN3JmOVGgzL7tHZKHr.jpg' },
+    { id:'a_johnny',      title:'Johnny Bravo',                   genre:'Animação / Comédia',  year:'1997–2004', desc:'Johnny, vaidoso e musculoso, tenta conquistar as mulheres com péssimo sucesso.',   emoji:'💪', color:'#e8a020', tmdbId:1705,   type:'series', thumb:'https://image.tmdb.org/t/p/w500/x7fXlHFTLHlAK6XJBQ6Xn4yY0v1.jpg' },
+    { id:'a_coragem',     title:'Coragem o Cão Covarde',          genre:'Animação / Terror',   year:'1999–2002', desc:'Coragem vive no meio do nada com seus donos e enfrenta monstros horríveis.',        emoji:'👻', color:'#5c2a7a', tmdbId:954,    type:'series', thumb:'https://image.tmdb.org/t/p/w500/rXcNkjbIvFwHmWvbxRvDxI1J9GG.jpg' },
+    { id:'a_samurai',     title:'Samurai Jack',                   genre:'Animação / Ação',     year:'2001–2017', desc:'Um samurai viaja no tempo e luta contra o demônio Aku para voltar ao passado.',    emoji:'⚔️', color:'#2a2a3a', tmdbId:30984,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/3bhkxtNPHLe8pqPFZ3bepCr6gkQ.jpg' },
+    { id:'a_trem',        title:'Trem Infinito',                  genre:'Animação / Aventura', year:'2019–2021', desc:'Passageiros embarcam num trem misterioso e precisam resolver seus problemas.',       emoji:'🚂', color:'#1a3a5c', tmdbId:93134,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/gKXkMUmPMHkNS1pJP0MNdqYjq2K.jpg' },
+    { id:'a_greg',        title:'O Mundo de Greg',                genre:'Animação / Comédia',  year:'2018–presente', desc:'Greg e seu amigo Wirt vivem aventuras hilárias numa cidade pequena.',          emoji:'🦎', color:'#4a7a2a', tmdbId:79008,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/6sMNzMdq5OjDcKJzJMBMsBmRFZm.jpg' },
+    { id:'a_ursos',       title:'Ursos sem Curso',                genre:'Animação / Comédia',  year:'2015–2019', desc:'Três irmãos ursos tentam se encaixar no mundo humano com resultados caóticos.',    emoji:'🐻', color:'#5c4a3a', tmdbId:62643,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/p9EqoFcXTNFt4fBq1bFHh77e11f.jpg' },
+    { id:'a_titãs',       title:'Jovens Titãs',                   genre:'Animação / Ação',     year:'2003–2006', desc:'Robin, Estelar, Aresta, Cyborg e Mutante formam um time de heróis jovens.',       emoji:'🦸', color:'#3a2a5c', tmdbId:604,    type:'series', thumb:'https://image.tmdb.org/t/p/w500/j2SbbFP1qBzeBKIuPGOkQ5Ywi9F.jpg' },
+    { id:'a_titãs_ac',    title:'Jovens Titãs em Ação!',          genre:'Animação / Comédia',  year:'2013–presente', desc:'A versão cômica dos Jovens Titãs, com aventuras leves e muito humor nonsense.',  emoji:'😂', color:'#c04a2a', tmdbId:45140,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/bnvSwAJJrj2xGivLvFLBNqFB3bK.jpg' },
+    { id:'a_batman',      title:'Batman: A Série Animada',        genre:'Animação / Ação',     year:'1992–1995', desc:'A versão mais aclamada do Batman em animação — sombria, épica e inesquecível.',  emoji:'🦇', color:'#1a1a2e', tmdbId:2098,   type:'series', thumb:'https://image.tmdb.org/t/p/w500/lSu7JIu0XAp9MxVdRr4jUAygILc.jpg' },
+    { id:'a_liga',        title:'Liga da Justiça Sem Limites',    genre:'Animação / Ação',     year:'2004–2006', desc:'Os maiores heróis do DC se unem para defender a Terra de ameaças colossais.',     emoji:'🌟', color:'#2a3a6e', tmdbId:1639,   type:'series', thumb:'https://image.tmdb.org/t/p/w500/4F6v4QXs8yfq2LOjU8lkpwBM3Jy.jpg' },
+    { id:'a_jjovem',      title:'Justiça Jovem',                  genre:'Animação / Ação',     year:'2010–presente', desc:'A equipe de sidekicks dos grandes heróis opera missões secretas para a Liga.',  emoji:'⚡', color:'#3a5c7a', tmdbId:33217,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/cEGXLLGWCXkgD1nwLxKDfYjufeU.jpg' },
+    { id:'a_harley',      title:'Harley Quinn',                   genre:'Animação / Comédia',  year:'2019–presente', desc:'Harley Quinn deixa o Coringa e tenta se tornar uma vilã por conta própria.',  emoji:'🃏', color:'#c0207a', tmdbId:74440,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/h8PFAB6MIBZ0qVR3RLXVbU4fZPb.jpg' },
+    { id:'a_rick',        title:'Rick e Morty',                   genre:'Animação / Ficção',   year:'2013–presente', desc:'Um cientista bêbado e genial viaja pelo cosmos com seu neto inseguro.',        emoji:'🧪', color:'#2a8e3a', tmdbId:60625,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/cvhNj9eoJ0oH9StjDn3zESWQRyP.jpg' },
+    /* ─── HBO Max / MAX ─── */
+    { id:'a_close_enough',title:'Quase Lá',                       genre:'Animação / Comédia',  year:'2020–2022', desc:'Um casal de 30 anos vive situações bizarras e hilárias no subúrbio de Los Angeles.', emoji:'🏠', color:'#e85c1a', tmdbId:88236,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/ggkfvYCeZTN8T7MJ7r8aUQPo7hE.jpg' },
+    { id:'a_final_space', title:'Final Space',                    genre:'Animação / Ficção',   year:'2018–2021', desc:'Gary Goodspeed e um alienígena adorável tentam salvar o universo de dentro de uma prisão.', emoji:'🚀', color:'#1a1a3a', tmdbId:71763,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/lXZyS8gFUGOPlVoQUpiZGfOgwCr.jpg' },
+    { id:'a_velma',       title:'Velma',                          genre:'Animação / Mistério', year:'2023–presente', desc:'A origem sombria e irreverente de Velma, do universo Scooby-Doo, no Max.',     emoji:'🔍', color:'#e85c00', tmdbId:195616, type:'series', thumb:'https://image.tmdb.org/t/p/w500/3O31U3cLNXgUpMIL2sQGMgRgTwC.jpg' },
+    { id:'a_stevenu_f',   title:'Steven Universo: O Filme',      genre:'Animação / Musical',  year:'2019',      desc:'Steven enfrenta uma nova ameaça que quer apagar as memórias das Gemas para sempre.',  emoji:'🌟', color:'#e8536f', tmdbId:609728, type:'movie',  thumb:'https://image.tmdb.org/t/p/w500/4I5nQfFGVPMa2VRuO7nJBTLUEKo.jpg' },
   ],
 };
 
@@ -327,7 +463,7 @@ function _buildPlayerSrc(item, epIdx, serverIdx) {
   const server   = PLAYER_SERVERS[serverIdx];
 
   if (server && item.tmdbId) {
-    // Servidor 2 (vidlink) e Servidor 1 (vidsrc.me) já têm query params — usar & em vez de ?
+    // Servidores com hasParams:true já têm query string — usar & em vez de ?
     const sep = server.hasParams ? '&' : '?';
 
     if (isSeries) {
@@ -355,9 +491,8 @@ function _createIframe(src, title) {
   iframe.title           = title || 'Player';
   iframe.frameBorder     = '0';
   iframe.allowFullscreen  = true;
-  // Sem sandbox — os servidores de embed (vidsrc, vidlink, 2embed) precisam
-  // de allow-top-navigation e allow-popups para funcionar corretamente.
-  // O YouTube também não aceita sandbox restritivo.
+  // Sem sandbox — os servidores de embed precisam de allow-top-navigation e
+  // allow-popups para funcionar corretamente.
   iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');
   iframe.style.cssText   = 'width:100%;aspect-ratio:16/9;display:block;';
   return iframe;
@@ -412,8 +547,9 @@ function _buildPlayer(item, epIdx) {
 }
 
 function _showServerRetryButton(container, item, epIdx) {
-  const nextIdx    = _serverIdx + 1;
-  const hasNext    = nextIdx <= PLAYER_SERVERS.length; // inclui YouTube como próximo
+  const nextIdx = _serverIdx + 1;
+  // FIX: corrigido — inclui YouTube como fallback final após todos os servidores
+  const hasNext    = nextIdx <= PLAYER_SERVERS.length;
   const nextName   = nextIdx < PLAYER_SERVERS.length
     ? PLAYER_SERVERS[nextIdx].name
     : nextIdx === PLAYER_SERVERS.length ? 'YouTube' : null;
@@ -426,7 +562,7 @@ function _showServerRetryButton(container, item, epIdx) {
         <div class="cinema-server-title">${currentName} demorou para responder</div>
         <div class="cinema-server-sub">Tente outro servidor ou aguarde</div>
         <div class="cinema-server-btns">
-          ${nextName ? `<button class="cinema-server-btn cinema-server-btn--primary" onclick="window._cinemaNextServer()">
+          ${hasNext && nextName ? `<button class="cinema-server-btn cinema-server-btn--primary" onclick="window._cinemaNextServer()">
             Trocar para ${nextName}
           </button>` : ''}
           <button class="cinema-server-btn cinema-server-btn--secondary" onclick="window._cinemaRetryServer()">
@@ -437,7 +573,7 @@ function _showServerRetryButton(container, item, epIdx) {
     </div>`;
 }
 
-function _showPlayerError(container) {
+function _showPlayerError(container, item) {
   container.innerHTML = `
     <div class="cinema-server-overlay">
       <div class="cinema-server-msg">
@@ -448,10 +584,9 @@ function _showPlayerError(container) {
     </div>`;
 }
 
-// FIX Bug 3: usa PLAYER_SERVERS.length (não .length - 1) para que índice >= length
-// caia no YouTube fallback dentro de _buildPlayerSrc
+// índice >= PLAYER_SERVERS.length cai no YouTube fallback dentro de _buildPlayerSrc
 window._cinemaNextServer = function () {
-  _serverIdx = Math.min(_serverIdx + 1, PLAYER_SERVERS.length); // permite idx = 3 → YouTube fallback
+  _serverIdx = Math.min(_serverIdx + 1, PLAYER_SERVERS.length);
   if (_currentItem) _buildPlayer(_currentItem, _currentEpIdx);
 };
 
@@ -470,7 +605,7 @@ async function _loadWatched() {
   } catch (e) {}
 }
 
-async function _saveWatched() {
+function _saveWatched() {
   if (!_cinemaDoc) return;
   clearTimeout(_saveDebounce);
   _saveDebounce = setTimeout(async () => {
@@ -513,7 +648,7 @@ function _renderCatalog() {
     const totalEps    = !itemIsMovie ? (item.episodes || []).length : 0;
     const pct         = totalEps > 0 ? Math.round((watchedEps / totalEps) * 100) : 0;
 
-    // FIX Bug 4: séries com todos os episódios assistidos também recebem o badge
+    // séries com todos os episódios assistidos também recebem o badge
     const allEpsDone  = !itemIsMovie && totalEps > 0 && watchedEps === totalEps;
     const showWatched = isWatched || allEpsDone;
 
@@ -555,11 +690,9 @@ function _renderCatalog() {
 /* ══════════════════════════════════════════════
    MODAL — ABRIR / RENDER / FECHAR
    ══════════════════════════════════════════════ */
-// FIX Bug 1: assinatura corrigida — aceita o 2º argumento (tab) que vinha sendo passado
-// em todas as chamadas mas ignorado. O tab não é necessário para abrir o item
-// (o item é buscado em todas as listas), mas aceitamos para compatibilidade.
+// Aceita o 2º argumento (tab) para compatibilidade retroativa, mas não é necessário
 window._openCinemaItem = function (id /*, _tabIgnored */) {
-  if (_isModalOpen) _destroyPlayer();
+  if (_isModalOpen) { stopTracking(); _destroyPlayer(); }
 
   const allLists = [
     ...CINEMA_CATALOG.series,
@@ -596,7 +729,7 @@ window._openCinemaItem = function (id /*, _tabIgnored */) {
   _renderModal();
 };
 
-function _renderModal() {
+function _renderModal(skipPlayerBuild = false) {
   const item = _currentItem;
   if (!item) return;
 
@@ -604,13 +737,14 @@ function _renderModal() {
   const epCount  = isSeries ? item.episodes.length : 0;
   if (isSeries && _currentEpIdx >= epCount) _currentEpIdx = 0;
 
-  const titleEl  = document.getElementById('cinema-modal-title');
-  const epListEl = document.getElementById('cinema-modal-eplist');
-  const markBtn  = document.getElementById('cinema-modal-markbtn');
+  const titleEl    = document.getElementById('cinema-modal-title');
+  const epListEl   = document.getElementById('cinema-modal-eplist');
+  const epLabelEl  = document.getElementById('cinema-modal-eplabel');
+  const markBtn    = document.getElementById('cinema-modal-markbtn');
 
   if (titleEl) titleEl.textContent = `${item.emoji || '🎬'} ${item.title}`;
 
-  _buildPlayer(item, _currentEpIdx);
+  if (!skipPlayerBuild) _buildPlayer(item, _currentEpIdx);
 
   if (isSeries && epListEl) {
     epListEl.innerHTML = item.episodes.map((ep, i) => {
@@ -622,9 +756,11 @@ function _renderModal() {
           <span class="cinema-ep-name">${ep.title}</span>
         </div>`;
     }).join('');
-    epListEl.style.display = 'flex';
+    epListEl.style.display  = 'flex';
+    if (epLabelEl) epLabelEl.style.display = '';
   } else if (epListEl) {
-    epListEl.style.display = 'none';
+    epListEl.style.display  = 'none';
+    if (epLabelEl) epLabelEl.style.display = 'none';
   }
 
   if (markBtn) {
@@ -632,7 +768,7 @@ function _renderModal() {
     const done = !!_watched[key];
     markBtn.textContent = done ? '✓ Marcado como assistido' : '☑ Marcar como assistido';
     markBtn.classList.toggle('done', done);
-    markBtn.onclick = () => { _markWatched(key); _renderModal(); };
+    markBtn.onclick = () => { _markWatched(key); _renderModal(true); };
   }
 }
 

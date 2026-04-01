@@ -188,6 +188,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
   z-index: 5;
 }
@@ -685,7 +686,7 @@
 .home-xp-label { font-size:.72rem; color:#c9a9b0; letter-spacing:.05em; }
 
 /* Level Up Modal */
-.levelup-overlay { position:fixed;inset:0;background:rgba(89,13,34,.7);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center; }
+.levelup-overlay { position:fixed;inset:0;background:rgba(89,13,34,.7);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center; }
 .levelup-card { background:white;border-radius:28px;padding:2.5rem 2rem;text-align:center;max-width:320px;width:90%;box-shadow:0 20px 60px rgba(89,13,34,.3); }
 .levelup-stars { font-size:2rem;margin-bottom:.8rem; }
 .levelup-titulo { font-family:'Playfair Display',serif;font-size:2rem;color:#590d22;font-weight:700; }
@@ -693,7 +694,7 @@
 .levelup-btn { background:#e8536f;color:white;border:none;padding:.8rem 2rem;border-radius:50px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:1rem; }
 
 /* Diálogos */
-.dialogo-overlay { position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2rem; }
+.dialogo-overlay { position:fixed;inset:0;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2rem; }
 .dialogo-hint { color:rgba(255,255,255,.6);font-size:.75rem;margin-top:.8rem;letter-spacing:.1em; }
 .dialogo-box { display:flex;align-items:flex-start;gap:.8rem;max-width:360px;width:90%;padding:1.2rem;border-radius:20px;animation:dialogoIn .3s ease; }
 .dialogo-pietro { background:linear-gradient(135deg,#e8f4ff,#d0e8ff);flex-direction:row; }
