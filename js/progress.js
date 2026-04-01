@@ -329,18 +329,27 @@ export function renderContinueWatching() {
   `;
 }
 
+// FIX Bug 1: escapa todos os dados do usuário injetados via innerHTML (XSS)
+function _escHTML(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function _buildContinueCard(entry) {
   const pct     = Math.round((entry.pct || 0) * 100);
   const timeStr = _formatTime(entry.watched || 0);
+  // FIX Bug 1: sanitiza epTitle antes de inserir no HTML
   const epLabel = entry.type === 'series' && entry.epTitle
-    ? `<div class="cinema-cont-ep">${entry.epTitle}</div>`
+    ? `<div class="cinema-cont-ep">${_escHTML(entry.epTitle)}</div>`
     : '';
+  // FIX Bug 1: itemId pode conter aspas — usa data-attribute + handler em vez de onclick inline
+  const safeId  = _escHTML(entry.itemId);
 
   return `
-    <div class="cinema-cont-card"
-         onclick="window._openCinemaItem('${entry.itemId}')">
-      <div class="cinema-cont-thumb" style="background:${entry.color || '#111'}">
-        <img src="${entry.thumb || ''}" alt="${entry.title}" loading="lazy"
+    <div class="cinema-cont-card" data-item-id="${safeId}" onclick="window._openCinemaItem(this.dataset.itemId)">
+      <div class="cinema-cont-thumb" style="background:${_escHTML(entry.color || '#111')}">
+        <img src="${_escHTML(entry.thumb || '')}" alt="${_escHTML(entry.title)}" loading="lazy"
              onerror="this.style.display='none'">
         <div class="cinema-cont-emoji">${entry.emoji || '🎬'}</div>
         <div class="cinema-cont-bar">
@@ -348,7 +357,7 @@ function _buildContinueCard(entry) {
         </div>
       </div>
       <div class="cinema-cont-info">
-        <div class="cinema-cont-title">${entry.title}</div>
+        <div class="cinema-cont-title">${_escHTML(entry.title)}</div>
         ${epLabel}
         <div class="cinema-cont-time">${timeStr} assistidos</div>
         <button class="cinema-cont-resume-btn">▶ Continuar</button>

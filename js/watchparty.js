@@ -44,6 +44,13 @@ const EMOJIS_CINEMA = [
 export function initWatchParty(db, myName) {
   _db       = db;
   _myName   = myName;        // 'pietro' ou 'emilly'
+
+  // FIX Bug C5: guard — se Firebase falhou, db é null; não cria refs nem listeners
+  if (!db) {
+    console.warn('[WatchParty] Firebase indisponível — Watch Party desativado.');
+    return;
+  }
+
   _wpDoc    = doc(db, 'watchparty', 'session');
   _notifDoc = doc(db, 'watchparty', 'invite');
 
@@ -601,8 +608,9 @@ function _listenForInvite() {
 
     notif.classList.add('show');
 
-    // Auto-dismiss após 30s
-    setTimeout(() => notif.classList.remove('show'), 30000);
+    // FIX Bug WP1: armazena o timer para poder cancelar ao aceitar/recusar
+    clearTimeout(_listenForInvite._dismissTimer);
+    _listenForInvite._dismissTimer = setTimeout(() => notif.classList.remove('show'), 30000);
   }, () => {});
 }
 
@@ -946,20 +954,20 @@ function _closeEmojiPicker() {
    ENCERRAR SESSÃO
 ──────────────────────────────────────────── */
 async function _endSession() {
+  // Para listeners ANTES do setDoc para não receber o próprio evento de encerramento
+  if (_unsub) { _unsub(); _unsub = null; }
+
   // Para streams
   _localStream?.getTracks().forEach(t => t.stop());
   _localStream = null;
   _camOn = false; _micOn = false;
 
-  // Para listeners
-  if (_unsub) { _unsub(); _unsub = null; }
-
   try {
     await setDoc(_wpDoc, { status: 'ended', endedBy: _myName, endedAt: Date.now() }, { merge: true });
   } catch(e) {}
 
-  _closePanel();
-  _resetUI();
+  // FIX Bug C6: usa _onSessionEnded(true) para evitar toast "sessão encerrada" para quem encerrou
+  _onSessionEnded(true);
 }
 
 function _onSessionEnded(byMe) {

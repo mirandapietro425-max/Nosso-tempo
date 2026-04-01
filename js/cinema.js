@@ -19,45 +19,64 @@ import {
   updateProgressBars, renderContinueWatching,
 } from './progress.js';
 
+// FIX Bug C10: importa TMDB_KEY do config.js (evita chave hardcoded duplicada)
+import { TMDB_KEY } from './config.js';
+
 /* ══════════════════════════════════════════════
    PLAYER — SERVIDORES COM DUBLAGEM E LEGENDA PT-BR
    Ordem: prioridade máxima para dublagem brasileira
    ══════════════════════════════════════════════ */
 const PLAYER_SERVERS = [
+  // ── DUBLADO PT-BR ─────────────────────────────────────────────────────────
   {
-    name: '🇧🇷 Dub 1', label: 'Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=pt-BR&primaryColor=e8536f&secondaryColor=c0392b`,
-    tv    : (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=pt-BR&primaryColor=e8536f&secondaryColor=c0392b`,
-    hasParams: true,
-  },
-  {
-    name: '🇧🇷 Dub 2', label: 'Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://embed.su/embed/movie/${id}`,
-    tv    : (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
+    name: '🇧🇷 Dub 1', label: 'SuperFlixAPI — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://superflixapi.rest/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.rest/serie/${id}/${s}/${e}/`,
     hasParams: false,
   },
   {
-    name: '🇧🇷 Dub 3', label: 'Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    tv    : (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+    name: '🇧🇷 Dub 2', label: 'SuperFlixAPI .run — Dublado PT-BR', type: 'dub',
+    // Espelho oficial mais estável da SuperFlixAPI
+    movie : (id)       => `https://superflixapi.run/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.run/serie/${id}/${s}/${e}/`,
+    hasParams: false,
+  },
+  {
+    name: '🇧🇷 Dub 3', label: 'SuperFlixAPI .my — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://superflixapi.my/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.my/serie/${id}/${s}/${e}/`,
+    hasParams: false,
+  },
+  {
+    name: '🇧🇷 Dub 4', label: 'WarezCDN — Dublado PT-BR', type: 'dub',
+    // CDN BR com +250k vídeos, aceita TMDB ID
+    movie : (id)       => `https://warezcdn.site/filme/${id}/`,
+    tv    : (id, s, e) => `https://warezcdn.site/serie/${id}/${s}/${e}/`,
+    hasParams: false,
+  },
+  {
+    name: '🇧🇷 Dub 5', label: 'UltraEmbed — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://ultraembed.com/filme/${id}`,
+    tv    : (id, s, e) => `https://ultraembed.com/serie/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🇧🇷 Dub 6', label: 'SuperFlixAPI .top — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://superflixapi.top/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.top/serie/${id}/${s}/${e}/`,
+    hasParams: false,
+  },
+  // ── LEGENDADO PT-BR ───────────────────────────────────────────────────────
+  {
+    name: '🔤 Leg 1', label: 'VidLink — Legendado PT-BR', type: 'sub',
+    movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=pt-BR&primaryColor=e8536f`,
+    tv    : (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=pt-BR&primaryColor=e8536f`,
     hasParams: true,
   },
   {
-    name: '🔤 Leg 1', label: 'Legenda PT-BR', type: 'sub',
+    name: '🔤 Leg 2', label: 'VidSrc — Legendado', type: 'sub',
     movie : (id)       => `https://vidsrc.me/embed/movie/${id}`,
     tv    : (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
-    hasParams: false,
-  },
-  {
-    name: '🔤 Leg 2', label: 'Legenda PT-BR', type: 'sub',
-    movie : (id)       => `https://autoembed.cc/movie/tmdb-${id}`,
-    tv    : (id, s, e) => `https://autoembed.cc/tv/tmdb-${id}-${s}-${e}`,
-    hasParams: false,
-  },
-  {
-    name: '🔤 Leg 3', label: 'Legenda PT-BR', type: 'sub',
-    movie : (id)       => `https://vidsrc.cc/v2/embed/movie/${id}`,
-    tv    : (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
 ];
@@ -425,7 +444,7 @@ export const CINEMA_CATALOG = {
 /* ══════════════════════════════════════════════
    TMDB — BUSCA DINÂMICA DE EPISÓDIOS PT-BR
    ══════════════════════════════════════════════ */
-const TMDB_KEY = '8265bd1679663a7ea12ac168da84d2e8';
+// FIX Bug C10: TMDB_KEY agora vem do import acima (config.js) — não redefinido aqui
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 
 // Cache em memória: tmdbId → { seasons, episodes[] }
@@ -631,7 +650,7 @@ function _buildPlayer(item, epIdx) {
   const src = _buildPlayerSrc(item, epIdx, _serverIdx);
   if (!src) { _showPlayerError(playerEl, item); return; }
 
-  const isDubServer = _serverIdx < 3; // primeiros 3 são PT-BR
+  const isDubServer = PLAYER_SERVERS[_serverIdx]?.type === 'dub';
   const serverName  = PLAYER_SERVERS[_serverIdx]?.name || 'YouTube';
 
   // Loading skeleton
@@ -798,7 +817,10 @@ function _renderCatalog() {
     const watchedEps  = !itemIsMovie
       ? Object.keys(_watched).filter(k => k.startsWith(`${item.id}_ep`) && _watched[k]).length
       : 0;
-    const totalEps    = !itemIsMovie ? (item.episodes || []).length : 0;
+    // FIX Bug C8: usa episódios do cache dinâmico se disponíveis, senão os estáticos
+    // (evita mostrar 0/0 para doramas/animações que só têm episódios via TMDB)
+    const cachedDynEps = !itemIsMovie && item.tmdbId ? (_episodeCache[item.tmdbId] || null) : null;
+    const totalEps    = !itemIsMovie ? (cachedDynEps ? cachedDynEps.length : (item.episodes || []).length) : 0;
     const pct         = totalEps > 0 ? Math.round((watchedEps / totalEps) * 100) : 0;
 
     // séries com todos os episódios assistidos também recebem o badge
@@ -811,9 +833,11 @@ function _renderCatalog() {
     <div class="cinema-card ${showWatched ? 'cinema-card--watched' : ''}"
          data-item-id="${item.id}"
          data-item-type="${itemIsMovie ? 'movie' : 'series'}"
-         onclick="window._openCinemaItem('${item.id}')">
+         onclick="window._openCinemaItem(this.dataset.itemId)">
       <div class="cinema-card-thumb" style="background:${item.color || '#1a1a2e'}">
         <img src="${thumb}" alt="${item.title}" loading="lazy"
+             style="opacity:0;transition:opacity .3s"
+             onload="this.style.opacity='1';this.nextElementSibling.style.display='none'"
              onerror="this.style.display='none'">
         <div class="cinema-card-emoji">${item.emoji || '🎬'}</div>
         ${showWatched ? '<div class="cinema-card-watched-badge">✓ Assistido</div>' : ''}

@@ -11,15 +11,23 @@
   background: #fff0f3;
   border-radius: 50px;
   padding: 0.3rem;
+  /* v39: scrollável para 5+ abas */
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.cinema-tabs::-webkit-scrollbar { display: none; }
 
 .cinema-tab {
-  flex: 1;
-  padding: 0.6rem 1rem;
+  /* v39: não encolhe, permite scroll horizontal */
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 0.6rem 1.1rem;
   border: none;
   border-radius: 50px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   background: transparent;
@@ -723,22 +731,9 @@
 }
 
 /* ═══════════════════════════════════════════════
-   v39 — TABS SCROLLÁVEL (5 abas)
+   v39 — TABS SCROLLÁVEL (5 abas) — regras já
+   incorporadas na definição principal acima
    ═══════════════════════════════════════════════ */
-.cinema-tabs {
-  overflow-x: auto;
-  flex-wrap: nowrap;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.cinema-tabs::-webkit-scrollbar { display: none; }
-
-.cinema-tab {
-  white-space: nowrap;
-  flex: 0 0 auto;
-  padding: 0.6rem 1.1rem;
-  font-size: 0.82rem;
-}
 
 /* ═══════════════════════════════════════════════
    v39 — PLAYER LOADING SKELETON
@@ -765,11 +760,7 @@
   border: 3px solid rgba(232,83,111,0.25);
   border-top-color: #e8536f;
   border-radius: 50%;
-  animation: cinema-spin 0.8s linear infinite;
-}
-
-@keyframes cinema-spin {
-  to { transform: rotate(360deg); }
+  animation: cinema-spin 0.8s linear infinite; /* reutiliza o keyframe já definido acima */
 }
 
 .cinema-player-loading-text {

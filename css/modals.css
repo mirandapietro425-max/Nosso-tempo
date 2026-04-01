@@ -9,6 +9,7 @@
   background: var(--velvet-alpha-55);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
+  z-index: 10005; /* FIX: sem z-index ficava abaixo da mini-player-bar (10000) */
   display: flex; align-items: center; justify-content: center;
   padding: 1rem;
   opacity: 0; pointer-events: none;
@@ -100,7 +101,10 @@
   background: #ffeef1; border: none; color: var(--rose);
   width: 32px; height: 32px; border-radius: 50%;
   font-size: 1rem; cursor: pointer; font-weight: 700;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  display: flex; align-items: center; justify-content: center;
 }
+.cal-modal-close:hover { background: var(--rose); color: white; }
 
 .cal-modal-date { font-family: var(--font-serif); font-size: 1.4rem; color: var(--velvet); margin-bottom: 1.5rem; text-transform: capitalize; }
 .cal-modal-section { margin-bottom: 1.4rem; }
@@ -179,8 +183,8 @@
 .movie-modal-add { display: flex; flex-direction: column; gap: 0.6rem; }
 .movie-modal-author-row { display: flex; gap: 0.5rem; }
 .movie-modal-input-row { display: flex; gap: 0.5rem; }
-.movie-modal-input { flex: 1; padding: 0.6rem 1rem; border: 1px solid #ffd6de; border-radius: var(--radius-pill); font-family: var(--font-italic); font-size: 0.95rem; font-style: italic; outline: none; color: var(--velvet); }
-.movie-modal-input:focus { border-color: var(--rose); }
+.movie-modal-input { flex: 1; padding: 0.6rem 1rem; border: 1px solid #ffd6de; border-radius: var(--radius-pill); font-family: var(--font-italic); font-size: 0.95rem; font-style: italic; outline: none; color: var(--velvet); background: white; transition: border-color var(--transition-fast); }
+.movie-modal-input:focus { border-color: var(--rose); box-shadow: 0 0 0 3px var(--rose-alpha-10); }
 .movie-modal-send { background: var(--rose); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: var(--radius-pill); cursor: pointer; font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
 .movie-modal-send:hover { background: var(--velvet); }
 
@@ -270,7 +274,8 @@
 .mood-picker-overlay.show .mood-picker-sheet { transform: translateY(0); }
 .mood-picker-title { font-family: var(--font-serif); font-size: 1.1rem; color: var(--velvet); margin-bottom: 0.3rem; text-align: center; }
 .mood-picker-sub { font-size: 0.75rem; color: #c9a9b0; font-style: italic; text-align: center; margin-bottom: 1.2rem; }
-.mood-picker-close { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--rose); font-weight: 700; }
+.mood-picker-close { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--rose); font-weight: 700; z-index: 2; transition: transform var(--transition-fast); }
+.mood-picker-close:hover { transform: scale(1.2); }
 
 .mood-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
 .mood-grid--sticker { display: block; }

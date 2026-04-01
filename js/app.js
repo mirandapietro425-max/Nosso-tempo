@@ -139,27 +139,29 @@ try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
 // (ano-novo, reveillon, dia-maes, dia-pais, finados, independencia, tiradentes, republica,
 // aparecida), fazendo com que as partículas ficassem no estilo padrão enquanto o banner
 // mostrava o evento correto.
+// FIX Bug 2: funções de datas móveis declaradas UMA vez no módulo — usadas por ambos os IIFEs
+function _calcPascoa(y) {
+  const a=y%19,b=Math.floor(y/100),c=y%100,d2=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+  const h=(19*a+b-d2-g+15)%30,i2=Math.floor(c/4),k=c%4,l=(32+2*e+2*i2-h-k)%7,m2=Math.floor((a+11*h+22*l)/451);
+  return new Date(y,Math.floor((h+l-7*m2+114)/31)-1,((h+l-7*m2+114)%31)+1);
+}
+function _isPascoa(d)   { const p=_calcPascoa(d.getFullYear()); return d.getMonth()===p.getMonth()&&d.getDate()===p.getDate(); }
+function _isCarnaval(d) { const p=_calcPascoa(d.getFullYear()),t=new Date(p);t.setDate(p.getDate()-47);const s=new Date(t);s.setDate(t.getDate()-1); return (d.getMonth()===t.getMonth()&&d.getDate()===t.getDate())||(d.getMonth()===s.getMonth()&&d.getDate()===s.getDate()); }
+function _nthWeekday(y,m,wd,n){ let d=new Date(y,m,1),count=0; while(true){if(d.getDay()===wd){count++;if(count===n)return d;} d.setDate(d.getDate()+1); } }
+function _isDiaDasMaes(d){ const s=_nthWeekday(d.getFullYear(),4,0,2); return d.getMonth()===s.getMonth()&&d.getDate()===s.getDate(); }
+function _isDiaDossPais(d){ const s=_nthWeekday(d.getFullYear(),7,0,2); return d.getMonth()===s.getMonth()&&d.getDate()===s.getDate(); }
+
 (function detectAndInitExperience() {
   const now   = new Date();
   const day   = now.getDate();
   const month = now.getMonth();
 
-  function calcPascoa(y) {
-    const a=y%19,b=Math.floor(y/100),c=y%100,d2=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
-    const h=(19*a+b-d2-g+15)%30,i2=Math.floor(c/4),k=c%4,l=(32+2*e+2*i2-h-k)%7,m2=Math.floor((a+11*h+22*l)/451);
-    return new Date(y,Math.floor((h+l-7*m2+114)/31)-1,((h+l-7*m2+114)%31)+1);
-  }
-  function isPascoa(d)   { const p=calcPascoa(d.getFullYear()); return d.getMonth()===p.getMonth()&&d.getDate()===p.getDate(); }
-  function isCarnaval(d) { const p=calcPascoa(d.getFullYear()),t=new Date(p);t.setDate(p.getDate()-47);const s=new Date(t);s.setDate(t.getDate()-1); return (d.getMonth()===t.getMonth()&&d.getDate()===t.getDate())||(d.getMonth()===s.getMonth()&&d.getDate()===s.getDate()); }
-  function nthWeekday(y,m,wd,n){ let d=new Date(y,m,1),count=0; while(true){if(d.getDay()===wd){count++;if(count===n)return d;} d.setDate(d.getDate()+1); } }
-  function isDiaDasMaes(d){ const s=nthWeekday(d.getFullYear(),4,0,2); return d.getMonth()===s.getMonth()&&d.getDate()===s.getDate(); }
-  function isDiaDossPais(d){ const s=nthWeekday(d.getFullYear(),7,0,2); return d.getMonth()===s.getMonth()&&d.getDate()===s.getDate(); }
-
+  // FIX Bug 2: usa as funções compartilhadas do módulo (sem duplicar aqui)
   const dynamicChecks = {
-    'pascoa':   () => isPascoa(now),
-    'carnaval': () => isCarnaval(now),
-    'dia-maes': () => isDiaDasMaes(now),
-    'dia-pais': () => isDiaDossPais(now),
+    'pascoa':   () => _isPascoa(now),
+    'carnaval': () => _isCarnaval(now),
+    'dia-maes': () => _isDiaDasMaes(now),
+    'dia-pais': () => _isDiaDossPais(now),
   };
   const found = EVENTOS.find(e => {
     if (e.check) return e.check(day, month);
@@ -698,6 +700,9 @@ function _muralTodayStr() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// FIX Bug 10: flag que indica se renderMural já rodou ao menos uma vez e populou _muralLastCleanCache
+let _muralInitialized = false;
+
 // APP-2: limpeza diária integrada ao render — uma única chamada getMural()
 async function renderMural() {
   const list = document.getElementById('mural-list');
@@ -705,6 +710,7 @@ async function renderMural() {
 
   let { msgs, lastClean } = await getMural();
   _muralLastCleanCache = lastClean; // atualiza cache
+  _muralInitialized = true; // FIX Bug 10: agora é seguro chamar saveMural(msgs) sem lastClean explícito
 
   const today = _muralTodayStr();
   // FIX: só limpa se lastClean for de um dia ANTERIOR (não apenas diferente de today)
@@ -789,6 +795,9 @@ window.removeMuralPhoto = function() {
 let _addingMural = false;
 async function addMural() {
   if (_addingMural) return;
+  // FIX Bug 10: se renderMural ainda não rodou, o _muralLastCleanCache é null e saveMural
+  // salvaria lastClean: null no Firebase, perdendo a data de controle de limpeza diária
+  if (!_muralInitialized) { showToast('⏳ Aguarda o mural carregar...'); return; }
   const input = document.getElementById('mural-input');
   const text  = input?.value.trim();
   if (!text && !_muralPhotoUrl) { showToast('✏️ Escreve um recado ou adiciona uma foto!'); return; }
@@ -1489,6 +1498,11 @@ function removeCalMedia(i) {
   if (!confirm('Remover esta mídia?')) return;
   calModalData.media.splice(i, 1);
   renderCalMedia();
+  // FIX Bug 3/12: persiste no Firebase E atualiza dot local imediatamente
+  if (calCurrentKey) {
+    calDayData[calCurrentKey] = !!(calModalData.text || calModalData.media?.length || calModalData.comments?.length);
+    saveCalDayData(calCurrentKey, calModalData).catch(() => showToast('❌ Erro ao salvar mídia.', 3000));
+  }
 }
 
 function renderCalComments() {
@@ -1510,6 +1524,11 @@ function removeCalComment(i) {
   if (!confirm('Remover este comentário?')) return;
   calModalData.comments.splice(i, 1);
   renderCalComments();
+  // FIX Bug 3/12: persiste no Firebase E atualiza dot local imediatamente
+  if (calCurrentKey) {
+    calDayData[calCurrentKey] = !!(calModalData.text || calModalData.media?.length || calModalData.comments?.length);
+    saveCalDayData(calCurrentKey, calModalData).catch(() => showToast('❌ Erro ao salvar comentário.', 3000));
+  }
 }
 
 function selectCalAuthor(name) {
@@ -1526,6 +1545,11 @@ function addCalComment() {
   calModalData.comments.push({ author: calAuthor, text });
   if (input) input.value = '';
   renderCalComments();
+  // FIX Bug 4/12: persiste no Firebase E atualiza dot local imediatamente
+  if (calCurrentKey) {
+    calDayData[calCurrentKey] = !!(calModalData.text || calModalData.media?.length || calModalData.comments?.length);
+    saveCalDayData(calCurrentKey, calModalData).catch(() => showToast('❌ Erro ao salvar comentário.', 3000));
+  }
 }
 
 document.getElementById('cal-file-input')?.addEventListener('change', async function () {
@@ -1754,14 +1778,19 @@ function updateLocUI() {
         btnEl.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`;
       }
       // Se cidade não identificada, busca com Nominatim agora
+      // FIX Bug 8: debounce por pessoa evita setDoc duplo se dois snapshots chegarem quase simultâneos
       if (!d.city || rawCoords) {
-        reverseGeocode(d.lat, d.lng).then(async city => {
-          if (cityEl)   cityEl.textContent  = city;
-          if (cityCard) cityCard.textContent = city;
-          const snap = await getDoc(LOC_DOC).catch(() => null);
-          const curr = snap?.exists() ? snap.data() : {};
-          if (curr[person]) { curr[person].city = city; await setDoc(LOC_DOC, curr); }
-        }).catch(() => {});
+        clearTimeout(updateLocUI._geoTimer?.[person]);
+        if (!updateLocUI._geoTimer) updateLocUI._geoTimer = {};
+        updateLocUI._geoTimer[person] = setTimeout(() => {
+          reverseGeocode(d.lat, d.lng).then(async city => {
+            if (cityEl)   cityEl.textContent  = city;
+            if (cityCard) cityCard.textContent = city;
+            const snap = await getDoc(LOC_DOC).catch(() => null);
+            const curr = snap?.exists() ? snap.data() : {};
+            if (curr[person]) { curr[person].city = city; await setDoc(LOC_DOC, curr); }
+          }).catch(() => {});
+        }, 400); // aguarda 400ms para descartar chamadas em rajada
       }
     } else {
       if (cityEl)   cityEl.textContent  = 'Sem localização';
@@ -1887,57 +1916,13 @@ window.shareLocation = shareLocation;
   const month = now.getMonth();
   const year  = now.getFullYear();
 
-  // ── Funções para datas móveis ──
-  function calcPascoa(y) {
-    const a = y % 19, b = Math.floor(y/100), c = y % 100;
-    const d2 = Math.floor(b/4), e = b % 4;
-    const f = Math.floor((b+8)/25), g = Math.floor((b-f+1)/3);
-    const h = (19*a + b - d2 - g + 15) % 30;
-    const i2 = Math.floor(c/4), k = c % 4;
-    const l = (32 + 2*e + 2*i2 - h - k) % 7;
-    const m2 = Math.floor((a + 11*h + 22*l) / 451);
-    const mes = Math.floor((h + l - 7*m2 + 114) / 31) - 1;
-    const dia = ((h + l - 7*m2 + 114) % 31) + 1;
-    return new Date(y, mes, dia);
-  }
-
-  function isPascoa(date) {
-    const p = calcPascoa(date.getFullYear());
-    return date.getMonth() === p.getMonth() && date.getDate() === p.getDate();
-  }
-
-  function isCarnaval(date) {
-    const pascoa = calcPascoa(date.getFullYear());
-    const terca  = new Date(pascoa); terca.setDate(pascoa.getDate() - 47);
-    const seg    = new Date(terca);  seg.setDate(terca.getDate() - 1);
-    return (date.getMonth() === terca.getMonth() && date.getDate() === terca.getDate()) ||
-           (date.getMonth() === seg.getMonth()   && date.getDate() === seg.getDate());
-  }
-
-  function nthWeekday(y, m, weekday, n) {
-    let d = new Date(y, m, 1), count = 0;
-    while (true) {
-      if (d.getDay() === weekday) { count++; if (count === n) return d; }
-      d.setDate(d.getDate() + 1);
-    }
-  }
-
-  function isDiaDasMaes(date) {
-    const seg = nthWeekday(date.getFullYear(), 4, 0, 2); // 2º domingo de maio
-    return date.getMonth() === seg.getMonth() && date.getDate() === seg.getDate();
-  }
-
-  function isDiaDossPais(date) {
-    const seg = nthWeekday(date.getFullYear(), 7, 0, 2); // 2º domingo de agosto
-    return date.getMonth() === seg.getMonth() && date.getDate() === seg.getDate();
-  }
-
-  // Resolve checks dinâmicos
+  // FIX Bug 2: usa as funções compartilhadas do módulo (_calcPascoa, _isPascoa, etc.)
+  // em vez de redefinir localmente — garante lógica idêntica entre os dois IIFEs
   const dynamicChecks = {
-    'pascoa':   () => isPascoa(now),
-    'carnaval': () => isCarnaval(now),
-    'dia-maes': () => isDiaDasMaes(now),
-    'dia-pais': () => isDiaDossPais(now),
+    'pascoa':   () => _isPascoa(now),
+    'carnaval': () => _isCarnaval(now),
+    'dia-maes': () => _isDiaDasMaes(now),
+    'dia-pais': () => _isDiaDossPais(now),
   };
 
   const evento = EVENTOS.find(e => {
@@ -2000,7 +1985,12 @@ window.shareLocation = shareLocation;
 
   // ── Efeitos especiais por tipo de evento ──
   function spawnElement() {
+    // FIX Bug 11: limita elementos simultâneos no DOM para evitar acúmulo em sessões longas
+    const existing = document.querySelectorAll('._event-spawn-el').length;
+    if (existing >= 40) return; // no máximo 40 elementos de evento no DOM ao mesmo tempo
+
     const el = document.createElement('div');
+    el.className = '_event-spawn-el'; // classe para contar e limpar
     el.textContent = evento.elements[Math.floor(Math.random() * evento.elements.length)];
 
     // Aniversários: elementos maiores e mais rápidos
@@ -2019,8 +2009,7 @@ window.shareLocation = shareLocation;
   const qty    = isAniv ? 30 : 18;
   const rate   = isAniv ? 300 : 700;
   for (let i = 0; i < qty; i++) setTimeout(spawnElement, i * 200);
-  // FIX: armazena ID para poder limpar (evita acúmulo infinito de elementos ao ficar horas na página)
-  const _spawnInterval = setInterval(spawnElement, rate);
+  // FIX Bug 5: intervalo gerenciado via _spawnIntervalId abaixo (pausa/retoma)
 
   // Fogos para aniversários — bolhas coloridas subindo
   if (isAniv) {
@@ -2051,18 +2040,29 @@ window.shareLocation = shareLocation;
       }
     }
     for (let i = 0; i < 6; i++) setTimeout(spawnFirework, i * 400);
-    // FIX: armazena ID para poder limpar
-    const _fireworkInterval = setInterval(spawnFirework, 2500);
-    // Limpa fogos quando a página fica oculta (aba minimizada)
+    // FIX Bug 5: usa intervalo mutável para poder pausar E retomar ao voltar para a aba
+    let _fireworkIntervalId = setInterval(spawnFirework, 2500);
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) { clearInterval(_fireworkInterval); }
-    }, { once: true });
+      if (document.hidden) {
+        clearInterval(_fireworkIntervalId);
+        _fireworkIntervalId = null;
+      } else {
+        // Retoma ao voltar para a aba — { once:true } impedia isso
+        if (!_fireworkIntervalId) _fireworkIntervalId = setInterval(spawnFirework, 2500);
+      }
+    });
   }
 
-  // Limpa elementos quando página fica oculta
+  // FIX Bug 5: pausa E retoma o spawn de elementos ao minimizar/restaurar aba
+  let _spawnIntervalId = setInterval(spawnElement, rate);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { clearInterval(_spawnInterval); }
-  }, { once: true });
+    if (document.hidden) {
+      clearInterval(_spawnIntervalId);
+      _spawnIntervalId = null;
+    } else {
+      if (!_spawnIntervalId) _spawnIntervalId = setInterval(spawnElement, rate);
+    }
+  });
 })();
 
 /* ════════════════════════════════════════════

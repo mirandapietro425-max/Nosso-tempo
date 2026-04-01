@@ -182,12 +182,14 @@ export function initDaily() {
       setTimeout(() => openDailyPopup(), 1800);
     } else {
       // Primeira visita da sessão: carta de boas-vindas vai aparecer em 800ms
-      // Tenta a cada 500ms se a carta já foi fechada (_welcomeClosed), com timeout máximo de 15s
+      // FIX Bug C7: limpa intervalo anterior antes de criar novo (evita vazamento se initDaily re-executa à meia-noite)
+      if (initDaily._welcomeInterval) clearInterval(initDaily._welcomeInterval);
       let _dailyAttempts = 0;
-      const _dailyInterval = setInterval(() => {
+      initDaily._welcomeInterval = setInterval(() => {
         _dailyAttempts++;
         if (window._welcomeClosed || _dailyAttempts >= 30) {
-          clearInterval(_dailyInterval);
+          clearInterval(initDaily._welcomeInterval);
+          initDaily._welcomeInterval = null;
           setTimeout(() => openDailyPopup(), 600);
         }
       }, 500);

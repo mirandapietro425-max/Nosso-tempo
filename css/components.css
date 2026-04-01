@@ -49,7 +49,8 @@
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--rose-lt), var(--gold));
-  border-radius: 100px;
+  /* FIX: border-radius removido — o overflow:hidden do pai já faz o clip,
+     o border-radius duplo causava inconsistência visual no Safari iOS */
   transition: width 1s ease;
 }
 
@@ -68,7 +69,7 @@
 }
 
 .letter-card::before {
-  content: '"';
+  content: '\201C'; /* " — escape Unicode para compatibilidade máxima */
   font-family: var(--font-serif);
   font-size: 7rem;
   color: var(--rose-lt);
@@ -268,6 +269,7 @@
 /* ── INPUTS COMUNS ── */
 .input-base {
   padding: 0.55rem 1rem;
+  border: 1px solid #ffd6de; /* FIX: border ausente causava borda padrão do browser */
   border-radius: var(--radius-pill);
   font-family: var(--font-sans);
   font-size: 0.85rem;
@@ -406,7 +408,8 @@
   background: var(--velvet-alpha-55);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
-  z-index: 100000;
+  /* FIX: era 100000 — ficava ACIMA da senha-overlay (z:20000), bloqueando o acesso ao modal de senha */
+  z-index: 10004;
   display: flex; align-items: center; justify-content: center;
   padding: 1.5rem;
   opacity: 0; transition: opacity var(--transition-slow); pointer-events: none;
