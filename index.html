@@ -20,14 +20,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=43">
-  <link rel="stylesheet" href="css/components.css?v=43">
-  <link rel="stylesheet" href="css/modals.css?v=43">
-  <link rel="stylesheet" href="css/animations.css?v=43">
-  <link rel="stylesheet" href="css/stickers.css?v=43">
-  <link rel="stylesheet" href="css/home.css?v=43">
-  <link rel="stylesheet" href="css/games.css?v=43">
-  <link rel="stylesheet" href="css/cinema.css?v=43">
+  <link rel="stylesheet" href="css/main.css?v=45">
+  <link rel="stylesheet" href="css/components.css?v=45">
+  <link rel="stylesheet" href="css/modals.css?v=45">
+  <link rel="stylesheet" href="css/animations.css?v=45">
+  <link rel="stylesheet" href="css/stickers.css?v=45">
+  <link rel="stylesheet" href="css/home.css?v=45">
+  <link rel="stylesheet" href="css/games.css?v=45">
+  <link rel="stylesheet" href="css/cinema.css?v=45">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -599,6 +599,17 @@
       <div class="cinema-modal-title" id="cinema-modal-title">Carregando...</div>
     </div>
     <div class="cinema-modal-player" id="cinema-modal-player"></div>
+
+    <!-- Painel de servidores: Dub e Leg PT-BR -->
+    <div class="cinema-server-panel" id="cinema-server-panel">
+      <div class="cinema-server-panel-label">🇧🇷 Dublado</div>
+      <div class="cinema-server-panel-group" id="cinema-srv-dub"></div>
+      <div class="cinema-server-panel-sep"></div>
+      <div class="cinema-server-panel-label">🔤 Legenda</div>
+      <div class="cinema-server-panel-group" id="cinema-srv-sub"></div>
+    </div>
+
+    <div class="cinema-modal-meta" id="cinema-modal-meta"></div>
     <div class="cinema-modal-mark">
       <button class="cinema-modal-markbtn" id="cinema-modal-markbtn">☑ Marcar como assistido</button>
     </div>

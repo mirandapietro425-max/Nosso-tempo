@@ -74,6 +74,7 @@ import { initLibrary } from './library.js';
 
 // ── Cinema ──
 import { initCinema } from './cinema.js';
+import { initWatchParty } from './watchparty.js';
 
 // ── Jogos / Arcade ──
 import { initGames } from './games.js';
@@ -176,6 +177,11 @@ try { initHome(db); } catch(e) { console.error('initHome:', e); }
 try { initGames(db); } catch(e) { console.error('initGames:', e); }
 try { initLibrary(db, () => { try { return localStorage.getItem('pe_active_player'); } catch { return null; } }); } catch(e) { console.error('initLibrary:', e); }
 try { initCinema(db); } catch(e) { console.error('initCinema:', e); }
+try {
+  // Detecta jogador ativo para o watch party (usa localStorage da casinha)
+  const _wpPlayer = (() => { try { return localStorage.getItem('pe_active_player') || null; } catch { return null; } })();
+  initWatchParty(db, _wpPlayer);
+} catch(e) { console.error('initWatchParty:', e); }
 
 /* ════════════════════════════════════════════
    MUSIC

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — cinema.js  v42
+   PIETRO & EMILLY — cinema.js  v48
    Nosso Cinema 🎬
    · 5 abas: Séries · Filmes · Romance · Doramas · Animação
    · Player multi-servidor com fallback automático — áudio/legenda PT-BR
@@ -20,51 +20,45 @@ import {
 } from './progress.js';
 
 /* ══════════════════════════════════════════════
-   PLAYER — SERVIDORES MULTI-FONTE (PT-BR)
-   Todos configurados para priorizar áudio/legenda em português
+   PLAYER — SERVIDORES COM DUBLAGEM E LEGENDA PT-BR
+   Ordem: prioridade máxima para dublagem brasileira
    ══════════════════════════════════════════════ */
 const PLAYER_SERVERS = [
   {
-    // vidsrc.me — excelente cobertura de dublagem PT-BR, muito estável
-    name: 'Servidor 1',
-    movie : (id)       => `https://vidsrc.me/embed/movie/${id}`,
-    tv    : (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
-    hasParams: false,
-  },
-  {
-    // vidlink.pro — permite forçar idioma PT-BR no player com lang param
-    name: 'Servidor 2',
-    movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=pt-BR&primaryColor=e8536f`,
-    tv    : (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=pt-BR&primaryColor=e8536f`,
+    name: '🇧🇷 Dub 1', label: 'Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=pt-BR&primaryColor=e8536f&secondaryColor=c0392b`,
+    tv    : (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true&lang=pt-BR&primaryColor=e8536f&secondaryColor=c0392b`,
     hasParams: true,
   },
   {
-    // autoembed.cc — detecta idioma do navegador automaticamente (PT-BR preferido)
-    name: 'Servidor 3',
-    movie : (id)       => `https://autoembed.cc/movie/tmdb-${id}`,
-    tv    : (id, s, e) => `https://autoembed.cc/tv/tmdb-${id}-${s}-${e}`,
-    hasParams: false,
-  },
-  {
-    // embed.su — player com seletor de áudio/legenda, inclui PT-BR em muitos títulos
-    name: 'Servidor 4',
+    name: '🇧🇷 Dub 2', label: 'Dublado PT-BR', type: 'dub',
     movie : (id)       => `https://embed.su/embed/movie/${id}`,
     tv    : (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
   {
-    // vidsrc.cc — fonte extra com boa cobertura brasileira
-    name: 'Servidor 5',
-    movie : (id)       => `https://vidsrc.cc/v2/embed/movie/${id}`,
-    tv    : (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
-    hasParams: false,
-  },
-  {
-    // multiembed.mov (SuperEmbed) — múltiplas fontes, player com seleção de legenda
-    name: 'Servidor 6',
+    name: '🇧🇷 Dub 3', label: 'Dublado PT-BR', type: 'dub',
     movie : (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
     tv    : (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
     hasParams: true,
+  },
+  {
+    name: '🔤 Leg 1', label: 'Legenda PT-BR', type: 'sub',
+    movie : (id)       => `https://vidsrc.me/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🔤 Leg 2', label: 'Legenda PT-BR', type: 'sub',
+    movie : (id)       => `https://autoembed.cc/movie/tmdb-${id}`,
+    tv    : (id, s, e) => `https://autoembed.cc/tv/tmdb-${id}-${s}-${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🔤 Leg 3', label: 'Legenda PT-BR', type: 'sub',
+    movie : (id)       => `https://vidsrc.cc/v2/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
   },
 ];
 const PLAYER_TIMEOUT_MS = 12000;
@@ -291,7 +285,7 @@ export const CINEMA_CATALOG = {
     /* — Lançamentos 2025 — */
     { id:'f_capitao5',      title:'Capitão América: Admirável Mundo Novo', genre:'Ação / Ficção Científica', year:'2025', desc:'Sam Wilson assume o escudo e enfrenta ameaças globais como o novo Capitão América.',                    emoji:'🛡️', color:'#1a3a6e', tmdbId:822119,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/pzIddUEMWhWzfvLI3TwxUG2wGoi.jpg` },
     { id:'f_quarteto',      title:'Quarteto Fantástico: Primeiros Passos', genre:'Ação / Ficção Científica', year:'2025', desc:'Os Quatro Fantásticos surgem como os maiores heróis do planeta.',                                    emoji:'🔥', color:'#1a3a6e', tmdbId:1411196, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/ngl2FKBlU4fhbdsrtdom9LVLBXw.jpg` },
-    { id:'f_jwrecomeço',    title:'Jurassic World: Recomeço',              genre:'Aventura / Ficção',        year:'2025', desc:'Uma nova era de dinossauros começa quando a humanidade tenta recolonizar seu território.',             emoji:'🦕', color:'#1a4a1a', tmdbId:1157750, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/oAiL7XpMTHiKdSBqR9HMWUQ8jJD.jpg` },
+    { id:'f_jwrecomecos',    title:'Jurassic World: Recomeço',              genre:'Aventura / Ficção',        year:'2025', desc:'Uma nova era de dinossauros começa quando a humanidade tenta recolonizar seu território.',             emoji:'🦕', color:'#1a4a1a', tmdbId:1157750, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/oAiL7XpMTHiKdSBqR9HMWUQ8jJD.jpg` },
     { id:'f_bailarina',     title:'Bailarina',                             genre:'Ação / Thriller',          year:'2025', desc:'Uma assassina do universo de John Wick busca vingança por sua família.',                             emoji:'💃', color:'#1a1a2e', tmdbId:573435,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/lgqSZCUYkiDSLVJcqWdPQHQgDjn.jpg` },
     { id:'f_mi_final',      title:'Missão: Impossível – O Acerto Final',   genre:'Ação / Espionagem',        year:'2025', desc:'Ethan Hunt enfrenta sua missão mais perigosa e pessoal de toda a carreira.',                         emoji:'💣', color:'#0a0a1a', tmdbId:575265,  type:'movie', thumb:`https://image.tmdb.org/t/p/w500/z53D72EAOxGRqdr7KXXWp9dJiDe.jpg` },
     { id:'f_panico7',       title:'Pânico 7',                              genre:'Terror / Suspense',        year:'2025', desc:'O legado de Ghostface retorna com novos sustos e reviravoltas inesperadas.',                         emoji:'👻', color:'#8b0000', tmdbId:1100782, type:'movie', thumb:`https://image.tmdb.org/t/p/w500/2zmTngn1tYC1AvfnrFLhxeD82hz.jpg` },
@@ -413,8 +407,8 @@ export const CINEMA_CATALOG = {
     { id:'a_trem',        title:'Trem Infinito',                  genre:'Animação / Aventura', year:'2019–2021', desc:'Passageiros embarcam num trem misterioso e precisam resolver seus problemas.',       emoji:'🚂', color:'#1a3a5c', tmdbId:93134,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/gKXkMUmPMHkNS1pJP0MNdqYjq2K.jpg' },
     { id:'a_greg',        title:'O Mundo de Greg',                genre:'Animação / Comédia',  year:'2018–presente', desc:'Greg e seu amigo Wirt vivem aventuras hilárias numa cidade pequena.',          emoji:'🦎', color:'#4a7a2a', tmdbId:79008,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/6sMNzMdq5OjDcKJzJMBMsBmRFZm.jpg' },
     { id:'a_ursos',       title:'Ursos sem Curso',                genre:'Animação / Comédia',  year:'2015–2019', desc:'Três irmãos ursos tentam se encaixar no mundo humano com resultados caóticos.',    emoji:'🐻', color:'#5c4a3a', tmdbId:62643,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/p9EqoFcXTNFt4fBq1bFHh77e11f.jpg' },
-    { id:'a_titãs',       title:'Jovens Titãs',                   genre:'Animação / Ação',     year:'2003–2006', desc:'Robin, Estelar, Aresta, Cyborg e Mutante formam um time de heróis jovens.',       emoji:'🦸', color:'#3a2a5c', tmdbId:604,    type:'series', thumb:'https://image.tmdb.org/t/p/w500/j2SbbFP1qBzeBKIuPGOkQ5Ywi9F.jpg' },
-    { id:'a_titãs_ac',    title:'Jovens Titãs em Ação!',          genre:'Animação / Comédia',  year:'2013–presente', desc:'A versão cômica dos Jovens Titãs, com aventuras leves e muito humor nonsense.',  emoji:'😂', color:'#c04a2a', tmdbId:45140,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/bnvSwAJJrj2xGivLvFLBNqFB3bK.jpg' },
+    { id:'a_titas',       title:'Jovens Titãs',                   genre:'Animação / Ação',     year:'2003–2006', desc:'Robin, Estelar, Aresta, Cyborg e Mutante formam um time de heróis jovens.',       emoji:'🦸', color:'#3a2a5c', tmdbId:604,    type:'series', thumb:'https://image.tmdb.org/t/p/w500/j2SbbFP1qBzeBKIuPGOkQ5Ywi9F.jpg' },
+    { id:'a_titas_ac',    title:'Jovens Titãs em Ação!',          genre:'Animação / Comédia',  year:'2013–presente', desc:'A versão cômica dos Jovens Titãs, com aventuras leves e muito humor nonsense.',  emoji:'😂', color:'#c04a2a', tmdbId:45140,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/bnvSwAJJrj2xGivLvFLBNqFB3bK.jpg' },
     { id:'a_batman',      title:'Batman: A Série Animada',        genre:'Animação / Ação',     year:'1992–1995', desc:'A versão mais aclamada do Batman em animação — sombria, épica e inesquecível.',  emoji:'🦇', color:'#1a1a2e', tmdbId:2098,   type:'series', thumb:'https://image.tmdb.org/t/p/w500/lSu7JIu0XAp9MxVdRr4jUAygILc.jpg' },
     { id:'a_liga',        title:'Liga da Justiça Sem Limites',    genre:'Animação / Ação',     year:'2004–2006', desc:'Os maiores heróis do DC se unem para defender a Terra de ameaças colossais.',     emoji:'🌟', color:'#2a3a6e', tmdbId:1639,   type:'series', thumb:'https://image.tmdb.org/t/p/w500/4F6v4QXs8yfq2LOjU8lkpwBM3Jy.jpg' },
     { id:'a_jjovem',      title:'Justiça Jovem',                  genre:'Animação / Ação',     year:'2010–presente', desc:'A equipe de sidekicks dos grandes heróis opera missões secretas para a Liga.',  emoji:'⚡', color:'#3a5c7a', tmdbId:33217,  type:'series', thumb:'https://image.tmdb.org/t/p/w500/cEGXLLGWCXkgD1nwLxKDfYjufeU.jpg' },
@@ -429,6 +423,120 @@ export const CINEMA_CATALOG = {
 };
 
 /* ══════════════════════════════════════════════
+   TMDB — BUSCA DINÂMICA DE EPISÓDIOS PT-BR
+   ══════════════════════════════════════════════ */
+const TMDB_KEY = '8265bd1679663a7ea12ac168da84d2e8';
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+
+// Cache em memória: tmdbId → { seasons, episodes[] }
+const _episodeCache = {};
+
+async function _fetchAllEpisodes(item) {
+  const id = item.tmdbId;
+  if (!id) return null;
+  if (_episodeCache[id]) return _episodeCache[id];
+
+  try {
+    // 1. Busca detalhes da série em PT-BR para obter lista de temporadas
+    const detailRes = await fetch(
+      `${TMDB_BASE}/tv/${id}?api_key=${TMDB_KEY}&language=pt-BR`
+    );
+    if (!detailRes.ok) return null;
+    const detail = await detailRes.json();
+
+    // Temporadas válidas (excluir "Especiais" — season_number 0)
+    const seasons = (detail.seasons || []).filter(s => s.season_number > 0);
+
+    // 2. Busca episódios de cada temporada em paralelo
+    const seasonData = await Promise.all(
+      seasons.map(s =>
+        fetch(`${TMDB_BASE}/tv/${id}/season/${s.season_number}?api_key=${TMDB_KEY}&language=pt-BR`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    );
+
+    // 3. Monta lista flat de episódios
+    const episodes = [];
+    for (const sd of seasonData) {
+      if (!sd || !sd.episodes) continue;
+      for (const ep of sd.episodes) {
+        const epName = ep.name && ep.name.trim()
+          ? ep.name
+          : `Episódio ${ep.episode_number}`;
+        episodes.push({
+          title: `T${ep.season_number}E${ep.episode_number} — ${epName}`,
+          season: ep.season_number,
+          episode: ep.episode_number,
+          overview: ep.overview || '',
+          still: ep.still_path
+            ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
+            : null,
+        });
+      }
+    }
+
+    _episodeCache[id] = episodes.length > 0 ? episodes : null;
+    return _episodeCache[id];
+  } catch (e) {
+    return null;
+  }
+}
+
+// Cache de metadados de filmes/séries
+const _metaCache = {};
+
+async function _fetchTmdbMeta(item) {
+  const id = item.tmdbId;
+  if (!id) return null;
+  if (_metaCache[id]) return _metaCache[id];
+
+  try {
+    const isMovie = item.type === 'movie';
+    const endpoint = isMovie ? 'movie' : 'tv';
+
+    const [detailRes, creditsRes] = await Promise.all([
+      fetch(`${TMDB_BASE}/${endpoint}/${id}?api_key=${TMDB_KEY}&language=pt-BR`),
+      fetch(`${TMDB_BASE}/${endpoint}/${id}/credits?api_key=${TMDB_KEY}&language=pt-BR`),
+    ]);
+
+    const detail  = detailRes.ok  ? await detailRes.json()  : null;
+    const credits = creditsRes.ok ? await creditsRes.json() : null;
+
+    if (!detail) return null;
+
+    const runtime = isMovie
+      ? (detail.runtime ? `${detail.runtime} min` : null)
+      : (detail.episode_run_time?.[0] ? `~${detail.episode_run_time[0]} min/ep` : null);
+
+    const cast = (credits?.cast || [])
+      .slice(0, 5)
+      .map(a => a.name)
+      .join(', ');
+
+    const genres = (detail.genres || []).map(g => g.name).join(', ');
+
+    const overview = detail.overview && detail.overview.trim()
+      ? detail.overview
+      : null;
+
+    const tagline = detail.tagline && detail.tagline.trim()
+      ? detail.tagline
+      : null;
+
+    const vote = detail.vote_average
+      ? Math.round(detail.vote_average * 10) / 10
+      : null;
+
+    const meta = { runtime, cast, genres, overview, tagline, vote, isMovie };
+    _metaCache[id] = meta;
+    return meta;
+  } catch (e) {
+    return null;
+  }
+}
+
+/* ══════════════════════════════════════════════
    ESTADO INTERNO
    ══════════════════════════════════════════════ */
 let _db          = null;
@@ -441,6 +549,8 @@ let _isModalOpen    = false;
 let _saveDebounce   = null;
 let _serverIdx      = 0;
 let _playerTimeout  = null;
+let _dynamicEpisodes = null;   // episódios carregados dinamicamente do TMDB
+let _loadingEpisodes = false;  // flag de loading
 
 /* ══════════════════════════════════════════════
    HELPERS — PLAYER
@@ -452,6 +562,15 @@ function _destroyPlayer() {
   if (p) p.innerHTML = '';
 }
 
+function _escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function _parseSeasonEpisode(title) {
   if (!title) return [1, 1];
   const m = title.match(/T(\d+)E(\d+)/i);
@@ -459,7 +578,7 @@ function _parseSeasonEpisode(title) {
 }
 
 function _buildPlayerSrc(item, epIdx, serverIdx) {
-  const isSeries = !!(item.episodes || item.type === 'series');
+  const isSeries = !!(item.episodes || item.type === 'series' || _dynamicEpisodes);
   const server   = PLAYER_SERVERS[serverIdx];
 
   if (server && item.tmdbId) {
@@ -467,10 +586,16 @@ function _buildPlayerSrc(item, epIdx, serverIdx) {
     const sep = server.hasParams ? '&' : '?';
 
     if (isSeries) {
-      const ep     = item.episodes ? item.episodes[epIdx] : null;
-      const [s, e] = _parseSeasonEpisode(ep?.title);
-      const rt     = getResumeTime(item, epIdx);
-      return server.tv(item.tmdbId, s, e) + (rt > 0 ? `${sep}t=${rt}` : '');
+      // Usa episódios dinâmicos do TMDB se disponíveis, senão cai no estático
+      const episodes = _dynamicEpisodes || item.episodes;
+      const ep       = episodes ? episodes[epIdx] : null;
+      const s        = ep?.season   || null;
+      const e        = ep?.episode  || null;
+      const [sf, ef] = (s && e) ? [s, e] : _parseSeasonEpisode(ep?.title);
+      // BUG FIX: passa dynEp para getResumeTime para doramas/animações sem episodes[]
+      const dynEp = (ep?.season != null && ep?.episode != null) ? { season: ep.season, episode: ep.episode } : null;
+      const rt    = getResumeTime(item, epIdx, dynEp);
+      return server.tv(item.tmdbId, sf, ef) + (rt > 0 ? `${sep}t=${rt}` : '');
     } else {
       const rt = getResumeTime(item, 0);
       return server.movie(item.tmdbId) + (rt > 0 ? `${sep}t=${rt}` : '');
@@ -506,6 +631,9 @@ function _buildPlayer(item, epIdx) {
   const src = _buildPlayerSrc(item, epIdx, _serverIdx);
   if (!src) { _showPlayerError(playerEl, item); return; }
 
+  const isDubServer = _serverIdx < 3; // primeiros 3 são PT-BR
+  const serverName  = PLAYER_SERVERS[_serverIdx]?.name || 'YouTube';
+
   // Loading skeleton
   const skeleton = document.createElement('div');
   skeleton.id        = 'cinema-player-skeleton';
@@ -513,7 +641,9 @@ function _buildPlayer(item, epIdx) {
   skeleton.innerHTML = `
     <div class="cinema-player-loading">
       <div class="cinema-player-spinner"></div>
-      <span class="cinema-player-loading-text">Carregando ${PLAYER_SERVERS[_serverIdx]?.name || 'YouTube'}…</span>
+      <span class="cinema-player-loading-text">
+        ${isDubServer ? '🇧🇷 Carregando dublagem PT-BR…' : `Carregando ${serverName}…`}
+      </span>
     </div>`;
   playerEl.appendChild(skeleton);
 
@@ -522,6 +652,15 @@ function _buildPlayer(item, epIdx) {
     const sk = document.getElementById('cinema-player-skeleton');
     if (sk) sk.remove();
     if (_playerTimeout) { clearTimeout(_playerTimeout); _playerTimeout = null; }
+
+    // Badge PT-BR aparece por 4s após carregar
+    if (isDubServer) {
+      const badge = document.createElement('div');
+      badge.className = 'cinema-ptbr-badge';
+      badge.textContent = '🇧🇷 Dublado PT-BR';
+      playerEl.appendChild(badge);
+      setTimeout(() => { badge.style.opacity = '0'; setTimeout(() => badge.remove(), 400); }, 3600);
+    }
   };
 
   // Timeout de 12s → botão trocar servidor
@@ -534,8 +673,15 @@ function _buildPlayer(item, epIdx) {
   playerEl.appendChild(iframe);
 
   // Rastreia progresso
+  // BUG FIX: passa dynEp para startTracking — garante chave e type corretos para episódios dinâmicos
+  const episodes = _dynamicEpisodes || item.episodes;
+  const ep       = episodes ? episodes[epIdx] : null;
+  const dynEp    = (ep?.season != null && ep?.episode != null)
+    ? { season: ep.season, episode: ep.episode }
+    : null;
+
   startTracking(item, epIdx, (key, watchedItem, eIdx) => {
-    const watchKey = watchedItem.episodes
+    const watchKey = (watchedItem.episodes || dynEp)
       ? `${watchedItem.id}_ep${eIdx}`
       : watchedItem.id;
     if (!_watched[watchKey]) {
@@ -543,17 +689,20 @@ function _buildPlayer(item, epIdx) {
       _saveWatched();
       _renderCatalog();
     }
-  });
+  }, dynEp);
 }
 
 function _showServerRetryButton(container, item, epIdx) {
   const nextIdx = _serverIdx + 1;
   // FIX: corrigido — inclui YouTube como fallback final após todos os servidores
-  const hasNext    = nextIdx <= PLAYER_SERVERS.length;
+  const hasNext    = nextIdx <= PLAYER_SERVERS.length; // <= length permite YouTube como próximo
   const nextName   = nextIdx < PLAYER_SERVERS.length
     ? PLAYER_SERVERS[nextIdx].name
     : nextIdx === PLAYER_SERVERS.length ? 'YouTube' : null;
   const currentName = PLAYER_SERVERS[_serverIdx]?.name || 'YouTube';
+
+  // Não mostra botão se já está no YouTube (fallback final)
+  const isAtLastServer = _serverIdx >= PLAYER_SERVERS.length;
 
   container.innerHTML = `
     <div class="cinema-server-overlay">
@@ -562,7 +711,7 @@ function _showServerRetryButton(container, item, epIdx) {
         <div class="cinema-server-title">${currentName} demorou para responder</div>
         <div class="cinema-server-sub">Tente outro servidor ou aguarde</div>
         <div class="cinema-server-btns">
-          ${hasNext && nextName ? `<button class="cinema-server-btn cinema-server-btn--primary" onclick="window._cinemaNextServer()">
+        ${!isAtLastServer && hasNext && nextName ? `<button class="cinema-server-btn cinema-server-btn--primary" onclick="window._cinemaNextServer()">
             Trocar para ${nextName}
           </button>` : ''}
           <button class="cinema-server-btn cinema-server-btn--secondary" onclick="window._cinemaRetryServer()">
@@ -609,7 +758,7 @@ function _saveWatched() {
   if (!_cinemaDoc) return;
   clearTimeout(_saveDebounce);
   _saveDebounce = setTimeout(async () => {
-    try { await setDoc(_cinemaDoc, { watched: _watched }); } catch (e) {}
+    try { await setDoc(_cinemaDoc, { watched: _watched }, { merge: true }); } catch (e) {} // BUG FIX: merge evita sobrescrever dados do outro usuário
   }, 600);
 }
 
@@ -641,10 +790,14 @@ function _renderCatalog() {
   const { list, isMovie } = _getTabData();
 
   wrap.innerHTML = list.map(item => {
-    const itemIsMovie = isMovie || item.type === 'movie' || !item.episodes;
+    // É filme se: aba é filmes/romance E item não tem type:'series', OU se explicitamente type:'movie'
+    const itemIsMovie = item.type === 'movie'
+      || (isMovie && item.type !== 'series');
     const isWatched   = itemIsMovie ? !!_watched[item.id] : false;
+    // Conta episódios assistidos pelo prefixo do ID (funciona com episódios dinâmicos e estáticos)
     const watchedEps  = !itemIsMovie
-      ? (item.episodes || []).filter((_, i) => !!_watched[`${item.id}_ep${i}`]).length : 0;
+      ? Object.keys(_watched).filter(k => k.startsWith(`${item.id}_ep`) && _watched[k]).length
+      : 0;
     const totalEps    = !itemIsMovie ? (item.episodes || []).length : 0;
     const pct         = totalEps > 0 ? Math.round((watchedEps / totalEps) * 100) : 0;
 
@@ -691,7 +844,7 @@ function _renderCatalog() {
    MODAL — ABRIR / RENDER / FECHAR
    ══════════════════════════════════════════════ */
 // Aceita o 2º argumento (tab) para compatibilidade retroativa, mas não é necessário
-window._openCinemaItem = function (id /*, _tabIgnored */) {
+window._openCinemaItem = async function (id /*, _tabIgnored */) {
   if (_isModalOpen) { stopTracking(); _destroyPlayer(); }
 
   const allLists = [
@@ -704,13 +857,22 @@ window._openCinemaItem = function (id /*, _tabIgnored */) {
   const item = allLists.find(x => x.id === id);
   if (!item) return;
 
-  _currentItem = item;
-  _serverIdx   = 0;
+  _currentItem     = item;
+  _serverIdx       = 0;
+  _dynamicEpisodes = null;
+  _loadingEpisodes = false;
 
-  if (item.episodes) {
+  const isMovie = item.type === 'movie';
+  // É série se não for filme explícito
+  const isTVItem = !isMovie;
+
+  // Restaura último episódio assistido
+  // BUG FIX: restaura para TODOS os itens TV (inclui doramas/animações sem episodes[] estáticos)
+  // Aceita type='series' e type='movie' (compatibilidade com dados salvos antes da correção)
+  if (isTVItem) {
     try {
       const all     = JSON.parse(localStorage.getItem('cinema_progress_v1') || '{}');
-      const entries = Object.values(all).filter(e => e.itemId === id && e.type === 'series');
+      const entries = Object.values(all).filter(e => e.itemId === id);
       if (entries.length) {
         const latest  = entries.sort((a, b) => (b.updated || 0) - (a.updated || 0))[0];
         _currentEpIdx = (latest.epIdx != null && !latest.done) ? latest.epIdx : 0;
@@ -726,42 +888,65 @@ window._openCinemaItem = function (id /*, _tabIgnored */) {
   if (!overlay) return;
   _isModalOpen = true;
   overlay.classList.add('show');
+
+  // Abre modal imediatamente
   _renderModal();
+
+  // Busca metadados TMDB em paralelo para todos (filmes e séries)
+  if (item.tmdbId) {
+    // Snapshot do item para detectar race condition (usuário abriu outro título durante o fetch)
+    const fetchedForItem = item;
+
+    // Metadados (sinopse PT-BR, elenco, duração, nota)
+    _fetchTmdbMeta(item).then(meta => {
+      if (_currentItem !== fetchedForItem) return; // race condition: outro item foi aberto
+      if (meta) _renderMeta(meta);
+    });
+
+    // Episódios (só para séries/doramas/animações)
+    if (isTVItem) {
+      _loadingEpisodes = true;
+      _renderEpisodeList();
+      const fetched = await _fetchAllEpisodes(item);
+      // BUG FIX: race condition — verifica se o item ainda é o mesmo após o await
+      if (_currentItem !== fetchedForItem) return;
+      _loadingEpisodes = false;
+      if (fetched && fetched.length > 0) {
+        _dynamicEpisodes = fetched;
+        const prevIdx = _currentEpIdx;
+        if (_currentEpIdx >= fetched.length) _currentEpIdx = 0;
+        _renderEpisodeList();
+        // Se o índice mudou, reconstrói o player com o ep correto
+        if (_currentEpIdx !== prevIdx) {
+          _buildPlayer(item, _currentEpIdx);
+          _renderServerPanel();
+        }
+      } else {
+        _renderEpisodeList();
+      }
+    }
+  }
 };
 
 function _renderModal(skipPlayerBuild = false) {
   const item = _currentItem;
   if (!item) return;
 
-  const isSeries = !!(item.episodes);
-  const epCount  = isSeries ? item.episodes.length : 0;
-  if (isSeries && _currentEpIdx >= epCount) _currentEpIdx = 0;
+  // Usa episódios dinâmicos (TMDB) se disponíveis, senão os estáticos
+  const episodes = _dynamicEpisodes || item.episodes || null;
+  const isSeries = !!(episodes || item.type === 'series');
+  const epCount  = episodes ? episodes.length : 0;
+  if (isSeries && epCount > 0 && _currentEpIdx >= epCount) _currentEpIdx = 0;
 
-  const titleEl    = document.getElementById('cinema-modal-title');
-  const epListEl   = document.getElementById('cinema-modal-eplist');
-  const epLabelEl  = document.getElementById('cinema-modal-eplabel');
-  const markBtn    = document.getElementById('cinema-modal-markbtn');
+  const titleEl   = document.getElementById('cinema-modal-title');
+  const markBtn   = document.getElementById('cinema-modal-markbtn');
 
   if (titleEl) titleEl.textContent = `${item.emoji || '🎬'} ${item.title}`;
 
   if (!skipPlayerBuild) _buildPlayer(item, _currentEpIdx);
 
-  if (isSeries && epListEl) {
-    epListEl.innerHTML = item.episodes.map((ep, i) => {
-      const done = !!_watched[`${item.id}_ep${i}`];
-      return `
-        <div class="cinema-ep-item ${i === _currentEpIdx ? 'active' : ''} ${done ? 'ep-done' : ''}"
-             onclick="window._cinemaSwitchEp(${i})">
-          <span class="cinema-ep-check">${done ? '✓' : (i + 1)}</span>
-          <span class="cinema-ep-name">${ep.title}</span>
-        </div>`;
-    }).join('');
-    epListEl.style.display  = 'flex';
-    if (epLabelEl) epLabelEl.style.display = '';
-  } else if (epListEl) {
-    epListEl.style.display  = 'none';
-    if (epLabelEl) epLabelEl.style.display = 'none';
-  }
+  _renderServerPanel();
+  _renderEpisodeList();
 
   if (markBtn) {
     const key  = isSeries ? `${item.id}_ep${_currentEpIdx}` : item.id;
@@ -772,12 +957,135 @@ function _renderModal(skipPlayerBuild = false) {
   }
 }
 
+function _renderServerPanel() {
+  const dubEl = document.getElementById('cinema-srv-dub');
+  const subEl = document.getElementById('cinema-srv-sub');
+  if (!dubEl || !subEl) return;
+
+  const dubServers = PLAYER_SERVERS.map((s, i) => ({ s, i })).filter(({ s }) => s.type === 'dub');
+  const subServers = PLAYER_SERVERS.map((s, i) => ({ s, i })).filter(({ s }) => s.type === 'sub');
+
+  const makeBtn = ({ s, i }) => {
+    const isActive = i === _serverIdx;
+    const num = s.type === 'dub'
+      ? dubServers.findIndex(x => x.i === i) + 1
+      : subServers.findIndex(x => x.i === i) + 1;
+    return `<button
+      class="cinema-srv-btn ${isActive ? 'active' : ''} cinema-srv-btn--${s.type}"
+      onclick="window._cinemaSelectServer(${i})"
+      title="${s.label}"
+    >${num}</button>`;
+  };
+
+  dubEl.innerHTML = dubServers.map(makeBtn).join('');
+  subEl.innerHTML = subServers.map(makeBtn).join('');
+}
+
+window._cinemaSelectServer = function (idx) {
+  _serverIdx = idx;
+  if (_currentItem) {
+    _buildPlayer(_currentItem, _currentEpIdx);
+    _renderServerPanel();
+    // BUG FIX: se ainda carregando episódios, mantém o spinner visível
+    if (_loadingEpisodes) _renderEpisodeList();
+  }
+};
+
+function _renderEpisodeList() {
+  const item     = _currentItem;
+  if (!item) return;
+
+  const epListEl  = document.getElementById('cinema-modal-eplist');
+  const epLabelEl = document.getElementById('cinema-modal-eplabel');
+  if (!epListEl) return;
+
+  // Usa dinâmicos se disponíveis, senão estáticos
+  const episodes = _dynamicEpisodes || item.episodes || null;
+  const isSeries = !!(episodes || item.type === 'series');
+
+  if (isSeries) {
+    epListEl.style.display = 'flex';
+    if (epLabelEl) epLabelEl.style.display = '';
+
+    if (_loadingEpisodes) {
+      epListEl.innerHTML = `
+        <div class="cinema-ep-loading">
+          <div class="cinema-ep-spinner"></div>
+          <span>Carregando episódios em PT-BR…</span>
+        </div>`;
+      return;
+    }
+
+    if (!episodes || episodes.length === 0) {
+      epListEl.innerHTML = `
+        <div class="cinema-ep-loading">
+          <span>Episódios não encontrados</span>
+        </div>`;
+      return;
+    }
+
+    // Agrupa por temporada
+    const byseason = {};
+    episodes.forEach((ep, i) => {
+      const s = ep.season || 1;
+      if (!byseason[s]) byseason[s] = [];
+      byseason[s].push({ ep, i });
+    });
+
+    const seasons = Object.keys(byseason).map(Number).sort((a, b) => a - b);
+
+    epListEl.innerHTML = seasons.map(s => {
+      const header = seasons.length > 1
+        ? `<div class="cinema-season-header">Temporada ${s}</div>`
+        : '';
+      const items = byseason[s].map(({ ep, i }) => {
+        const done = !!_watched[`${item.id}_ep${i}`];
+        const epNum = ep.episode != null ? ep.episode : (i + 1); // BUG FIX: ep.episode=0 é válido
+        return `
+          <div class="cinema-ep-item ${i === _currentEpIdx ? 'active' : ''} ${done ? 'ep-done' : ''}"
+               onclick="window._cinemaSwitchEp(${i})">
+            <span class="cinema-ep-check">${done ? '✓' : epNum}</span>
+            <span class="cinema-ep-name">${_escapeHtml(ep.title)}</span>
+          </div>`;
+      }).join('');
+      return header + items;
+    }).join('');
+
+  } else {
+    epListEl.style.display = 'none';
+    if (epLabelEl) epLabelEl.style.display = 'none';
+  }
+}
+
+function _renderMeta(meta) {
+  const el = document.getElementById('cinema-modal-meta');
+  if (!el || !meta) return;
+
+  const stars = meta.vote
+    ? `<span class="cinema-meta-badge cinema-meta-vote">⭐ ${meta.vote}</span>`
+    : '';
+  const runtime = meta.runtime
+    ? `<span class="cinema-meta-badge">🕐 ${meta.runtime}</span>`
+    : '';
+  const genres = meta.genres
+    ? `<span class="cinema-meta-badge">🎭 ${meta.genres}</span>`
+    : '';
+
+  el.innerHTML = `
+    <div class="cinema-meta-badges">${stars}${runtime}${genres}</div>
+    ${meta.tagline ? `<div class="cinema-meta-tagline">"${_escapeHtml(meta.tagline)}"</div>` : ''}
+    ${meta.overview ? `<div class="cinema-meta-overview">${_escapeHtml(meta.overview)}</div>` : ''}
+    ${meta.cast ? `<div class="cinema-meta-cast"><span class="cinema-meta-cast-label">Elenco:</span> ${_escapeHtml(meta.cast)}</div>` : ''}
+  `;
+  el.style.display = 'block';
+}
+
 window._cinemaSwitchEp = function (idx) {
   if (idx === _currentEpIdx) return;
   stopTracking();
   _serverIdx    = 0;
   _currentEpIdx = idx;
-  _renderModal();
+  _renderModal(); // _renderModal já chama _renderServerPanel internamente
 };
 
 window._closeCinemaModal = function () {
@@ -786,10 +1094,14 @@ window._closeCinemaModal = function () {
   overlay.classList.remove('show');
   stopTracking();
   _destroyPlayer();
-  _isModalOpen  = false;
-  _currentItem  = null;
-  _currentEpIdx = 0;
-  _serverIdx    = 0;
+  _isModalOpen     = false;
+  _currentItem     = null;
+  _currentEpIdx    = 0;
+  _serverIdx       = 0;
+  _dynamicEpisodes = null;
+  _loadingEpisodes = false;
+  const metaEl = document.getElementById('cinema-modal-meta');
+  if (metaEl) { metaEl.innerHTML = ''; metaEl.style.display = 'none'; }
   renderContinueWatching();
 };
 

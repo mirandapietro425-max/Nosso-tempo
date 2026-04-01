@@ -26,6 +26,7 @@ let _sessionKey     = null;   // chave do item atual ex: "breaking_bad_ep2"
 let _sessionItem    = null;   // referência ao item do catálogo
 let _sessionEpIdx   = 0;      // índice do episódio atual
 let _onWatchedCb    = null;   // callback quando item marcado assistido
+let _sessionDynEp   = null;   // {season, episode} do episódio dinâmico atual (doramas sem episodes[])
 
 /* ─────────────────────────────────────────────
    STORAGE HELPERS
@@ -54,14 +55,19 @@ function _writeAll(data) {
    filmes:    "tmdbId_movie"   ex: "597_movie"
    séries ep: "tmdbId_s1e3"   ex: "1396_s1e3"
 ───────────────────────────────────────────── */
-function _makeKey(item, epIdx) {
+function _makeKey(item, epIdx, dynEp) {
   if (!item) return null;
-  if (!item.episodes) return `${item.tmdbId || item.id}_movie`;
+  const base = item.tmdbId || item.id;
+  // dynEp = {season, episode} vem dos episódios dinâmicos do TMDB (doramas/animações sem episodes[])
+  if (dynEp && dynEp.season != null && dynEp.episode != null) {
+    return `${base}_s${dynEp.season}e${dynEp.episode}`;
+  }
+  if (!item.episodes) return `${base}_movie`;
   const ep = item.episodes[epIdx];
-  if (!ep) return `${item.tmdbId || item.id}_s1e1`;
+  if (!ep) return `${base}_s1e1`;
   const m = ep.title.match(/T(\d+)E(\d+)/i);
-  if (m) return `${item.tmdbId || item.id}_s${m[1]}e${m[2]}`;
-  return `${item.tmdbId || item.id}_ep${epIdx}`;
+  if (m) return `${base}_s${m[1]}e${m[2]}`;
+  return `${base}_ep${epIdx}`;
 }
 
 /* ─────────────────────────────────────────────
@@ -72,12 +78,13 @@ function _makeKey(item, epIdx) {
  * Inicia o rastreamento de progresso para um item/episódio.
  * Chamado quando o player abre.
  */
-export function startTracking(item, epIdx = 0, onWatchedCallback = null) {
+export function startTracking(item, epIdx = 0, onWatchedCallback = null, dynEp = null) {
   stopTracking(); // para qualquer timer anterior
 
   _sessionItem  = item;
   _sessionEpIdx = epIdx;
-  _sessionKey   = _makeKey(item, epIdx);
+  _sessionDynEp = dynEp; // {season, episode} para episódios dinâmicos (doramas/animações)
+  _sessionKey   = _makeKey(item, epIdx, dynEp);
   _sessionStart = Date.now();
   _onWatchedCb  = onWatchedCallback;
 
@@ -104,6 +111,7 @@ export function stopTracking() {
   _sessionKey   = null;
   _sessionItem  = null;
   _sessionStart = null;
+  _sessionDynEp = null;
 }
 
 /**
@@ -126,6 +134,12 @@ function _tickSave() {
 
   const pct = duration > 0 ? Math.min(accumulated / duration, 1) : 0;
 
+  // BUG FIX: type deve ser 'series' também para itens com episódios dinâmicos (doramas/animações sem episodes[])
+  const isSeries = !!(_sessionItem.episodes || _sessionDynEp);
+  const epTitle  = _sessionItem.episodes
+    ? (_sessionItem.episodes[_sessionEpIdx]?.title ?? '')
+    : (_sessionDynEp ? `T${_sessionDynEp.season}E${_sessionDynEp.episode}` : '');
+
   all[_sessionKey] = {
     itemId    : _sessionItem.id,
     tmdbId    : _sessionItem.tmdbId || null,
@@ -133,9 +147,9 @@ function _tickSave() {
     thumb     : _sessionItem.thumb,
     color     : _sessionItem.color,
     emoji     : _sessionItem.emoji,
-    type      : _sessionItem.episodes ? 'series' : 'movie',
+    type      : isSeries ? 'series' : 'movie',
     epIdx     : _sessionEpIdx,
-    epTitle   : _sessionItem.episodes ? (_sessionItem.episodes[_sessionEpIdx]?.title ?? '') : '',
+    epTitle   : epTitle,
     watched   : accumulated,
     duration  : duration,
     pct       : pct,
@@ -164,7 +178,8 @@ function _tickSave() {
  * filmes: ~110 min. séries: ~45 min por episódio.
  */
 function _estimateDuration(item) {
-  return item.episodes ? 45 * 60 : 110 * 60;
+  // Com episódios dinâmicos (_sessionDynEp), trata como série mesmo sem episodes[]
+  return (item.episodes || _sessionDynEp) ? 45 * 60 : 110 * 60;
 }
 
 /**
@@ -183,8 +198,8 @@ function _pruneOldEntries(all) {
  * Retorna o progresso salvo de um item/episódio.
  * { watched, duration, pct, updated, done } ou null
  */
-export function loadProgress(item, epIdx = 0) {
-  const key = _makeKey(item, epIdx);
+export function loadProgress(item, epIdx = 0, dynEp = null) {
+  const key = _makeKey(item, epIdx, dynEp);
   if (!key) return null;
   const all = _readAll();
   return all[key] || null;
@@ -194,8 +209,8 @@ export function loadProgress(item, epIdx = 0) {
  * Retorna o tempo de resume em segundos para um item.
  * Retorna 0 se não deve resumir (muito pouco visto ou já terminado).
  */
-export function getResumeTime(item, epIdx = 0) {
-  const p = loadProgress(item, epIdx);
+export function getResumeTime(item, epIdx = 0, dynEp = null) {
+  const p = loadProgress(item, epIdx, dynEp);
   if (!p) return 0;
   if (p.done) return 0;              // já terminou — recomeça do início
   if (p.watched < RESUME_MIN_S) return 0; // menos de 30s — não vale retomar
@@ -323,7 +338,7 @@ function _buildContinueCard(entry) {
 
   return `
     <div class="cinema-cont-card"
-         onclick="window._openCinemaItem('${entry.itemId}','${entry.type === 'series' ? 'series' : 'filmes'}')">
+         onclick="window._openCinemaItem('${entry.itemId}')">
       <div class="cinema-cont-thumb" style="background:${entry.color || '#111'}">
         <img src="${entry.thumb || ''}" alt="${entry.title}" loading="lazy"
              onerror="this.style.display='none'">

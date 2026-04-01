@@ -277,10 +277,141 @@
 .cinema-modal-player {
   width: 100%;
   background: black;
+  position: relative;
 }
 
 .cinema-modal-player iframe {
   border-radius: 0 !important;
+}
+
+/* ── PAINEL DE SERVIDORES (Dub / Leg PT-BR) ── */
+.cinema-server-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.35);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-wrap: wrap;
+}
+.cinema-server-panel-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.cinema-server-panel-group {
+  display: flex;
+  gap: 5px;
+}
+.cinema-server-panel-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.12);
+  margin: 0 2px;
+}
+.cinema-srv-btn {
+  width: 32px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.55);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cinema-srv-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-color: rgba(255,255,255,0.25);
+}
+.cinema-srv-btn--dub.active {
+  background: rgba(0,160,60,0.25);
+  border-color: rgba(0,200,80,0.6);
+  color: #4dff90;
+}
+.cinema-srv-btn--sub.active {
+  background: rgba(232,83,111,0.2);
+  border-color: rgba(232,83,111,0.55);
+  color: #f4879c;
+}
+.cinema-srv-btn--dub:hover:not(.active) {
+  border-color: rgba(0,200,80,0.3);
+  color: #aaffcc;
+}
+.cinema-srv-btn--sub:hover:not(.active) {
+  border-color: rgba(232,83,111,0.3);
+  color: #f4879c;
+}
+
+/* ── METADADOS TMDB (sinopse, elenco, nota) ── */
+.cinema-modal-meta {
+  display: none;
+  padding: 0.8rem 1.2rem 0.2rem;
+  animation: fadeInMeta 0.4s ease;
+}
+@keyframes fadeInMeta {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cinema-meta-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.cinema-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.75);
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cinema-meta-vote {
+  background: rgba(255,210,70,0.12);
+  border-color: rgba(255,210,70,0.25);
+  color: #ffd246;
+}
+.cinema-meta-tagline {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+.cinema-meta-overview {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.55;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cinema-meta-cast {
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.4;
+}
+.cinema-meta-cast-label {
+  color: rgba(255,255,255,0.6);
+  font-weight: 600;
+  margin-right: 2px;
 }
 
 /* ── MARCA ASSISTIDO ── */
@@ -385,9 +516,49 @@
   font-weight: 600;
 }
 
-/* ═══════════════════════════════════════════════
-   PROGRESS BAR — barra vermelha no card (Netflix style)
-   ═══════════════════════════════════════════════ */
+/* ═══ SEASON HEADERS ═══ */
+.cinema-season-header {
+  width: 100%;
+  padding: 8px 12px 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent, #e8536f);
+  background: rgba(232, 83, 111, 0.08);
+  border-left: 3px solid var(--accent, #e8536f);
+  margin-top: 6px;
+  border-radius: 0 4px 4px 0;
+  flex-shrink: 0;
+}
+.cinema-season-header:first-child { margin-top: 0; }
+
+/* ═══ EPISODE LOADING SPINNER ═══ */
+.cinema-ep-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 30px 16px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.8rem;
+  text-align: center;
+  width: 100%;
+}
+.cinema-ep-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(232, 83, 111, 0.2);
+  border-top-color: var(--accent, #e8536f);
+  border-radius: 50%;
+  animation: cinema-spin 0.8s linear infinite;
+}
+@keyframes cinema-spin {
+  to { transform: rotate(360deg); }
+}
+
+
 .cinema-progress-bar {
   position: absolute;
   bottom: 0;
@@ -607,9 +778,27 @@
   color: rgba(255,255,255,0.4);
 }
 
-/* ═══════════════════════════════════════════════
-   v39 — SERVER OVERLAY (timeout / erro)
-   ═══════════════════════════════════════════════ */
+/* ── BADGE PT-BR DUBLADO ── */
+.cinema-ptbr-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,120,0,0.85);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+  backdrop-filter: blur(4px);
+  letter-spacing: 0.03em;
+}
+
+
 .cinema-server-overlay {
   width: 100%;
   aspect-ratio: 16/9;
