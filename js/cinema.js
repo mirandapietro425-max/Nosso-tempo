@@ -374,6 +374,9 @@ function _renderEpisodeList() {
     }
   }
 
+  // M-03: limpa o flag antes de destruir o innerHTML para que o listener
+  // seja re-adicionado quando a lista for reconstruída.
+  epListEl.dataset.delegated = '';
   epListEl.innerHTML = '';
   epListEl.appendChild(fragment);
 
@@ -440,7 +443,11 @@ window._openCinemaItem = async function (id) {
       const entries = Object.values(all).filter(e => e.itemId === id);
       if (entries.length) {
         const latest = entries.sort((a, b) => (b.updated || 0) - (a.updated || 0))[0];
-        cinemaState.episodeIdx = (latest.epIdx != null && !latest.done) ? latest.epIdx : 0;
+        const restoredIdx = (latest.epIdx != null && !latest.done) ? latest.epIdx : 0;
+        // A-03: clamp contra episódios estáticos para evitar índice fora do array
+        const staticEps = item.episodes;
+        const maxIdx = (staticEps && staticEps.length > 0) ? staticEps.length - 1 : 0;
+        cinemaState.episodeIdx = Math.min(restoredIdx, maxIdx);
       } else {
         cinemaState.episodeIdx = 0;
       }
@@ -610,11 +617,13 @@ export function initCinema(db) {
   // nunca fique olhando para "⏳ Carregando catálogo..." enquanto o Firebase inicializa.
   // Quando o Firebase responder, re-renderiza com os badges "Assistido" corretos.
   _renderCatalog();
+  // A-02: renderiza "Continue Assistindo" já na carga inicial (dados do localStorage)
+  renderContinueWatching();
 
   if (db) {
     cinemaState.db        = db;
     cinemaState.cinemaDoc = doc(db, 'cinema', 'shared');
-    _loadWatched().then(() => _renderCatalog()).catch(() => {/* Firebase offline — catálogo já visível */});
+    _loadWatched().then(() => { _renderCatalog(); renderContinueWatching(); }).catch(() => {/* Firebase offline — catálogo já visível */});
   }
 
   // Fechar modal ao clicar no overlay

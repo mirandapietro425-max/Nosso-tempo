@@ -389,6 +389,8 @@ function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
 
   iframe.onload = () => {
     document.getElementById('cinema-player-skeleton')?.remove();
+    // A-05: só inicia tracking após confirmar que o iframe carregou com sucesso
+    _startTrackingAfterBuild(item, epIdx, ep, onWatched);
     if (isDub) {
       const badge = document.createElement('div');
       badge.className   = 'cinema-ptbr-badge';
@@ -419,7 +421,7 @@ function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
   }, isDub ? TIMEOUT_DUB_MS : TIMEOUT_SUB_MS);
 
   playerEl.appendChild(iframe);
-  _startTrackingAfterBuild(item, epIdx, ep, onWatched);
+  // A-05: tracking movido para dentro de iframe.onload — não registrar progresso se o iframe falhou
 }
 
 /* ── Render do painel de servidores ──────────── */
@@ -444,7 +446,10 @@ export function renderServerPanel() {
     return btn;
   };
 
-  // Limpa e reconstrói com addEventListener (sem onclick inline)
+  // M-02: limpa o flag de delegation antes de destruir o innerHTML,
+  // garantindo que o listener seja re-adicionado nos botões novos.
+  dubEl.dataset.delegated = '';
+  subEl.dataset.delegated = '';
   dubEl.innerHTML = '';
   subEl.innerHTML = '';
   dubServers.forEach(entry => {

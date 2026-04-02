@@ -31,7 +31,7 @@ function sanitizeHTML(str) {
 import {
   showToast, initGreeting, initCounter, initAnniversary,
   initSurprise, initDaily, openDailyPopup, closeDailyPopup,
-  initParticles, initTimeline, initScrollReveal,
+  initTimeline, initScrollReveal,
 } from './ui.js';
 // FIX: expõe showToast globalmente para módulos como library.js
 window.showToast = showToast;
@@ -170,9 +170,9 @@ function _isDiaDossPais(d){ const s=_nthWeekday(d.getFullYear(),7,0,2); return d
   });
   const activeEventId = found ? found.id : null;
 
+  // C-02: initExperience já chama initAdaptiveParticles internamente.
+  // Remover initParticles() aqui evita dois sistemas de partículas simultâneos (canvas + adaptive).
   try { initExperience(activeEventId); } catch(e) { console.error('initExperience:', e); }
-  // Partículas iniciam DEPOIS do experience para garantir que canvas.dataset.eventId já está setado
-  try { initParticles(); } catch(e) { console.error('initParticles:', e); }
 })();
 
 // ── Casinha + Pet + Quiz ──
@@ -521,7 +521,7 @@ async function openMovieModal(i) {
       }
 
       document.getElementById('movie-modal-trailer').innerHTML = trailer
-        ? `<iframe width="100%" height="220" src="https://www.youtube.com/embed/${trailer.key}?autoplay=0&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:16px;display:block;"></iframe>`
+        ? `<iframe width="100%" height="220" src="https://www.youtube.com/embed/${trailer.key}?autoplay=0&rel=0" frameborder="0" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:16px;display:block;"></iframe>`
         : '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Trailer não encontrado 😕</p>';
     } else {
       document.getElementById('movie-modal-trailer').innerHTML =
@@ -735,7 +735,10 @@ async function renderMural() {
     // Primeiro acesso ou deploy sem lastClean: registra hoje como data base
     // sem apagar as mensagens existentes — elas serão limpas na próxima virada do dia
     _muralLastCleanCache = today;
-    await saveMural(msgs, today);
+    // M-04: só escreve se houver mensagens; evita write desnecessário (e possível race)
+    // quando é o primeiro acesso e o mural ainda está vazio
+    if (msgs.length > 0) await saveMural(msgs, today);
+    else _muralLastCleanCache = today; // atualiza cache local sem tocar o Firebase
   }
   // Se lastClean === today: mural já está atualizado, sem escrita desnecessária no Firebase
   list.innerHTML = '';
@@ -1229,7 +1232,13 @@ async function initSpecial(type) {
     if (textEl) textEl.value = '';
     specialFiles[type] = { photo: null, audio: null };
     const prevEl = document.getElementById(`special-${type}-preview`);
-    if (prevEl) prevEl.innerHTML = '';
+    if (prevEl) {
+      // M-05: revogar todos os blob URLs antes de limpar o preview (evita memory leak)
+      prevEl.querySelectorAll('img[src^="blob:"], audio[src^="blob:"]').forEach(el => {
+        URL.revokeObjectURL(el.src);
+      });
+      prevEl.innerHTML = '';
+    }
   }
 
   // 4 estados possíveis:
@@ -1335,6 +1344,11 @@ async function saveSpecial(type) {
   await setDoc(ref, { text, photoUrl, audioUrl, cycleKey });
   showToast('💕 Mensagem guardada com amor!');
   if (status) status.textContent = '';
+  // M-05: revogar blob URLs do preview antes do reset do formulário
+  const prevElSave = document.getElementById(`special-${type}-preview`);
+  if (prevElSave) {
+    prevElSave.querySelectorAll('img[src^="blob:"], audio[src^="blob:"]').forEach(el => URL.revokeObjectURL(el.src));
+  }
   initSpecial(type);
   } finally {
     _savingSpecial[type] = false;
@@ -1679,6 +1693,21 @@ function renderEmbedMap() {
   _loadLeaflet(() => {
     const L = window.L;
 
+    // A-04: se o container foi removido/reinserido no DOM (ex: SPA nav),
+    // o Leaflet lança "Map container is already initialized". Destruir e recriar.
+    if (_leafletMap) {
+      try {
+        if (!mapDiv.contains(_leafletMap.getContainer())) {
+          _leafletMap.remove();
+          _leafletMap = null;
+          _leafletMarkers = {};
+        }
+      } catch(e) {
+        _leafletMap = null;
+        _leafletMarkers = {};
+      }
+    }
+
     if (!_leafletMap) {
       _leafletMap = L.map(mapDiv, { zoomControl: true, scrollWheelZoom: false });
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1992,12 +2021,15 @@ window.shareLocation = shareLocation;
       const overlay = document.createElement('div');
       overlay.id = '_evento-popup-overlay'; // FIX: id fixo para o botão fechar corretamente
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:fadeIn .4s ease;';
+      const _bannerText = sanitizeHTML(evento.banner.replace(/^[^\s]+ /, ''));
+      const _popupText  = sanitizeHTML(evento.popup);
+      const _accentColor = sanitizeHTML(evento.accent);
       overlay.innerHTML = `
         <div style="background:#fff8f9;border-radius:28px;padding:2.2rem 2rem;max-width:420px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.25);position:relative;animation:popIn .4s cubic-bezier(.32,1.2,.5,1)">
           <div style="font-size:3rem;margin-bottom:0.8rem">${evento.elements[0]}</div>
-          <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:#590d22;margin-bottom:1rem;line-height:1.3">${evento.banner.replace(/^[^\s]+ /, '')}</div>
-          <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:#7a3045;line-height:1.7;margin-bottom:1.5rem">${evento.popup}</p>
-          <button onclick="document.getElementById('_evento-popup-overlay')?.remove()" style="background:${evento.accent};color:white;border:none;padding:0.75rem 2rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer">Com amor 💕</button>
+          <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:#590d22;margin-bottom:1rem;line-height:1.3">${_bannerText}</div>
+          <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:#7a3045;line-height:1.7;margin-bottom:1.5rem">${_popupText}</p>
+          <button onclick="document.getElementById('_evento-popup-overlay')?.remove()" style="background:${_accentColor};color:white;border:none;padding:0.75rem 2rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer">Com amor 💕</button>
         </div>`;
       document.body.appendChild(overlay);
       overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
@@ -2106,8 +2138,12 @@ window.shareLocation = shareLocation;
   const now     = new Date();
   const day     = now.getDate();
   const month   = now.getMonth();
-  const start   = new Date(START_DATE);
-  const dias    = Math.floor((now - start) / 86400000);
+  // B-03: normaliza ambas as datas para meia-noite UTC antes de subtrair,
+  // evitando que o fuso horário (ex: UTC-3) cause diferença de ±1 dia.
+  const nowUtcMidnight   = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const startRaw         = new Date(START_DATE);
+  const startUtcMidnight = Date.UTC(startRaw.getUTCFullYear(), startRaw.getUTCMonth(), startRaw.getUTCDate());
+  const dias    = Math.floor((nowUtcMidnight - startUtcMidnight) / 86400000);
 
   // Mensagem muda dependendo do dia
   const isMesv  = day === 11;

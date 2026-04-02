@@ -197,11 +197,15 @@ export async function fetchAllEpisodes(item, signal = null) {
   if (!seriesData || signal?.aborted) return null;
 
   // A API pode retornar seasons como array de números ou de objetos
-  const seasons = Array.isArray(seriesData.seasons)
-    ? seriesData.seasons
-        .map(s => (typeof s === 'object' ? s.season_number ?? s.number : s))
-        .filter(n => n > 0)
-    : await _inferSeasonNumbers(seriesData);
+  // M-06: se seasons é array vazio, cai no fallback de inferência (não retorna null prematuramente)
+  let seasons;
+  if (Array.isArray(seriesData.seasons) && seriesData.seasons.length > 0) {
+    seasons = seriesData.seasons
+      .map(s => (typeof s === 'object' ? s.season_number ?? s.number : s))
+      .filter(n => n > 0);
+  } else {
+    seasons = await _inferSeasonNumbers(seriesData);
+  }
 
   if (!seasons.length) return null;
 
