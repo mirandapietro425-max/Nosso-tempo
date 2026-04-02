@@ -153,8 +153,16 @@ function _renderCatalog() {
   };
   const { list, isMovie } = tabMap[cinemaState.activeTab] || tabMap.series;
   const watchedCounts = buildWatchedCountCache();  // O(n) total
-  const observer      = getThumbObserver();
-  const fragment      = document.createDocumentFragment();
+
+  // BUG-1 FIX: disconnect() deve acontecer ANTES de observer.observe() nas novas imagens,
+  // não depois. O fluxo anterior era: observe(img) → disconnect() → appendChild() — o
+  // disconnect() removia as observações recém-adicionadas antes que as imagens entrassem
+  // no DOM, quebrando silenciosamente o lazy loading em todo re-render do catálogo.
+  if (_thumbObserver) _thumbObserver.disconnect();
+  wrap.innerHTML = '';
+
+  const observer = getThumbObserver();
+  const fragment  = document.createDocumentFragment();
 
   for (const item of list) {
     const itemIsMovie = item.type === 'movie' || (isMovie && item.type !== 'series');
@@ -236,10 +244,6 @@ function _renderCatalog() {
     fragment.appendChild(card);
   }
 
-  // BUG-11 FIX: desconecta observer antes de limpar o DOM para não
-  // continuar observando imagens orphaned. O observer em si é reutilizado.
-  if (_thumbObserver) _thumbObserver.disconnect();
-  wrap.innerHTML = '';
   wrap.appendChild(fragment);
 
   // Event delegation no catálogo — um único listener para todos os cards [S5]

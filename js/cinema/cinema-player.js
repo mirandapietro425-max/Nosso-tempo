@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    cinema-player.js — Player, iframe, fallback
-   Pietro & Emilly · v56
+   Pietro & Emilly · v63
    ═══════════════════════════════════════════════ */
 
 import { startTracking, stopTracking, getResumeTime } from '../progress.js';
@@ -8,8 +8,13 @@ import { cinemaState }  from './cinema-state.js';
 import { sanitizeTmdb, fetchSources, PLAYLT_ENABLED } from './cinema-playlt.js';
 
 export const PLAYER_SERVERS = [
-  // ── PT-BR Dublado ─────────────────────────────────────────────
-  // SuperFlixAPI: principal player BR, múltiplos domínios espelho para resiliência
+  /* ══════════════════════════════════════════════════════════════
+     GRUPO 1 — PT-BR Dublado (prioridade máxima)
+     SuperFlixAPI: maior CDN BR, banco de dados com filmes, séries,
+     animes, doramas. Múltiplos domínios espelho para resiliência.
+     URL: /filme/{tmdbId}/ e /serie/{tmdbId}/{season}/{episode}/
+     Atualizado: abril 2026 — domínios ativos verificados.
+  ══════════════════════════════════════════════════════════════ */
   {
     name: '🇧🇷 Dub 1', label: 'SuperFlixAPI .rest — Dublado PT-BR', type: 'dub',
     movie : (id)       => `https://superflixapi.rest/filme/${id}/`,
@@ -34,7 +39,29 @@ export const PLAYER_SERVERS = [
     tv    : (id, s, e) => `https://superflixapi.help/serie/${id}/${s}/${e}/`,
     hasParams: false,
   },
-  // ── Multi-idioma (dub/leg automático) ─────────────────────────
+  {
+    name: '🇧🇷 Dub 5', label: 'SuperFlixAPI .life — Dublado PT-BR (novo)', type: 'dub',
+    movie : (id)       => `https://superflixapi.life/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.life/serie/${id}/${s}/${e}/`,
+    hasParams: false,
+  },
+  {
+    name: '🇧🇷 Dub 6', label: 'SuperFlixAPI .link — Dublado PT-BR (novo)', type: 'dub',
+    movie : (id)       => `https://superflixapi.link/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.link/serie/${id}/${s}/${e}/`,
+    hasParams: false,
+  },
+  {
+    name: '🇧🇷 Dub 7', label: 'SuperFlixAPI .buzz — Dublado PT-BR (novo)', type: 'dub',
+    movie : (id)       => `https://superflixapi.buzz/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.buzz/serie/${id}/${s}/${e}/`,
+    hasParams: false,
+  },
+  /* ══════════════════════════════════════════════════════════════
+     GRUPO 2 — Multi-idioma (auto dub/leg, multi-servidor interno)
+     Servidores internacionais que agregam múltiplas fontes.
+     Geralmente oferecem opção de troca de fonte internamente.
+  ══════════════════════════════════════════════════════════════ */
   {
     name: '🌐 Multi 1', label: 'VidSrc.mov — Multi servidor 1080p', type: 'dub',
     movie : (id)       => `https://vidsrc.mov/embed/movie/${id}`,
@@ -42,36 +69,51 @@ export const PLAYER_SERVERS = [
     hasParams: false,
   },
   {
-    name: '🌐 Multi 2', label: 'VidSrc.cc — Multi servidor + legendas', type: 'dub',
+    name: '🌐 Multi 2', label: 'VidSrc.cc — Legendas PT-BR via API', type: 'dub',
     movie : (id)       => `https://vidsrc.cc/v2/embed/movie/${id}`,
     tv    : (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
   {
-    name: '🌐 Multi 3', label: 'VidSrc.icu — Multi servidor', type: 'dub',
+    name: '🌐 Multi 3', label: 'VidSrc.icu — Multi servidor estável', type: 'dub',
     movie : (id)       => `https://vidsrc.icu/embed/movie/${id}`,
     tv    : (id, s, e) => `https://vidsrc.icu/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
   {
-    name: '🌐 Multi 4', label: 'MultiEmbed/SuperEmbed — Multi idioma', type: 'dub',
+    name: '🌐 Multi 4', label: 'VidSrc.store — Multi servidor (novo 2026)', type: 'dub',
+    movie : (id)       => `https://vidsrc.store/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://vidsrc.store/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🌐 Multi 5', label: 'VidSrc.online — Multi servidor (novo 2026)', type: 'dub',
+    movie : (id)       => `https://vidsrc.online/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://vidsrc.online/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🌐 Multi 6', label: 'MultiEmbed/SuperEmbed — Multi idioma', type: 'dub',
     movie : (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
     tv    : (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
     hasParams: true,
   },
   {
-    name: '🌐 Multi 5', label: 'Videasy — Multi idioma 4K', type: 'dub',
+    name: '🌐 Multi 7', label: 'Videasy — 4K multi idioma', type: 'dub',
     movie : (id)       => `https://player.videasy.net/movie/${id}`,
     tv    : (id, s, e) => `https://player.videasy.net/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
   {
-    name: '🌐 Multi 6', label: 'AutoEmbed — Multi idioma', type: 'dub',
+    name: '🌐 Multi 8', label: 'AutoEmbed — Multi idioma autoplay', type: 'dub',
     movie : (id)       => `https://player.autoembed.cc/embed/movie/${id}?autoplay=true`,
     tv    : (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?autoplay=true`,
     hasParams: true,
   },
-  // ── Legendado ──────────────────────────────────────────────────
+  /* ══════════════════════════════════════════════════════════════
+     GRUPO 3 — Legendado PT-BR / multi-fonte
+     Players focados em legendas, com mais opções de idioma.
+  ══════════════════════════════════════════════════════════════ */
   {
     name: '🔤 Leg 1', label: 'VidLink — Legendado PT-BR', type: 'sub',
     movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=pt-BR&primaryColor=e8536f`,
@@ -79,39 +121,50 @@ export const PLAYER_SERVERS = [
     hasParams: true,
   },
   {
-    name: '🔤 Leg 2', label: 'VidSrc.me — Legendado', type: 'sub',
+    name: '🔤 Leg 2', label: 'VidSrc.me — Legendado clássico', type: 'sub',
     movie : (id)       => `https://vidsrc.me/embed/movie?tmdb=${id}`,
     tv    : (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
     hasParams: true,
   },
   {
-    name: '🔤 Leg 3', label: 'Embed.su — Legendado multi-servidor', type: 'sub',
+    name: '🔤 Leg 3', label: 'VidSrc.xyz — Legendado TMDB', type: 'sub',
+    movie : (id)       => `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
+    tv    : (id, s, e) => `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+    hasParams: true,
+  },
+  {
+    name: '🔤 Leg 4', label: 'Embed.su — Multi-servidor legendado', type: 'sub',
     movie : (id)       => `https://embed.su/embed/movie/${id}`,
     tv    : (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
   {
-    name: '🔤 Leg 4', label: 'VidSrc.rip — Legendado', type: 'sub',
+    name: '🔤 Leg 5', label: 'VidSrc.rip — Legendado', type: 'sub',
     movie : (id)       => `https://vidsrc.rip/embed/movie/${id}`,
     tv    : (id, s, e) => `https://vidsrc.rip/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
   {
-    name: '🔤 Leg 5', label: 'VidPlus — Legendado 4K', type: 'sub',
-    movie : (id)       => `https://player.vidplus.to/embed/movie/${id}?autoplay=true`,
-    tv    : (id, s, e) => `https://player.vidplus.to/embed/tv/${id}/${s}/${e}?autoplay=true`,
-    hasParams: true,
+    name: '🔤 Leg 6', label: 'VidBinge (MoviesAPI) — Multi-fonte (novo 2026)', type: 'sub',
+    movie : (id)       => `https://www.vidbinge.to/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://www.vidbinge.to/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
   },
   {
-    name: '🔤 Leg 6', label: '2Embed — Legendado multi-fonte', type: 'sub',
+    name: '🔤 Leg 7', label: '2Embed — Multi-fonte legendado', type: 'sub',
     movie : (id)       => `https://www.2embed.stream/embed/movie/${id}`,
     tv    : (id, s, e) => `https://www.2embed.stream/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
+  {
+    name: '🔤 Leg 8', label: 'SuperEmbed — Multi idioma', type: 'sub',
+    movie : (id)       => `https://www.superembed.stream/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://www.superembed.stream/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
 ];
-
-const TIMEOUT_DUB_MS = 25_000;  // SuperFlixAPI pode demorar até 20s na primeira carga
-const TIMEOUT_SUB_MS = 30_000;  // Players internacionais com múltiplos servidores
+const TIMEOUT_DUB_MS = 28_000;  // SuperFlixAPI pode demorar 20-25s na 1ª carga — 7 espelhos
+const TIMEOUT_SUB_MS = 32_000;  // Players internacionais multi-fonte — 8 opções legendadas
 
 /* ── Helpers ─────────────────────────────────── */
 

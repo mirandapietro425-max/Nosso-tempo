@@ -1073,15 +1073,22 @@ async function confirmMood() {
   if (!MOOD_DOC) { showToast('❌ Banco de dados indisponível.'); return; } // guard db null
   _savingMood = true;
   try {
-  const person = moodPickerTarget.toLowerCase();
+  // BUG-3 FIX: captura todos os valores de moodPickerSelected ANTES do primeiro
+  // await. O usuário pode fechar o picker (closeMoodPicker zerando moodPickerSelected
+  // para null) enquanto getDoc aguarda, causando "Cannot read properties of null".
+  const person      = moodPickerTarget.toLowerCase();
+  const _selEmoji   = moodPickerSelected.emoji;
+  const _selLabel   = moodPickerSelected.label;
+  const _selFile    = moodPickerSelected.file    || null;
+  const _selSticker = moodPickerSelected.isSticker || false;
   const now    = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const snap   = await getDoc(MOOD_DOC).catch(() => null);
   const current = (snap?.exists() ? snap.data() : {});
   current[person] = {
-    emoji: moodPickerSelected.emoji,
-    label: moodPickerSelected.label,
-    file:  moodPickerSelected.file  || null,
-    isSticker: moodPickerSelected.isSticker || false,
+    emoji: _selEmoji,
+    label: _selLabel,
+    file:  _selFile,
+    isSticker: _selSticker,
     time: now
   };
 
@@ -1106,11 +1113,11 @@ async function confirmMood() {
   current.history = current.history.slice(0, 7);
 
   await setDoc(MOOD_DOC, current);
-  // Salva referências ANTES de closeMoodPicker() zerá-las
-  const _toastEmoji  = moodPickerSelected.emoji;
-  const _toastPerson = moodPickerTarget;
+  // BUG-3 FIX: usa os valores já capturados antes do primeiro await
+  // (moodPickerSelected/moodPickerTarget podem ter sido zerados pelo usuário)
+  const _toastPerson = moodPickerTarget || person;  // person já capturado antes do await
   closeMoodPicker();
-  showToast(`${_toastEmoji} Humor de ${_toastPerson} atualizado!`);
+  showToast(`${_selEmoji} Humor de ${_toastPerson} atualizado!`);
 
   // FIX Bug 1: atualiza UI imediatamente com os dados locais — sem esperar novo getDoc
   const _p = person; // já é lowercase
@@ -1123,7 +1130,8 @@ async function confirmMood() {
     if (box)     box.classList.add('active-mood');
     if (emojiEl) {
       if (_d.isSticker && _d.file) {
-        emojiEl.innerHTML = `<img src="${_d.file}" alt="${_d.label}" style="width:52px;height:52px;object-fit:contain;">`;
+        // BUG-4 FIX: sanitiza _d.file/_d.label antes de inserir no innerHTML (XSS)
+        emojiEl.innerHTML = `<img src="${sanitizeHTML(_d.file)}" alt="${sanitizeHTML(_d.label)}" style="width:52px;height:52px;object-fit:contain;">`;
       } else {
         emojiEl.textContent = _d.emoji;
       }
@@ -1483,7 +1491,13 @@ function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
 function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0;  calYear++; } loadCalMonth(); }
 
 async function openCalModal(d) {
-  calCurrentKey = calKey(calYear, calMonth, d);
+  // BUG-2 FIX: captura a key localmente para evitar race condition.
+  // Se o usuário abre dois dias rapidamente, a segunda chamada sobrescrevia
+  // calCurrentKey antes do await da primeira resolver, fazendo calModalData
+  // conter dados do dia A enquanto calCurrentKey já apontava para o dia B.
+  const thisKey = calKey(calYear, calMonth, d);
+  calCurrentKey = thisKey;
+
   // Reset autor para Pietro a cada abertura
   calAuthor = 'Pietro';
   document.getElementById('cal-btn-pietro')?.classList.add('active');
@@ -1495,11 +1509,21 @@ async function openCalModal(d) {
     if (isBirthday(calYear, calMonth, d)) {
       const _isPietro = calMonth === BDAY_MONTH && d === BDAY_DAY;
       const _bdayName = _isPietro ? 'Pietro 💙' : 'Emilly 💗';
-      dateEl.innerHTML += ' 🎂<br><span style="font-size:0.9rem;color:#856404;font-style:italic;">Feliz aniversário, ' + _bdayName + '! 💕</span>';
+      dateEl.innerHTML += ' 🎂<br><span style=\'font-size:0.9rem;color:#856404;font-style:italic;\'>Feliz aniversário, ' + _bdayName + '! 💕</span>';
     }
   }
 
-  calModalData = await getCalDay(calCurrentKey);
+  // BUG-2 FIX: try-catch garante que calModalData nunca fique com dados
+  // obsoletos se o Firebase lançar (ex: offline) — fallback para objeto vazio.
+  try {
+    calModalData = await getCalDay(thisKey);
+  } catch (_) {
+    calModalData = { text: '', media: [], comments: [] };
+  }
+
+  // Guard: se outra chamada abriu um dia diferente enquanto aguardávamos, descarta.
+  if (calCurrentKey !== thisKey) return;
+
   const textEl = document.getElementById('cal-text');
   if (textEl) textEl.value = calModalData.text || '';
   renderCalMedia();
@@ -1519,9 +1543,11 @@ function renderCalMedia() {
   (calModalData.media || []).forEach((m, i) => {
     const div = document.createElement('div');
     div.className = 'cal-media-item';
+    // BUG-5 FIX: sanitiza m.url antes de inserir no src (XSS via URL maliciosa)
+    const safeUrl = sanitizeHTML(m.url || '');
     div.innerHTML = m.type === 'video'
-      ? `<video src="${m.url}" controls></video>`
-      : `<img src="${m.url}" loading="lazy">`;
+      ? `<video src="${safeUrl}" controls playsinline style="max-width:100%;border-radius:8px;"></video>`
+      : `<img src="${safeUrl}" loading="lazy" style="max-width:100%;border-radius:8px;">`;
     div.innerHTML += `<button class="cal-media-del" onclick="removeCalMedia(${i})">✕</button>`;
     grid.appendChild(div);
   });
