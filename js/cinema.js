@@ -497,7 +497,8 @@ window._openCinemaItem = async function (id) {
       if (cinemaState.generation !== myGeneration) return;
       if (cinemaState.currentItem !== item) return;
       if (meta) _renderMeta(meta);
-    });
+    })
+    .catch(e => console.warn('[Cinema] meta render error:', e?.message || e));
 
   if (!isTVItem) return;
 
@@ -565,6 +566,7 @@ window._closeCinemaModal = function () {
 };
 
 window._cinemaSwitchEp = function (idx) {
+  if (!cinemaState.currentItem) return;
   if (idx === cinemaState.episodeIdx) return;
   // BUG-1 FIX: idx negativo nunca é válido, independente de episodes estar carregado.
   // Sem este guard, um idx=-1 enviado pelo watchparty remoto passava quando

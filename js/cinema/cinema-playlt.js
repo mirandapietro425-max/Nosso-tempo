@@ -372,10 +372,11 @@ export async function fetchAllEpisodes(item, signal = null) {
  */
 async function _inferSeasonNumbers(seriesData) {
   // Usa total_seasons ou numberOfSeasons se disponível
-  const total = seriesData.total_seasons
+  const raw = seriesData.total_seasons
     ?? seriesData.numberOfSeasons
     ?? seriesData.seasons_count
     ?? 1;
+  const total = Math.max(1, raw); // RangeError guard: total negativo/zero → 1 temporada
   return Array.from({ length: total }, (_, i) => i + 1);
 }
 

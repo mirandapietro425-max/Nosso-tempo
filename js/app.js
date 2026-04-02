@@ -78,6 +78,9 @@ import { initWatchParty } from './watchparty.js';
 
 // ── Jogos / Arcade ──
 import { initGames } from './games.js';
+
+// ── Love City Core ──
+import { initLoveCity } from './love-city-core.js';
 window.awardCoins = _awardCoins;
 
 /* ════════════════════════════════════════════
@@ -178,6 +181,7 @@ function _isDiaDossPais(d){ const s=_nthWeekday(d.getFullYear(),7,0,2); return d
 // ── Casinha + Pet + Quiz ──
 try { initHome(db); } catch(e) { console.error('initHome:', e); }
 try { initGames(db); } catch(e) { console.error('initGames:', e); }
+try { initLoveCity(); } catch(e) { console.error('initLoveCity:', e); }
 try { initLibrary(db, () => { try { return localStorage.getItem('pe_active_player'); } catch { return null; } }); } catch(e) { console.error('initLibrary:', e); }
 try { initCinema(db); } catch(e) { console.error('initCinema:', e); }
 try {

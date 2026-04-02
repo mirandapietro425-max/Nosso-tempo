@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    cinema-player.js — Player, iframe, fallback
-   Pietro & Emilly · v64
+   Pietro & Emilly · v65
    ═══════════════════════════════════════════════ */
 
 import { startTracking, stopTracking, getResumeTime } from '../progress.js';
@@ -311,6 +311,11 @@ function createStreamPlayer(url, title) {
         video.src = url;
       }
     };
+    script.onerror = () => {
+      // CDN bloqueada (firewall/CSP/offline) — usa src direto como fallback
+      console.warn('[Cinema] HLS.js CDN blocked — falling back to direct src');
+      video.src = url;
+    };
     document.head.appendChild(script);
   } else {
     video.src = url;
@@ -484,6 +489,7 @@ function _startTrackingAfterBuild(item, epIdx, ep, onWatched) {
 /* ── buildPlayer — ponto de entrada principal ─── */
 
 export function buildPlayer(item, epIdx, onWatched) {
+  if (!item) return;
   const playerEl = document.getElementById('cinema-modal-player');
   if (!playerEl) return;
 
@@ -525,13 +531,18 @@ async function _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched) 
   // Inicia watchdog também no caminho PlayLT
   _startWatchdog(playerEl, item, epIdx, onWatched);
 
-  const source = await fetchSources(playltId);
+  let source = null;
+  try {
+    source = await fetchSources(playltId);
+  } catch (err) {
+    console.warn('[Cinema] fetchSources threw:', err?.message || err);
+  }
 
   // F1: generation guard — bail if a newer buildPlayer was triggered
-  if (myGeneration !== cinemaState.generation) return;
+  if (myGeneration !== cinemaState.generation) { _stopWatchdog(); return; }
 
   // Guard: modal ainda aberto com o mesmo item?
-  if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+  if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) { _stopWatchdog(); return; }
   _stopWatchdog();
   document.getElementById('cinema-player-skeleton')?.remove();
 
