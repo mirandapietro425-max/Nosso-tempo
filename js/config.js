@@ -20,8 +20,15 @@ export const CLOUDINARY_PRESET = 'nosso_tempo_cal';
 // ── ImgBB ──
 export const IMGBB_KEY = 'fd49cf34ebd541510c6f4b64abc3f4f8';
 
-// ── TMDB ──
+// ── TMDB (mantido para referência — player agora usa PlayLT) ──
 export const TMDB_KEY = '8265bd1679663a7ea12ac168da84d2e8';
+
+// ── PLAYLT API ─────────────────────────────────────────────────
+// Para trocar de provider: altere apenas PLAYLT_API_BASE e PLAYLT_API_KEY.
+// O arquivo js/cinema/cinema-playlt.js consome essas duas constantes
+// e é o único ponto de integração com a API externa.
+export const PLAYLT_API_BASE = 'https://api-plhq.playlt.xyz/apiv5';
+export const PLAYLT_API_KEY  = ''; // Cole sua chave aqui se a API exigir Bearer token
 
 // ── Datas especiais ──
 export const START_DATE       = new Date('2024-10-11T03:00:00Z'); // início — meia-noite horário de Brasília (UTC-3)

@@ -47,7 +47,7 @@ import {
 import {
   fetchAllEpisodes, fetchTmdbMeta,
   getEpisodeCacheFor, sanitizeTmdb,
-} from './cinema/cinema-tmdb.js';
+} from './cinema/cinema-playlt.js';
 
 export { CINEMA_CATALOG };
 

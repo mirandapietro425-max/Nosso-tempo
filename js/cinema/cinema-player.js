@@ -5,7 +5,7 @@
 
 import { startTracking, stopTracking, getResumeTime } from '../progress.js';
 import { cinemaState }  from './cinema-state.js';
-import { sanitizeTmdb } from './cinema-tmdb.js';
+import { sanitizeTmdb, fetchSources } from './cinema-playlt.js';
 
 export const PLAYER_SERVERS = [
   {
@@ -15,34 +15,34 @@ export const PLAYER_SERVERS = [
     hasParams: false,
   },
   {
-    name: '🇧🇷 Dub 2', label: 'SuperFlixAPI .run — Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://superflixapi.run/filme/${id}/`,
-    tv    : (id, s, e) => `https://superflixapi.run/serie/${id}/${s}/${e}/`,
+    name: '🇧🇷 Dub 2', label: 'SuperFlixAPI .help — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://superflixapi.help/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.help/serie/${id}/${s}/${e}/`,
     hasParams: false,
   },
   {
-    name: '🇧🇷 Dub 3', label: 'SuperFlixAPI .top — Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://superflixapi.top/filme/${id}/`,
-    tv    : (id, s, e) => `https://superflixapi.top/serie/${id}/${s}/${e}/`,
-    hasParams: false,
-  },
-  {
-    name: '🇧🇷 Dub 4', label: 'SuperFlixAPI .my — Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://superflixapi.my/filme/${id}/`,
-    tv    : (id, s, e) => `https://superflixapi.my/serie/${id}/${s}/${e}/`,
-    hasParams: false,
-  },
-  {
-    name: '🇧🇷 Dub 5', label: 'WarezCDN — Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://warezcdn.com.br/filme/${id}/`,
-    tv    : (id, s, e) => `https://warezcdn.com.br/serie/${id}/${s}/${e}/`,
-    hasParams: false,
-  },
-  {
-    name: '🇧🇷 Dub 6', label: 'CineEmbed — Dublado PT-BR', type: 'dub',
+    name: '🇧🇷 Dub 3', label: 'CineEmbed — Dublado PT-BR', type: 'dub',
     movie : (id)       => `https://cineembed.com/embed/${id}`,
     tv    : (id, s, e) => `https://cineembed.com/embed/${id}/${s}/${e}`,
     hasParams: false,
+  },
+  {
+    name: '🌐 Multi 1', label: 'AutoEmbed — Multi idioma', type: 'dub',
+    movie : (id)       => `https://player.autoembed.cc/embed/movie/${id}?autoplay=true`,
+    tv    : (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}?autoplay=true`,
+    hasParams: true,
+  },
+  {
+    name: '🌐 Multi 2', label: '2Embed — Multi idioma', type: 'dub',
+    movie : (id)       => `https://www.2embed.stream/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://www.2embed.stream/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🌐 Multi 3', label: 'MultiEmbed — Multi idioma', type: 'dub',
+    movie : (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    tv    : (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+    hasParams: true,
   },
   {
     name: '🔤 Leg 1', label: 'VidLink — Legendado PT-BR', type: 'sub',
@@ -58,8 +58,8 @@ export const PLAYER_SERVERS = [
   },
 ];
 
-const TIMEOUT_DUB_MS = 8_000;
-const TIMEOUT_SUB_MS = 15_000;
+const TIMEOUT_DUB_MS = 18_000;
+const TIMEOUT_SUB_MS = 22_000;
 
 /* ── Helpers ─────────────────────────────────── */
 
@@ -132,6 +132,43 @@ function createIframe(src, title) {
   return iframe;
 }
 
+/* ── Stream nativo (m3u8 / mp4) ──────────────── */
+
+function createStreamPlayer(url, title) {
+  const wrap  = document.createElement('div');
+  wrap.style.cssText = 'width:100%;aspect-ratio:16/9;background:#000;position:relative;';
+
+  const video = document.createElement('video');
+  video.controls    = true;
+  video.autoplay    = true;
+  video.playsInline = true;
+  video.title       = title || 'Player';
+  video.style.cssText = 'width:100%;height:100%;display:block;';
+
+  const isHLS = url.includes('.m3u8');
+  if (isHLS && !video.canPlayType('application/vnd.apple.mpegurl')) {
+    // Carrega hls.js da CDN para browsers sem suporte nativo
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js';
+    script.onload = () => {
+      if (window.Hls?.isSupported()) {
+        const hls = new window.Hls({ maxBufferLength: 30 });
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        video._hls = hls; // referência para destruição
+      } else {
+        video.src = url;
+      }
+    };
+    document.head.appendChild(script);
+  } else {
+    video.src = url;
+  }
+
+  wrap.appendChild(video);
+  return wrap;
+}
+
 /* ── Destroy ─────────────────────────────────── */
 
 export function destroyPlayer() {
@@ -139,14 +176,18 @@ export function destroyPlayer() {
     clearTimeout(cinemaState.playerTimeout);
     cinemaState.playerTimeout = null;
   }
-  // BUG-13 FIX: cancela o timer do badge PT-BR para evitar que tente
-  // remover um elemento já destruído pelo innerHTML = ''
   if (cinemaState.badgeTimeout) {
     clearTimeout(cinemaState.badgeTimeout);
     cinemaState.badgeTimeout = null;
   }
   const p = document.getElementById('cinema-modal-player');
   if (!p) return;
+  // Destrói instância HLS se existir (evita leak de memória)
+  p.querySelectorAll('video').forEach(v => {
+    if (v._hls) { try { v._hls.destroy(); } catch (_) {} v._hls = null; }
+    v.pause();
+    v.src = '';
+  });
   // Para stream cross-origin antes de limpar o DOM (fix áudio Safari/mobile)
   p.querySelectorAll('iframe').forEach(f => {
     try { f.src = 'about:blank'; } catch (_) {}
@@ -193,45 +234,103 @@ function showPlayerError(container) {
     </div>`;
 }
 
-/* ── buildPlayer ─────────────────────────────── */
+/* ── Helper: skeleton de loading ──────────────── */
 
-export function buildPlayer(item, epIdx, onWatched) {
-  const playerEl = document.getElementById('cinema-modal-player');
-  if (!playerEl) return;
-
-  // Sempre para tracking antes de destruir (BUG-P fix)
-  stopTracking();
-  destroyPlayer();
-
-  let src;
-  try {
-    src = buildPlayerSrc(item, epIdx, cinemaState.serverIdx);
-  } catch (err) {
-    console.warn('[Cinema] buildPlayerSrc error:', err);
-    showPlayerError(playerEl);
-    return;
-  }
-
-  if (!src) { showPlayerError(playerEl); return; }
-
-  const server      = PLAYER_SERVERS[cinemaState.serverIdx];
-  const isDub       = server?.type === 'dub';
-  const serverName  = server?.name || 'YouTube';
-  // BUG FIX (item 2): <= length-1 para não overflow além do último servidor
-  const isLastServer = cinemaState.serverIdx >= PLAYER_SERVERS.length - 1;
-
-  // Loading skeleton
+function _makeSkeleton(text) {
   const skeleton = document.createElement('div');
   skeleton.id        = 'cinema-player-skeleton';
   skeleton.className = 'cinema-player-skeleton';
   skeleton.innerHTML = `
     <div class="cinema-player-loading">
       <div class="cinema-player-spinner"></div>
-      <span class="cinema-player-loading-text">
-        ${isDub ? '🇧🇷 Carregando dublagem PT-BR…' : `Carregando ${escapeHtml(serverName)}…`}
-      </span>
+      <span class="cinema-player-loading-text">${escapeHtml(text)}</span>
     </div>`;
-  playerEl.appendChild(skeleton);
+  return skeleton;
+}
+
+/* ── Helper: inicia tracking após montar player ── */
+
+function _startTrackingAfterBuild(item, epIdx, ep, onWatched) {
+  const dynEp = (ep?.season != null && ep?.episode != null)
+    ? { season: ep.season, episode: ep.episode }
+    : null;
+  startTracking(item, epIdx, (key, watchedItem, eIdx) => {
+    const watchKey = (watchedItem.episodes || dynEp)
+      ? `${watchedItem.id}_ep${eIdx}`
+      : watchedItem.id;
+    if (typeof onWatched === 'function') onWatched(watchKey);
+  }, dynEp);
+}
+
+/* ── buildPlayer — ponto de entrada principal ─── */
+
+export function buildPlayer(item, epIdx, onWatched) {
+  const playerEl = document.getElementById('cinema-modal-player');
+  if (!playerEl) return;
+
+  stopTracking();
+  destroyPlayer();
+
+  // Resolve o episódio atual (para séries)
+  const dynEps   = cinemaState.dynamicEpisodes;
+  const episodes = dynEps || item.episodes;
+  const ep       = episodes?.[epIdx] ?? null;
+
+  // ID para a PlayLT: usa contentId do episódio se disponível, senão tmdbId
+  const playltId = ep?.contentId ?? item.tmdbId ?? null;
+
+  if (playltId) {
+    _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched);
+  } else {
+    _buildFromServer(playerEl, item, epIdx, ep, onWatched);
+  }
+}
+
+/* ── PlayLT: busca /sources e renderiza ────────── */
+
+async function _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched) {
+  playerEl.appendChild(_makeSkeleton('🎬 Carregando…'));
+
+  const source = await fetchSources(playltId);
+
+  // Guard: modal ainda aberto com o mesmo item?
+  if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+  document.getElementById('cinema-player-skeleton')?.remove();
+
+  if (source?.url) {
+    if (source.type === 'stream') {
+      // Stream direto (m3u8 / mp4) — player nativo
+      playerEl.appendChild(createStreamPlayer(source.url, item.title));
+    } else {
+      // iframe embed
+      const iframe = createIframe(source.url, item.title);
+      iframe.onload = () => document.getElementById('cinema-player-skeleton')?.remove();
+      playerEl.appendChild(iframe);
+    }
+    _startTrackingAfterBuild(item, epIdx, ep, onWatched);
+    return;
+  }
+
+  // PlayLT sem source → fallback para embed servers
+  console.warn('[Cinema] PlayLT sem source para id=' + playltId + ' — usando fallback');
+  _buildFromServer(playerEl, item, epIdx, ep, onWatched);
+}
+
+/* ── Fallback: embed servers (SuperFlixAPI, VidLink…) ── */
+
+function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
+  let src;
+  try { src = buildPlayerSrc(item, epIdx, cinemaState.serverIdx); }
+  catch (err) { console.warn('[Cinema] buildPlayerSrc error:', err); showPlayerError(playerEl); return; }
+
+  if (!src) { showPlayerError(playerEl); return; }
+
+  const server       = PLAYER_SERVERS[cinemaState.serverIdx];
+  const isDub        = server?.type === 'dub';
+  const serverName   = server?.name || 'Externo';
+  const isLastServer = cinemaState.serverIdx >= PLAYER_SERVERS.length - 1;
+
+  playerEl.appendChild(_makeSkeleton(isDub ? '🇧🇷 Carregando dublagem PT-BR…' : `Carregando ${escapeHtml(serverName)}…`));
 
   const iframe = createIframe(src, item.title);
 
@@ -242,9 +341,6 @@ export function buildPlayer(item, epIdx, onWatched) {
       badge.className   = 'cinema-ptbr-badge';
       badge.textContent = '🇧🇷 Dublado PT-BR';
       playerEl.appendChild(badge);
-      // BUG-13 FIX: guarda o timer no state para poder cancelá-lo em destroyPlayer()
-      // Sem isso, se o player for destruído antes dos 3600ms, o timer continua vivo
-      // apontando para um badge já removido do DOM.
       cinemaState.badgeTimeout = setTimeout(() => {
         cinemaState.badgeTimeout = null;
         badge.style.opacity = '0';
@@ -257,35 +353,17 @@ export function buildPlayer(item, epIdx, onWatched) {
   cinemaState.playerTimeout = setTimeout(() => {
     if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
     document.getElementById('cinema-player-skeleton')?.remove();
-
     if (!isLastServer) {
-      // BUG FIX (item 2): clamp correto — nunca ultrapassa o último índice válido
-      cinemaState.serverIdx = Math.min(
-        cinemaState.serverIdx + 1,
-        PLAYER_SERVERS.length - 1
-      );
+      cinemaState.serverIdx = Math.min(cinemaState.serverIdx + 1, PLAYER_SERVERS.length - 1);
       renderServerPanel();
       buildPlayer(item, epIdx, onWatched);
     } else {
-      showRetryOverlay(playerEl, item, epIdx, onWatched);  // BUG-7 FIX: passa onWatched
+      showRetryOverlay(playerEl, item, epIdx, onWatched);
     }
   }, isDub ? TIMEOUT_DUB_MS : TIMEOUT_SUB_MS);
 
   playerEl.appendChild(iframe);
-
-  // Rastreia progresso
-  const episodes = cinemaState.dynamicEpisodes || item.episodes;
-  const ep       = episodes?.[epIdx] ?? null;
-  const dynEp    = (ep?.season != null && ep?.episode != null)
-    ? { season: ep.season, episode: ep.episode }
-    : null;
-
-  startTracking(item, epIdx, (key, watchedItem, eIdx) => {
-    const watchKey = (watchedItem.episodes || dynEp)
-      ? `${watchedItem.id}_ep${eIdx}`
-      : watchedItem.id;
-    if (typeof onWatched === 'function') onWatched(watchKey);
-  }, dynEp);
+  _startTrackingAfterBuild(item, epIdx, ep, onWatched);
 }
 
 /* ── Render do painel de servidores ──────────── */
