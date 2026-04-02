@@ -64,6 +64,17 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+/* ── F5: Fetch Failure Isolation ─────────────── */
+// Wraps any async fetch so a failure in one path never cancels another.
+async function safeFetch(fn) {
+  try {
+    return await fn();
+  } catch (e) {
+    console.warn('[Cinema] fetch isolated:', e?.message || e);
+    return null;
+  }
+}
+
 function makeWatchedCallback(watchKey) {
   if (cinemaState.watched[watchKey]) return;
   cinemaState.watched[watchKey] = true;
@@ -426,9 +437,9 @@ window._openCinemaItem = async function (id) {
   }
   cinemaState.isModalOpen = true;
 
-  // Aborta fetches anteriores e avança geração
-  abortInFlightFetches();
-  const myGeneration = cinemaState.generation;
+  // BUG-GENERATION FIX: abortInFlightFetches() agora retorna o valor pós-incremento —
+  // capturar na mesma expressão elimina fragilidade de timing em refatorações futuras.
+  const myGeneration = abortInFlightFetches();
 
   const item = ALL_ITEMS_MAP.get(id);
   if (!item) { cinemaState.isModalOpen = false; return; }
@@ -448,10 +459,10 @@ window._openCinemaItem = async function (id) {
       if (entries.length) {
         const latest = entries.sort((a, b) => (b.updated || 0) - (a.updated || 0))[0];
         const restoredIdx = (latest.epIdx != null && !latest.done) ? latest.epIdx : 0;
-        // A-03: clamp contra episódios estáticos para evitar índice fora do array
-        const staticEps = item.episodes;
-        const maxIdx = (staticEps && staticEps.length > 0) ? staticEps.length - 1 : 0;
-        cinemaState.episodeIdx = Math.min(restoredIdx, maxIdx);
+        // BUG-EPCLAMP-PREMATURE FIX: não clampar o índice restaurado contra os episódios
+        // estáticos (que podem ser menos). O clamp final acontecerá depois que os episódios
+        // dinâmicos carregarem — assim um usuário no ep 15 não é regrido para ep 4 (último estático).
+        cinemaState.episodeIdx = restoredIdx >= 0 ? restoredIdx : 0;
       } else {
         cinemaState.episodeIdx = 0;
       }
@@ -480,13 +491,13 @@ window._openCinemaItem = async function (id) {
   const episodeSignal = cinemaState.episodeFetchCtrl.signal;
 
   // Metadados — fire-and-forget com dupla guard [S4]
-  fetchTmdbMeta(item, metaSignal)
+  // F5: wrapped in safeFetch so a meta failure never affects the player
+  safeFetch(() => fetchTmdbMeta(item, metaSignal))
     .then(meta => {
       if (cinemaState.generation !== myGeneration) return;
       if (cinemaState.currentItem !== item) return;
       if (meta) _renderMeta(meta);
-    })
-    .catch(() => {});
+    });
 
   if (!isTVItem) return;
 
@@ -494,7 +505,8 @@ window._openCinemaItem = async function (id) {
   cinemaState.loadingEpisodes = true;
   _renderEpisodeList();
 
-  const fetched = await fetchAllEpisodes(item, episodeSignal);
+  // F5: episode fetch isolated — failure here never cancels the player
+  const fetched = await safeFetch(() => fetchAllEpisodes(item, episodeSignal));
 
   // [S4] Dupla race-protection após await
   if (cinemaState.generation !== myGeneration) return;
@@ -554,8 +566,13 @@ window._closeCinemaModal = function () {
 
 window._cinemaSwitchEp = function (idx) {
   if (idx === cinemaState.episodeIdx) return;
+  // BUG-1 FIX: idx negativo nunca é válido, independente de episodes estar carregado.
+  // Sem este guard, um idx=-1 enviado pelo watchparty remoto passava quando
+  // dynamicEpisodes ainda era null (série ainda carregando), causando carregamento
+  // silencioso do episódio errado (ep undefined → parseSeasonEpisode → S01E01).
+  if (idx < 0) return;
   const episodes = cinemaState.dynamicEpisodes || cinemaState.currentItem?.episodes;
-  if (episodes && (idx < 0 || idx >= episodes.length)) return;
+  if (episodes && idx >= episodes.length) return;
 
   // Aborta fetches TMDB em andamento para evitar que episódios de uma carga
   // anterior sobrescrevam o estado após a troca de episódio

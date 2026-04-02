@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    cinema-state.js — Estado centralizado do Cinema
-   Pietro & Emilly · v56
+   Pietro & Emilly · v64
    ═══════════════════════════════════════════════ */
 
 /**
@@ -14,7 +14,11 @@ export const cinemaState = {
   episodeIdx       : 0,
   serverIdx        : 0,
   playerTimeout    : null,
-  badgeTimeout     : null,   // timer do badge PT-BR — deve ser cancelado no destroyPlayer
+  badgeTimeout     : null,   // timer do badge PT-BR — cancelado em destroyPlayer e resetModalState
+
+  /* ── watchdog ── */
+  watchdogTimer    : null,   // setInterval do watchdog de iframe
+  watchdogStart    : 0,      // Date.now() quando watchdog iniciou
 
   /* ── modal ── */
   isModalOpen      : false,
@@ -34,16 +38,30 @@ export const cinemaState = {
 
   /* ── UI ── */
   activeTab        : 'series',
+
+  /* ── HARDENING v64+ ── */
+  playerDestroyed  : false,       // F6: idempotent destroy guard
+  activeTimers     : [],          // F7: timer registry for full cleanup
+  freezeTimer      : null,        // F2: freeze detection timer
+  silentSwitching  : false,       // F3: silent server switch in progress
 };
 
 /** Reseta tudo que pertence ao modal sem tocar em db/watched/activeTab */
 export function resetModalState() {
-  // BUG-6 FIX: cancela o timeout do player antes de zerar o estado
-  // Sem isso, o timeout podia disparar após o fechamento do modal e tentar
-  // usar cinemaState.currentItem === null, causando erros silenciosos.
+  // Cancela todos os timers pendentes antes de zerar o estado
   if (cinemaState.playerTimeout) {
     clearTimeout(cinemaState.playerTimeout);
     cinemaState.playerTimeout = null;
+  }
+  // BUG-RESETSTATE-BADGE FIX: cancela badge para não disparar em elemento já removido do DOM
+  if (cinemaState.badgeTimeout) {
+    clearTimeout(cinemaState.badgeTimeout);
+    cinemaState.badgeTimeout = null;
+  }
+  // BUG-WATCHDOG FIX: para o watchdog se modal fechar durante o intervalo
+  if (cinemaState.watchdogTimer) {
+    clearInterval(cinemaState.watchdogTimer);
+    cinemaState.watchdogTimer = null;
   }
   cinemaState.currentItem     = null;
   cinemaState.episodeIdx      = 0;
@@ -51,9 +69,21 @@ export function resetModalState() {
   cinemaState.dynamicEpisodes = null;
   cinemaState.loadingEpisodes = false;
   cinemaState.isModalOpen     = false;
+  cinemaState.watchdogStart   = 0;
+  // F6/F7: reset hardening fields
+  cinemaState.playerDestroyed = false;
+  cinemaState.silentSwitching = false;
+  if (cinemaState.freezeTimer) { clearTimeout(cinemaState.freezeTimer); cinemaState.freezeTimer = null; }
+  cinemaState.activeTimers.forEach(t => clearTimeout(t));
+  cinemaState.activeTimers = [];
 }
 
-/** Aborta fetches TMDB in-flight e avança geração */
+/**
+ * Aborta fetches TMDB in-flight, avança geração e retorna o novo valor.
+ * BUG-GENERATION FIX: retornar o valor pós-incremento elimina a fragilidade
+ * de capturar cinemaState.generation na linha seguinte à chamada.
+ * @returns {number} nova geração
+ */
 export function abortInFlightFetches() {
   if (cinemaState.episodeFetchCtrl) {
     cinemaState.episodeFetchCtrl.abort();
@@ -64,4 +94,5 @@ export function abortInFlightFetches() {
     cinemaState.metaFetchCtrl = null;
   }
   cinemaState.generation += 1;
+  return cinemaState.generation;
 }

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    cinema-player.js — Player, iframe, fallback
-   Pietro & Emilly · v63
+   Pietro & Emilly · v64
    ═══════════════════════════════════════════════ */
 
 import { startTracking, stopTracking, getResumeTime } from '../progress.js';
@@ -163,8 +163,49 @@ export const PLAYER_SERVERS = [
     hasParams: false,
   },
 ];
-const TIMEOUT_DUB_MS = 28_000;  // SuperFlixAPI pode demorar 20-25s na 1ª carga — 7 espelhos
-const TIMEOUT_SUB_MS = 32_000;  // Players internacionais multi-fonte — 8 opções legendadas
+const TIMEOUT_DUB_MS   = 28_000;  // SuperFlixAPI pode demorar 20-25s na 1ª carga — 7 espelhos
+const TIMEOUT_SUB_MS   = 32_000;  // Players internacionais multi-fonte — 8 opções legendadas
+const WATCHDOG_TICK_MS = 5_000;   // intervalo do watchdog
+const WATCHDOG_MAX_MS  = 40_000;  // tempo máximo de espera antes do avanço automático
+
+/* ── F4: Adaptive Watchdog Timeout Map ───────── */
+// Per-server adaptive timeout overrides. Faster servers get shorter timeouts.
+// Values never go below the existing TIMEOUT_DUB_MS/TIMEOUT_SUB_MS defaults.
+const SERVER_TIMEOUT_MAP = {
+  // Fast mirrors (superflixapi variants already proven fast)
+  'superflixapi.rest' : 22_000,
+  'superflixapi.top'  : 22_000,
+  // Standard international multi-servers
+  'vidsrc.mov'        : 28_000,
+  'vidsrc.cc'         : 30_000,
+  'vidsrc.icu'        : 30_000,
+  // Slower aggregators
+  'multiembed.mov'    : 35_000,
+  'player.videasy.net': 35_000,
+};
+
+function _getAdaptiveTimeout(serverIdx) {
+  const server = PLAYER_SERVERS[serverIdx];
+  if (!server) return TIMEOUT_SUB_MS;
+  // Extract hostname from a sample URL to look up the map
+  try {
+    const sampleUrl = server.movie ? server.movie('1') : null;
+    if (sampleUrl) {
+      const host = new URL(sampleUrl).hostname;
+      const override = SERVER_TIMEOUT_MAP[host];
+      if (override) return override;
+    }
+  } catch (_) { /* ignore parse errors */ }
+  return server.type === 'dub' ? TIMEOUT_DUB_MS : TIMEOUT_SUB_MS;
+}
+
+/* ── F7: Timer Registry helper ───────────────── */
+function _registerTimer(timerId) {
+  if (timerId == null) return timerId;
+  cinemaState.activeTimers.push(timerId);
+  return timerId;
+}
+
 
 /* ── Helpers ─────────────────────────────────── */
 
@@ -195,14 +236,18 @@ export function buildPlayerSrc(item, epIdx, serverIdx) {
 
     if (isSeries) {
       const episodes = dynEps || item.episodes;
-      const ep       = episodes?.[epIdx] ?? null;
+      // BUG-EPCLAMP: clamp defensivo para index fora do array
+      const safeIdx  = (episodes && episodes.length > 0)
+        ? Math.min(epIdx, episodes.length - 1)
+        : 0;
+      const ep       = episodes?.[safeIdx] ?? null;
       const s        = ep?.season  ?? null;
       const e        = ep?.episode ?? null;
       const [sf, ef] = (s != null && e != null) ? [s, e] : parseSeasonEpisode(ep?.title);
       const dynEp    = (ep?.season != null && ep?.episode != null)
         ? { season: ep.season, episode: ep.episode }
         : null;
-      const rt = getResumeTime(item, epIdx, dynEp);
+      const rt = getResumeTime(item, safeIdx, dynEp);
       return server.tv(item.tmdbId, sf, ef) + (rt > 0 ? `${sep}t=${rt}` : '');
     }
 
@@ -275,17 +320,85 @@ function createStreamPlayer(url, title) {
   return wrap;
 }
 
+/* ── Watchdog ────────────────────────────────── */
+
+/**
+ * BUG-WATCHDOG FIX: inicia um setInterval que verifica a cada 5s se o skeleton
+ * ainda está presente. Após WATCHDOG_MAX_MS avança servidor ou exibe retry.
+ * Isso cobre o caso de X-Frame-Options/CSP que impede o iframe.onload de disparar.
+ */
+function _startWatchdog(playerEl, item, epIdx, onWatched) {
+  _stopWatchdog();
+  cinemaState.watchdogStart = Date.now();
+  cinemaState.watchdogTimer = setInterval(() => {
+    if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) {
+      _stopWatchdog();
+      return;
+    }
+    const skeleton = document.getElementById('cinema-player-skeleton');
+    if (!skeleton) {
+      // Skeleton foi removido — player carregou normalmente
+      _stopWatchdog();
+      return;
+    }
+    const elapsed = Date.now() - cinemaState.watchdogStart;
+    if (elapsed >= WATCHDOG_MAX_MS) {
+      _stopWatchdog();
+      _advanceOrShowRetry(playerEl, item, epIdx, onWatched);
+    }
+  }, WATCHDOG_TICK_MS);
+}
+
+function _stopWatchdog() {
+  if (cinemaState.watchdogTimer) {
+    clearInterval(cinemaState.watchdogTimer);
+    cinemaState.watchdogTimer = null;
+  }
+  cinemaState.watchdogStart = 0;
+}
+
+function _advanceOrShowRetry(playerEl, item, epIdx, onWatched) {
+  if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+  document.getElementById('cinema-player-skeleton')?.remove();
+  const isLastServer = cinemaState.serverIdx >= PLAYER_SERVERS.length - 1;
+  if (!isLastServer) {
+    cinemaState.serverIdx = Math.min(cinemaState.serverIdx + 1, PLAYER_SERVERS.length - 1);
+    renderServerPanel();
+    buildPlayer(item, epIdx, onWatched);
+  } else {
+    showRetryOverlay(playerEl, item, epIdx, onWatched);
+  }
+}
+
 /* ── Destroy ─────────────────────────────────── */
 
 export function destroyPlayer() {
+  // F6: idempotent guard — prevent double-destroy
+  if (cinemaState.playerDestroyed) return;
+  cinemaState.playerDestroyed = true;
+
+  // F7: clear ALL registered timers
+  cinemaState.activeTimers.forEach(t => { try { clearTimeout(t); } catch (_) {} });
+  cinemaState.activeTimers = [];
+
+  // F2: clear freeze timer
+  if (cinemaState.freezeTimer) {
+    clearTimeout(cinemaState.freezeTimer);
+    cinemaState.freezeTimer = null;
+  }
+
   if (cinemaState.playerTimeout) {
     clearTimeout(cinemaState.playerTimeout);
     cinemaState.playerTimeout = null;
   }
+  // BUG-DESTROYPLAYER-BADGE FIX: cancela o badge para não disparar após destroyPlayer
   if (cinemaState.badgeTimeout) {
     clearTimeout(cinemaState.badgeTimeout);
     cinemaState.badgeTimeout = null;
   }
+  // Para o watchdog ao destruir o player
+  _stopWatchdog();
+
   const p = document.getElementById('cinema-modal-player');
   if (!p) return;
   // Destrói instância HLS se existir (evita leak de memória)
@@ -374,8 +487,17 @@ export function buildPlayer(item, epIdx, onWatched) {
   const playerEl = document.getElementById('cinema-modal-player');
   if (!playerEl) return;
 
+  // F1: capture generation snapshot before any async work
+  const myGeneration = cinemaState.generation;
+
   stopTracking();
   destroyPlayer();
+
+  // F6: reset destroyed flag for new build cycle
+  cinemaState.playerDestroyed = false;
+
+  // F1: bail if generation changed while we were setting up
+  if (myGeneration !== cinemaState.generation) return;
 
   // Resolve o episódio atual (para séries)
   const dynEps   = cinemaState.dynamicEpisodes;
@@ -395,12 +517,22 @@ export function buildPlayer(item, epIdx, onWatched) {
 /* ── PlayLT: busca /sources e renderiza ────────── */
 
 async function _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched) {
+  // F1: snapshot generation at start of async path
+  const myGeneration = cinemaState.generation;
+
   playerEl.appendChild(_makeSkeleton('🎬 Carregando…'));
+
+  // Inicia watchdog também no caminho PlayLT
+  _startWatchdog(playerEl, item, epIdx, onWatched);
 
   const source = await fetchSources(playltId);
 
+  // F1: generation guard — bail if a newer buildPlayer was triggered
+  if (myGeneration !== cinemaState.generation) return;
+
   // Guard: modal ainda aberto com o mesmo item?
   if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+  _stopWatchdog();
   document.getElementById('cinema-player-skeleton')?.remove();
 
   if (source?.url) {
@@ -425,6 +557,45 @@ async function _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched) 
   _buildFromServer(playerEl, item, epIdx, ep, onWatched);
 }
 
+/* ── F2: Freeze Detection ────────────────────── */
+// After iframe.onload fires, starts a timer. If no load confirmation in time,
+// triggers a single silent rebuild of the same server.
+function _startFreezeDetector(playerEl, item, epIdx, onWatched) {
+  if (cinemaState.freezeTimer) { clearTimeout(cinemaState.freezeTimer); cinemaState.freezeTimer = null; }
+  let attempts = 0;
+  cinemaState.freezeTimer = _registerTimer(setTimeout(() => {
+    cinemaState.freezeTimer = null;
+    if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+    if (attempts >= 1) return;
+    attempts++;
+    // Only retry if skeleton is gone (load fired) but player seems stuck
+    const skeleton = document.getElementById('cinema-player-skeleton');
+    if (skeleton) return; // still loading — watchdog handles it
+    console.warn('[Cinema] Freeze detected — rebuilding same server');
+    buildPlayer(item, epIdx, onWatched);
+  }, 11_000)); // 11s after onload — freeze window
+}
+
+/* ── F3: Silent Server Switch Badge ─────────── */
+function _showSilentSwitchBadge() {
+  const existing = document.getElementById('cinema-silent-switch-badge');
+  if (existing) return;
+  const playerEl = document.getElementById('cinema-modal-player');
+  if (!playerEl) return;
+  const badge = document.createElement('div');
+  badge.id = 'cinema-silent-switch-badge';
+  badge.style.cssText = [
+    'position:absolute', 'top:8px', 'right:8px', 'z-index:9999',
+    'background:rgba(0,0,0,.72)', 'color:#fff', 'font-size:12px',
+    'padding:4px 10px', 'border-radius:20px', 'pointer-events:none',
+    'transition:opacity .4s',
+  ].join(';');
+  badge.textContent = '🔄 trocando servidor…';
+  playerEl.style.position = playerEl.style.position || 'relative';
+  playerEl.appendChild(badge);
+  _registerTimer(setTimeout(() => { badge.style.opacity = '0'; setTimeout(() => badge.remove(), 420); }, 2800));
+}
+
 /* ── Fallback: embed servers (SuperFlixAPI, VidLink…) ── */
 
 function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
@@ -437,42 +608,60 @@ function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
   const server       = PLAYER_SERVERS[cinemaState.serverIdx];
   const isDub        = server?.type === 'dub';
   const serverName   = server?.name || 'Externo';
+
+  // F3: show silent switch badge if auto-switching (not the first server)
+  if (cinemaState.serverIdx > 0 && cinemaState.silentSwitching) {
+    _showSilentSwitchBadge();
+  }
+  cinemaState.silentSwitching = false; // reset flag after badge
+
   playerEl.appendChild(_makeSkeleton(isDub ? '🇧🇷 Carregando dublagem PT-BR…' : `Carregando ${escapeHtml(serverName)}…`));
 
   const iframe = createIframe(src, item.title);
 
   iframe.onload = () => {
+    _stopWatchdog();
     document.getElementById('cinema-player-skeleton')?.remove();
     // A-05: só inicia tracking após confirmar que o iframe carregou com sucesso
     _startTrackingAfterBuild(item, epIdx, ep, onWatched);
+    // F2: start freeze detector after iframe confirms load
+    _startFreezeDetector(playerEl, item, epIdx, onWatched);
     if (isDub) {
       const badge = document.createElement('div');
       badge.className   = 'cinema-ptbr-badge';
       badge.textContent = '🇧🇷 Dublado PT-BR';
       playerEl.appendChild(badge);
-      cinemaState.badgeTimeout = setTimeout(() => {
+      cinemaState.badgeTimeout = _registerTimer(setTimeout(() => {
         cinemaState.badgeTimeout = null;
         badge.style.opacity = '0';
-        setTimeout(() => badge.remove(), 400);
-      }, 3600);
+        _registerTimer(setTimeout(() => badge.remove(), 400));
+      }, 3600));
     }
   };
+
+  // F4: use adaptive timeout per server instead of fixed value
+  const adaptiveTimeout = _getAdaptiveTimeout(cinemaState.serverIdx);
 
   // Auto-fallback timeout
   // BUG-3 FIX: isLastServer calculado DENTRO do timeout, não antes —
   // evita valor stale se o usuário trocou de servidor manualmente entre o início e o disparo
-  cinemaState.playerTimeout = setTimeout(() => {
+  cinemaState.playerTimeout = _registerTimer(setTimeout(() => {
     if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+    _stopWatchdog();
     document.getElementById('cinema-player-skeleton')?.remove();
     const isLastServer = cinemaState.serverIdx >= PLAYER_SERVERS.length - 1;
     if (!isLastServer) {
       cinemaState.serverIdx = Math.min(cinemaState.serverIdx + 1, PLAYER_SERVERS.length - 1);
+      cinemaState.silentSwitching = true; // F3: flag silent switch
       renderServerPanel();
       buildPlayer(item, epIdx, onWatched);
     } else {
       showRetryOverlay(playerEl, item, epIdx, onWatched);
     }
-  }, isDub ? TIMEOUT_DUB_MS : TIMEOUT_SUB_MS);
+  }, adaptiveTimeout)); // F4: adaptive instead of fixed isDub ? TIMEOUT_DUB_MS : TIMEOUT_SUB_MS
+
+  // BUG-WATCHDOG FIX: inicia watchdog para detectar bloqueio por X-Frame-Options/CSP
+  _startWatchdog(playerEl, item, epIdx, onWatched);
 
   playerEl.appendChild(iframe);
   // A-05: tracking movido para dentro de iframe.onload — não registrar progresso se o iframe falhou

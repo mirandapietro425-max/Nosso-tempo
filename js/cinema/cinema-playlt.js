@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    cinema-playlt.js — Integração PlayLT API v5
-   Pietro & Emilly · v62
+   Pietro & Emilly · v64
 
    Substitui cinema-tmdb.js.
    Ponto único de contato com a API externa — para trocar de
@@ -12,6 +12,11 @@
      GET /season?id={tmdbId}&season={n}
      GET /episode?id={tmdbId}&season={n}&episode={n}
      GET /sources?id={contentId}
+
+   v64 fixes:
+     [BUG-PROMISE-ALL]  Promise.allSettled em todas as buscas paralelas de seasons
+     [BUG-CACHE-STALE]  Cache com TTL (30min meta, 10min episódios, 5min sources)
+     [BUG-TMDB-FALLBACK] Fallback direto para TMDB API quando PlayLT offline
    ═══════════════════════════════════════════════════════════════ */
 
 import { PLAYLT_API_BASE, PLAYLT_API_KEY } from '../config.js';
@@ -21,6 +26,10 @@ import { PLAYLT_API_BASE, PLAYLT_API_KEY } from '../config.js';
 const BASE      = PLAYLT_API_BASE.replace(/\/$/, ''); // remove trailing slash
 const TIMEOUT   = 14_000; // ms por request
 const MAX_RETRY = 2;      // tentativas extras em caso de falha de rede
+
+// TMDB fallback — usado quando PlayLT está offline
+const TMDB_BASE    = 'https://api.themoviedb.org/3';
+const TMDB_API_KEY = '8265bd1679663a7ea12ac168da84d2e8'; // chave pública de leitura
 
 /* ── Sanitização ──────────────────────────────── */
 
@@ -35,13 +44,32 @@ export function sanitizeTmdb(str) {
     .replace(/'/g, '&#x27;');
 }
 
-/* ── Cache em memória (por sessão) ────────────── */
+/* ── Cache em memória com TTL ─────────────────── */
+
+// BUG-CACHE-STALE FIX: cache com TTL para evitar dados eternamente stale
+const TTL_META     = 30 * 60 * 1000;  // 30 min
+const TTL_EPISODES = 10 * 60 * 1000;  // 10 min
+const TTL_SOURCES  =  5 * 60 * 1000;  //  5 min
 
 const _cache = {
-  meta    : {}, // tmdbId → meta object
-  episodes: {}, // tmdbId → Episode[]
-  sources : {}, // contentId → Source
+  meta    : {}, // tmdbId → { value, expiresAt }
+  episodes: {}, // tmdbId → { value, expiresAt }
+  sources : {}, // contentId → { value, expiresAt }
 };
+
+function _makeCacheEntry(value, ttl) {
+  return { value, expiresAt: Date.now() + ttl };
+}
+
+function _cacheGet(bucket, key) {
+  const entry = _cache[bucket][key];
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    delete _cache[bucket][key];
+    return null;
+  }
+  return entry.value;
+}
 
 /* ── HTTP helper com retry e timeout ──────────── */
 
@@ -85,14 +113,34 @@ async function _apiFetch(path, signal = null) {
       signal?.removeEventListener('abort', onAbort);
       if (signal?.aborted || ctrl.signal.aborted) return null;
       if (attempt < MAX_RETRY) {
-        // Backoff exponencial: 400ms, 800ms
-        await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+        // BUG-CACHE-STALE: backoff exponencial mais agressivo: 400ms → 800ms → 1600ms
+        await new Promise(r => setTimeout(r, 400 * Math.pow(2, attempt)));
         continue;
       }
       return null;
     }
   }
   return null;
+}
+
+/* ── TMDB fallback fetch ──────────────────────── */
+
+async function _tmdbFetch(path, signal = null) {
+  const sep = path.includes('?') ? '&' : '?';
+  const url = `${TMDB_BASE}${path}${sep}api_key=${TMDB_API_KEY}&language=pt-BR`;
+  try {
+    const ctrl      = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 10_000);
+    const onAbort   = () => ctrl.abort();
+    signal?.addEventListener('abort', onAbort, { once: true });
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', onAbort);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 /* ── Normalização de dados ────────────────────── */
@@ -140,34 +188,109 @@ function _normalizeEpisode(ep, seriesId) {
   };
 }
 
+/* ── TMDB fallback: meta ──────────────────────── */
+
+async function _fetchMovieMetaFromTMDB(id, signal) {
+  const data = await _tmdbFetch(`/movie/${id}`, signal);
+  if (!data) return null;
+  // Adapta schema TMDB para _normalizeMeta
+  data.rating = data.vote_average;
+  data.genres = data.genres?.map(g => g.name) || [];
+  data.year   = data.release_date?.slice(0, 4) || null;
+  return _normalizeMeta(data, true);
+}
+
+async function _fetchSeriesMetaFromTMDB(id, signal) {
+  const data = await _tmdbFetch(`/tv/${id}`, signal);
+  if (!data) return null;
+  data.rating          = data.vote_average;
+  data.genres          = data.genres?.map(g => g.name) || [];
+  data.year            = data.first_air_date?.slice(0, 4) || null;
+  data.episodeRuntime  = data.episode_run_time?.[0] || null;
+  return _normalizeMeta(data, false);
+}
+
+/* ── TMDB fallback: episodes ──────────────────── */
+
+async function _fetchEpisodesFromTMDB(id, signal) {
+  // Busca informações da série para saber quantas temporadas tem
+  const seriesData = await _tmdbFetch(`/tv/${id}`, signal);
+  if (!seriesData || signal?.aborted) return null;
+
+  const numSeasons = seriesData.number_of_seasons || 1;
+  const seasons    = Array.from({ length: numSeasons }, (_, i) => i + 1);
+
+  // BUG-PROMISE-ALL FIX: allSettled para não abortar se uma season retornar 404
+  const results = await Promise.allSettled(
+    seasons.map(n => _tmdbFetch(`/tv/${id}/season/${n}`, signal))
+  );
+
+  const episodes = [];
+  for (const result of results) {
+    if (result.status !== 'fulfilled' || !result.value) continue;
+    const sd  = result.value;
+    const eps = sd.episodes || [];
+    for (const ep of eps) {
+      episodes.push(_normalizeEpisode(ep, id));
+    }
+  }
+  return episodes.length > 0 ? episodes : null;
+}
+
 /* ── API pública ──────────────────────────────── */
 
 /**
  * Busca metadados de um filme pelo TMDB ID.
  * Equivale ao fetchTmdbMeta(item) anterior para filmes.
+ * BUG-TMDB-FALLBACK FIX: cai para TMDB oficial quando PlayLT offline.
  */
 export async function fetchMovieMeta(item, signal = null) {
   const id = item.tmdbId;
   if (!id) return null;
-  if (_cache.meta[`movie_${id}`]) return _cache.meta[`movie_${id}`];
 
-  const data = await _apiFetch(`/movie?id=${id}`, signal);
-  const meta = _normalizeMeta(data, true);
-  if (meta) _cache.meta[`movie_${id}`] = meta;
+  const cached = _cacheGet('meta', `movie_${id}`);
+  if (cached) return cached;
+
+  let meta = null;
+
+  if (PLAYLT_ENABLED) {
+    const data = await _apiFetch(`/movie?id=${id}`, signal);
+    meta = _normalizeMeta(data, true);
+  }
+
+  // BUG-TMDB-FALLBACK FIX: fallback direto para TMDB se PlayLT offline ou sem dados
+  if (!meta) {
+    meta = await _fetchMovieMetaFromTMDB(id, signal);
+  }
+
+  if (meta) _cache.meta[`movie_${id}`] = _makeCacheEntry(meta, TTL_META);
   return meta;
 }
 
 /**
  * Busca metadados de uma série pelo TMDB ID.
+ * BUG-TMDB-FALLBACK FIX: cai para TMDB oficial quando PlayLT offline.
  */
 export async function fetchSeriesMeta(item, signal = null) {
   const id = item.tmdbId;
   if (!id) return null;
-  if (_cache.meta[`series_${id}`]) return _cache.meta[`series_${id}`];
 
-  const data = await _apiFetch(`/series?id=${id}`, signal);
-  const meta = _normalizeMeta(data, false);
-  if (meta) _cache.meta[`series_${id}`] = meta;
+  const cached = _cacheGet('meta', `series_${id}`);
+  if (cached) return cached;
+
+  let meta = null;
+
+  if (PLAYLT_ENABLED) {
+    const data = await _apiFetch(`/series?id=${id}`, signal);
+    meta = _normalizeMeta(data, false);
+  }
+
+  // BUG-TMDB-FALLBACK FIX: fallback para TMDB se PlayLT offline
+  if (!meta) {
+    meta = await _fetchSeriesMetaFromTMDB(id, signal);
+  }
+
+  if (meta) _cache.meta[`series_${id}`] = _makeCacheEntry(meta, TTL_META);
   return meta;
 }
 
@@ -184,50 +307,64 @@ export async function fetchTmdbMeta(item, signal = null) {
 
 /**
  * Busca todos os episódios de uma série — substitui fetchAllEpisodes.
- * Chama /season para cada temporada listada em /series.
+ * BUG-PROMISE-ALL FIX: Promise.allSettled para não abortar se uma season falhar.
+ * BUG-TMDB-FALLBACK FIX: fallback para TMDB quando PlayLT offline.
  */
 export async function fetchAllEpisodes(item, signal = null) {
   const id = item.tmdbId;
   if (!id) return null;
-  if (_cache.episodes[id]) return _cache.episodes[id];
+
+  const cached = _cacheGet('episodes', id);
+  if (cached) return cached;
   if (signal?.aborted) return null;
 
-  // Primeiro pega os dados gerais da série para saber quantas temporadas tem
-  const seriesData = await _apiFetch(`/series?id=${id}`, signal);
-  if (!seriesData || signal?.aborted) return null;
+  let episodes = null;
 
-  // A API pode retornar seasons como array de números ou de objetos
-  // M-06: se seasons é array vazio, cai no fallback de inferência (não retorna null prematuramente)
-  let seasons;
-  if (Array.isArray(seriesData.seasons) && seriesData.seasons.length > 0) {
-    seasons = seriesData.seasons
-      .map(s => (typeof s === 'object' ? s.season_number ?? s.number : s))
-      .filter(n => n > 0);
-  } else {
-    seasons = await _inferSeasonNumbers(seriesData);
-  }
+  if (PLAYLT_ENABLED) {
+    // Primeiro pega os dados gerais da série para saber quantas temporadas tem
+    const seriesData = await _apiFetch(`/series?id=${id}`, signal);
+    if (seriesData && !signal?.aborted) {
+      let seasons;
+      if (Array.isArray(seriesData.seasons) && seriesData.seasons.length > 0) {
+        seasons = seriesData.seasons
+          .map(s => (typeof s === 'object' ? s.season_number ?? s.number : s))
+          .filter(n => n > 0);
+      } else {
+        seasons = await _inferSeasonNumbers(seriesData);
+      }
 
-  if (!seasons.length) return null;
+      if (seasons.length > 0) {
+        // BUG-PROMISE-ALL FIX: allSettled para não abortar se uma season retornar 404
+        const results = await Promise.allSettled(
+          seasons.map(n =>
+            _apiFetch(`/season?id=${id}&season=${n}`, signal)
+          )
+        );
 
-  // Busca cada temporada em paralelo
-  const seasonResponses = await Promise.all(
-    seasons.map(n =>
-      _apiFetch(`/season?id=${id}&season=${n}`, signal).catch(() => null)
-    )
-  );
-
-  const episodes = [];
-  for (const sd of seasonResponses) {
-    if (!sd) continue;
-    const eps = sd.episodes || sd.data || (Array.isArray(sd) ? sd : []);
-    for (const ep of eps) {
-      episodes.push(_normalizeEpisode(ep, id));
+        const eps = [];
+        for (const result of results) {
+          if (result.status !== 'fulfilled' || !result.value) continue;
+          const sd = result.value;
+          const seasonEps = sd.episodes || sd.data || (Array.isArray(sd) ? sd : []);
+          for (const ep of seasonEps) {
+            eps.push(_normalizeEpisode(ep, id));
+          }
+        }
+        if (eps.length > 0) episodes = eps;
+      }
     }
   }
 
-  if (episodes.length === 0) return null;
-  _cache.episodes[id] = episodes;
-  return episodes;
+  // BUG-TMDB-FALLBACK FIX: fallback para TMDB se PlayLT offline ou sem episódios
+  if (!episodes) {
+    episodes = await _fetchEpisodesFromTMDB(id, signal);
+  }
+
+  if (episodes && episodes.length > 0) {
+    _cache.episodes[id] = _makeCacheEntry(episodes, TTL_EPISODES);
+    return episodes;
+  }
+  return null;
 }
 
 /**
@@ -250,7 +387,9 @@ async function _inferSeasonNumbers(seriesData) {
 export async function fetchSources(contentId, signal = null) {
   if (!contentId) return null;
   const key = String(contentId);
-  if (_cache.sources[key]) return _cache.sources[key];
+
+  const cached = _cacheGet('sources', key);
+  if (cached) return cached;
 
   const data = await _apiFetch(`/sources?id=${key}`, signal);
   if (!data) return null;
@@ -263,7 +402,7 @@ export async function fetchSources(contentId, signal = null) {
     type: source.type || (source.url.includes('.m3u8') || source.url.includes('.mp4') ? 'stream' : 'iframe'),
     url : source.url,
   };
-  _cache.sources[key] = normalized;
+  _cache.sources[key] = _makeCacheEntry(normalized, TTL_SOURCES);
   return normalized;
 }
 
@@ -272,7 +411,7 @@ export async function fetchSources(contentId, signal = null) {
  * Mantém compatibilidade com cinema.js.
  */
 export function getEpisodeCacheFor(tmdbId) {
-  return _cache.episodes[tmdbId] ?? null;
+  return _cacheGet('episodes', tmdbId);
 }
 
 /**
