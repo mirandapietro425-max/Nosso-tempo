@@ -377,3 +377,50 @@ export function initTimeline() {
   items.forEach(el => io.observe(el));
 }
 
+
+// ── SCROLL REVEAL ────────────────────────────────
+export function initScrollReveal() {
+  if (typeof IntersectionObserver === 'undefined') return;
+
+  // Injeta classes de reveal em elementos-alvo
+  const targets = [
+    { sel: 'section', cls: 'pe-reveal' },
+    { sel: '.stat-card',    cls: 'pe-reveal-scale' },
+    { sel: '.anniv-card',   cls: 'pe-reveal-scale' },
+    { sel: '.letter-card',  cls: 'pe-reveal' },
+    { sel: '.daily-card',   cls: 'pe-reveal' },
+    { sel: '.gallery-slot', cls: 'pe-reveal-scale' },
+    { sel: '.dream-item',   cls: 'pe-reveal-left' },
+    { sel: '.music-featured', cls: 'pe-reveal' },
+    { sel: '.book-card',    cls: 'pe-reveal' },
+    { sel: '.cinema-card',  cls: 'pe-reveal-scale' },
+    { sel: '.mood-card',    cls: 'pe-reveal' },
+    { sel: '.mural-lock-card', cls: 'pe-reveal' },
+    { sel: '.divider',      cls: 'pe-reveal' },
+    { sel: '.section-label', cls: 'pe-reveal-left' },
+    { sel: '.section-title', cls: 'pe-reveal' },
+  ];
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('pe-visible');
+        io.unobserve(e.target); // só anima uma vez
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  targets.forEach(({ sel, cls }) => {
+    document.querySelectorAll(sel).forEach((el, i) => {
+      // Não sobrescreve se já tem classe de reveal
+      if (!el.classList.contains('pe-reveal') &&
+          !el.classList.contains('pe-reveal-left') &&
+          !el.classList.contains('pe-reveal-scale')) {
+        el.classList.add(cls);
+        // Delay escalonado para grupos de cards
+        if (i > 0 && i <= 5) el.classList.add(`pe-delay-${i}`);
+      }
+      io.observe(el);
+    });
+  });
+}

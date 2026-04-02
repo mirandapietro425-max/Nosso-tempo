@@ -31,7 +31,7 @@ function sanitizeHTML(str) {
 import {
   showToast, initGreeting, initCounter, initAnniversary,
   initSurprise, initDaily, openDailyPopup, closeDailyPopup,
-  initParticles, initTimeline,
+  initParticles, initTimeline, initScrollReveal,
 } from './ui.js';
 // FIX: expõe showToast globalmente para módulos como library.js
 window.showToast = showToast;
@@ -129,6 +129,7 @@ try { initAnniversary(); } catch(e) { console.error('initAnniversary:', e); }
 try { initSurprise(); } catch(e) { console.error('initSurprise:', e); }
 try { initDaily(); } catch(e) { console.error('initDaily:', e); }
 try { initTimeline(); } catch(e) { console.error('initTimeline:', e); }
+try { initScrollReveal(); } catch(e) { console.error('initScrollReveal:', e); }
 
 /* ════════════════════════════════════════════
    EXPERIENCE SYSTEM

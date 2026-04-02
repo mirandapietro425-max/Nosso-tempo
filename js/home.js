@@ -769,7 +769,7 @@ let _petDecayStarted = false;
 function startPetDecayInterval(){
   if(_petDecayStarted) return;
   _petDecayStarted = true;
-  setInterval(()=>{\
+  setInterval(()=>{
     if(document.hidden) return; // não roda enquanto aba está oculta
     const ps=playerState();
     if(!ps?.pet?.adopted) return;
