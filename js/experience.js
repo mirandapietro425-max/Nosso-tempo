@@ -71,7 +71,13 @@ let _activePeriodId = null;
 
 export function initDynamicMode(activeEventId = null) {
   // Não aplica modo dinâmico se há evento ativo (evento tem prioridade visual)
-  if (activeEventId) return;
+  // MAS ainda agenda o próximo check horário para que o período seja reavaliado
+  if (activeEventId) {
+    const now = new Date();
+    const msToNextHour = (60 - now.getMinutes()) * 60000 - now.getSeconds() * 1000;
+    setTimeout(() => initDynamicMode(activeEventId), msToNextHour + 1000);
+    return;
+  }
 
   const period = getCurrentPeriod();
   if (_activePeriodId === period.id) return;
@@ -210,10 +216,10 @@ const EVENT_PARTICLES = {
 };
 
 const PERIOD_PARTICLES = {
-  madrugada: { elements: ['⭐', '✨', '💫', '🌙', '💜'], rate: 1000, size: [10, 18], speed: [8, 14] },
-  manha:     { elements: ['🌸', '✨', '🌺', '💕', '🌷'], rate: 900, size: [10, 18], speed: [6, 12] },
-  tarde:     { elements: ['💕', '🌹', '💗', '🌸', '❤️'], rate: 800, size: [10, 20], speed: [5, 10] },
-  noite:     { elements: ['⭐', '💜', '🌟', '💫', '✨'], rate: 1000, size: [10, 18], speed: [7, 13] },
+  madrugada: { elements: ['⭐', '✨', '💫', '🌙', '💜'], rate: 550, size: [10, 18], speed: [8, 14] },
+  manha:     { elements: ['🌸', '✨', '🌺', '💕', '🌷'], rate: 480, size: [10, 18], speed: [6, 12] },
+  tarde:     { elements: ['💕', '🌹', '💗', '🌸', '❤️'], rate: 450, size: [10, 20], speed: [5, 10] },
+  noite:     { elements: ['⭐', '💜', '🌟', '💫', '✨'], rate: 550, size: [10, 18], speed: [7, 13] },
 };
 
 export function initAdaptiveParticles(activeEventId = null) {
@@ -226,11 +232,18 @@ export function initAdaptiveParticles(activeEventId = null) {
 
   _particleConfig = config;
 
-  // Spawn inicial
-  for (let i = 0; i < 10; i++) setTimeout(() => _spawnParticle(config), i * 200);
+  // Spawn inicial — 18 partículas escalonadas a cada 120ms
+  for (let i = 0; i < 18; i++) setTimeout(() => _spawnParticle(config), i * 120);
 
   // Spawn contínuo
   _particleInterval = setInterval(() => { if (!document.hidden) _spawnParticle(config); }, config.rate);
+
+  // Burst ao voltar para a aba (partículas tinham expirado enquanto oculta)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      for (let i = 0; i < 8; i++) setTimeout(() => _spawnParticle(config), i * 80);
+    }
+  });
 
   // Atualiza canvas de corações/flocos
   _updateCanvasStyle(activeEventId);
@@ -241,7 +254,7 @@ function _spawnParticle(config) {
   const emoji = config.elements[Math.floor(Math.random() * config.elements.length)];
   const size = config.size[0] + Math.random() * (config.size[1] - config.size[0]);
   const speed = config.speed[0] + Math.random() * (config.speed[1] - config.speed[0]);
-  const drift = (Math.random() - 0.5) * 60;
+  const drift = (Math.random() - 0.5) * 240;
 
   el.textContent = emoji;
   el.style.cssText = `

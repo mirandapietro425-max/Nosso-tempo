@@ -122,7 +122,7 @@ function createIframe(src, title) {
   iframe.frameBorder    = '0';
   iframe.allowFullscreen = true;
   iframe.setAttribute('sandbox',
-    'allow-scripts allow-same-origin allow-forms allow-presentation'
+    'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation'
   );
   iframe.referrerPolicy = 'no-referrer';
   iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');

@@ -186,10 +186,15 @@ function _renderCatalog() {
       img.dataset.src = item.thumb;  // src setado pelo observer ao entrar na viewport
       observer.observe(img);
     }
-    // BUG-VISUAL-1 FIX: removido img.nextElementSibling.style.display='none'
-    // O nextElementSibling é o emojiDiv — escondê-lo removia o emoji ao carregar a imagem.
-    // A imagem já faz seu próprio fade-in via opacity. O emoji fica sempre visível.
-    img.addEventListener('load',  () => { img.style.opacity = '1'; });
+    // BUG-VISUAL-1 FIX: emoji some quando a imagem carrega, aparece só como fallback
+    img.addEventListener('load',  () => {
+      img.style.opacity = '1';
+      // Esconde emoji quando a thumb carregou com sucesso
+      if (img.nextElementSibling && img.nextElementSibling.classList.contains('cinema-card-emoji')) {
+        img.nextElementSibling.style.opacity = '0';
+        img.nextElementSibling.style.pointerEvents = 'none';
+      }
+    });
     img.addEventListener('error', () => { img.style.display = 'none'; });
 
     const thumbDiv = document.createElement('div');
