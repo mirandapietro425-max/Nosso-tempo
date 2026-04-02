@@ -104,7 +104,7 @@ export const PLAYER_SERVERS = [
   {
     name: '🔤 Leg 6', label: 'VikingEmbed — Legendado', type: 'sub',
     movie : (id)       => `https://vembed.click/e/${id}`,
-    tv    : (id, s, e) => `https://vembed.click/e/${id}_s${s}`,
+    tv    : (id, s, e) => `https://vembed.click/e/${id}?s=${s}&e=${e}`,
     hasParams: false,
   },
 ];
@@ -168,18 +168,19 @@ export function buildPlayerSrc(item, epIdx, serverIdx) {
 
 function createIframe(src, title) {
   const iframe = document.createElement('iframe');
-  iframe.src            = src;
-  iframe.title          = title || 'Player';
-  iframe.frameBorder    = '0';
+  iframe.src             = src;
+  iframe.title           = title || 'Player';
+  iframe.frameBorder     = '0';
   iframe.allowFullscreen = true;
   iframe.setAttribute('sandbox',
-    'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation'
+    'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-downloads'
   );
-  iframe.referrerPolicy = 'no-referrer';
+  // BUG-1 FIX: NÃO definir referrerPolicy como 'no-referrer'.
+  // SuperFlixAPI e outros players BR verificam o Referer — sem ele exibem
+  // "ACESSO NÃO AUTORIZADO". O padrão do browser (origin-when-cross-origin)
+  // envia a origem corretamente sem expor a URL completa.
   iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');
-  iframe.style.cssText  = 'width:100%;aspect-ratio:16/9;display:block;';
-  // NOTA: NÃO usar loading='lazy' em iframes de player — o modal já está na viewport
-  // e o lazy loading atrasaria o início do vídeo em alguns browsers mobile.
+  iframe.style.cssText   = 'width:100%;aspect-ratio:16/9;display:block;';
   return iframe;
 }
 
@@ -363,7 +364,10 @@ async function _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched) 
   }
 
   // PlayLT sem source → fallback para embed servers
+  // BUG-2 FIX: limpa o container antes de chamar _buildFromServer
+  // sem isso ficam dois skeletons sobrepostos no player
   console.warn('[Cinema] PlayLT sem source para id=' + playltId + ' — usando fallback');
+  playerEl.innerHTML = '';
   _buildFromServer(playerEl, item, epIdx, ep, onWatched);
 }
 
@@ -379,8 +383,6 @@ function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
   const server       = PLAYER_SERVERS[cinemaState.serverIdx];
   const isDub        = server?.type === 'dub';
   const serverName   = server?.name || 'Externo';
-  const isLastServer = cinemaState.serverIdx >= PLAYER_SERVERS.length - 1;
-
   playerEl.appendChild(_makeSkeleton(isDub ? '🇧🇷 Carregando dublagem PT-BR…' : `Carregando ${escapeHtml(serverName)}…`));
 
   const iframe = createIframe(src, item.title);
@@ -401,9 +403,12 @@ function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
   };
 
   // Auto-fallback timeout
+  // BUG-3 FIX: isLastServer calculado DENTRO do timeout, não antes —
+  // evita valor stale se o usuário trocou de servidor manualmente entre o início e o disparo
   cinemaState.playerTimeout = setTimeout(() => {
     if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
     document.getElementById('cinema-player-skeleton')?.remove();
+    const isLastServer = cinemaState.serverIdx >= PLAYER_SERVERS.length - 1;
     if (!isLastServer) {
       cinemaState.serverIdx = Math.min(cinemaState.serverIdx + 1, PLAYER_SERVERS.length - 1);
       renderServerPanel();

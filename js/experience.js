@@ -239,11 +239,18 @@ export function initAdaptiveParticles(activeEventId = null) {
   _particleInterval = setInterval(() => { if (!document.hidden) _spawnParticle(config); }, config.rate);
 
   // Burst ao voltar para a aba (partículas tinham expirado enquanto oculta)
-  document.addEventListener('visibilitychange', () => {
+  // BUG-5 FIX: usa named handler para poder remover o anterior antes de re-adicionar,
+  // evitando listeners duplicados a cada chamada de initAdaptiveParticles
+  if (window._peVisibilityHandler) {
+    document.removeEventListener('visibilitychange', window._peVisibilityHandler);
+  }
+  window._peVisibilityHandler = () => {
     if (!document.hidden) {
-      for (let i = 0; i < 8; i++) setTimeout(() => _spawnParticle(config), i * 80);
+      const cfg = _particleConfig;
+      for (let i = 0; i < 8; i++) setTimeout(() => _spawnParticle(cfg), i * 80);
     }
-  });
+  };
+  document.addEventListener('visibilitychange', window._peVisibilityHandler);
 
   // Atualiza canvas de corações/flocos
   _updateCanvasStyle(activeEventId);
