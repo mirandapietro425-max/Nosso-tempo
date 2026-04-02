@@ -11,7 +11,10 @@
    BUG-SW3: Estratégia única network-first para tudo substituída por:
              · Imagens      → cache-first  (offline-first, instantâneo)
              · HTML         → network-first (sempre tenta versão fresca)
-             · CSS/JS/JSON  → stale-while-revalidate (serve cache + atualiza bg)
+             · JS           → network-first (garante código novo a cada deploy)
+             · CSS/JSON     → stale-while-revalidate (rápido + atualiza bg)
+   BUG-SW5: JS usava stale-while-revalidate → browser servia JS antigo após deploy.
+             Corrigido para network-first: código novo entregue imediatamente.
    BUG-SW4: Cache de imagens não tinha limite → crescia indefinidamente.
              Implementado trim LRU com máximo de 120 entradas.
 
@@ -26,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v58';
+const CACHE_VERSION = 'v59';
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -139,9 +142,13 @@ self.addEventListener('install', (event) => {
           )
         )
       )
-      .then(() => console.log('[SW] Instalação completa —', CACHE_VERSION))
+      .then(() => {
+        console.log('[SW] Instalação completa —', CACHE_VERSION);
+        // Assume controle imediatamente: garante que o novo SW (com o JS correto)
+        // entra em ação sem esperar o usuário fechar e reabrir todas as abas.
+        return self.skipWaiting();
+      })
   );
-  // BUG-5 FIX: sem skipWaiting() aqui — só via mensagem SKIP_WAITING
 });
 
 // ── ACTIVATE ──
@@ -203,8 +210,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // CSS / JS / JSON: stale-while-revalidate (rápido + sempre atualizado)
-  if (['css','js','json'].includes(ext)) {
+  // JS: network-first — garante que cada deploy entrega o código novo imediatamente.
+  // stale-while-revalidate servia JS antigo do cache e só atualizava em background,
+  // fazendo o app carregar com código desatualizado a cada deploy.
+  if (ext === 'js') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // CSS / JSON: stale-while-revalidate (rápido + atualiza em background)
+  if (['css', 'json'].includes(ext)) {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }

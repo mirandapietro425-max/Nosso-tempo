@@ -249,7 +249,7 @@ function _spawnParticle(config) {
     left:${Math.random() * 100}vw;
     top:-60px;
     font-size:${size}px;
-    z-index:1;
+    z-index:9996;
     pointer-events:none;
     opacity:${0.5 + Math.random() * 0.5};
     animation: petalFall ${speed}s linear forwards;

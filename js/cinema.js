@@ -601,12 +601,15 @@ window._cinemaRetryServer = function () {
    ══════════════════════════════════════════════ */
 
 export function initCinema(db) {
+  // Renderiza o catálogo IMEDIATAMENTE (sem watched state) para que o usuário
+  // nunca fique olhando para "⏳ Carregando catálogo..." enquanto o Firebase inicializa.
+  // Quando o Firebase responder, re-renderiza com os badges "Assistido" corretos.
+  _renderCatalog();
+
   if (db) {
     cinemaState.db        = db;
     cinemaState.cinemaDoc = doc(db, 'cinema', 'shared');
-    _loadWatched().then(() => _renderCatalog());
-  } else {
-    _renderCatalog();
+    _loadWatched().then(() => _renderCatalog()).catch(() => {/* Firebase offline — catálogo já visível */});
   }
 
   // Fechar modal ao clicar no overlay

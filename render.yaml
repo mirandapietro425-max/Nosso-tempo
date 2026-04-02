@@ -16,13 +16,16 @@ services:
       - path: /manifest.json
         name: Cache-Control
         value: public, max-age=86400
-      # CSS / JS: cache com versão (sw.js invalida o cache automaticamente)
+      # CSS: cache curto com revalidação — muda pouco entre deploys
       - path: /css/*
         name: Cache-Control
-        value: public, max-age=604800, stale-while-revalidate=86400
+        value: public, max-age=3600, stale-while-revalidate=86400
+      # JS: nunca cachear no CDN — o SW cuida do cache offline.
+      # max-age=0 garante que cada deploy serve o JS novo imediatamente,
+      # sem precisar esperar a expiração do cache do Render/browser.
       - path: /js/*
         name: Cache-Control
-        value: public, max-age=604800, stale-while-revalidate=86400
+        value: no-cache, no-store, must-revalidate
       # Assets e emojis: cache longo (imagens imutáveis)
       - path: /assets/*
         name: Cache-Control

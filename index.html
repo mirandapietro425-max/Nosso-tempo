@@ -381,6 +381,20 @@
     <div class="counter-unit"><span class="counter-num" id="c-min">0</span><span class="counter-label">Minutos</span></div>
     <div class="counter-unit"><span class="counter-num" id="c-seg">0</span><span class="counter-label">Segundos</span></div>
   </div>
+  <!-- Preenche o contador imediatamente (antes do módulo JS carregar) para evitar flash de zeros -->
+  <script>
+    (function(){
+      try {
+        var start = new Date('2024-10-11T03:00:00Z');
+        var diff  = Date.now() - start.getTime();
+        if (diff < 0) return;
+        document.getElementById('c-dias' ).textContent = Math.floor(diff / 86400000);
+        document.getElementById('c-horas').textContent = Math.floor((diff % 86400000) / 3600000);
+        document.getElementById('c-min'  ).textContent = Math.floor((diff % 3600000) / 60000);
+        document.getElementById('c-seg'  ).textContent = Math.floor((diff % 60000) / 1000);
+      } catch(e) {}
+    })();
+  </script>
 
   <nav class="hero-nav" aria-label="Seções do site">
     <a class="hero-nav-btn" href="#sec-carta">      <span class="hero-nav-icon">💌</span><span class="hero-nav-label">Carta</span></a>

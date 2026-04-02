@@ -83,13 +83,13 @@ window.awardCoins = _awardCoins;
 /* ════════════════════════════════════════════
    FIREBASE INIT
    ════════════════════════════════════════════ */
-let app, db;
+let app, db = null;
 try {
   app = initializeApp(FIREBASE_CONFIG);
   db  = getFirestore(app);
 } catch (e) {
   console.error('[Firebase] Falha ao inicializar:', e);
-  // Mostra aviso discreto no topo da página sem travar o app
+  db = null; // explícito — garante que todos os módulos recebem null e caem no caminho offline
   const warn = document.createElement('div');
   warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;font-size:12px;padding:6px 12px;z-index:99999;text-align:center;';
   warn.textContent = '⚠️ Erro de conexão com o banco de dados. Algumas funções podem não funcionar.';
