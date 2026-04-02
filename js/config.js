@@ -27,8 +27,11 @@ export const TMDB_KEY = '8265bd1679663a7ea12ac168da84d2e8';
 // Para trocar de provider: altere apenas PLAYLT_API_BASE e PLAYLT_API_KEY.
 // O arquivo js/cinema/cinema-playlt.js consome essas duas constantes
 // e é o único ponto de integração com a API externa.
-export const PLAYLT_API_BASE = 'https://api-plhq.playlt.xyz/apiv5';
-export const PLAYLT_API_KEY  = ''; // Cole sua chave aqui se a API exigir Bearer token
+// PlayLT API desativada — domínio offline (ERR_NAME_NOT_RESOLVED).
+// Deixe vazio para ir direto aos servidores de fallback (SuperFlixAPI, VidLink, etc.)
+// Quando a API estiver ativa, cole a URL aqui.
+export const PLAYLT_API_BASE = '';
+export const PLAYLT_API_KEY  = '';
 
 // ── Datas especiais ──
 export const START_DATE       = new Date('2024-10-11T03:00:00Z'); // início — meia-noite horário de Brasília (UTC-3)

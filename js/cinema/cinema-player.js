@@ -5,11 +5,12 @@
 
 import { startTracking, stopTracking, getResumeTime } from '../progress.js';
 import { cinemaState }  from './cinema-state.js';
-import { sanitizeTmdb, fetchSources } from './cinema-playlt.js';
+import { sanitizeTmdb, fetchSources, PLAYLT_ENABLED } from './cinema-playlt.js';
 
 export const PLAYER_SERVERS = [
+  // ── PT-BR Dublado ─────────────────────────────────────────────
   {
-    name: '🇧🇷 Dub 1', label: 'SuperFlixAPI — Dublado PT-BR', type: 'dub',
+    name: '🇧🇷 Dub 1', label: 'SuperFlixAPI .rest — Dublado PT-BR', type: 'dub',
     movie : (id)       => `https://superflixapi.rest/filme/${id}/`,
     tv    : (id, s, e) => `https://superflixapi.rest/serie/${id}/${s}/${e}/`,
     hasParams: false,
@@ -21,11 +22,18 @@ export const PLAYER_SERVERS = [
     hasParams: false,
   },
   {
-    name: '🇧🇷 Dub 3', label: 'CineEmbed — Dublado PT-BR', type: 'dub',
-    movie : (id)       => `https://cineembed.com/embed/${id}`,
-    tv    : (id, s, e) => `https://cineembed.com/embed/${id}/${s}/${e}`,
+    name: '🇧🇷 Dub 3', label: 'SuperFlixAPI .dev — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://superflixapi.dev/filme/${id}/`,
+    tv    : (id, s, e) => `https://superflixapi.dev/serie/${id}/${s}/${e}/`,
     hasParams: false,
   },
+  {
+    name: '🇧🇷 Dub 4', label: 'EmbedPlayAPI — Dublado PT-BR', type: 'dub',
+    movie : (id)       => `https://embedplayapi.site/embed/${id}`,
+    tv    : (id, s, e) => `https://embedplayapi.site/embed/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  // ── Multi-idioma (dub/leg automático) ─────────────────────────
   {
     name: '🌐 Multi 1', label: 'AutoEmbed — Multi idioma', type: 'dub',
     movie : (id)       => `https://player.autoembed.cc/embed/movie/${id}?autoplay=true`,
@@ -33,17 +41,36 @@ export const PLAYER_SERVERS = [
     hasParams: true,
   },
   {
-    name: '🌐 Multi 2', label: '2Embed — Multi idioma', type: 'dub',
+    name: '🌐 Multi 2', label: 'MultiEmbed (SuperEmbed) — Multi idioma', type: 'dub',
+    movie : (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    tv    : (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+    hasParams: true,
+  },
+  {
+    name: '🌐 Multi 3', label: '2Embed — Multi idioma', type: 'dub',
     movie : (id)       => `https://www.2embed.stream/embed/movie/${id}`,
     tv    : (id, s, e) => `https://www.2embed.stream/embed/tv/${id}/${s}/${e}`,
     hasParams: false,
   },
   {
-    name: '🌐 Multi 3', label: 'MultiEmbed — Multi idioma', type: 'dub',
-    movie : (id)       => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    tv    : (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+    name: '🌐 Multi 4', label: 'Embed-API — Multi servidor', type: 'dub',
+    movie : (id)       => `https://player.embed-api.stream/?id=${id}`,
+    tv    : (id, s, e) => `https://player.embed-api.stream/?id=${id}&s=${s}&e=${e}`,
     hasParams: true,
   },
+  {
+    name: '🌐 Multi 5', label: 'Videasy — Multi idioma 4K', type: 'dub',
+    movie : (id)       => `https://player.videasy.net/movie/${id}`,
+    tv    : (id, s, e) => `https://player.videasy.net/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🌐 Multi 6', label: 'VidFast — Multi idioma 4K', type: 'dub',
+    movie : (id)       => `https://vidfast.pro/movie/${id}?autoPlay=true`,
+    tv    : (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}?autoPlay=true`,
+    hasParams: true,
+  },
+  // ── Legendado ──────────────────────────────────────────────────
   {
     name: '🔤 Leg 1', label: 'VidLink — Legendado PT-BR', type: 'sub',
     movie : (id)       => `https://vidlink.pro/movie/${id}?autoplay=true&lang=pt-BR&primaryColor=e8536f`,
@@ -51,9 +78,33 @@ export const PLAYER_SERVERS = [
     hasParams: true,
   },
   {
-    name: '🔤 Leg 2', label: 'VidSrc — Legendado', type: 'sub',
+    name: '🔤 Leg 2', label: 'VidSrc.cc — Legendado', type: 'sub',
     movie : (id)       => `https://vidsrc.cc/v2/embed/movie/${id}`,
     tv    : (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🔤 Leg 3', label: 'VidSrc.me — Legendado', type: 'sub',
+    movie : (id)       => `https://vidsrc.me/embed/movie?tmdb=${id}`,
+    tv    : (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+    hasParams: true,
+  },
+  {
+    name: '🔤 Leg 4', label: 'VidSrc.pro — Legendado 4K', type: 'sub',
+    movie : (id)       => `https://vidsrc.pro/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://vidsrc.pro/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🔤 Leg 5', label: 'Embed.su — Legendado', type: 'sub',
+    movie : (id)       => `https://embed.su/embed/movie/${id}`,
+    tv    : (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
+    hasParams: false,
+  },
+  {
+    name: '🔤 Leg 6', label: 'VikingEmbed — Legendado', type: 'sub',
+    movie : (id)       => `https://vembed.click/e/${id}`,
+    tv    : (id, s, e) => `https://vembed.click/e/${id}_s${s}`,
     hasParams: false,
   },
 ];
@@ -279,7 +330,7 @@ export function buildPlayer(item, epIdx, onWatched) {
   // ID para a PlayLT: usa contentId do episódio se disponível, senão tmdbId
   const playltId = ep?.contentId ?? item.tmdbId ?? null;
 
-  if (playltId) {
+  if (playltId && PLAYLT_ENABLED) {
     _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched);
   } else {
     _buildFromServer(playerEl, item, epIdx, ep, onWatched);

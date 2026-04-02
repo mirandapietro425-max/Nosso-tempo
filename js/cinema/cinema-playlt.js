@@ -201,7 +201,7 @@ export async function fetchAllEpisodes(item, signal = null) {
     ? seriesData.seasons
         .map(s => (typeof s === 'object' ? s.season_number ?? s.number : s))
         .filter(n => n > 0)
-    : _inferSeasonNumbers(seriesData);
+    : await _inferSeasonNumbers(seriesData);
 
   if (!seasons.length) return null;
 
@@ -270,6 +270,13 @@ export async function fetchSources(contentId, signal = null) {
 export function getEpisodeCacheFor(tmdbId) {
   return _cache.episodes[tmdbId] ?? null;
 }
+
+/**
+ * Flag: true se a API PlayLT está configurada (BASE não vazio).
+ * Usado em cinema-player.js para pular a chamada PlayLT quando não configurada,
+ * evitando 14s de timeout antes do fallback em cada reprodução.
+ */
+export const PLAYLT_ENABLED = typeof PLAYLT_API_BASE === 'string' && PLAYLT_API_BASE.length > 0;
 
 /**
  * Limpa todo o cache (útil após logout ou troca de usuário).

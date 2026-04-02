@@ -395,7 +395,7 @@ function _renderMeta(meta) {
   const runtime = meta.runtime ? `<span class="cinema-meta-badge">🕐 ${sanitizeTmdb(meta.runtime)}</span>` : '';
   const genres  = meta.genres  ? `<span class="cinema-meta-badge">🎭 ${sanitizeTmdb(meta.genres)}</span>`  : '';
 
-  // Sanitização já aplicada em cinema-tmdb.js — renderiza direto
+  // Sanitização já aplicada em cinema-playlt.js — renderiza direto
   el.innerHTML = `
     <div class="cinema-meta-badges">${stars}${runtime}${genres}</div>
     ${meta.tagline  ? `<div class="cinema-meta-tagline">"${meta.tagline}"</div>`                                          : ''}
