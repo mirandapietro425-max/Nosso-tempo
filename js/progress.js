@@ -112,6 +112,7 @@ export function stopTracking() {
   _sessionItem  = null;
   _sessionStart = null;
   _sessionDynEp = null;
+  _onWatchedCb  = null; // BUG-H7: evita callback antigo disparar em tick tardio
 }
 
 /**
@@ -224,7 +225,7 @@ export function getResumeTime(item, epIdx = 0, dynEp = null) {
 export function getContinueWatching() {
   const all = _readAll();
   return Object.values(all)
-    .filter(e => e.watched >= RESUME_MIN_S && !e.done)
+    .filter(e => e.watched >= RESUME_MIN_S && !e.done && (e.pct || 0) > 0)
     .sort((a, b) => (b.updated || 0) - (a.updated || 0))
     .slice(0, 6); // máx 6 cards na seção
 }

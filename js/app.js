@@ -475,10 +475,15 @@ async function deleteMovie(i) {
 let movieModalIndex  = null;
 let movieModalAuthor = 'Pietro';
 let _movieFetchId    = 0; // incrementado a cada abertura para cancelar fetches anteriores
+let _movieAbortCtrl  = null; // BUG-M2: AbortController para abortar fetches anteriores em voo
 
 async function openMovieModal(i) {
   movieModalIndex  = i;
   const fetchId    = ++_movieFetchId; // APP-8: ID único para este fetch
+  // BUG-M2: aborta fetches anteriores que ainda estão em voo
+  if (_movieAbortCtrl) { _movieAbortCtrl.abort(); }
+  _movieAbortCtrl = new AbortController();
+  const signal = _movieAbortCtrl.signal;
   // Reset author para Pietro a cada abertura
   movieModalAuthor = 'Pietro';
   document.getElementById('movie-btn-pietro')?.classList.add('active');
@@ -492,7 +497,7 @@ async function openMovieModal(i) {
   renderMovieComments(m.comments || []);
 
   try {
-    const search  = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(m.name)}&language=pt-BR`);
+    const search  = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(m.name)}&language=pt-BR`, { signal });
     const sData   = await search.json();
     const movie   = sData.results?.[0];
 
@@ -502,13 +507,13 @@ async function openMovieModal(i) {
         document.getElementById('movie-modal-poster-area').innerHTML =
           `<img class="movie-modal-poster" src="https://image.tmdb.org/t/p/w780${movie.poster_path}" alt="${m.name}">`;
       }
-      const videos  = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=pt-BR`);
+      const videos  = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=pt-BR`, { signal });
       if (fetchId !== _movieFetchId) return; // APP-8: guard após fetch de vídeos PT-BR
       const vData   = await videos.json();
       let trailer   = vData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
 
       if (!trailer) {
-        const vEn     = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}`);
+        const vEn     = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}`, { signal });
         if (fetchId !== _movieFetchId) return; // APP-8: guard após fetch de vídeos EN
         const vEnData = await vEn.json();
         trailer       = vEnData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
@@ -522,6 +527,7 @@ async function openMovieModal(i) {
         '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Filme não encontrado 😕</p>';
     }
   } catch (e) {
+    if (e.name === 'AbortError') return; // BUG-M2: fetch abortado intencionalmente — não mostrar erro
     document.getElementById('movie-modal-trailer').innerHTML =
       '<p style="text-align:center;color:#c9a9b0;font-size:0.85rem;font-style:italic;">Erro ao buscar trailer 😕</p>';
   }
@@ -743,8 +749,10 @@ async function renderMural() {
     div.className = 'mural-msg ' + m.author.toLowerCase();
     let mediaHTML = '';
     if (m.photo) {
-      const safePhotoUrl = sanitizeHTML(m.photo);
-      mediaHTML = `<img src="${safePhotoUrl}" alt="foto" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin:0.6rem 0;cursor:pointer;" onclick="window.open('${safePhotoUrl}','_blank')" onerror="this.style.display='none'">`;
+      // BUG-H1: sanitizeHTML escapa & em URLs → window.open receberia &amp; literal
+      // Usar sanitizeHTML só no atributo src (contexto HTML); onclick usa a URL bruta via dataset
+      const safePhotoSrc = sanitizeHTML(m.photo);
+      mediaHTML = `<img src="${safePhotoSrc}" alt="foto" data-photourl="${safePhotoSrc}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin:0.6rem 0;cursor:pointer;" onclick="window.open(this.dataset.photourl,'_blank')" onerror="this.style.display='none'">`;
     }
     div.innerHTML = `
       <button class="mural-msg-del" onclick="deleteMural('${m.id || String(i)}')">✕</button>
@@ -778,9 +786,11 @@ async function uploadMuralPhoto(file) {
           <button onclick="removeMuralPhoto()" style="background:none;border:none;color:#e8536f;cursor:pointer;font-size:0.8rem;margin-top:0.3rem;">✕ Remover foto</button>`;
       }
     } else {
+      _muralPhotoUrl = null; // BUG-L1: limpa URL antiga para não enviar foto de tentativa anterior
       if (statusEl) statusEl.textContent = '❌ Erro no upload';
     }
   } catch(e) {
+    _muralPhotoUrl = null; // BUG-L1: limpa na exceção de rede também
     if (statusEl) statusEl.textContent = '❌ Erro no upload';
   } finally {
     _uploadingMuralPhoto = false;
@@ -837,7 +847,9 @@ async function deleteMural(idOrIndex) {
     // FIX: busca por id estável — se não encontrar (msgs antigas sem id), cai no índice numérico
     const byId = msgs.findIndex(m => m.id === idOrIndex);
     const idx  = byId !== -1 ? byId : Number(idOrIndex);
-    if (idx >= 0 && idx < msgs.length) msgs.splice(idx, 1);
+    // BUG-M3: Number() de um id alfanumérico retorna NaN → guard explícito
+    if (Number.isNaN(idx) || idx < 0 || idx >= msgs.length) return;
+    msgs.splice(idx, 1);
     await saveMural(msgs);
     renderMural();
   } finally { _deletingMural = false; }
@@ -996,9 +1008,9 @@ function renderMoodGrid() {
     const list = (window._STICKERS?.[moodActiveTab]) || [];
     grid.classList.add('mood-grid--sticker');
     grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s) => `
-      <div class="mood-sticker-pick" data-sid="${s.id}" data-cat="${moodActiveTab}" onclick="selectStickerOption(this)">
-        <img src="${s.file}" alt="${s.label}" class="mood-sticker-pick-img" onerror="this.style.opacity='0.3';this.title='Imagem não encontrada'">
-        <div class="mood-sticker-pick-label">${s.name}</div>
+      <div class="mood-sticker-pick" data-sid="${sanitizeHTML(String(s.id))}" data-cat="${sanitizeHTML(moodActiveTab)}" onclick="selectStickerOption(this)">
+        <img src="${sanitizeHTML(s.file)}" alt="${sanitizeHTML(s.label)}" class="mood-sticker-pick-img" onerror="this.style.opacity='0.3';this.title='Imagem não encontrada'">
+        <div class="mood-sticker-pick-label">${sanitizeHTML(s.name)}</div>
       </div>`).join('')}
     </div>`;
     return;
@@ -1142,7 +1154,7 @@ async function initMoodDisplay() {
         const timeEl  = document.getElementById(`mood-time-${p}`);
         if (emojiEl) {
           if (d.isSticker && d.file) {
-            emojiEl.innerHTML = `<img src="${d.file}" alt="${sanitizeHTML(d.label)}" style="width:52px;height:52px;object-fit:contain;">`;
+            emojiEl.innerHTML = `<img src="${sanitizeHTML(d.file)}" alt="${sanitizeHTML(d.label)}" style="width:52px;height:52px;object-fit:contain;">`;
           } else {
             emojiEl.textContent = d.emoji;
           }
@@ -1155,8 +1167,8 @@ async function initMoodDisplay() {
     const histList = document.getElementById('mood-history-list');
     if (histList && data.history && data.history.length) {
       histList.innerHTML = data.history.map(h => {
-        const pEmoji = h.pietro ? (h.pietro.isSticker && h.pietro.file ? `<img src="${h.pietro.file}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;">` : h.pietro.emoji) : '—';
-        const eEmoji = h.emilly ? (h.emilly.isSticker && h.emilly.file ? `<img src="${h.emilly.file}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;">` : h.emilly.emoji) : '—';
+        const pEmoji = h.pietro ? (h.pietro.isSticker && h.pietro.file ? `<img src="${sanitizeHTML(h.pietro.file)}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;">` : h.pietro.emoji) : '—';
+        const eEmoji = h.emilly ? (h.emilly.isSticker && h.emilly.file ? `<img src="${sanitizeHTML(h.emilly.file)}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;">` : h.emilly.emoji) : '—';
         const pLabel = h.pietro?.label || '';
         const eLabel = h.emilly?.label || '';
         return `<div class="mood-history-item">

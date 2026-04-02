@@ -466,6 +466,9 @@ function openTaekwondo(mode = 'split', ctx = null) {
         p2:{x:p2.x,y:p2.y,hp:p2.hp,dir:p2.dir,kick:p2.kick,block:p2.block,wins:p2.wins},
         rOver, rMsg } });
     }, 150);
+    // BUG-H3: _activeCleanup definido imediatamente após o interval do host
+    // para que qualquer chamada de cleanup entre aqui e o _activeCleanup final (linha ~551) não vaze o interval
+    _activeCleanup = () => { if(_syncInterval){clearInterval(_syncInterval);_syncInterval=null;} if(_roomUnsub){_roomUnsub();_roomUnsub=null;} };
   }
 
   function _tkdUpdateUI() {

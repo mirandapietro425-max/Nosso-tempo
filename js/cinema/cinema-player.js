@@ -118,7 +118,7 @@ export function buildPlayerSrc(item, epIdx, serverIdx) {
 function createIframe(src, title) {
   const iframe = document.createElement('iframe');
   iframe.src            = src;
-  iframe.title          = escapeHtml(title) || 'Player';
+  iframe.title          = title || 'Player';
   iframe.frameBorder    = '0';
   iframe.allowFullscreen = true;
   iframe.setAttribute('sandbox',

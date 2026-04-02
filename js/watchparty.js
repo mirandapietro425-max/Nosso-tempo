@@ -22,6 +22,7 @@ let _wpDoc       = null;       // doc('watchparty', 'session')
 let _notifDoc    = null;       // doc('watchparty', 'invite')
 let _unsub       = null;       // onSnapshot da sessão
 let _unsubNotif  = null;       // onSnapshot do convite
+let _listenForInvitePending = false; // BUG-H6: evita dois setTimeout em paralelo
 let _myName      = null;       // 'pietro' | 'emilly'
 let _rtcPeer     = null;       // RTCPeerConnection
 let _localStream = null;       // getUserMedia stream
@@ -991,7 +992,7 @@ function _spawnFloatingReaction(emoji) {
   el.textContent = emoji;
   // Posição aleatória na parte inferior da tela
   el.style.left  = (10 + Math.random() * 80) + 'vw';
-  el.style.bottom = '120px';
+  el.style.bottom = 'calc(120px + env(safe-area-inset-bottom, 0px))';
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2400);
 }
@@ -1146,7 +1147,11 @@ function _onSessionEnded(byMe) {
   _resetUI();
 
   // Reativa listener de convite para próxima sessão (com pequeno delay para evitar loop)
-  if (_db) setTimeout(() => _listenForInvite(), 600);
+  // BUG-H6: flag previne dois setTimeout simultâneos agendarem dois _listenForInvite
+  if (_db && !_listenForInvitePending) {
+    _listenForInvitePending = true;
+    setTimeout(() => { _listenForInvitePending = false; _listenForInvite(); }, 600);
+  }
 }
 
 function _resetUI() {

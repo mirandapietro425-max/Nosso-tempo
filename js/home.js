@@ -250,7 +250,15 @@ export function awardCoins(reason,amount,playerName){
   if(!_state[resolvedName]) _state[resolvedName]=JSON.parse(JSON.stringify(DEFAULT_PLAYER));
   const ps = _state[resolvedName];
   const today=todayStr();
-  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location_pietro:false,location_emilly:false,mural:false,quiz:false};
+  // BUG-M7: reset dinâmico — mantém todas as chaves conhecidas como false sem lista hardcoded
+  // Qualquer nova reason adicionada no awardCoins funciona automaticamente
+  if(ps.earnedToday.date!==today){
+    const resetKeys={date:today};
+    Object.keys(ps.earnedToday).forEach(k=>{ if(k!=='date') resetKeys[k]=false; });
+    // Garante chaves base mesmo se earnedToday estava vazio
+    ['mood','location_pietro','location_emilly','mural','quiz'].forEach(k=>{ if(!(k in resetKeys)) resetKeys[k]=false; });
+    ps.earnedToday=resetKeys;
+  }
   if(ps.earnedToday[reason])return;
   ps.earnedToday[reason]=true; ps.coins+=amount;
   if(!_doc) _hasPendingSave=true; // FIX-BUG3: _doc ainda null (casinha não aberta) — salva quando initHome conectar
@@ -838,7 +846,12 @@ window._homeAnswerQuiz=function(idx,btn){
   if(!ps.quiz)ps.quiz={}; ps.quiz.lastDate=today;
   _quizLastDateLocal[_quizPerson]=today; // FIX-BUG2: cache local — sobrevive ao snapshot do Firebase
   // Marca quiz como feito hoje independente de acertar ou errar
-  if(ps.earnedToday.date!==today) ps.earnedToday={date:today,mood:false,location_pietro:false,location_emilly:false,mural:false,quiz:false};
+  if(ps.earnedToday.date!==today){
+    const resetKeys={date:today};
+    Object.keys(ps.earnedToday).forEach(k=>{ if(k!=='date') resetKeys[k]=false; });
+    ['mood','location_pietro','location_emilly','mural','quiz'].forEach(k=>{ if(!(k in resetKeys)) resetKeys[k]=false; });
+    ps.earnedToday=resetKeys;
+  }
   ps.earnedToday.quiz=true;
   if(correct){
     ps.coins+=30;

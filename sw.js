@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v59';
+const CACHE_VERSION = 'v60';
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -310,7 +310,18 @@ function fetchWithTimeout(request, ms) {
 async function trimCache(cacheName, max) {
   const cache = await caches.open(cacheName);
   const keys  = await cache.keys();
-  if (keys.length > max) {
-    await Promise.all(keys.slice(0, keys.length - max).map(k => cache.delete(k)));
-  }
+  if (keys.length <= max) return;
+
+  // BUG-L8: cache.keys() não garante ordem cronológica em todos os browsers
+  // Busca a data de cada entrada e ordena da mais antiga para a mais nova antes de apagar
+  const entries = await Promise.all(
+    keys.map(async req => {
+      const res  = await cache.match(req);
+      const date = res?.headers?.get('date');
+      return { req, ts: date ? new Date(date).getTime() : 0 };
+    })
+  );
+  entries.sort((a, b) => a.ts - b.ts); // mais antigas primeiro
+  const toDelete = entries.slice(0, entries.length - max);
+  await Promise.all(toDelete.map(e => cache.delete(e.req)));
 }
