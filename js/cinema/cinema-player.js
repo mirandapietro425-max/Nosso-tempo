@@ -127,8 +127,8 @@ function createIframe(src, title) {
   iframe.referrerPolicy = 'no-referrer';
   iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');
   iframe.style.cssText  = 'width:100%;aspect-ratio:16/9;display:block;';
-  // Performance: lazy decode para não bloquear main thread
-  iframe.loading        = 'lazy';
+  // NOTA: NÃO usar loading='lazy' em iframes de player — o modal já está na viewport
+  // e o lazy loading atrasaria o início do vídeo em alguns browsers mobile.
   return iframe;
 }
 

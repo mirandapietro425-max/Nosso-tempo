@@ -186,7 +186,10 @@ function _renderCatalog() {
       img.dataset.src = item.thumb;  // src setado pelo observer ao entrar na viewport
       observer.observe(img);
     }
-    img.addEventListener('load',  () => { img.style.opacity = '1'; img.nextElementSibling?.style && (img.nextElementSibling.style.display = 'none'); });
+    // BUG-VISUAL-1 FIX: removido img.nextElementSibling.style.display='none'
+    // O nextElementSibling é o emojiDiv — escondê-lo removia o emoji ao carregar a imagem.
+    // A imagem já faz seu próprio fade-in via opacity. O emoji fica sempre visível.
+    img.addEventListener('load',  () => { img.style.opacity = '1'; });
     img.addEventListener('error', () => { img.style.display = 'none'; });
 
     const thumbDiv = document.createElement('div');
