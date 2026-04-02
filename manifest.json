@@ -1,0 +1,38 @@
+{
+  "name": "Pietro & Emilly 💕",
+  "short_name": "Pietro & Emilly",
+  "description": "Nosso cantinho especial de amor",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fffaf9",
+  "theme_color": "#590d22",
+  "lang": "pt-BR",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mural de Humor",
+      "url": "/#sec-humor",
+      "description": "Ver o mural de humor"
+    },
+    {
+      "name": "Calendário",
+      "url": "/#sec-calendario",
+      "description": "Ver o calendário"
+    }
+  ]
+}

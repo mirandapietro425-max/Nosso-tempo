@@ -5,15 +5,28 @@ services:
     buildCommand: echo "Static site ready"
     staticPublishPath: .
     headers:
-      - path: /*
+      # HTML e SW: nunca cachear (sempre busca versão fresca)
+      - path: /index.html
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      # Manifest: cache curto (precisa ser re-lido para PWA install)
+      - path: /manifest.json
+        name: Cache-Control
+        value: public, max-age=86400
+      # CSS / JS: cache com versão (sw.js invalida o cache automaticamente)
+      - path: /css/*
+        name: Cache-Control
+        value: public, max-age=604800, stale-while-revalidate=86400
+      - path: /js/*
+        name: Cache-Control
+        value: public, max-age=604800, stale-while-revalidate=86400
+      # Assets e emojis: cache longo (imagens imutáveis)
       - path: /assets/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
       - path: /emojis/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
-      - path: /sw.js
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate

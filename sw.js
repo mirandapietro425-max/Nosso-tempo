@@ -1,24 +1,50 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v43
+   PIETRO & EMILLY — sw.js v58
    Service Worker · Cache · Offline Support
+
+   BUGS CORRIGIDOS nesta versão (v57):
+   BUG-SW1: manifest link não tinha href → PWA não instalável.
+             Criado manifest.json estático; adicionado ao STATIC_ASSETS.
+   BUG-SW2: /emojis/Merida/Merida_Happy.png duplicado no STATIC_ASSETS
+             (listado 2× na versão anterior) → duplo fetch desnecessário no install.
+             Duplicata removida.
+   BUG-SW3: Estratégia única network-first para tudo substituída por:
+             · Imagens      → cache-first  (offline-first, instantâneo)
+             · HTML         → network-first (sempre tenta versão fresca)
+             · CSS/JS/JSON  → stale-while-revalidate (serve cache + atualiza bg)
+   BUG-SW4: Cache de imagens não tinha limite → crescia indefinidamente.
+             Implementado trim LRU com máximo de 120 entradas.
+
+   INTEGRAÇÃO v58:
+   Cinema refatorado para arquitetura modular (cinema-state, cinema-player,
+   cinema-catalog, cinema-tmdb) — todos adicionados ao STATIC_ASSETS.
+
+   CORREÇÕES MANTIDAS de versões anteriores:
+   BUG-1:  externalHosts usa hostname real (gstatic.com, não substring firebasejs).
+   BUG-5:  skipWaiting() só via mensagem SKIP_WAITING (evita tela em branco).
+   BUG-11: /emojis/Rapunzel/ Angry e Happy removidos — stickers.js usa /Princesas/.
+   BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-// Versão do cache — altere este valor ao fazer deploy para invalidar o cache antigo
-const CACHE_VERSION  = 'v52';
-const CACHE_STATIC   = `pe-static-${CACHE_VERSION}`;
-const CACHE_DYNAMIC  = `pe-dynamic-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v58';
+const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
+const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
+const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
 
-// Assets estáticos — SEM query strings (?v=)
-// O próprio CACHE_VERSION garante atualização quando há novo deploy
+const MAX_IMAGE_CACHE = 120;
+
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/manifest.json',
   '/css/main.css',
   '/css/components.css',
   '/css/modals.css',
   '/css/animations.css',
   '/css/stickers.css',
   '/css/home.css',
+  '/css/games.css',
+  '/css/cinema.css',
   '/js/app.js',
   '/js/config.js',
   '/js/ui.js',
@@ -29,14 +55,15 @@ const STATIC_ASSETS = [
   '/js/library.js',
   '/js/games.js',
   '/js/cinema.js',
+  '/js/cinema/cinema-state.js',
+  '/js/cinema/cinema-player.js',
+  '/js/cinema/cinema-catalog.js',
+  '/js/cinema/cinema-tmdb.js',
   '/js/progress.js',
   '/js/watchparty.js',
-  '/css/games.css',
-  '/css/cinema.css',
   '/assets/favicon.png',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
-  // Emojis das figurinhas — pré-cacheados para abertura instantânea do mood picker
   '/emojis/Ariel/Ariel_Happy.png',
   '/emojis/Ariel/Ariel_Sad.png',
   '/emojis/Ariel/Ariel_Scared.png',
@@ -62,6 +89,7 @@ const STATIC_ASSETS = [
   '/emojis/Marvel/Spider-Man_Happy.png',
   '/emojis/Marvel/Spider-Man_Sad.png',
   '/emojis/Merida/Merida_Angry.png',
+  '/emojis/Merida/Merida_Happy.png',
   '/emojis/Merida/Merida_Scared.png',
   '/emojis/Princes/Hercules_Angry.png',
   '/emojis/Princes/Hercules_Happy.png',
@@ -98,12 +126,9 @@ const STATIC_ASSETS = [
   '/emojis/Princesas/Tiana_Happy_2.png',
   '/emojis/Princesas/Tiana_Sad.png',
   '/emojis/Rapunzel/Rapunzel_Scared.png',
-  '/emojis/Merida/Merida_Happy.png',
-  '/emojis/Rapunzel/Rapunzel_Angry.png',
-  '/emojis/Rapunzel/Rapunzel_Happy.png',
 ];
 
-// ── INSTALL: pré-cacheia assets estáticos ──
+// ── INSTALL ──
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_STATIC)
@@ -114,107 +139,163 @@ self.addEventListener('install', (event) => {
           )
         )
       )
-      // Assume controle imediatamente após instalar — garante que novos deploys
-      // sempre sirvam os arquivos atualizados, sem ficar preso no SW antigo.
-      .then(() => self.skipWaiting())
+      .then(() => console.log('[SW] Instalação completa —', CACHE_VERSION))
   );
+  // BUG-5 FIX: sem skipWaiting() aqui — só via mensagem SKIP_WAITING
 });
 
-// ── ACTIVATE: remove caches de versões anteriores ──
+// ── ACTIVATE ──
 self.addEventListener('activate', (event) => {
+  const valid = [CACHE_STATIC, CACHE_DYNAMIC, CACHE_IMAGES];
   event.waitUntil(
     caches.keys()
       .then((keys) =>
         Promise.all(
           keys
-            .filter(k => k !== CACHE_STATIC && k !== CACHE_DYNAMIC)
-            .map(k => {
-              console.log('[SW] Removendo cache antigo:', k);
-              return caches.delete(k);
-            })
+            .filter(k => !valid.includes(k))
+            .map(k => { console.log('[SW] Cache antigo removido:', k); return caches.delete(k); })
         )
       )
       .then(async () => {
-        // Assume controle de todas as abas imediatamente
         await self.clients.claim();
-        // Notifica as abas que há atualização — elas recarregam suavemente
         const clients = await self.clients.matchAll({ type: 'window' });
-        clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
+        if (clients.length > 0) {
+          clients.forEach(c => c.postMessage({ type: 'SW_UPDATED' }));
+        }
       })
   );
 });
 
-// ── FETCH: ignora requisições externas, usa network-first para locais ──
-
-// ── Aceita SKIP_WAITING sob demanda (botão "Atualizar" na página) ──
+// ── Mensagens ──
 self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
+
+// ── Domínios externos (SW não intercepta) ──
+const EXTERNAL_HOSTS = [
+  'gstatic.com', 'firestore.googleapis.com', 'googleapis.com',
+  'cloudinary.com', 'imgbb.com', 'cdnjs.cloudflare.com',
+  'fonts.googleapis.com', 'fonts.gstatic.com',
+  'themoviedb.org', 'image.tmdb.org',
+  'youtube.com', 'youtu.be', 'ytimg.com',
+  'nominatim.openstreetmap.org', 'tile.openstreetmap.org',
+  'superflixapi.rest', 'superflixapi.run', 'superflixapi.top', 'superflixapi.my',
+  'warezcdn.com', 'warezcdn.com.br',
+  'cineembed.com', 'vidlink.pro',
+  'vidsrc.cc', 'vidsrc.me', 'vidsrc.to',
+];
+
+// ── FETCH: estratégias diferenciadas por tipo ──
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   if (request.method !== 'GET') return;
+  if (EXTERNAL_HOSTS.some(h => url.hostname.includes(h))) return;
+  if (url.hostname !== self.location.hostname) return;
 
-  // Deixa o browser lidar diretamente com APIs externas
-  const externalHosts = [
-    'firebasejs', 'firestore.googleapis.com', 'googleapis.com',
-    'cloudinary.com', 'imgbb.com', 'themoviedb.org',
-    'youtube.com', 'youtu.be', 'nominatim.openstreetmap.org',
-    'tile.openstreetmap.org', 'cdnjs.cloudflare.com',
-    'fonts.googleapis.com', 'fonts.gstatic.com',
-  ];
-  if (externalHosts.some(h => url.hostname.includes(h))) return;
+  const path = url.pathname;
+  const ext  = path.split('.').pop().toLowerCase();
 
-  event.respondWith(networkFirstWithTimeout(request));
+  // Imagens: cache-first (instantâneo, funciona offline)
+  if (['png','jpg','jpeg','gif','webp','svg','ico'].includes(ext)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  // CSS / JS / JSON: stale-while-revalidate (rápido + sempre atualizado)
+  if (['css','js','json'].includes(ext)) {
+    event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+
+  // HTML e navegação: network-first (garante conteúdo fresco)
+  event.respondWith(networkFirst(request));
 });
 
-// ── Network-first com timeout de 4s ──
-// Se a rede responder em tempo: usa e atualiza o cache
-// Se timeout ou offline: serve do cache
-async function networkFirstWithTimeout(request) {
-  // Normaliza a URL removendo query strings dos assets locais
-  // para evitar mismatch entre ?v=22 no HTML e URLs sem query no cache
-  const cacheKey = stripQueryString(request);
+// ── cache-first ──
+async function cacheFirst(request) {
+  const key    = stripQuery(request);
+  const cached = await caches.match(key) || await caches.match(request);
+  if (cached) return cached;
 
   try {
-    const networkResponse = await fetchWithTimeout(request, 4000);
-
-    if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_DYNAMIC);
-      cache.put(cacheKey, networkResponse.clone());
+    const response = await fetchWithTimeout(request, 8000);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_IMAGES);
+      await cache.put(key, response.clone());
+      trimCache(CACHE_IMAGES, MAX_IMAGE_CACHE); // async, não bloqueia
     }
-    return networkResponse;
-
+    return response;
   } catch (_) {
-    // Tenta cache com URL normalizada primeiro, depois original
-    const cached =
-      await caches.match(cacheKey) ||
-      await caches.match(request)  ||
-      await caches.match('/index.html');
-
-    return cached || new Response('Offline — sem conexão', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    });
+    return new Response('', { status: 503, statusText: 'Offline' });
   }
 }
 
-// Remove query string de URLs locais para unificar chaves de cache
-// FIX: não passa mode:'navigate' para new Request — é inválido e derruba o SW inteiro
-function stripQueryString(request) {
+// ── stale-while-revalidate ──
+async function staleWhileRevalidate(request) {
+  const key   = stripQuery(request);
+  const cache = await caches.open(CACHE_STATIC);
+  const cached = await cache.match(key) || await caches.match(request);
+
+  const fetchPromise = fetchWithTimeout(request, 6000)
+    .then(res => { if (res.ok) cache.put(key, res.clone()); return res; })
+    .catch(() => null);
+
+  return cached || await fetchPromise || new Response('', { status: 503 });
+}
+
+// ── network-first ──
+async function networkFirst(request) {
+  const key = stripQuery(request);
+  try {
+    const response = await fetchWithTimeout(request, 4000);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_DYNAMIC);
+      cache.put(key, response.clone());
+    }
+    return response;
+  } catch (_) {
+    const cached =
+      await caches.match(key) ||
+      await caches.match(request) ||
+      await caches.match('/index.html');
+
+    return cached || new Response(
+      '<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>Pietro & Emilly 💕</title>' +
+      '<style>body{font-family:"DM Sans",sans-serif;text-align:center;padding:4rem 2rem;' +
+      'background:#fff8f9;color:#590d22;}h1{font-size:2rem;margin-bottom:1rem;}' +
+      'p{color:#7a3045;line-height:1.7;max-width:400px;margin:0 auto 1.5rem;}' +
+      'button{background:#e8536f;color:#fff;border:none;padding:.8rem 2rem;' +
+      'border-radius:50px;font-size:1rem;cursor:pointer;}</style></head>' +
+      '<body><h1>💕 Pietro & Emilly</h1>' +
+      '<p>Você está offline no momento.<br>Reconecte-se para acessar nosso cantinho especial.</p>' +
+      '<button onclick="location.reload()">Tentar novamente 💕</button></body></html>',
+      { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+  }
+}
+
+// ── Helpers ──
+function stripQuery(request) {
   const url = new URL(request.url);
   if (url.hostname !== self.location.hostname) return request;
   url.search = '';
   return new Request(url.toString());
 }
 
-// fetch com timeout via AbortController
 function fetchWithTimeout(request, ms) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(request, { signal: controller.signal })
-    .finally(() => clearTimeout(timer));
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return fetch(request, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
+
+async function trimCache(cacheName, max) {
+  const cache = await caches.open(cacheName);
+  const keys  = await cache.keys();
+  if (keys.length > max) {
+    await Promise.all(keys.slice(0, keys.length - max).map(k => cache.delete(k)));
+  }
 }

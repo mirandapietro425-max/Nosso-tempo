@@ -189,9 +189,9 @@ try {
    MUSIC
    ════════════════════════════════════════════ */
 loadYTApi();
+exposeMusicGlobals();
 renderPlaylist();
 renderMiniPlayerList();
-exposeMusicGlobals();
 
 // Controla o botão de play/pause da barra de música dos eventos sazonais
 window.toggleEventMusic = function() {
@@ -264,7 +264,7 @@ async function renderGallery() {
 
     if (url) {
       slot.innerHTML = `
-        <img src="${url}" alt="Memória ${i+1}" loading="lazy">
+        <img src="${url}" alt="Memória ${i+1}" loading="lazy" onerror="this.src='';this.parentElement.querySelector('.slot-empty-icon')||this.insertAdjacentHTML('afterend','<div class=\\'slot-empty-icon\\'>📷</div><div class=\\'slot-empty-text\\'>Erro ao carregar</div>');this.remove()">
         <div class="slot-overlay">
           <button class="slot-btn" onclick="startUpload(${i},event)">🔄 Trocar</button>
           <button class="slot-btn del" onclick="deletePhoto(${i},event)">🗑 Remover</button>
@@ -503,11 +503,13 @@ async function openMovieModal(i) {
           `<img class="movie-modal-poster" src="https://image.tmdb.org/t/p/w780${movie.poster_path}" alt="${m.name}">`;
       }
       const videos  = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=pt-BR`);
+      if (fetchId !== _movieFetchId) return; // APP-8: guard após fetch de vídeos PT-BR
       const vData   = await videos.json();
       let trailer   = vData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
 
       if (!trailer) {
         const vEn     = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}`);
+        if (fetchId !== _movieFetchId) return; // APP-8: guard após fetch de vídeos EN
         const vEnData = await vEn.json();
         trailer       = vEnData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
       }
@@ -741,7 +743,8 @@ async function renderMural() {
     div.className = 'mural-msg ' + m.author.toLowerCase();
     let mediaHTML = '';
     if (m.photo) {
-      mediaHTML = `<img src="${m.photo}" alt="foto" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin:0.6rem 0;cursor:pointer;" onclick="window.open('${m.photo}','_blank')">`;
+      const safePhotoUrl = sanitizeHTML(m.photo);
+      mediaHTML = `<img src="${safePhotoUrl}" alt="foto" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin:0.6rem 0;cursor:pointer;" onclick="window.open('${safePhotoUrl}','_blank')" onerror="this.style.display='none'">`;
     }
     div.innerHTML = `
       <button class="mural-msg-del" onclick="deleteMural('${m.id || String(i)}')">✕</button>
@@ -994,7 +997,7 @@ function renderMoodGrid() {
     grid.classList.add('mood-grid--sticker');
     grid.innerHTML = `<div class="mood-sticker-grid-inner">${list.map((s) => `
       <div class="mood-sticker-pick" data-sid="${s.id}" data-cat="${moodActiveTab}" onclick="selectStickerOption(this)">
-        <img src="${s.file}" alt="${s.label}" class="mood-sticker-pick-img">
+        <img src="${s.file}" alt="${s.label}" class="mood-sticker-pick-img" onerror="this.style.opacity='0.3';this.title='Imagem não encontrada'">
         <div class="mood-sticker-pick-label">${s.name}</div>
       </div>`).join('')}
     </div>`;
@@ -1025,6 +1028,9 @@ function switchMoodTab(tab) {
   document.querySelectorAll('.mood-tab').forEach(b => b.classList.remove('active'));
   document.getElementById(`mood-tab-${tab}`)?.classList.add('active');
   renderMoodGrid();
+  // BUG-6 FIX: reset scroll ao trocar de aba
+  const grid = document.getElementById('mood-sticker-grid-inner');
+  if (grid) grid.scrollTop = 0;
 }
 
 function selectMoodOption(i) {
@@ -1121,6 +1127,7 @@ async function confirmMood() {
 }
 
 async function initMoodDisplay() {
+  if (!MOOD_DOC) return;
   try {
     const snap = await getDoc(MOOD_DOC);
     if (!snap.exists()) return;
@@ -1246,7 +1253,7 @@ async function initSpecial(type) {
     if (content) {
       content.innerHTML = '';
       if (data.text)     content.innerHTML += `<div class="special-content-text">${sanitizeHTML(data.text)}</div>`;
-      if (data.photoUrl) content.innerHTML += `<img src="${data.photoUrl}" alt="Foto especial">`;
+      if (data.photoUrl) content.innerHTML += `<img src="${data.photoUrl}" alt="Foto especial" onerror="this.style.display='none'" style="max-width:100%;border-radius:12px;">`;
       if (data.audioUrl) content.innerHTML += `<audio controls src="${data.audioUrl}"></audio>`;
     }
   }
@@ -1396,14 +1403,13 @@ async function renderCal() {
   const grid     = document.getElementById('cal-grid');
   if (!grid) return;
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  grid.innerHTML = dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('');
 
   const firstDay    = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
-  // FIX Bug renderCal: acumula HTML em string e faz uma única atribuição ao DOM
-  // (evita re-parse completo do grid a cada iteração — ~42x por mês em mobile)
-  let html = '';
+  // FIX Bug renderCal: acumula TODO o HTML (incluindo cabeçalhos) num único string
+  // e faz uma única atribuição ao DOM — sem grid.innerHTML += que força duplo re-parse.
+  let html = dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('');
   for (let i = 0; i < firstDay; i++) html += `<div class="cal-day empty"></div>`;
 
   for (let d = 1; d <= daysInMonth; d++) {
@@ -1424,7 +1430,7 @@ async function renderCal() {
       <div class="cal-day-num">${d}</div>${dot}${bIcon}
     </div>`;
   }
-  grid.innerHTML += html;
+  grid.innerHTML = html;
 }
 
 async function loadCalMonth() {
@@ -1552,7 +1558,10 @@ function addCalComment() {
   }
 }
 
-document.getElementById('cal-file-input')?.addEventListener('change', async function () {
+const _calFileInput = document.getElementById('cal-file-input');
+if (_calFileInput && !_calFileInput.dataset.listenerAttached) {
+  _calFileInput.dataset.listenerAttached = '1';
+  _calFileInput.addEventListener('change', async function () {
   const files = Array.from(this.files);
   if (!files.length) return;
   this.value = '';
@@ -1581,7 +1590,8 @@ document.getElementById('cal-file-input')?.addEventListener('change', async func
     status.textContent = '✅ Enviado!';
     setTimeout(() => { status.textContent = ''; }, 2500);
   }
-});
+  });
+}
 
 let _savingCalDay = false;
 async function saveCalDay() {
@@ -1786,6 +1796,7 @@ function updateLocUI() {
           reverseGeocode(d.lat, d.lng).then(async city => {
             if (cityEl)   cityEl.textContent  = city;
             if (cityCard) cityCard.textContent = city;
+            if (!LOC_DOC) return; // guard db null
             const snap = await getDoc(LOC_DOC).catch(() => null);
             const curr = snap?.exists() ? snap.data() : {};
             if (curr[person]) { curr[person].city = city; await setDoc(LOC_DOC, curr); }
@@ -1839,6 +1850,12 @@ if (LOC_DOC) onSnapshot(
 async function shareLocation(person) {
   const btn = document.getElementById(`loc-btn-${person}`);
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Obtendo localização...'; }
+
+  if (!LOC_DOC) {
+    showToast('❌ Banco de dados indisponível.');
+    if (btn) { btn.disabled = false; btn.textContent = `📍 Atualizar ${person === 'pietro' ? 'Pietro' : 'Emilly'}`; }
+    return;
+  }
 
   if (!navigator.geolocation) {
     showToast('❌ Geolocalização não suportada neste navegador.');
@@ -2144,21 +2161,11 @@ window.shareLocation = shareLocation;
 })();
 
 /* ════════════════════════════════════════════
-   PWA MANIFEST (inline)
+   PWA MANIFEST
+   BUG-SW1 FIX: manifest.json agora é um arquivo estático com href definido
+   diretamente no HTML (<link rel="manifest" href="manifest.json">).
+   A injeção via blob URL foi removida pois blob URLs:
+     1. Não são cacheáveis pelo Service Worker
+     2. Mudam a cada carregamento (URL diferente)
+     3. Podem falhar em alguns browsers para manifests PWA
    ════════════════════════════════════════════ */
-(function injectManifest() {
-  const manifest = {
-    name: 'Pietro & Emilly',
-    short_name: 'Pietro & Emilly',
-    start_url: '/',
-    display: 'standalone',
-    background_color: '#fffaf9',
-    theme_color: '#590d22',
-    icons: [{ src: '/assets/icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: '/assets/icon-512.png', sizes: '512x512', type: 'image/png' }]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const link = document.getElementById('pwa-manifest');
-  if (link) link.href = url;
-})();

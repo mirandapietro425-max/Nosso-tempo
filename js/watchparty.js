@@ -49,17 +49,26 @@ export function initWatchParty(db, myName) {
   _db       = db;
   _myName   = myName;        // 'pietro' ou 'emilly'
 
-  // FIX Bug C5: guard — se Firebase falhou, db é null; não cria refs nem listeners
+  // FIX WP2: injeta HTML/CSS sempre — o botão "Duo" deve aparecer mesmo se Firebase estiver lento
+  _injectStyles();
+  _injectHTML();
+
+  // FIX Bug C5: guard — se Firebase falhou, db é null; não cria refs nem listeners de Firebase
   if (!db) {
     console.warn('[WatchParty] Firebase indisponível — Watch Party desativado.');
+    // Mesmo sem Firebase, expõe globais para que os botões injetados não quebrem
+    window._wpOpen = () => window.showToast?.('❌ Cinema em Dupla requer conexão com o banco.');
+    window._wpClose = () => {};
+    window._wpInvite = window._wpAccept = window._wpDecline = window._wpOpen;
+    window._wpSendMsg = window._wpSendReaction = window._wpToggleCam = window._wpOpen;
+    window._wpToggleMic = window._wpToggleEmoji = window._wpSendPhoto = window._wpOpen;
+    window._wpEndSession = window._wpOpen;
     return;
   }
 
   _wpDoc    = doc(db, 'watchparty', 'session');
   _notifDoc = doc(db, 'watchparty', 'invite');
 
-  _injectStyles();
-  _injectHTML();
   _listenForInvite();
 
   // Expõe globais para onclick no HTML
@@ -888,7 +897,8 @@ async function _handlePhotoUpload(input) {
     form.append('key', IMGBB_KEY);
     const res  = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
     const data = await res.json();
-    loading.remove();
+    loading.remove(); // BUG-WP-1 FIX: removido ANTES do if/else — sem isso, loading ficava
+                      // visível para sempre quando data.success === false (sem throw de rede)
 
     if (data.success) {
       const msg = {

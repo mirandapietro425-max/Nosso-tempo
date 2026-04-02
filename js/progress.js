@@ -231,9 +231,10 @@ export function getContinueWatching() {
 
 /**
  * Remove o progresso de um item específico (ex: ao marcar como assistido).
+ * dynEp: { season, episode } — obrigatório para episódios dinâmicos sem episodes[]
  */
-export function clearProgress(item, epIdx = 0) {
-  const key = _makeKey(item, epIdx);
+export function clearProgress(item, epIdx = 0, dynEp = null) {
+  const key = _makeKey(item, epIdx, dynEp);
   if (!key) return;
   const all = _readAll();
   delete all[key];
