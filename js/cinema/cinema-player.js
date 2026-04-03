@@ -166,17 +166,24 @@ export const PLAYER_SERVERS = [
 const TIMEOUT_DUB_MS   = 28_000;  // SuperFlixAPI pode demorar 20-25s na 1ª carga — 7 espelhos
 const TIMEOUT_SUB_MS   = 32_000;  // Players internacionais multi-fonte — 8 opções legendadas
 const WATCHDOG_TICK_MS = 3_000;   // intervalo do watchdog (P6: reduzido de 5s → 3s)
-const WATCHDOG_MAX_MS  = 18_000;  // P6: reduzido de 40s → 18s — early-exit cobre os primeiros 6s
+const WATCHDOG_MAX_MS  = 14_000;  // M3: 18s → 14s para mobile 4G
+
+/* ── X4: Bad-connection mode ─────────────────── */
+const BAD_CONN_SWITCH_THRESHOLD = 2;   // após 2 trocas automáticas → ativa modo degradado
+const BAD_CONN_TIMEOUT_FACTOR   = 0.5; // reduz timeouts para 50% no modo degradado
+// Servidores lentos pulados automaticamente em modo degradado
+const SLOW_SERVER_HOSTS = new Set([
+  'multiembed.mov', 'player.videasy.net', 'player.autoembed.cc',
+]);
 
 /* ── P9: Anti-spam / auto-switch cap ─────────── */
 const AUTO_SWITCH_DEBOUNCE_MS = 3_000;  // mínimo 3s entre trocas automáticas
 const MAX_AUTO_SWITCHES       = 4;      // máximo 4 trocas automáticas por item
-let   _lastAutoSwitchTs       = 0;      // timestamp da última troca automática (módulo-level)
+// M1: movidos para cinemaState (v79) — failedServers + lastAutoSwitchTs
+// — eram vars de módulo que não resetavam entre aberturas de modal.
 
 /* ── P10: Session Failed Servers Blacklist ────── */
-// Servidores que falharam nesta sessão de item — não re-tentar automaticamente.
-// Resetado ao abrir novo item (serverIdx=0) ou ao clicar "Tentar do início".
-const _failedThisSession = new Set();
+// M1: agora em cinemaState.failedServers — ver cinema-state.js
 
 /* ── F4: Adaptive Watchdog Timeout Map ───────── */
 // Per-server adaptive timeout overrides. Faster servers get shorter timeouts.
@@ -197,16 +204,29 @@ const SERVER_TIMEOUT_MAP = {
 function _getAdaptiveTimeout(serverIdx) {
   const server = PLAYER_SERVERS[serverIdx];
   if (!server) return TIMEOUT_SUB_MS;
-  // Extract hostname from a sample URL to look up the map
   try {
     const sampleUrl = server.movie ? server.movie('1') : null;
     if (sampleUrl) {
-      const host = new URL(sampleUrl).hostname;
+      const host     = new URL(sampleUrl).hostname;
       const override = SERVER_TIMEOUT_MAP[host];
-      if (override) return override;
+      const base     = override ?? (server.type === 'dub' ? TIMEOUT_DUB_MS : TIMEOUT_SUB_MS);
+      // X4: reduz timeout em modo conexão ruim
+      return cinemaState.badConnectionMode ? Math.round(base * BAD_CONN_TIMEOUT_FACTOR) : base;
     }
   } catch (_) { /* ignore parse errors */ }
-  return server.type === 'dub' ? TIMEOUT_DUB_MS : TIMEOUT_SUB_MS;
+  const base = server.type === 'dub' ? TIMEOUT_DUB_MS : TIMEOUT_SUB_MS;
+  return cinemaState.badConnectionMode ? Math.round(base * BAD_CONN_TIMEOUT_FACTOR) : base;
+}
+
+/* ── X4: check if server should be skipped in bad-connection mode ── */
+function _isSlowServer(serverIdx) {
+  if (!cinemaState.badConnectionMode) return false;
+  const server = PLAYER_SERVERS[serverIdx];
+  if (!server) return false;
+  try {
+    const host = new URL(server.movie?.('1') || '').hostname;
+    return SLOW_SERVER_HOSTS.has(host);
+  } catch (_) { return false; }
 }
 
 /* ── F7: Timer Registry helper ───────────────── */
@@ -280,12 +300,12 @@ const PING_CANDIDATES   = 3;
 async function selectBestServer(tmdbId) {
   // P4: servidor lembrado tem prioridade — mas só se não falhou nesta sessão
   const remembered = getLastGoodServer(tmdbId);
-  if (remembered !== null && !_failedThisSession.has(remembered)) return remembered;
+  if (remembered !== null && !cinemaState.failedServers.has(remembered)) return remembered;
 
   // P10: candidatos excluem servidores que já falharam nesta sessão
   const candidates = PLAYER_SERVERS
     .map((server, idx) => ({ server, idx }))
-    .filter(({ idx }) => !_failedThisSession.has(idx))
+    .filter(({ idx }) => !cinemaState.failedServers.has(idx))
     .slice(0, PING_CANDIDATES);
 
   if (candidates.length === 0) return 0; // todos falharam → tenta do 0 mesmo
@@ -317,7 +337,7 @@ async function selectBestServer(tmdbId) {
         ctrls.forEach(c => { try { c.abort(); } catch (_) {} });
       } else if (!settled && pending === 0) {
         // Todos falharam ou foram filtrados — pega o primeiro não-bloqueado
-        const fallback = PLAYER_SERVERS.findIndex((_, i) => !_failedThisSession.has(i));
+        const fallback = PLAYER_SERVERS.findIndex((_, i) => !cinemaState.failedServers.has(i));
         resolve(fallback >= 0 ? fallback : 0);
       }
     }));
@@ -351,7 +371,7 @@ function _startEarlyExit(playerEl, item, epIdx, onWatched) {
       if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
       _advanceOrShowRetry(playerEl, item, epIdx, onWatched);
     }, 300));
-  }, 6_000));
+  }, 5_000));  // M3: 6s → 5s para mobile 4G
 }
 
 function _clearEarlyExit() {
@@ -450,6 +470,7 @@ function createIframe(src, title) {
   iframe.src             = src;
   iframe.title           = title || 'Player';
   iframe.frameBorder     = '0';
+  iframe.loading         = 'eager';
   iframe.allowFullscreen = true;
   iframe.setAttribute('sandbox',
     'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-downloads'
@@ -458,8 +479,8 @@ function createIframe(src, title) {
   // SuperFlixAPI e outros players BR verificam o Referer — sem ele exibem
   // "ACESSO NÃO AUTORIZADO". O padrão do browser (origin-when-cross-origin)
   // envia a origem corretamente sem expor a URL completa.
-  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');
-  iframe.style.cssText   = 'width:100%;aspect-ratio:16/9;display:block;';
+  iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media; playsinline');
+  iframe.style.cssText   = 'width:100%;aspect-ratio:16/9;display:block;opacity:0;transition:opacity 0.35s ease;will-change:opacity;transform:translateZ(0);';
   return iframe;
 }
 
@@ -542,12 +563,127 @@ function _stopWatchdog() {
   cinemaState.watchdogStart = 0;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   D1 — DUAL IFRAME: PRELOAD + SWAP INSTANTÂNEO
+   Pré-carrega o próximo servidor em background (invisível).
+   Se disponível na troca, aplica swap de opacity — zero skeleton.
+══════════════════════════════════════════════════════════════ */
+function _abortPreload() {
+  if (cinemaState.preloadAbortCtrl) {
+    try { cinemaState.preloadAbortCtrl.abort(); } catch(_) {}
+    cinemaState.preloadAbortCtrl = null;
+  }
+  if (cinemaState.preloadedIframe && cinemaState.preloadedIframe.isConnected) {
+    try { cinemaState.preloadedIframe.src = 'about:blank'; cinemaState.preloadedIframe.remove(); } catch(_) {}
+  }
+  cinemaState.preloadedIframe = null;
+  cinemaState.preloadedIdx    = -1;
+  cinemaState.preloadedReady  = false;
+}
+
+function _startPreload(item, epIdx, nextIdx) {
+  // Pula índices inválidos, falhados ou lentos — busca o próximo candidato válido
+  let candidateIdx = nextIdx;
+  while (
+    candidateIdx < PLAYER_SERVERS.length &&
+    (cinemaState.failedServers.has(candidateIdx) || _isSlowServer(candidateIdx))
+  ) { candidateIdx++; }
+
+  if (candidateIdx >= PLAYER_SERVERS.length) return;
+  if (cinemaState.preloadedIdx === candidateIdx && cinemaState.preloadedReady) return; // já pronto
+
+  _abortPreload();
+
+  const ctrl = new AbortController();
+  cinemaState.preloadAbortCtrl = ctrl;
+
+  let src;
+  try {
+    src = buildPlayerSrc(item, epIdx, candidateIdx);
+  } catch (_) { return; }
+  if (!src) return;
+
+  const iframe = createIframe(src, item.title);
+  // Invisível e fora da área visível — GPU layer já alocada via will-change
+  iframe.style.cssText = [
+    'position:absolute', 'width:1px', 'height:1px',
+    'opacity:0', 'pointer-events:none',
+    'top:-9999px', 'left:-9999px',
+    'will-change:opacity',
+    'transform:translateZ(0)',
+  ].join(';') + ';';
+
+  iframe.onload = () => {
+    if (ctrl.signal.aborted) { try { iframe.remove(); } catch(_) {} return; }
+    // Warm-up: 300ms após onload antes de marcar como ready
+    // Garante que o player interno iniciou e não é uma página em branco
+    setTimeout(() => {
+      if (ctrl.signal.aborted) return;
+      cinemaState.preloadedIframe = iframe;
+      cinemaState.preloadedIdx    = candidateIdx;
+      cinemaState.preloadedReady  = true;
+      // Prepara estilo final (invisível, no fluxo) — swap será instantâneo
+      iframe.style.cssText = [
+        'width:100%', 'aspect-ratio:16/9', 'display:block',
+        'opacity:0', 'transition:opacity 0.3s ease',
+        'will-change:opacity', 'transform:translateZ(0)',
+      ].join(';') + ';';
+    }, 300);
+  };
+
+  const playerEl = document.getElementById('cinema-modal-player');
+  if (!playerEl) return;
+  playerEl.appendChild(iframe);
+}
+
+function _swapToPreloaded(playerEl, item, epIdx) {
+  const preloaded = cinemaState.preloadedIframe;
+  // Só faz swap se iframe passou pelo warm-up e está genuinamente ready
+  if (!preloaded || !preloaded.isConnected || !cinemaState.preloadedReady) return false;
+
+  const swappedIdx = cinemaState.preloadedIdx;
+
+  document.getElementById('cinema-player-skeleton')?.remove();
+
+  // Fade-in instantâneo do preloaded — GPU layer já está alocada
+  preloaded.style.cssText = [
+    'width:100%', 'aspect-ratio:16/9', 'display:block',
+    'opacity:1', 'transition:opacity 0.3s ease',
+    'will-change:opacity', 'transform:translateZ(0)',
+  ].join(';') + ';';
+
+  // Fade-out e remoção do live anterior
+  const old = cinemaState.liveIframe;
+  if (old && old !== preloaded && old.isConnected) {
+    old.style.transition = 'opacity 0.3s ease';
+    old.style.opacity    = '0';
+    setTimeout(() => { try { old.src = 'about:blank'; old.remove(); } catch(_) {} }, 320);
+  }
+
+  cinemaState.liveIframe      = preloaded;
+  cinemaState.preloadedIframe = null;
+  cinemaState.preloadedIdx    = -1;
+  cinemaState.preloadedReady  = false;
+  cinemaState.preloadAbortCtrl = null;
+
+  // Preload em cadeia — já inicia o próximo standby
+  if (item) {
+    const next2 = swappedIdx + 1;
+    setTimeout(() => {
+      if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+      _startPreload(item, epIdx, next2);
+    }, 300);
+  }
+
+  return true;
+}
+
 function _advanceOrShowRetry(playerEl, item, epIdx, onWatched) {
   if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
 
   // P9 — Debounce: evita spam de troca automática (mín. 3s entre switches)
   const now = Date.now();
-  if (now - _lastAutoSwitchTs < AUTO_SWITCH_DEBOUNCE_MS) return;
+  if (now - cinemaState.lastAutoSwitchTs < AUTO_SWITCH_DEBOUNCE_MS) return;
 
   // P9 — Cap: após MAX_AUTO_SWITCHES trocas, mostra overlay manual em vez de continuar
   if (cinemaState.autoSwitchCount >= MAX_AUTO_SWITCHES) {
@@ -556,24 +692,50 @@ function _advanceOrShowRetry(playerEl, item, epIdx, onWatched) {
     return;
   }
 
+  // X4: após N trocas → ativa modo conexão ruim (timeouts menores, pula lentos)
+  if (cinemaState.autoSwitchCount >= BAD_CONN_SWITCH_THRESHOLD && !cinemaState.badConnectionMode) {
+    cinemaState.badConnectionMode = true;
+    console.info('[Cinema] Bad-connection mode activated');
+  }
+
   document.getElementById('cinema-player-skeleton')?.remove();
   // P4: servidor falhou — invalida memória para não tentar de novo na próxima
   _invalidateLastGoodServer(item?.tmdbId);
-  // P10: registra falha na blacklist de sessão
-  _failedThisSession.add(cinemaState.serverIdx);
+  // P10/M1: registra falha na blacklist de sessão (agora em cinemaState)
+  cinemaState.failedServers.add(cinemaState.serverIdx);
 
-  // Avança para o próximo servidor NÃO-falhado
+  // Avança para o próximo servidor NÃO-falhado (e não-lento em modo degradado)
   let nextIdx = cinemaState.serverIdx + 1;
-  while (nextIdx < PLAYER_SERVERS.length && _failedThisSession.has(nextIdx)) {
-    nextIdx++; // pula servidores que já falharam nesta sessão
+  while (nextIdx < PLAYER_SERVERS.length &&
+    (cinemaState.failedServers.has(nextIdx) || _isSlowServer(nextIdx))) {
+    nextIdx++;
   }
 
   if (nextIdx < PLAYER_SERVERS.length) {
-    _lastAutoSwitchTs = now;
+    // v80: haptic feedback leve ao trocar servidor automaticamente
+    try { navigator.vibrate?.(25); } catch (_) {}
+    cinemaState.lastAutoSwitchTs = now;
     cinemaState.autoSwitchCount += 1;
     cinemaState.serverIdx = nextIdx;
     renderServerPanel();
-    buildPlayer(item, epIdx, onWatched);
+    // D1: se temos o próximo servidor já pré-carregado e ready, swap instantâneo
+    if (cinemaState.preloadedIdx === nextIdx && _swapToPreloaded(playerEl, item, epIdx)) {
+      // Swap invisível concluído — inicia tracking
+      const dynEps   = cinemaState.dynamicEpisodes;
+      const episodes = dynEps || item.episodes;
+      const ep       = episodes?.[epIdx] ?? null;
+      saveLastGoodServer(item?.tmdbId, nextIdx);
+      _startTrackingAfterBuild(item, epIdx, ep, onWatched);
+      _startFreezeDetector(playerEl, item, epIdx, onWatched);
+      // próximo preload já iniciado dentro de _swapToPreloaded
+    } else if (cinemaState.preloadedIdx === nextIdx && !cinemaState.preloadedReady) {
+      // Preload existe mas ainda não passou pelo warm-up — fallback ultra-rápido:
+      // descarta o preload parcial e builda direto sem esperar timeout
+      _abortPreload();
+      buildPlayer(item, epIdx, onWatched);
+    } else {
+      buildPlayer(item, epIdx, onWatched);
+    }
   } else {
     showRetryOverlay(playerEl, item, epIdx, onWatched);
   }
@@ -618,6 +780,15 @@ export function destroyPlayer() {
   // Para o watchdog ao destruir o player
   _stopWatchdog();
 
+  // v81: limpa timers e overlays adicionais
+  if (cinemaState.fakeLoadTimer)  { clearTimeout(cinemaState.fakeLoadTimer);  cinemaState.fakeLoadTimer = null; }
+  if (cinemaState.nextEpTimer)    { clearTimeout(cinemaState.nextEpTimer);    cinemaState.nextEpTimer = null; }
+  cinemaState.nextEpOverlay?.remove();
+  cinemaState.nextEpOverlay = null;
+
+  // D1: aborta preload dual-iframe
+  _abortPreload();
+
   const p = document.getElementById('cinema-modal-player');
   if (!p) return;
   // Destrói instância HLS se existir (evita leak de memória)
@@ -626,11 +797,33 @@ export function destroyPlayer() {
     v.pause();
     v.src = '';
   });
-  // Para stream cross-origin antes de limpar o DOM (fix áudio Safari/mobile)
-  p.querySelectorAll('iframe').forEach(f => {
-    try { f.src = 'about:blank'; } catch (_) {}
+  // X1: crossfade — preserva liveIframe durante transição de servidor.
+  // Ele será removido com fade pelo onload do próximo iframe.
+  // Limpa todos os outros filhos (skeleton, overlays, badges, botões).
+  Array.from(p.children).forEach(child => {
+    if (child === cinemaState.liveIframe) return; // preserva para crossfade
+    if (child.tagName === 'IFRAME') { try { child.src = 'about:blank'; } catch (_) {} }
+    child.remove();
   });
-  p.innerHTML = '';
+  // Se não há crossfade em andamento, limpa tudo
+  if (!cinemaState.liveIframe) p.innerHTML = '';
+  if (!p) return;
+  // Destrói instância HLS se existir (evita leak de memória)
+  p.querySelectorAll('video').forEach(v => {
+    if (v._hls) { try { v._hls.destroy(); } catch (_) {} v._hls = null; }
+    v.pause();
+    v.src = '';
+  });
+  // X1: crossfade — preserva liveIframe durante transição de servidor.
+  // Ele será removido com fade pelo onload do próximo iframe.
+  // Limpa todos os outros filhos (skeleton, overlays, badges, botões).
+  Array.from(p.children).forEach(child => {
+    if (child === cinemaState.liveIframe) return; // preserva para crossfade
+    if (child.tagName === 'IFRAME') { try { child.src = 'about:blank'; } catch (_) {} }
+    child.remove();
+  });
+  // Se não há crossfade em andamento, limpa tudo
+  if (!cinemaState.liveIframe) p.innerHTML = '';
 }
 
 /* ── UI de erro / retry ──────────────────────── */
@@ -654,8 +847,9 @@ function showRetryOverlay(container, item, epIdx, onWatched) {
     </div>`;
   container.querySelector('#cinema-reset-btn')?.addEventListener('click', () => {
     cinemaState.serverIdx = 0;
-    // P10: fresh start — limpa blacklist de sessão e contadores
-    _failedThisSession.clear();
+    // P10/M1: fresh start — limpa blacklist (agora em cinemaState) e contadores
+    cinemaState.failedServers.clear();
+    cinemaState.lastAutoSwitchTs = 0;
     cinemaState.autoSwitchCount = 0;
     cinemaState.earlyExitFired  = false;
     buildPlayer(item, epIdx, onWatched);
@@ -738,9 +932,9 @@ export async function buildPlayer(item, epIdx, onWatched) {
 
   // P1: Smart Server Selection — mostra skeleton de "preparando" enquanto pinga
   if (item.tmdbId && cinemaState.serverIdx === 0) {
-    // Reset debounce timestamp e blacklist — novo item, novas tentativas livres
-    _lastAutoSwitchTs = 0;
-    _failedThisSession.clear();
+    // M1: Reset debounce e blacklist — novo item, novas tentativas livres (agora em cinemaState)
+    cinemaState.lastAutoSwitchTs = 0;
+    cinemaState.failedServers.clear();
     // Só pré-seleciona na primeira tentativa (serverIdx=0), não durante fallback
     playerEl.appendChild(_makeSkeleton('🎬 Preparando player…'));
     let bestIdx = 0;
@@ -767,8 +961,10 @@ async function _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched) 
 
   playerEl.appendChild(_makeSkeleton('🎬 Carregando…'));
 
-  // Inicia watchdog também no caminho PlayLT
+  // Inicia watchdog + early-exit também no caminho PlayLT
   _startWatchdog(playerEl, item, epIdx, onWatched);
+  _startEarlyExit(playerEl, item, epIdx, onWatched);
+  _startSlowNetworkTimer();
 
   let source = null;
   try {
@@ -778,21 +974,26 @@ async function _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched) 
   }
 
   // F1: generation guard — bail if a newer buildPlayer was triggered
-  if (myGeneration !== cinemaState.generation) { _stopWatchdog(); return; }
+  if (myGeneration !== cinemaState.generation) { _stopWatchdog(); _clearEarlyExit(); _clearSlowNetworkTimer(); return; }
 
   // Guard: modal ainda aberto com o mesmo item?
-  if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) { _stopWatchdog(); return; }
+  if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) { _stopWatchdog(); _clearEarlyExit(); _clearSlowNetworkTimer(); return; }
   _stopWatchdog();
+  _clearEarlyExit();
+  _clearSlowNetworkTimer();
   document.getElementById('cinema-player-skeleton')?.remove();
 
   if (source?.url) {
     if (source.type === 'stream') {
-      // Stream direto (m3u8 / mp4) — player nativo
       playerEl.appendChild(createStreamPlayer(source.url, item.title));
     } else {
-      // iframe embed
       const iframe = createIframe(source.url, item.title);
-      iframe.onload = () => document.getElementById('cinema-player-skeleton')?.remove();
+      iframe.onload = () => {
+        document.getElementById('cinema-player-skeleton')?.remove();
+        iframe.style.opacity = '1';
+        cinemaState.liveIframe = iframe;
+        try { navigator.vibrate?.(10); } catch (_) {}
+      };
       playerEl.appendChild(iframe);
     }
     _startTrackingAfterBuild(item, epIdx, ep, onWatched);
@@ -826,7 +1027,96 @@ function _startFreezeDetector(playerEl, item, epIdx, onWatched) {
   }, 11_000)); // 11s after onload — freeze window
 }
 
-/* ── F3: Silent Server Switch Badge ─────────── */
+/* ── X3: Fake-load detector ─────────────────── */
+// iframe.onload fires mas o player interno não iniciou (blank / error page).
+// Após FAKE_LOAD_MS sem interação com o iframe → considera falha e avança servidor.
+const FAKE_LOAD_MS = 3_500;
+
+function _startFakeLoadDetector(playerEl, item, epIdx, onWatched) {
+  if (cinemaState.fakeLoadTimer) { clearTimeout(cinemaState.fakeLoadTimer); cinemaState.fakeLoadTimer = null; }
+  cinemaState.fakeLoadTimer = _registerTimer(setTimeout(() => {
+    cinemaState.fakeLoadTimer = null;
+    if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+    // Só dispara se o iframe ainda está opaco (sem interação detectável)
+    const iframe = cinemaState.liveIframe;
+    if (!iframe || !iframe.isConnected) return;
+    // Verifica se o iframe reporta contentDocument acessível (mesma origin) ou
+    // se ainda está em about:blank — sinal de bloqueio silencioso
+    try {
+      const doc = iframe.contentDocument;
+      if (doc && (doc.URL === 'about:blank' || doc.body?.innerHTML === '')) {
+        console.warn('[Cinema] Fake load detected — advancing server');
+        try { navigator.vibrate?.(15); } catch (_) {}
+        _advanceOrShowRetry(playerEl, item, epIdx, onWatched);
+      }
+    } catch (_) {
+      // Cross-origin — não conseguimos inspecionar. Considera OK (servidor real carregou).
+    }
+  }, FAKE_LOAD_MS));
+}
+
+/* ── X6: Auto Next Episode ───────────────────── */
+function _showNextEpisodeOverlay(playerEl, item, nextEpIdx, onWatched) {
+  // Limpa overlay anterior se existir
+  cinemaState.nextEpOverlay?.remove();
+  if (cinemaState.nextEpTimer) { clearTimeout(cinemaState.nextEpTimer); cinemaState.nextEpTimer = null; }
+
+  const episodes = cinemaState.dynamicEpisodes || item.episodes;
+  if (!episodes || nextEpIdx >= episodes.length) return;
+  const nextEp = episodes[nextEpIdx];
+  const epLabel = nextEp?.title || `Episódio ${nextEpIdx + 1}`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'cinema-next-ep-overlay';
+  let countdown = 5;
+
+  const render = () => {
+    overlay.innerHTML = `
+      <div class="cinema-next-ep-card">
+        <div class="cinema-next-ep-label">A seguir</div>
+        <div class="cinema-next-ep-title">${escapeHtml(epLabel)}</div>
+        <div class="cinema-next-ep-row">
+          <button class="cinema-next-ep-btn cinema-next-ep-btn--play" id="cnep-play">
+            ▶ Próximo (${countdown}s)
+          </button>
+          <button class="cinema-next-ep-btn cinema-next-ep-btn--cancel" id="cnep-cancel">Cancelar</button>
+        </div>
+      </div>`;
+  };
+  render();
+  playerEl.appendChild(overlay);
+  cinemaState.nextEpOverlay = overlay;
+
+  // Força reflow para animação de entrada
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+
+  const tick = () => {
+    countdown--;
+    const btn = overlay.querySelector('#cnep-play');
+    if (btn) btn.textContent = `▶ Próximo (${countdown}s)`;
+    if (countdown <= 0) {
+      _doNextEp();
+    } else {
+      cinemaState.nextEpTimer = _registerTimer(setTimeout(tick, 1000));
+    }
+  };
+  cinemaState.nextEpTimer = _registerTimer(setTimeout(tick, 1000));
+
+  const _doNextEp = () => {
+    if (cinemaState.nextEpTimer) { clearTimeout(cinemaState.nextEpTimer); cinemaState.nextEpTimer = null; }
+    overlay.remove();
+    cinemaState.nextEpOverlay = null;
+    // Dispara troca de episódio via evento para manter orquestração no cinema.js
+    document.dispatchEvent(new CustomEvent('cinema:next-episode', { detail: { epIdx: nextEpIdx } }));
+  };
+
+  overlay.querySelector('#cnep-play')?.addEventListener('click', _doNextEp);
+  overlay.querySelector('#cnep-cancel')?.addEventListener('click', () => {
+    if (cinemaState.nextEpTimer) { clearTimeout(cinemaState.nextEpTimer); cinemaState.nextEpTimer = null; }
+    overlay.classList.remove('visible');
+    setTimeout(() => { overlay.remove(); cinemaState.nextEpOverlay = null; }, 350);
+  });
+}
 function _showSilentSwitchBadge() {
   const existing = document.getElementById('cinema-silent-switch-badge');
   if (existing) return;
@@ -878,16 +1168,81 @@ function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
     _stopWatchdog();
     _clearEarlyExit();
     _clearSlowNetworkTimer();
+    if (cinemaState.fakeLoadTimer) { clearTimeout(cinemaState.fakeLoadTimer); cinemaState.fakeLoadTimer = null; }
     document.getElementById('cinema-player-skeleton')?.remove();
+
+    // v80: fade-in suave do novo iframe
+    iframe.style.opacity = '1';
+
+    // X1: crossfade — remove iframe anterior com fade após novo estar visível
+    const oldIframe = cinemaState.liveIframe;
+    if (oldIframe && oldIframe !== iframe && oldIframe.isConnected) {
+      oldIframe.style.transition = 'opacity 0.3s ease';
+      oldIframe.style.opacity    = '0';
+      setTimeout(() => { try { oldIframe.remove(); } catch (_) {} }, 320);
+    }
+    cinemaState.liveIframe = iframe;
+
+    // X3: detecta player falso (iframe carregou mas conteúdo é blank)
+    _startFakeLoadDetector(playerEl, item, epIdx, onWatched);
+
+    // X9: haptic leve ao confirmar play
+    try { navigator.vibrate?.(10); } catch (_) {}
+
+    // v80: Tap-overlay mobile — toque no player exibe quick-switch por 3s
+    document.getElementById('cinema-tap-ctrl')?.remove();
+    const tapCtrl = document.createElement('div');
+    tapCtrl.id        = 'cinema-tap-ctrl';
+    tapCtrl.className = 'cinema-tap-ctrl';
+    const _srvName = escapeHtml(PLAYER_SERVERS[cinemaState.serverIdx]?.name || '');
+    const _nextIdx = Math.min(cinemaState.serverIdx + 1, PLAYER_SERVERS.length - 1);
+    tapCtrl.innerHTML = `
+      <div class="cinema-tap-ctrl__bar">
+        <span class="cinema-tap-ctrl__label">${_srvName}</span>
+        <button class="cinema-tap-ctrl__btn" data-next="${_nextIdx}">⚡ Trocar</button>
+      </div>`;
+    tapCtrl.querySelector('.cinema-tap-ctrl__btn').addEventListener('click', e => {
+      e.stopPropagation();
+      const idx = parseInt(e.currentTarget.dataset.next, 10);
+      document.dispatchEvent(new CustomEvent('cinema:server-select', { detail: { idx } }));
+    });
+    let _tapHideTimer;
+    tapCtrl.addEventListener('click', e => {
+      if (e.target.closest('.cinema-tap-ctrl__btn')) return;
+      tapCtrl.classList.toggle('active');
+      clearTimeout(_tapHideTimer);
+      if (tapCtrl.classList.contains('active')) {
+        _tapHideTimer = _registerTimer(setTimeout(() => tapCtrl.classList.remove('active'), 3000));
+      }
+    });
+    playerEl.appendChild(tapCtrl);
+
     // P4: servidor funcionou — salva para próxima vez
     saveLastGoodServer(item?.tmdbId, cinemaState.serverIdx);
     // A-05: só inicia tracking após confirmar que o iframe carregou com sucesso
     _startTrackingAfterBuild(item, epIdx, ep, onWatched);
     // F2: start freeze detector after iframe confirms load
     _startFreezeDetector(playerEl, item, epIdx, onWatched);
+    // D1: pré-carrega próximo servidor em background (300ms — agressivo mas sem competir)
+    const _preloadNextIdx = cinemaState.serverIdx + 1;
+    _registerTimer(setTimeout(() => {
+      if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+      _startPreload(item, epIdx, _preloadNextIdx);
+    }, 300));
+
+    // X6: para séries, agenda overlay "próximo episódio" ao fim do ep
+    // Disparado via evento externo (progress.js reporta fim) — registra listener uma vez
+    const _onEpEnd = (e) => {
+      document.removeEventListener('cinema:episode-ended', _onEpEnd);
+      const episodes = cinemaState.dynamicEpisodes || item.episodes;
+      if (episodes && epIdx + 1 < episodes.length && cinemaState.isModalOpen) {
+        _showNextEpisodeOverlay(playerEl, item, epIdx + 1, onWatched);
+      }
+    };
+    document.removeEventListener('cinema:episode-ended', _onEpEnd); // segurança contra duplicata
+    document.addEventListener('cinema:episode-ended', _onEpEnd, { once: true });
 
     // ── Botão "Trocar servidor" rápido ──────────────────────────────
-    // Remove botão antigo se existir (rebuild sem criar duplicata)
     document.getElementById('cinema-quick-switch')?.remove();
     const quickBtn = document.createElement('button');
     quickBtn.id        = 'cinema-quick-switch';
@@ -896,20 +1251,20 @@ function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
     quickBtn.setAttribute('title', 'Tentar o próximo servidor');
     quickBtn.onclick = () => {
       quickBtn.remove();
-      // Dispara via evento para manter o fluxo do cinema.js
       const nextIdx = Math.min(cinemaState.serverIdx + 1, PLAYER_SERVERS.length - 1);
       document.dispatchEvent(new CustomEvent('cinema:server-select', { detail: { idx: nextIdx } }));
     };
     playerEl.style.position = playerEl.style.position || 'relative';
     playerEl.appendChild(quickBtn);
-    // Auto-esconde após 8s para não poluir o player
     _registerTimer(setTimeout(() => {
       quickBtn.style.opacity = '0';
       _registerTimer(setTimeout(() => quickBtn.remove(), 400));
     }, 8_000));
 
-    // ── Toast "assistindo juntos" se watch party ativa ──────────────
-    if (typeof window._wpIsInSession === 'function' && window._wpIsInSession()) {
+    // X7: toast "assistindo juntos" — apenas 1x por sessão de modal
+    if (!cinemaState.watchPartyToastShown &&
+        typeof window._wpIsInSession === 'function' && window._wpIsInSession()) {
+      cinemaState.watchPartyToastShown = true;
       _registerTimer(setTimeout(() => {
         window.showToast?.('💛 assistindo juntos agora');
       }, 600));

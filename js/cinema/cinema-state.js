@@ -51,6 +51,22 @@ export const cinemaState = {
   preloadCtrl      : null,        // P5: AbortController do ping de preload
   autoSwitchCount  : 0,           // P9: quantas trocas automáticas já ocorreram neste item
   earlyExitFired   : false,       // P9: early exit já disparou — não repetir automaticamente
+
+  /* ── v79 mobile fixes ── */
+  failedServers    : new Set(),   // M1: era _failedThisSession no módulo — movido para state para reset correto entre modais
+  lastAutoSwitchTs : 0,           // M1: era _lastAutoSwitchTs no módulo — não resetava entre modais
+
+  /* ── v81 UX premium ── */
+  liveIframe       : null,        // X1: iframe ativo atual (crossfade — mantém visível durante troca)
+  preloadedIframe  : null,        // D1: iframe pré-carregado em background (dual-iframe)
+  preloadedIdx     : -1,          // D1: serverIdx do iframe pré-carregado
+  preloadedReady   : false,       // D1: true somente após onload + 300ms warm-up
+  preloadAbortCtrl : null,        // D1: AbortController para cancelar preload em andamento
+  fakeLoadTimer    : null,        // X3: timeout pós-onload para detectar player falso
+  badConnectionMode: false,       // X4: modo conexão ruim — timeouts reduzidos, pula servidores lentos
+  nextEpTimer      : null,        // X6: countdown "próximo episódio em 5s"
+  nextEpOverlay    : null,        // X6: referência ao overlay de next-ep
+  watchPartyToastShown: false,    // X7: toast "assistindo juntos" já foi exibido nesta sessão
 };
 
 /** Reseta tudo que pertence ao modal sem tocar em db/watched/activeTab */
@@ -90,6 +106,25 @@ export function resetModalState() {
   // P9: reset auto-switch counters
   cinemaState.autoSwitchCount = 0;
   cinemaState.earlyExitFired  = false;
+  // M1: reset mobile-fix state (eram vars de módulo — agora aqui para garantir reset entre modais)
+  cinemaState.failedServers.clear();
+  cinemaState.lastAutoSwitchTs = 0;
+  // v81: reset UX premium fields
+  cinemaState.liveIframe        = null;  // modal fechou — próxima abertura começa limpa
+  // D1: aborta e limpa dual-iframe ao fechar modal
+  if (cinemaState.preloadAbortCtrl) { try { cinemaState.preloadAbortCtrl.abort(); } catch(_) {} cinemaState.preloadAbortCtrl = null; }
+  if (cinemaState.preloadedIframe && cinemaState.preloadedIframe.isConnected) {
+    try { cinemaState.preloadedIframe.src = 'about:blank'; cinemaState.preloadedIframe.remove(); } catch(_) {}
+  }
+  cinemaState.preloadedIframe  = null;
+  cinemaState.preloadedIdx     = -1;
+  cinemaState.preloadedReady   = false;
+  if (cinemaState.fakeLoadTimer)  { clearTimeout(cinemaState.fakeLoadTimer);  cinemaState.fakeLoadTimer = null; }
+  cinemaState.badConnectionMode = false;
+  if (cinemaState.nextEpTimer)    { clearTimeout(cinemaState.nextEpTimer);    cinemaState.nextEpTimer = null; }
+  cinemaState.nextEpOverlay?.remove();
+  cinemaState.nextEpOverlay     = null;
+  cinemaState.watchPartyToastShown = false;
 }
 
 /**
@@ -111,5 +146,18 @@ export function abortInFlightFetches() {
   // P9: novo item → zera contadores de auto-troca
   cinemaState.autoSwitchCount = 0;
   cinemaState.earlyExitFired  = false;
+  // M1: novo item → limpa blacklist e debounce
+  cinemaState.failedServers.clear();
+  cinemaState.lastAutoSwitchTs = 0;
+  // X4: novo item → sai do modo conexão ruim
+  cinemaState.badConnectionMode = false;
+  // D1: novo item → descarta preload anterior
+  if (cinemaState.preloadAbortCtrl) { try { cinemaState.preloadAbortCtrl.abort(); } catch(_) {} cinemaState.preloadAbortCtrl = null; }
+  if (cinemaState.preloadedIframe && cinemaState.preloadedIframe.isConnected) {
+    try { cinemaState.preloadedIframe.src = 'about:blank'; cinemaState.preloadedIframe.remove(); } catch(_) {}
+  }
+  cinemaState.preloadedIframe = null;
+  cinemaState.preloadedIdx    = -1;
+  cinemaState.preloadedReady  = false;
   return cinemaState.generation;
 }
