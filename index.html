@@ -413,6 +413,7 @@
     <a class="hero-nav-btn" href="#sec-localizacao"><span class="hero-nav-icon">📍</span><span class="hero-nav-label">Localização</span></a>
     <a class="hero-nav-btn" href="#sec-biblioteca"><span class="hero-nav-icon">📚</span><span class="hero-nav-label">Biblioteca</span></a>
     <a class="hero-nav-btn" href="#sec-jogos">    <span class="hero-nav-icon">🎮</span><span class="hero-nav-label">Arcade</span></a>
+    <a class="hero-nav-btn" href="#sec-museu">      <span class="hero-nav-icon">🏛️</span><span class="hero-nav-label">Memórias</span></a>
     <a class="hero-nav-btn" href="#sec-casinha">    <span class="hero-nav-icon">🏡</span><span class="hero-nav-label">Casinha</span></a>
   </nav>
 
@@ -500,6 +501,16 @@
     <div class="stat-card"><div class="stat-icon">🌠</div><div class="stat-num" id="stat-noites">0</div><div class="stat-label">Sonhos juntos</div></div>
     <div class="stat-card"><div class="stat-icon">🌹</div><div class="stat-num" id="stat-semanas">0</div><div class="stat-label">Semanas de amor</div></div>
     <div class="stat-card"><div class="stat-icon">🥰</div><div class="stat-num">∞</div><div class="stat-label">Amor</div></div>
+  </div>
+</section>
+
+<!-- ── MEMÓRIA DO DIA ── -->
+<section id="sec-memory-day" aria-labelledby="sec-memory-day-title">
+  <div class="divider"><span class="divider-icon">💛</span></div>
+  <div class="section-label">Todo dia, uma lembrança</div>
+  <h2 class="section-title" id="sec-memory-day-title">Memória <em>do dia</em> 💛</h2>
+  <div id="memory-of-day">
+    <!-- injetado por memory-of-day.js -->
   </div>
 </section>
 
@@ -617,6 +628,7 @@
     <div class="cinema-modal-header">
       <button class="cinema-modal-back" onclick="window._closeCinemaModal()">✕</button>
       <div class="cinema-modal-title" id="cinema-modal-title">Carregando...</div>
+      <div class="cinema-modal-ep-indicator" id="cinema-ep-indicator" style="display:none"></div>
     </div>
     <div class="cinema-modal-player" id="cinema-modal-player"></div>
 
@@ -1023,6 +1035,14 @@
     </div>
   </div>
 
+</section>
+
+<section id="sec-museu" aria-labelledby="sec-museu-title">
+  <div class="section-label">Love City</div>
+  <h2 class="section-title" id="sec-museu-title">Museu de <em>Memórias</em> 🏛️</h2>
+  <div id="museu-wrap">
+    <!-- injetado por museum.js -->
+  </div>
 </section>
 
 <!-- ── FOOTER ── -->

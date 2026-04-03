@@ -44,6 +44,13 @@ export const cinemaState = {
   activeTimers     : [],          // F7: timer registry for full cleanup
   freezeTimer      : null,        // F2: freeze detection timer
   silentSwitching  : false,       // F3: silent server switch in progress
+
+  /* ── v78 smart player (P1-P8) ── */
+  earlyExitTimer   : null,        // P2: 6s early exit se skeleton ainda presente
+  slowNetworkTimer : null,        // P7: 4s UX "conexão lenta"
+  preloadCtrl      : null,        // P5: AbortController do ping de preload
+  autoSwitchCount  : 0,           // P9: quantas trocas automáticas já ocorreram neste item
+  earlyExitFired   : false,       // P9: early exit já disparou — não repetir automaticamente
 };
 
 /** Reseta tudo que pertence ao modal sem tocar em db/watched/activeTab */
@@ -76,6 +83,13 @@ export function resetModalState() {
   if (cinemaState.freezeTimer) { clearTimeout(cinemaState.freezeTimer); cinemaState.freezeTimer = null; }
   cinemaState.activeTimers.forEach(t => clearTimeout(t));
   cinemaState.activeTimers = [];
+  // P2/P5/P7: reset smart player fields
+  if (cinemaState.earlyExitTimer)   { clearTimeout(cinemaState.earlyExitTimer);   cinemaState.earlyExitTimer = null; }
+  if (cinemaState.slowNetworkTimer) { clearTimeout(cinemaState.slowNetworkTimer); cinemaState.slowNetworkTimer = null; }
+  if (cinemaState.preloadCtrl)      { try { cinemaState.preloadCtrl.abort(); } catch(_) {} cinemaState.preloadCtrl = null; }
+  // P9: reset auto-switch counters
+  cinemaState.autoSwitchCount = 0;
+  cinemaState.earlyExitFired  = false;
 }
 
 /**
@@ -94,5 +108,8 @@ export function abortInFlightFetches() {
     cinemaState.metaFetchCtrl = null;
   }
   cinemaState.generation += 1;
+  // P9: novo item → zera contadores de auto-troca
+  cinemaState.autoSwitchCount = 0;
+  cinemaState.earlyExitFired  = false;
   return cinemaState.generation;
 }

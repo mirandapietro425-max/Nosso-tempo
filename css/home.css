@@ -957,3 +957,47 @@
   color: #590d22;
   margin-bottom: 0.6rem;
 }
+
+/* ── Evento especial: Campeonato de Taekwondo ── */
+.tk-evento-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: linear-gradient(135deg, #fff8f0, #fff0f3);
+  border: 1px solid #f4a0b0;
+  border-radius: 18px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.tk-evento-card:active {
+  transform: scale(0.97);
+}
+.tk-evento-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.tk-evento-body {
+  flex: 1;
+  min-width: 0;
+}
+.tk-evento-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem;
+  color: #590d22;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+.tk-evento-sub {
+  font-size: 0.75rem;
+  color: #c9a9b0;
+}
+.tk-evento-arrow {
+  font-size: 1.4rem;
+  color: #e8536f;
+  font-weight: 300;
+  flex-shrink: 0;
+}

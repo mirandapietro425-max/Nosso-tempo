@@ -314,7 +314,7 @@ export function addMemory({ type, summary } = {}) {
   };
 
   updateLoveCore(s => {
-    const memories = [...s.memories, memory];
+    const memories = [...s.memories, memory].slice(-200); // RISCO-1: cap 200
     return { memories };
   });
 
@@ -372,6 +372,11 @@ const ACHIEVEMENTS = [
     check   : s => s.relationshipLevel >= 5,
     label   : '❤️ Nível 5 — laço cada vez mais forte',
   },
+  {
+    id      : 'xadrez_era_desculpa',
+    check   : s => s.interactions.some(i => i.type === 'game' || i.summary?.includes('xadrez')),
+    label   : '♟️ O xadrez foi só uma desculpa — e deu muito certo',
+  },
 ];
 
 /**
@@ -381,8 +386,10 @@ const ACHIEVEMENTS = [
 export function checkAchievements() {
   if (!_core) _loadCore();
 
-  for (const ach of ACHIEVEMENTS) {
-    if (_core.achievements[ach.id]) continue; // já conquistado
+  const remaining = ACHIEVEMENTS.filter(a => !_core.achievements[a.id]);
+  if (remaining.length === 0) return; // MELHORIA-4: tudo conquistado
+
+  for (const ach of remaining) {
     try {
       if (ach.check(_core)) {
         updateLoveCore(s => ({
@@ -488,6 +495,7 @@ export function initLoveCity() {
 function _patchAwardCoins() {
   const original = window.awardCoins;
   if (typeof original !== 'function') return;
+  if (original.__lcPatched) return; // BUG-1: evitar dupla aplicação
 
   window.awardCoins = function(reason, amount, playerName) {
     // Chama a função original intacta
@@ -502,6 +510,7 @@ function _patchAwardCoins() {
       });
     } catch (_) {}
   };
+  window.awardCoins.__lcPatched = true; // BUG-1: marca para não reaplicar
 }
 
 /* ════════════════════════════════════════════
@@ -519,4 +528,5 @@ window._loveCity = {
   checkAchievements,
   emitLoveEvent,
   onLoveEvent,
+  todayStr: () => new Date().toISOString().slice(0, 10), // MELHORIA-1: shared util
 };

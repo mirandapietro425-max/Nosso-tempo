@@ -165,8 +165,18 @@ export const PLAYER_SERVERS = [
 ];
 const TIMEOUT_DUB_MS   = 28_000;  // SuperFlixAPI pode demorar 20-25s na 1ª carga — 7 espelhos
 const TIMEOUT_SUB_MS   = 32_000;  // Players internacionais multi-fonte — 8 opções legendadas
-const WATCHDOG_TICK_MS = 5_000;   // intervalo do watchdog
-const WATCHDOG_MAX_MS  = 40_000;  // tempo máximo de espera antes do avanço automático
+const WATCHDOG_TICK_MS = 3_000;   // intervalo do watchdog (P6: reduzido de 5s → 3s)
+const WATCHDOG_MAX_MS  = 18_000;  // P6: reduzido de 40s → 18s — early-exit cobre os primeiros 6s
+
+/* ── P9: Anti-spam / auto-switch cap ─────────── */
+const AUTO_SWITCH_DEBOUNCE_MS = 3_000;  // mínimo 3s entre trocas automáticas
+const MAX_AUTO_SWITCHES       = 4;      // máximo 4 trocas automáticas por item
+let   _lastAutoSwitchTs       = 0;      // timestamp da última troca automática (módulo-level)
+
+/* ── P10: Session Failed Servers Blacklist ────── */
+// Servidores que falharam nesta sessão de item — não re-tentar automaticamente.
+// Resetado ao abrir novo item (serverIdx=0) ou ao clicar "Tentar do início".
+const _failedThisSession = new Set();
 
 /* ── F4: Adaptive Watchdog Timeout Map ───────── */
 // Per-server adaptive timeout overrides. Faster servers get shorter timeouts.
@@ -204,6 +214,176 @@ function _registerTimer(timerId) {
   if (timerId == null) return timerId;
   cinemaState.activeTimers.push(timerId);
   return timerId;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   P4 — MEMÓRIA DE SERVIDOR BOM
+   Persiste { tmdbId: { idx, ts } } no localStorage.
+   TTL de 7 dias, máximo 50 entradas.
+══════════════════════════════════════════════════════════════ */
+const LS_LAST_GOOD_SRV  = 'cinema_last_good_srv_v1';
+const LAST_GOOD_TTL_MS  = 7 * 24 * 60 * 60 * 1000;
+const LAST_GOOD_MAX     = 50;
+
+function getLastGoodServer(tmdbId) {
+  if (!tmdbId) return null;
+  try {
+    const raw = localStorage.getItem(LS_LAST_GOOD_SRV);
+    if (!raw) return null;
+    const map   = JSON.parse(raw);
+    const entry = map[String(tmdbId)];
+    if (!entry) return null;
+    if (Date.now() - entry.ts > LAST_GOOD_TTL_MS) return null;
+    if (entry.idx >= PLAYER_SERVERS.length)        return null;
+    return entry.idx;
+  } catch (_) { return null; }
+}
+
+function saveLastGoodServer(tmdbId, serverIdx) {
+  if (!tmdbId) return;
+  try {
+    const raw  = localStorage.getItem(LS_LAST_GOOD_SRV);
+    const map  = raw ? JSON.parse(raw) : {};
+    map[String(tmdbId)] = { idx: serverIdx, ts: Date.now() };
+    const entries = Object.entries(map);
+    if (entries.length > LAST_GOOD_MAX) {
+      // Descarta os mais antigos
+      entries.sort((a, b) => a[1].ts - b[1].ts);
+      const trimmed = Object.fromEntries(entries.slice(-LAST_GOOD_MAX));
+      localStorage.setItem(LS_LAST_GOOD_SRV, JSON.stringify(trimmed));
+    } else {
+      localStorage.setItem(LS_LAST_GOOD_SRV, JSON.stringify(map));
+    }
+  } catch (_) {}
+}
+
+function _invalidateLastGoodServer(tmdbId) {
+  if (!tmdbId) return;
+  try {
+    const raw = localStorage.getItem(LS_LAST_GOOD_SRV);
+    if (!raw) return;
+    const map = JSON.parse(raw);
+    delete map[String(tmdbId)];
+    localStorage.setItem(LS_LAST_GOOD_SRV, JSON.stringify(map));
+  } catch (_) {}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   P1 — SMART SERVER SELECTION
+   Pinga os 3 primeiros candidatos via fetch no-cors (cross-origin safe).
+   Retorna o índice do mais rápido. Nunca trava a UI — sempre resolve.
+   Prioridade: lastGoodServer > ping race > 0.
+══════════════════════════════════════════════════════════════ */
+const PING_TIMEOUT_MS   = 1200;
+const PING_CANDIDATES   = 3;
+
+async function selectBestServer(tmdbId) {
+  // P4: servidor lembrado tem prioridade — mas só se não falhou nesta sessão
+  const remembered = getLastGoodServer(tmdbId);
+  if (remembered !== null && !_failedThisSession.has(remembered)) return remembered;
+
+  // P10: candidatos excluem servidores que já falharam nesta sessão
+  const candidates = PLAYER_SERVERS
+    .map((server, idx) => ({ server, idx }))
+    .filter(({ idx }) => !_failedThisSession.has(idx))
+    .slice(0, PING_CANDIDATES);
+
+  if (candidates.length === 0) return 0; // todos falharam → tenta do 0 mesmo
+
+  const ctrls = [];
+
+  const pings = candidates.map(({ idx }) =>
+    new Promise(resolve => {
+      const ctrl  = new AbortController();
+      ctrls.push(ctrl);
+      const timer = setTimeout(() => { ctrl.abort(); resolve(null); }, PING_TIMEOUT_MS);
+      const server  = PLAYER_SERVERS[idx];
+      const testUrl = server?.movie ? server.movie('1') : null;
+      if (!testUrl) { clearTimeout(timer); resolve(null); return; }
+      fetch(testUrl, { mode: 'no-cors', signal: ctrl.signal, cache: 'no-store' })
+        .then(() => { clearTimeout(timer); resolve(idx); })
+        .catch(() => { clearTimeout(timer); resolve(null); });
+    })
+  );
+
+  return new Promise(resolve => {
+    let settled = false;
+    let pending = pings.length;
+    pings.forEach(p => p.then(idx => {
+      pending--;
+      if (!settled && idx !== null) {
+        settled = true;
+        resolve(idx);
+        ctrls.forEach(c => { try { c.abort(); } catch (_) {} });
+      } else if (!settled && pending === 0) {
+        // Todos falharam ou foram filtrados — pega o primeiro não-bloqueado
+        const fallback = PLAYER_SERVERS.findIndex((_, i) => !_failedThisSession.has(i));
+        resolve(fallback >= 0 ? fallback : 0);
+      }
+    }));
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   P2 — EARLY EXIT TIMER (6s)
+   Se o skeleton ainda estiver presente após 6s → troca servidor.
+   Cancela automaticamente no onload do iframe.
+══════════════════════════════════════════════════════════════ */
+function _startEarlyExit(playerEl, item, epIdx, onWatched) {
+  // P9: se já disparou automaticamente neste item → não repetir
+  // (O watchdog cobre os servidores seguintes com WATCHDOG_MAX_MS)
+  if (cinemaState.earlyExitFired) return;
+
+  _clearEarlyExit();
+  cinemaState.earlyExitTimer = _registerTimer(setTimeout(() => {
+    cinemaState.earlyExitTimer = null;
+    if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+    const skeleton = document.getElementById('cinema-player-skeleton');
+    if (!skeleton) return; // carregou — tudo certo
+
+    // Marca como disparado — próximos servidores não terão early-exit automático
+    cinemaState.earlyExitFired = true;
+
+    // Mostra mensagem antes de trocar (300ms para o usuário ver)
+    const txt = skeleton.querySelector('.cinema-player-loading-text');
+    if (txt) txt.textContent = '⚡ tentando outro servidor…';
+    _registerTimer(setTimeout(() => {
+      if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+      _advanceOrShowRetry(playerEl, item, epIdx, onWatched);
+    }, 300));
+  }, 6_000));
+}
+
+function _clearEarlyExit() {
+  if (cinemaState.earlyExitTimer) {
+    clearTimeout(cinemaState.earlyExitTimer);
+    cinemaState.earlyExitTimer = null;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   P7 — SLOW NETWORK UX (4s)
+   Muda texto do skeleton para "📶 conexão lenta" se ainda carregando.
+══════════════════════════════════════════════════════════════ */
+function _startSlowNetworkTimer() {
+  _clearSlowNetworkTimer();
+  cinemaState.slowNetworkTimer = _registerTimer(setTimeout(() => {
+    cinemaState.slowNetworkTimer = null;
+    const skeleton = document.getElementById('cinema-player-skeleton');
+    if (!skeleton) return;
+    const txt = skeleton.querySelector('.cinema-player-loading-text');
+    // Não sobrescreve se early-exit já mudou o texto
+    if (txt && !txt.textContent.includes('⚡')) {
+      txt.textContent = '📶 conexão lenta — aguarde…';
+    }
+  }, 4_000));
+}
+
+function _clearSlowNetworkTimer() {
+  if (cinemaState.slowNetworkTimer) {
+    clearTimeout(cinemaState.slowNetworkTimer);
+    cinemaState.slowNetworkTimer = null;
+  }
 }
 
 
@@ -364,10 +544,34 @@ function _stopWatchdog() {
 
 function _advanceOrShowRetry(playerEl, item, epIdx, onWatched) {
   if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+
+  // P9 — Debounce: evita spam de troca automática (mín. 3s entre switches)
+  const now = Date.now();
+  if (now - _lastAutoSwitchTs < AUTO_SWITCH_DEBOUNCE_MS) return;
+
+  // P9 — Cap: após MAX_AUTO_SWITCHES trocas, mostra overlay manual em vez de continuar
+  if (cinemaState.autoSwitchCount >= MAX_AUTO_SWITCHES) {
+    document.getElementById('cinema-player-skeleton')?.remove();
+    showRetryOverlay(playerEl, item, epIdx, onWatched);
+    return;
+  }
+
   document.getElementById('cinema-player-skeleton')?.remove();
-  const isLastServer = cinemaState.serverIdx >= PLAYER_SERVERS.length - 1;
-  if (!isLastServer) {
-    cinemaState.serverIdx = Math.min(cinemaState.serverIdx + 1, PLAYER_SERVERS.length - 1);
+  // P4: servidor falhou — invalida memória para não tentar de novo na próxima
+  _invalidateLastGoodServer(item?.tmdbId);
+  // P10: registra falha na blacklist de sessão
+  _failedThisSession.add(cinemaState.serverIdx);
+
+  // Avança para o próximo servidor NÃO-falhado
+  let nextIdx = cinemaState.serverIdx + 1;
+  while (nextIdx < PLAYER_SERVERS.length && _failedThisSession.has(nextIdx)) {
+    nextIdx++; // pula servidores que já falharam nesta sessão
+  }
+
+  if (nextIdx < PLAYER_SERVERS.length) {
+    _lastAutoSwitchTs = now;
+    cinemaState.autoSwitchCount += 1;
+    cinemaState.serverIdx = nextIdx;
     renderServerPanel();
     buildPlayer(item, epIdx, onWatched);
   } else {
@@ -390,6 +594,16 @@ export function destroyPlayer() {
   if (cinemaState.freezeTimer) {
     clearTimeout(cinemaState.freezeTimer);
     cinemaState.freezeTimer = null;
+  }
+
+  // P2/P7: clear smart player timers
+  _clearEarlyExit();
+  _clearSlowNetworkTimer();
+
+  // P5: abort preload ping
+  if (cinemaState.preloadCtrl) {
+    try { cinemaState.preloadCtrl.abort(); } catch (_) {}
+    cinemaState.preloadCtrl = null;
   }
 
   if (cinemaState.playerTimeout) {
@@ -440,7 +654,11 @@ function showRetryOverlay(container, item, epIdx, onWatched) {
     </div>`;
   container.querySelector('#cinema-reset-btn')?.addEventListener('click', () => {
     cinemaState.serverIdx = 0;
-    buildPlayer(item, epIdx, onWatched);  // BUG-7 FIX: passa onWatched
+    // P10: fresh start — limpa blacklist de sessão e contadores
+    _failedThisSession.clear();
+    cinemaState.autoSwitchCount = 0;
+    cinemaState.earlyExitFired  = false;
+    buildPlayer(item, epIdx, onWatched);
   });
   container.querySelector('#cinema-retry-btn')?.addEventListener('click', () => {
     buildPlayer(item, epIdx, onWatched);  // BUG-7 FIX: passa onWatched
@@ -488,7 +706,7 @@ function _startTrackingAfterBuild(item, epIdx, ep, onWatched) {
 
 /* ── buildPlayer — ponto de entrada principal ─── */
 
-export function buildPlayer(item, epIdx, onWatched) {
+export async function buildPlayer(item, epIdx, onWatched) {
   if (!item) return;
   const playerEl = document.getElementById('cinema-modal-player');
   if (!playerEl) return;
@@ -515,9 +733,30 @@ export function buildPlayer(item, epIdx, onWatched) {
 
   if (playltId && PLAYLT_ENABLED) {
     _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched);
-  } else {
-    _buildFromServer(playerEl, item, epIdx, ep, onWatched);
+    return;
   }
+
+  // P1: Smart Server Selection — mostra skeleton de "preparando" enquanto pinga
+  if (item.tmdbId && cinemaState.serverIdx === 0) {
+    // Reset debounce timestamp e blacklist — novo item, novas tentativas livres
+    _lastAutoSwitchTs = 0;
+    _failedThisSession.clear();
+    // Só pré-seleciona na primeira tentativa (serverIdx=0), não durante fallback
+    playerEl.appendChild(_makeSkeleton('🎬 Preparando player…'));
+    let bestIdx = 0;
+    try {
+      bestIdx = await selectBestServer(item.tmdbId);
+    } catch (_) { bestIdx = 0; }
+    // F1: bail se geração mudou durante o ping async
+    if (myGeneration !== cinemaState.generation) return;
+    if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) return;
+    // Limpa skeleton de "preparando" antes de montar o real
+    document.getElementById('cinema-player-skeleton')?.remove();
+    cinemaState.serverIdx = bestIdx;
+    renderServerPanel();
+  }
+
+  _buildFromServer(playerEl, item, epIdx, ep, onWatched);
 }
 
 /* ── PlayLT: busca /sources e renderiza ────────── */
@@ -628,15 +867,54 @@ function _buildFromServer(playerEl, item, epIdx, ep, onWatched) {
 
   playerEl.appendChild(_makeSkeleton(isDub ? '🇧🇷 Carregando dublagem PT-BR…' : `Carregando ${escapeHtml(serverName)}…`));
 
+  // P2: early exit 6s — troca servidor se skeleton persistir
+  _startEarlyExit(playerEl, item, epIdx, onWatched);
+  // P7: slow network UX — muda texto após 4s
+  _startSlowNetworkTimer();
+
   const iframe = createIframe(src, item.title);
 
   iframe.onload = () => {
     _stopWatchdog();
+    _clearEarlyExit();
+    _clearSlowNetworkTimer();
     document.getElementById('cinema-player-skeleton')?.remove();
+    // P4: servidor funcionou — salva para próxima vez
+    saveLastGoodServer(item?.tmdbId, cinemaState.serverIdx);
     // A-05: só inicia tracking após confirmar que o iframe carregou com sucesso
     _startTrackingAfterBuild(item, epIdx, ep, onWatched);
     // F2: start freeze detector after iframe confirms load
     _startFreezeDetector(playerEl, item, epIdx, onWatched);
+
+    // ── Botão "Trocar servidor" rápido ──────────────────────────────
+    // Remove botão antigo se existir (rebuild sem criar duplicata)
+    document.getElementById('cinema-quick-switch')?.remove();
+    const quickBtn = document.createElement('button');
+    quickBtn.id        = 'cinema-quick-switch';
+    quickBtn.className = 'cinema-quick-switch-btn';
+    quickBtn.innerHTML = '⚡ Trocar servidor';
+    quickBtn.setAttribute('title', 'Tentar o próximo servidor');
+    quickBtn.onclick = () => {
+      quickBtn.remove();
+      // Dispara via evento para manter o fluxo do cinema.js
+      const nextIdx = Math.min(cinemaState.serverIdx + 1, PLAYER_SERVERS.length - 1);
+      document.dispatchEvent(new CustomEvent('cinema:server-select', { detail: { idx: nextIdx } }));
+    };
+    playerEl.style.position = playerEl.style.position || 'relative';
+    playerEl.appendChild(quickBtn);
+    // Auto-esconde após 8s para não poluir o player
+    _registerTimer(setTimeout(() => {
+      quickBtn.style.opacity = '0';
+      _registerTimer(setTimeout(() => quickBtn.remove(), 400));
+    }, 8_000));
+
+    // ── Toast "assistindo juntos" se watch party ativa ──────────────
+    if (typeof window._wpIsInSession === 'function' && window._wpIsInSession()) {
+      _registerTimer(setTimeout(() => {
+        window.showToast?.('💛 assistindo juntos agora');
+      }, 600));
+    }
+
     if (isDub) {
       const badge = document.createElement('div');
       badge.className   = 'cinema-ptbr-badge';

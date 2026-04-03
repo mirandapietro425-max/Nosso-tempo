@@ -85,11 +85,22 @@ const GATOS_ADOCAO = [
 
 const DIALOGOS = {
   introducao: [
-    { quem:"pietro", texto:"Emilly... e se a gente parasse de sonhar e realmente comprasse um lugar nosso?" },
-    { quem:"emilly", texto:"Aqui em Santa Maria? Meu Deus, Pietro... você tá falando sério?" },
-    { quem:"pietro", texto:"Completamente sério. Já até pesquisei alguns terrenos. Olha aqui..." },
-    { quem:"emilly", texto:"😍 Nossa casinha... posso já começar a planejar a decoração?" },
-    { quem:"pietro", texto:"Claro que sim — você é a arquiteta da família! Vamos escolher onde vai ser?" },
+    { quem:"pietro", texto:"Escola Maria Rocha. Técnico em Informática. Primeira semana de aula." },
+    { quem:"pietro", texto:"Ela entrou na turma e eu nem imaginava que aquilo ia mudar tudo." },
+    { quem:"emilly", texto:"Ei... você joga xadrez?" },
+    { quem:"pietro", texto:"Jogo, sim. Por quê?" },
+    { quem:"emilly", texto:"Me ensina? Quero aprender. 🙂" },
+    { quem:"pietro", texto:"(ela nunca quis aprender xadrez. mas eu só fui descobrir isso depois.) 😂" },
+    { quem:"pietro", texto:"Dois meses assim. Xadrez, músicas, conversas que não terminavam." },
+    { quem:"emilly", texto:"Você conhece Bridgerton? Podia olhar comigo hoje à noite." },
+    { quem:"pietro", texto:"Naquela noite, assistindo Bridgerton juntos, algo mudou. E os dois sabiam." },
+    { quem:"emilly", texto:"Não vai me pedir em namoro? 💗" },
+    { quem:"pietro", texto:"Não quer namorar comigo?" },
+    { quem:"emilly", texto:"...Quero. 💗" },
+    { quem:"pietro", texto:"11 de outubro de 2024. O melhor dia." },
+    { quem:"pietro", texto:"E desde então, cada dia ao lado dela é o melhor momento." },
+    { quem:"emilly", texto:"E se a gente tivesse um cantinho nosso aqui em Santa Maria? 🏡" },
+    { quem:"pietro", texto:"Já tô pesquisando os terrenos, Mimi. Vamos escolher juntos?" },
   ],
   terreno_escolhido: [
     { quem:"emilly", texto:"Perfeito! Já dá pra imaginar como vai ficar!" },
@@ -131,6 +142,29 @@ const DIALOGOS = {
     { quem:"emilly", texto:"Hoje acordei querendo passar o dia aqui com você. Fica?" },
     { quem:"pietro", texto:"Programei de casa hoje. Fica mais gostoso saber que você tá ao lado." },
     { quem:"emilly", texto:"Nossa casinha cheira a café e felicidade. Amo demais." },
+    { quem:"pietro", texto:"Lembra quando você fingia gostar de xadrez? Eu sabia. E adorei. 😂" },
+    { quem:"emilly", texto:"Não vai me pedir em namoro hoje também? 💗" },
+    { quem:"pietro", texto:"Você já é minha, Mimi. Todo dia. 💙" },
+    { quem:"emilly", texto:"Tô aprendendo Hometown no piano. É pra você saber que penso em você. 🎹" },
+    { quem:"pietro", texto:"No campeonato da prof. Rejane, olhei pra você e pensei: ela é incrível." },
+    { quem:"emilly", texto:"Sorvete do Mac + shopping + você = dia perfeito. Simples assim. 🍦" },
+    { quem:"pietro", texto:"Cada dia na escola ao lado dela é o melhor momento. Sem exagero." },
+    { quem:"emilly", texto:"A nossa casinha vai ter um piano um dia. Promessa. 🎹🏡" },
+  ],
+
+  campeonato_taekwondo: [
+    { quem:"pietro", texto:"Ginásio da prof. Rejane. Dia de campeonato." },
+    { quem:"pietro", texto:"Os dois estavam cansados. Treinos pesados na semana." },
+    { quem:"emilly", texto:"Tô com as pernas travando. Mas vou. 🥋" },
+    { quem:"pietro", texto:"Eu sabia que ela ia. Nunca vi ela desistir de nada." },
+    { quem:"emilly", texto:"Você também vai competir, né? Não me deixa sozinha nisso. 😅" },
+    { quem:"pietro", texto:"Claro que vou. A gente vai junto." },
+    { quem:"pietro", texto:"Na hora dela entrar... o cansaço sumiu. Fiquei só olhando." },
+    { quem:"pietro", texto:"Ela é forte. Concentrada. Boa em tudo que faz." },
+    { quem:"emilly", texto:"Você ficou me olhando a competição toda. Percebi. 💗" },
+    { quem:"pietro", texto:"É que você é incrível, Mimi. Não tem como não olhar." },
+    { quem:"emilly", texto:"Para. Você me faz corar. 🥺" },
+    { quem:"pietro", texto:"Saímos cansados. Mas eu tava feliz. Um dos meus dias favoritos." },
   ],
 };
 
@@ -465,16 +499,19 @@ window._homeSelectPlayer=function(player){
 function renderIntro(wrap){
   const isPietro=_activePlayer==="pietro";
   const emoji=isPietro?"💙":"💗";
-  const desc=isPietro
-    ?"Você é o programador que vai garantir que nada vai falhar. ❤️"
-    :"Você é a designer com um olhar especial pra beleza. 🎨";
+  const nome=isPietro?"Pietro":"Emilly";
+  const apelido=isPietro?"o dev que faz tudo funcionar 💻":"Mimi, a que finge gostar de xadrez 😂";
   wrap.innerHTML=`<div class="rpg-intro">
-    <div class="player-active-badge">${emoji} Jogando como <strong>${isPietro?"Pietro":"Emilly"}</strong></div>
-    <div style="font-size:4rem;margin-bottom:1rem">🏙️</div>
-    <h3 class="rpg-intro-title">A história começa aqui</h3>
-    <p class="rpg-intro-sub">Pietro & Emilly, em Santa Maria — RS</p>
-    <p class="rpg-intro-texto">Dois apaixonados, um sonho compartilhado: ter o primeiro lar juntos.<br>${desc}</p>
-    <button class="rpg-start-btn" onclick="window._homeStartGame()">✨ Começar nossa história</button>
+    <div class="player-active-badge">${emoji} Jogando como <strong>${nome}</strong></div>
+    <div style="font-size:3.2rem;margin-bottom:.6rem">🏫💗🏡</div>
+    <h3 class="rpg-intro-title">Pietro & Emilly</h3>
+    <p class="rpg-intro-sub">Escola Maria Rocha · Santa Maria, RS · desde 11/10/2024</p>
+    <p class="rpg-intro-texto">
+      Tudo começou com uma partida de xadrez que ela nunca quis jogar de verdade.<br>
+      Hoje você é ${apelido}.<br>
+      E agora vão construir o primeiro lar juntos. 🏡
+    </p>
+    <button class="rpg-start-btn" onclick="window._homeStartGame()">💗 Começar nossa história</button>
     <button class="trocar-player-btn" onclick="window._homeTrocarPlayer()">🔄 Trocar de jogador</button>
   </div>`;
 }
@@ -530,6 +567,14 @@ function renderCasinha(wrap){
   <div class="casinha-header"><span class="casinha-bairro">${terreno?.emoji||"🏠"} ${terreno?.nome||""} — Santa Maria</span><span class="casinha-fase">${sv?.fase==="interior"?"🏠 Interior":sv?.fase==="jardim"?"🌳 Jardim":"🔨 Exterior"}</span></div>
   <div class="casa-visual-wrap">${getCasaSVG(owned,sv?.fase)}</div>
   <div class="fase-progress"><div class="fase-progress-label">Progresso: ${doneItems}/${totalItems} itens</div><div class="fase-progress-bar"><div class="fase-progress-fill" style="width:${fasePct}%"></div></div></div>
+  <div class="tk-evento-card" onclick="window._homeTriggerTaekwondo()" title="Reviver o campeonato">
+    <span class="tk-evento-icon">🥋</span>
+    <div class="tk-evento-body">
+      <div class="tk-evento-title">Campeonato da Prof. Rejane</div>
+      <div class="tk-evento-sub">${ps?.dialogoVisto?.campeonato_taekwondo?"✓ Memória salva":"Toque para reviver esse momento"}</div>
+    </div>
+    <span class="tk-evento-arrow">›</span>
+  </div>
   <div class="loja-wrap">
     <div class="loja-titulo">🛒 ${sv?.fase==="interior"?"Interior":sv?.fase==="jardim"?"Jardim & Entrada":"Fachada"}</div>
     <div class="loja-grid">${loja.map(item=>{ const isOwned=owned.has(item.id); const exclBlock=item.exclusivo?loja.some(i=>i.exclusivo===item.exclusivo&&owned.has(i.id)&&i.id!==item.id):false; return `<div class="loja-item${isOwned?" owned":""}${exclBlock?" exclbl":""}" onclick="${isOwned||exclBlock?"":` window._homeComprar('${item.id}')`}">
@@ -654,6 +699,67 @@ window._homeCompletarCasa=function(){
   saveState();
   triggerDialogo("level6_completo",()=>{ showToastNativo("🏆 Parabéns! A casinha está completa!"); renderRPG(); });
 };
+
+/* ════ EVENTO TAEKWONDO ════ */
+// Pode ser chamado de qualquer lugar do app via window._loveCity.enterDistrict ou direto
+function triggerTaekwondoEvent() {
+  const ps = playerState();
+  if (!ps) return;
+  // Usa o sistema de diálogo existente — não cria nova infraestrutura
+  // dialogoVisto controla se já foi assistido, mas permite rever (não bloqueia como a intro)
+  const msgs = DIALOGOS.campeonato_taekwondo;
+  if (!msgs) return;
+  showDialogoSequence(msgs, () => {
+    // Marca como visto no save
+    if (ps) {
+      ps.dialogoVisto = ps.dialogoVisto || {};
+      ps.dialogoVisto.campeonato_taekwondo = true;
+    }
+    // Recompensa: moedas + XP (apenas na primeira vez)
+    const jaRecompensado = ps?.earnedToday?.taekwondo_evento;
+    if (!jaRecompensado) {
+      if (ps.earnedToday) ps.earnedToday.taekwondo_evento = true;
+      // Moedas via sistema existente (bypassa o filtro earnedToday por ser evento especial)
+      const today = todayStr();
+      if (ps.earnedToday?.date !== today) {
+        ps.earnedToday = { date: today };
+      }
+      ps.coins = (ps.coins || 0) + 50;
+      addXp(40);
+      spawnCoinPop(50, window.innerWidth / 2 - 30, window.innerHeight / 2);
+      spawnHearts(window.innerWidth / 2, window.innerHeight / 3, 6);
+      showToastNativo('🥋 +50 moedas · Momento especial vivido!');
+    } else {
+      showToastNativo('🥋 Uma memória incrível.');
+    }
+    // Memória no Love City Core (se disponível)
+    try {
+      if (typeof window._loveCity?.addMemory === 'function') {
+        window._loveCity.addMemory({
+          type: 'achievement',
+          summary: 'Campeonato de taekwondo juntos — prof. Rejane',
+        });
+      }
+      if (typeof window._loveCity?.addInteraction === 'function') {
+        window._loveCity.addInteraction('memory', {
+          points: 50,
+          summary: 'Campeonato de taekwondo',
+        });
+      }
+    } catch (_) { /* Love City Core opcional — não quebra se ausente */ }
+    saveState();
+    renderCoins();
+    renderRPG();
+  });
+}
+
+window._homeTriggerTaekwondo = function() {
+  try { triggerTaekwondoEvent(); }
+  catch(e) { console.warn('[Home] triggerTaekwondoEvent error:', e?.message || e); }
+};
+
+// Expõe para o calendário e outros módulos
+window.triggerTaekwondoEvent = function() { window._homeTriggerTaekwondo(); };
 
 /* ════ PET ════ */
 function getCatSVG(mood){

@@ -289,6 +289,19 @@ function _renderModal(skipPlayerBuild = false) {
   const titleEl = document.getElementById('cinema-modal-title');
   if (titleEl) titleEl.textContent = `${item.emoji || '🎬'} ${item.title}`;
 
+  // ── Indicador de episódio atual ──────────────────────────────────
+  const epIndEl = document.getElementById('cinema-ep-indicator');
+  if (epIndEl) {
+    if (isSeries && episodes && episodes.length > 0) {
+      const ep      = episodes[cinemaState.episodeIdx];
+      const epLabel = ep?.title || `Episódio ${cinemaState.episodeIdx + 1}`;
+      epIndEl.textContent = epLabel;
+      epIndEl.style.display = '';
+    } else {
+      epIndEl.style.display = 'none';
+    }
+  }
+
   if (!skipPlayerBuild) {
     buildPlayer(item, cinemaState.episodeIdx, key => makeWatchedCallback(key));
   }

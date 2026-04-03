@@ -64,6 +64,7 @@ export function initWatchParty(db, myName) {
     window._wpSendMsg = window._wpSendReaction = window._wpToggleCam = window._wpOpen;
     window._wpToggleMic = window._wpToggleEmoji = window._wpSendPhoto = window._wpOpen;
     window._wpEndSession = window._wpOpen;
+    window._wpIsInSession = () => false;  // sem Firebase, nunca em sessão
     return;
   }
 
@@ -85,6 +86,9 @@ export function initWatchParty(db, myName) {
   window._wpToggleEmoji = _toggleEmojiPicker;
   window._wpSendPhoto = _triggerPhotoUpload;
   window._wpEndSession = _endSession;
+
+  // Expõe estado da sessão para uso em cinema-player.js
+  window._wpIsInSession = () => !!_sessionId;
 
   // FIX BUG-8: para câmera/mic ao fechar a aba (sem isso a câmera fica ligada indefinidamente)
   window.addEventListener('beforeunload', () => {

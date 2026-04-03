@@ -81,6 +81,16 @@ import { initGames } from './games.js';
 
 // ── Love City Core ──
 import { initLoveCity } from './love-city-core.js';
+
+// ── Museu de Memórias ──
+import { initMuseum } from './museum.js';
+
+// ── Memória do Dia ──
+import { initMemoryOfDay } from './memory-of-day.js';
+import { initEventUnlock } from './event-unlock.js';
+import { initEmotionalState } from './emotional-state.js';
+import { initLivingMoments } from './living-moments.js';
+import { initMemoryAnniversaries } from './memory-anniversaries.js';
 window.awardCoins = _awardCoins;
 
 /* ════════════════════════════════════════════
@@ -182,6 +192,12 @@ function _isDiaDossPais(d){ const s=_nthWeekday(d.getFullYear(),7,0,2); return d
 try { initHome(db); } catch(e) { console.error('initHome:', e); }
 try { initGames(db); } catch(e) { console.error('initGames:', e); }
 try { initLoveCity(); } catch(e) { console.error('initLoveCity:', e); }
+try { initMuseum(); } catch(e) { console.error('initMuseum:', e); }
+try { initMemoryOfDay(); } catch(e) { console.error('initMemoryOfDay:', e); }
+try { initEventUnlock(); } catch(e) { console.error('initEventUnlock:', e); }
+try { initEmotionalState(); } catch(e) { console.error('initEmotionalState:', e); }
+try { initLivingMoments(); } catch(e) { console.error('initLivingMoments:', e); }
+try { initMemoryAnniversaries(); } catch(e) { console.error('initMemoryAnniversaries:', e); }
 try { initLibrary(db, () => { try { return localStorage.getItem('pe_active_player'); } catch { return null; } }); } catch(e) { console.error('initLibrary:', e); }
 try { initCinema(db); } catch(e) { console.error('initCinema:', e); }
 try {
