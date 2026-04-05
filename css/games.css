@@ -1003,3 +1003,36 @@
   padding: 12px 0;
 }
 .cn-waiting strong { color: #f9a8d4; font-style: normal; }
+
+/* ══════════════════════════════════════════
+   CORREÇÕES E ADIÇÕES — v2
+══════════════════════════════════════════ */
+
+/* Música: wave usa --spd em vez de --d */
+.musica-wave-bar.active {
+  animation: musica-wave var(--spd, .7s) ease-in-out infinite alternate !important;
+}
+
+/* Música: opção com ícone e artista separado */
+.musica-opt-icon { flex-shrink: 0; }
+.musica-opt-text { flex: 1; font-weight: 600; }
+.musica-artist   {
+  font-size: .72rem; color: rgba(255,255,255,.38);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+/* Música: status com strong */
+.musica-status strong { color: #f9a8d4; }
+
+/* Caça-níquel: garante que cn-machine preenche o body */
+.cn-machine { flex: 1; overflow-y: auto; }
+
+/* Caça-níquel: cn-reel nunca fica com animação infinita após parar */
+.cn-reel { animation: none; }
+.cn-reel.spinning {
+  animation: cn-blur-spin .1s linear infinite;
+}
+
+/* Quem sou eu: waiting com strong */
+.qse-waiting-txt strong { color: #f9a8d4; }
