@@ -1484,7 +1484,10 @@ function openVelha(mode = 'split', ctx = null) {
           <div style="font-size:1.1rem;color:white;font-weight:700;margin-bottom:.5rem">
             ${isDraw ? 'Empate! 🤝' : pn+' venceu!'}
           </div>
-          <button class="game-restart-btn" id="velha-next">Próximo round ▶</button>
+          ${myTurn
+            ? `<button class="game-restart-btn" id="velha-next">Próximo round ▶</button>`
+            : `<div style="font-size:.75rem;color:rgba(255,255,255,.45);margin-top:.5rem">Aguardando ${pn} continuar…</div>`
+          }
         </div>` : ''}`;
 
     const grid = document.getElementById('velha-board');
@@ -1498,6 +1501,7 @@ function openVelha(mode = 'split', ctx = null) {
     });
 
     document.getElementById('velha-next')?.addEventListener('click', async () => {
+      if (!myTurn) return;
       board = Array(9).fill(null);
       turn  = turn===0?1:0;
       if (isOnline) await _writeRoom({ data: {board, turn, s1, s2, wl: null, isDraw: false} });
@@ -2950,6 +2954,7 @@ function openMusica(mode = 'split', ctx = null) {
   let state      = _getInitData('musica');
   let _roomUnsub = null;
   let _countdownInt = null;
+  let _feedbackLock = false; // prevents Firebase listener from wiping answer feedback
 
   function stopAudio() {
     _stopYT();
@@ -3080,7 +3085,9 @@ function openMusica(mode = 'split', ctx = null) {
       const newState = { ...s, phase: gameover ? 'gameover' : 'listen',
         qi: newQi, s1: newS1, s2: newS2, turn: (s.turn + 1) % 2 };
 
+      _feedbackLock = true;
       await new Promise(r => setTimeout(r, 1800));
+      _feedbackLock = false;
       if (isOnline) await _writeRoom({ data: newState });
       else { state = newState; render(); }
     });
@@ -3090,6 +3097,7 @@ function openMusica(mode = 'split', ctx = null) {
   if (isOnline) {
     _roomUnsub = _listenRoom(ctx.code, data => {
       if (!data.data) return;
+      if (_feedbackLock) return; // don't wipe feedback while answer is being shown
       state = { ...state, ...data.data };
       stopAudio();
       render();
