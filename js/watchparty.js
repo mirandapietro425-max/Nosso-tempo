@@ -328,8 +328,10 @@ function _injectStyles() {
   border-radius: 24px 24px 0 0;
   display: flex; flex-direction: column;
   z-index: 10400;
-  transform: translateY(100%);
-  transition: transform 0.4s cubic-bezier(0.32, 1.2, 0.5, 1);
+  transform: translateY(110%);
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.4s cubic-bezier(0.32, 1.2, 0.5, 1), visibility 0s linear 0.4s;
   box-shadow: -8px -8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,83,111,0.1);
   overflow: hidden;
 }
@@ -340,7 +342,7 @@ function _injectStyles() {
     height: min(560px, 85vh);
   }
 }
-.wp-panel.open { transform: translateY(0); }
+.wp-panel.open { transform: translateY(0); visibility: visible; pointer-events: all; transition: transform 0.4s cubic-bezier(0.32, 1.2, 0.5, 1), visibility 0s linear 0s; }
 
 /* ── Header ── */
 .wp-panel-header {
