@@ -2801,7 +2801,12 @@ function openMusica(mode = 'split', ctx = null) {
       body.innerHTML = scoreBar + `
         <div class="musica-card">
           <div class="musica-turn-label">vez de <strong>${turnName}</strong></div>
-          <div class="musica-disc" id="m-disc">🎵</div>
+          <div class="musica-disc-wrap">
+            <div class="musica-disc" id="m-disc">🎵</div>
+          </div>
+          <div class="musica-waves" id="m-waves">
+            ${[.9,.5,.7,.4,.8,.6,.9,.4,.7,.5,.8].map((d,i)=>`<div class="musica-wave-bar" style="--d:${(0.4+d*0.5).toFixed(2)}s;animation-delay:${(i*0.06).toFixed(2)}s"></div>`).join('')}
+          </div>
           <div class="musica-status" id="m-status">Toque para ouvir o trecho!</div>
           <div class="musica-countdown" id="m-countdown"></div>
           <button class="musica-play-btn" id="m-play-btn">▶ Ouvir Música</button>
@@ -2826,10 +2831,12 @@ function openMusica(mode = 'split', ctx = null) {
         const status = document.getElementById('m-status');
         const opts = document.getElementById('m-options');
         const countdown = document.getElementById('m-countdown');
+        const waves = document.getElementById('m-waves');
 
         btn.disabled = true;
         btn.textContent = '🎵 Tocando…';
         disc.classList.add('musica-disc-spin');
+        if (waves) waves.querySelectorAll('.musica-wave-bar').forEach(b => b.classList.add('active'));
         status.textContent = `Ouvindo por ${PREVIEW_SEC}s…`;
 
         let sec = PREVIEW_SEC;
@@ -2843,6 +2850,7 @@ function openMusica(mode = 'split', ctx = null) {
         playTrack(track.src, () => {
           clearInterval(countdownInt);
           disc.classList.remove('musica-disc-spin');
+          if (waves) waves.querySelectorAll('.musica-wave-bar').forEach(b => b.classList.remove('active'));
           status.textContent = 'Qual é essa música?';
           opts.style.display = '';
           btn.style.display = 'none';
