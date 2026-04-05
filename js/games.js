@@ -665,13 +665,18 @@ function openTaekwondo(mode = 'split', ctx = null) {
   /* online: guest sends inputs, host syncs state */
   if (isOnline && !isHost) {
     /* guest: read state from Firebase, send input */
+    let _guestResultShown = false;
     _listenRoom(ctx.code, data => {
       if (!data.data || !data.data.p1) return;
       const d = data.data;
       p1 = {...p1, ...d.p1}; p2 = {...p2, ...d.p2};
       rOver = d.rOver; rMsg = d.rMsg||'';
       _tkdUpdateUI();
-      if (rOver && rMsg) _showResult(body,'🥋',rMsg,`Pietro ${p1.wins} × ${p2.wins} Emilly`,()=>openTaekwondo(mode,ctx));
+      if (rOver && rMsg && !_guestResultShown) {
+        _guestResultShown = true;
+        if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
+        _showResult(body,'🥋',rMsg,`Pietro ${p1.wins} × ${p2.wins} Emilly`,()=>openTaekwondo(mode,ctx));
+      }
     });
     /* guest sends k2 to firebase */
     _syncInterval = setInterval(async () => {
@@ -1109,13 +1114,16 @@ function openSnake(mode = 'split', ctx = null) {
 
   /* Online guest: just send input + render received state */
   if (isOnline && !isHost) {
+    let _guestResultShown = false;
     _listenRoom(ctx.code, data => {
       if (!data.data || !data.data.s1) return;
       const d=data.data; s1=d.s1; s2=d.s2; food=d.food; sc1=d.sc1; sc2=d.sc2;
       const e1=document.getElementById('sc1'),e2=document.getElementById('sc2');
       if(e1)e1.textContent=sc1; if(e2)e2.textContent=sc2;
       _drawSnake();
-      if(d.dead){
+      if(d.dead && !_guestResultShown){
+        _guestResultShown = true;
+        if(_syncInterval){clearInterval(_syncInterval);_syncInterval=null;}
         const w=d.dead==='both'?'Empate 💥':d.dead==='p1'?'Emilly venceu 💗':'Pietro venceu 💙';
         _showResult(body,'🐍',w,`Pietro ${sc1} × ${sc2} Emilly`,()=>openSnake(mode,ctx));
       }
@@ -1354,6 +1362,7 @@ function openCorrida(mode = 'split', ctx = null) {
 
   if(isOnline&&!isHost){
     const canvas=document.getElementById('cr-canvas'),ctx4=canvas.getContext('2d');
+    let _guestResultShown = false;
     _listenRoom(ctx.code,data=>{
       if(!data.data||!data.data.p1)return;
       const d=data.data; p1={...p1,...d.p1};p2={...p2,...d.p2};
@@ -1361,7 +1370,11 @@ function openCorrida(mode = 'split', ctx = null) {
       document.getElementById('cr-w1').textContent='🏆 '+w1;
       document.getElementById('cr-w2').textContent='🏆 '+w2;
       _drawCorrida(ctx4,canvas,CW,CH,GND,PW,PH);
-      if(d.done)_showResult(body,'🏃',`${w1>=3?'Pietro 💙':'Emilly 💗'} venceu!`,`Pietro ${w1} × ${w2} Emilly`,()=>openCorrida(mode,ctx));
+      if(d.done && !_guestResultShown){
+        _guestResultShown = true;
+        if(_syncInterval){clearInterval(_syncInterval);_syncInterval=null;}
+        _showResult(body,'🏃',`${w1>=3?'Pietro 💙':'Emilly 💗'} venceu!`,`Pietro ${w1} × ${w2} Emilly`,()=>openCorrida(mode,ctx));
+      }
     });
     _syncInterval=setInterval(()=>_writeRoom({p2input:{...k2}}),120);
     _activeCleanup=()=>{cancelAnimationFrame(animId4);clearInterval(_syncInterval);_syncInterval=null;if(_roomUnsub){_roomUnsub();_roomUnsub=null;}window.removeEventListener('keydown',onKey4);window.removeEventListener('keyup',onKey4);};
@@ -1967,7 +1980,7 @@ function openDesenho(mode = 'split', ctx = null) {
       </div>`;
 
     const isDrawer = !isOnline || (isHost && state.turn===0) || (!isHost && state.turn===1);
-    if (!isDrawer && !isLast) return; /* só o desenhista avança */
+    if (!isDrawer && !isLast) return; /* só o desenhista avança (rounds intermediários) */
 
     document.getElementById('draw-next')?.addEventListener('click', async () => {
       const nextRound   = (state.round||1) + 1;
@@ -1979,6 +1992,7 @@ function openDesenho(mode = 'split', ctx = null) {
       else renderChoose();
     });
     document.getElementById('draw-finish')?.addEventListener('click', () => {
+      if (!isDrawer) return; /* só o desenhista confirma o fim (online) */
       const s1=state.s1||0, s2=state.s2||0;
       const emoji = s1===s2?'🤝':s1>s2?'💙':'💗';
       const winner= s1===s2?'Empate!':s1>s2?'Pietro venceu!':'Emilly venceu!';
