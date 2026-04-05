@@ -449,7 +449,6 @@ Sempre que queiras atacar a um exército, assediar uma cidade ou atacar uma pess
     ]
   },
   {
-  {
     id: 'quincas-borba',
     title: 'Quincas Borba',
     author: 'Machado de Assis',
