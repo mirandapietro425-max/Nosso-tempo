@@ -2095,7 +2095,7 @@ window.shareLocation = shareLocation;
   function spawnElement() {
     // FIX Bug 11: limita elementos simultâneos no DOM para evitar acúmulo em sessões longas
     const existing = document.querySelectorAll('._event-spawn-el').length;
-    if (existing >= 18) return; // no máximo 18 elementos de evento no DOM (reduzido para performance)
+    if (existing >= 12) return; // reduzido de 18 → 12 para menos compositing layers
 
     const el = document.createElement('div');
     el.className = '_event-spawn-el'; // classe para contar e limpar
@@ -2105,18 +2105,18 @@ window.shareLocation = shareLocation;
     const isAniv = evento.id.startsWith('aniv-');
     const isMesv = evento.id === 'mesversario';
     const size   = isAniv ? Math.random()*24+16 : Math.random()*18+12;
-    const speed  = isAniv ? Math.random()*4+3   : Math.random()*6+5;
+    const speed  = isAniv ? Math.random()*4+4   : Math.random()*6+6;
 
-    el.style.cssText = `position:fixed;left:${Math.random()*100}vw;top:-60px;font-size:${size}px;z-index:9996;pointer-events:none;animation:petalFall ${speed}s linear forwards;`;
+    el.style.cssText = `position:fixed;left:${Math.random()*100}vw;top:-60px;font-size:${size}px;z-index:9996;pointer-events:none;will-change:transform;animation:petalFall ${speed}s linear forwards;`;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 12000);
+    setTimeout(() => el.remove(), 14000);
   }
 
   // Aniversários: efeito mais intenso (fogos)
   const isAniv = evento.id.startsWith('aniv-');
-  const qty    = isAniv ? 14 : 9; // reduzido: era 30/18
-  const rate   = isAniv ? 550 : 1100; // reduzido: era 300/700ms
-  for (let i = 0; i < qty; i++) setTimeout(spawnElement, i * 200);
+  const qty    = isAniv ? 8 : 5; // reduzido para performance no carregamento
+  const rate   = isAniv ? 800 : 1800; // spawn mais espaçado = menos elementos simultâneos
+  for (let i = 0; i < qty; i++) setTimeout(spawnElement, i * 350);
   // FIX Bug 5: intervalo gerenciado via _spawnIntervalId abaixo (pausa/retoma)
 
   // Fogos para aniversários — bolhas coloridas subindo

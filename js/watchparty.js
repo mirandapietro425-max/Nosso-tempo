@@ -130,21 +130,30 @@ export function initWatchParty(db, myName) {
    HTML / CSS INJECTION
 ──────────────────────────────────────────── */
 function _injectHTML() {
-  // Botão flutuante dentro do cinema-modal-header (injetado após modal existir)
-  // Usa MutationObserver para aguardar o modal abrir
+  // Botão "Duo" injetado no header do cinema modal — aparece só quando o modal está aberto
+  // Remove o botão quando o modal fecha via _closeCinemaModal
   const observer = new MutationObserver(() => {
-    const header = document.querySelector('.cinema-modal-header');
-    if (header && !document.getElementById('wp-invite-btn')) {
-      const btn = document.createElement('button');
-      btn.id = 'wp-invite-btn';
-      btn.className = 'wp-invite-btn';
-      btn.title = 'Assistir juntos 🎬';
-      btn.innerHTML = `<span>🎬</span><span class="wp-invite-label">Duo</span>`;
-      btn.onclick = () => _openPanel();
-      header.appendChild(btn);
+    const overlay = document.getElementById('cinema-modal-overlay');
+    const header  = document.querySelector('.cinema-modal-header');
+    const btn     = document.getElementById('wp-invite-btn');
+    const isOpen  = overlay?.classList.contains('show');
+
+    if (isOpen && header && !btn) {
+      // Modal abriu — injeta o botão
+      const newBtn = document.createElement('button');
+      newBtn.id        = 'wp-invite-btn';
+      newBtn.className = 'wp-invite-btn';
+      newBtn.title     = 'Assistir juntos 🎬';
+      newBtn.innerHTML = `<span>🎬</span><span class="wp-invite-label">Duo</span>`;
+      newBtn.onclick   = () => _openPanel();
+      header.appendChild(newBtn);
+    } else if (!isOpen && btn) {
+      // Modal fechou — remove o botão e fecha o painel
+      btn.remove();
+      _closePanel();
     }
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
   // Notificação de convite (aparece para quem NÃO iniciou)
   const notif = document.createElement('div');
@@ -179,7 +188,8 @@ function _injectHTML() {
       <div class="wp-panel-actions">
         <button class="wp-icon-btn" id="wp-cam-btn" onclick="window._wpToggleCam()" title="Câmera">📷</button>
         <button class="wp-icon-btn" id="wp-mic-btn" onclick="window._wpToggleMic()" title="Microfone">🎙️</button>
-        <button class="wp-icon-btn wp-icon-btn--danger" onclick="window._wpEndSession()" title="Encerrar">✕</button>
+        <button class="wp-icon-btn wp-icon-btn--danger" onclick="window._wpEndSession()" title="Encerrar sessão">🗑️</button>
+        <button class="wp-icon-btn wp-icon-btn--close" onclick="window._wpClose()" title="Minimizar">✕</button>
       </div>
     </div>
 
@@ -365,6 +375,8 @@ function _injectStyles() {
 .wp-icon-btn.muted  { background: rgba(255,100,100,0.2); border-color: rgba(255,100,100,0.4); }
 .wp-icon-btn--danger { background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.3); }
 .wp-icon-btn--danger:hover { background: rgba(220,38,38,0.35); }
+.wp-icon-btn--close { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
+.wp-icon-btn--close:hover { background: rgba(255,255,255,0.2); }
 .wp-icon-btn--sm { width: 30px; height: 30px; font-size: 0.8rem; }
 
 /* ── Vídeos ── */
@@ -1146,8 +1158,8 @@ function _onSessionEnded(byMe) {
 
   if (!byMe) {
     window.showToast?.('🎬 Sessão de cinema encerrada.');
-    _closePanel();
   }
+  _closePanel();
   _resetUI();
 
   // Reativa listener de convite para próxima sessão (com pequeno delay para evitar loop)
