@@ -6,7 +6,7 @@
    ✦ Bug fixes: Velha turnos, cleanup de animações, Quiz turnos
    ═══════════════════════════════════════════════ */
 
-import { doc, setDoc, onSnapshot, deleteDoc }
+import { doc, setDoc, onSnapshot, deleteDoc, getDoc }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 let _db = null;
@@ -19,6 +19,160 @@ export function initGames(db) {
 /* ══════════════════════════════════════════
    CATÁLOGO
 ══════════════════════════════════════════ */
+
+/* ══ DADOS DOS JOGOS (declarados cedo para _getInitData) ══ */
+/* IDs reais do Deezer — preview buscado via API em runtime */
+const MUSICA_TRACKS = [
+  { id:'blinding',  title:'Blinding Lights',       artist:'The Weeknd',        ytId: 'fHI8X4OXluQ' },
+  { id:'shape',     title:'Shape of You',           artist:'Ed Sheeran',        ytId: 'JGwWNGJdvx8' },
+  { id:'levitate',  title:'Levitating',             artist:'Dua Lipa',          ytId: 'TUVcZfQe-Kw' },
+  { id:'dancemon',  title:'Dance Monkey',           artist:'Tones and I',       ytId: 'q0hyYWKXF0Q' },
+  { id:'sunflower', title:'Sunflower',              artist:'Post Malone',       ytId: 'ApXoWvfEYVU' },
+  { id:'drivers',   title:'drivers license',        artist:'Olivia Rodrigo',    ytId: 'ZmDBbnmKpqQ' },
+  { id:'perfect',   title:'Perfect',                artist:'Ed Sheeran',        ytId: '2Vv-BfVoq4g' },
+  { id:'someone',   title:'Someone Like You',       artist:'Adele',             ytId: 'hLQl3WQQoQ0' },
+  { id:'counting',  title:'Counting Stars',         artist:'OneRepublic',       ytId: 'hT_nvWreIhg' },
+  { id:'rolling',   title:'Rolling in the Deep',    artist:'Adele',             ytId: 'rYEDA3JcQqw' },
+  { id:'stay',      title:'Stay',                   artist:'The Kid LAROI',     ytId: 'kTJczUoc26U' },
+  { id:'astronaut', title:'Astronaut in the Ocean', artist:'Masked Wolf',       ytId: 'MEg-oqI9qmw' },
+  { id:'thunder',   title:'Thunder',                artist:'Imagine Dragons',   ytId: 'fKopy74weus' },
+  { id:'lovestory', title:'Love Story',             artist:'Taylor Swift',      ytId: '8xg3vE8Ie_E' },
+  { id:'bad',       title:'Bad Guy',                artist:'Billie Eilish',     ytId: 'DyDfgMOUjCI' },
+  { id:'believer',  title:'Believer',               artist:'Imagine Dragons',   ytId: '7wtfhZwyrcc' },
+];
+
+/* ── YouTube IFrame player para o jogo de música ── */
+let _ytPlayer = null;
+let _ytReady  = false;
+let _ytOnReady = null;
+
+function _ensureYTApi() {
+  if (window.YT && window.YT.Player) { _ytReady = true; return; }
+  if (document.getElementById('_yt_api_script')) return;
+  window.onYouTubeIframeAPIReady = () => {
+    _ytReady = true;
+    if (_ytOnReady) { _ytOnReady(); _ytOnReady = null; }
+  };
+  const s = document.createElement('script');
+  s.id  = '_yt_api_script';
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+}
+
+function _createYTPlayer(ytId, onReady, onEnded) {
+  // Destrói player anterior
+  if (_ytPlayer) { try { _ytPlayer.destroy(); } catch(e){} _ytPlayer = null; }
+
+  // Cria div container invisível
+  let container = document.getElementById('_yt_container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = '_yt_container';
+    container.style.cssText = 'position:fixed;bottom:-200px;left:-200px;width:1px;height:1px;opacity:0;pointer-events:none;';
+    document.body.appendChild(container);
+  }
+  const div = document.createElement('div');
+  div.id = '_yt_player_' + Date.now();
+  container.innerHTML = '';
+  container.appendChild(div);
+
+  _ytPlayer = new window.YT.Player(div.id, {
+    width: '1', height: '1',
+    videoId: ytId,
+    playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, modestbranding: 1 },
+    events: {
+      onReady:       () => { if (onReady) onReady(); },
+      onStateChange: (e) => { if (e.data === window.YT.PlayerState.ENDED && onEnded) onEnded(); },
+      onError:       () => { if (onEnded) onEnded(); },
+    },
+  });
+}
+
+function _playYT(ytId, durationSec, onEnded) {
+  _ensureYTApi();
+  const start = () => {
+    _createYTPlayer(ytId, () => {
+      try { _ytPlayer.setVolume(90); _ytPlayer.playVideo(); } catch(e){}
+      if (durationSec) setTimeout(() => {
+        try { if (_ytPlayer) _ytPlayer.stopVideo(); } catch(e){}
+        if (onEnded) onEnded();
+      }, durationSec * 1000);
+    }, onEnded);
+  };
+  if (_ytReady) { start(); }
+  else { _ytOnReady = start; }
+}
+
+function _stopYT() {
+  try { if (_ytPlayer) { _ytPlayer.stopVideo(); } } catch(e){}
+}
+
+const QSE_CARDS = [
+  { name: 'Cinderela',        cat: '🎬 Filme',     hints: ['sou uma princesa','uso sapatinho de cristal','minha madrasta é malvada'] },
+  { name: 'Simba',            cat: '🎬 Filme',     hints: ['sou um leão','meu pai se chama Mufasa','vivo no Rei Leão'] },
+  { name: 'Elsa',             cat: '🎬 Filme',     hints: ['tenho poderes de gelo','sou irmã da Anna','canto Let It Go'] },
+  { name: 'Jack Sparrow',     cat: '🎬 Filme',     hints: ['sou um pirata','adoro rum','sou do Caribe'] },
+  { name: 'Homem-Aranha',     cat: '🎬 Filme',     hints: ['sou um super-herói','tenho teia','moro em Nova York'] },
+  { name: 'Hermione Granger', cat: '🎬 Filme',     hints: ['sou bruxa','estudo em Hogwarts','sou amiga do Harry Potter'] },
+  { name: 'Shrek',            cat: '🎬 Filme',     hints: ['sou ogro','moro num pântano','meu melhor amigo é um burro'] },
+  { name: 'Woody',            cat: '🎬 Filme',     hints: ['sou um cowboy de brinquedo','tenho um laço','sou amigo do Buzz'] },
+  { name: 'Nemo',             cat: '🎬 Filme',     hints: ['sou um peixe laranja','moro no oceano','meu pai me procurou pelo mar'] },
+  { name: 'Batman',           cat: '🎬 Filme',     hints: ['sou herói','uso capa preta','moro em Gotham'] },
+  { name: 'Golfinho',         cat: '🐾 Animal',    hints: ['vivo no mar','sou muito inteligente','faço sons agudos'] },
+  { name: 'Pinguim',          cat: '🐾 Animal',    hints: ['não consigo voar','vivo no frio','pareço usar smoking'] },
+  { name: 'Girafa',           cat: '🐾 Animal',    hints: ['tenho pescoço enorme','sou o animal mais alto','como folhas no topo das árvores'] },
+  { name: 'Coala',            cat: '🐾 Animal',    hints: ['vivo na Austrália','durmo quase 20 horas por dia','como eucalipto'] },
+  { name: 'Panda',            cat: '🐾 Animal',    hints: ['sou preto e branco','como bambu','sou da China'] },
+  { name: 'Flamingo',         cat: '🐾 Animal',    hints: ['sou rosa','fico de pé numa perna só','sou uma ave'] },
+  { name: 'Pizza',            cat: '🍕 Comida',    hints: ['sou redonda','tenho queijo','fui inventada na Itália'] },
+  { name: 'Sorvete',          cat: '🍕 Comida',    hints: ['sou gelada','tenho vários sabores','derreto no calor'] },
+  { name: 'Sushi',            cat: '🍕 Comida',    hints: ['sou japonês','levo peixe cru','como com hashis'] },
+  { name: 'Brigadeiro',       cat: '🍕 Comida',    hints: ['sou um doce','sou feito de chocolate','sou tipicamente brasileiro'] },
+  { name: 'Hambúrguer',       cat: '🍕 Comida',    hints: ['tenho dois pães','levo carne','sou vendido no McDonald\'s'] },
+  { name: 'Pipoca',           cat: '🍕 Comida',    hints: ['sou feita de milho','estouro no calor','vou bem com filme'] },
+  { name: 'Astronauta',       cat: '💼 Profissão', hints: ['vou ao espaço','uso roupa especial','flutuo em gravidade zero'] },
+  { name: 'Chef de Cozinha',  cat: '💼 Profissão', hints: ['uso toque branco','cozinho para muitas pessoas','trabalho em restaurante'] },
+  { name: 'Mergulhador',      cat: '💼 Profissão', hints: ['trabalho embaixo d\'água','uso cilindro de oxigênio','vejo corais e peixes'] },
+  { name: 'Palhaço',          cat: '💼 Profissão', hints: ['uso nariz vermelho','faço as pessoas rirem','trabalho no circo'] },
+  { name: 'Arco-íris',        cat: '🌈 Coisa',     hints: ['apareço após a chuva','tenho 7 cores','estou no céu'] },
+  { name: 'Tesouro',          cat: '🌈 Coisa',     hints: ['estou escondido','sou feito de ouro','piratas me procuram'] },
+  { name: 'Bússola',          cat: '🌈 Coisa',     hints: ['aponto para o norte','ajudo a se orientar','sou usada em expedições'] },
+  { name: 'Foguete',          cat: '🌈 Coisa',     hints: ['vou para o espaço','faço muito barulho','uso combustível'] },
+  { name: 'Taylor Swift',     cat: '⭐ Famoso',    hints: ['sou cantora','tenho muitos álbuns','minhas fãs se chamam Swifties'] },
+  { name: 'Cristiano Ronaldo',cat: '⭐ Famoso',    hints: ['sou jogador de futebol','já fiz muitos gols','digo "Siiiuu!"'] },
+  { name: 'Beyoncé',          cat: '⭐ Famoso',    hints: ['sou cantora','fui do Destiny\'s Child','meu marido é rapper famoso'] },
+  { name: 'Elon Musk',        cat: '⭐ Famoso',    hints: ['sou bilionário','tenho empresa de foguetes','comprei uma rede social'] },
+];
+
+const CN_SYMBOLS = ['💕','🌹','💋','🌸','💎','⭐','🍫','🎵'];
+const CN_REWARDS = {
+  '💕💕💕': { label:'JACKPOT DO AMOR! 💕',      pts:5, action:'Escolham juntos um programa especial para fazer hoje!' },
+  '🌹🌹🌹': { label:'ROSAS TRIPLAS! 🌹',         pts:4, action:'O outro fala 5 coisas lindas sobre você agora!' },
+  '💋💋💋': { label:'BEIJO TRIPLO! 💋',           pts:4, action:'Três beijos longos agora mesmo — sem escapatória!' },
+  '🌸🌸🌸': { label:'FLORZINHA TRIPLA! 🌸',      pts:3, action:'O outro te manda uma mensagem de voz fofa agora!' },
+  '💎💎💎': { label:'DIAMANTE! 💎',               pts:5, action:'Quem girou escolhe o próximo date — o outro banca!' },
+  '⭐⭐⭐': { label:'ESTRELA TRIPLA! ⭐',          pts:3, action:'Selfie juntos agora com coração feito com as mãos 🤳' },
+  '🍫🍫🍫': { label:'CHOCOLATE TRIPLO! 🍫',      pts:3, action:'Quem girou merece um docinho — o outro resolve!' },
+  '🎵🎵🎵': { label:'SERENATA! 🎵',              pts:4, action:'O outro canta uma música para você agora!' },
+  '💕💕':   { label:'Par de Corações 💕',          pts:2, action:'Abraço de 10 segundos — cronometrado!' },
+  '🌹🌹':   { label:'Par de Rosas 🌹',            pts:2, action:'Manda um áudio fofo de 15 segundos!' },
+  '💋💋':   { label:'Par de Beijos 💋',            pts:2, action:'Um beijo na bochecha e um no pescoço!' },
+  '💎💎':   { label:'Par de Diamantes 💎',         pts:2, action:'Dançem 30 segundos juntos!' },
+  '🌸🌸':   { label:'Par de Flores 🌸',           pts:1, action:'Troca uma mensagem carinhosa!' },
+  '⭐⭐':   { label:'Par de Estrelas ⭐',          pts:1, action:'Conta uma coisa que admira no outro!' },
+  '🍫🍫':   { label:'Par de Chocolates 🍫',       pts:1, action:'Manda um meme fofo agora!' },
+  '🎵🎵':   { label:'Par de Notas 🎵',            pts:1, action:'Manda a música que mais te lembra o outro!' },
+  'miss':    { label:'Quase lá… 😅',              pts:0, action:'Sem sorte dessa vez — passa a vez!' },
+};
+function _cnGetReward(reels) {
+  const [a, b, c] = reels;
+  if (a === b && b === c) return CN_REWARDS[`${a}${b}${c}`] || CN_REWARDS['miss'];
+  if (a === b) return CN_REWARDS[`${a}${b}`] || CN_REWARDS['miss'];
+  if (b === c) return CN_REWARDS[`${b}${c}`] || CN_REWARDS['miss'];
+  if (a === c) return CN_REWARDS[`${a}${c}`] || CN_REWARDS['miss'];
+  return CN_REWARDS['miss'];
+}
+
 const CATALOG = [
   { id:'taekwondo', icon:'🥋', title:'Taekwondo',           desc:'Combate 1v1 — derrube o rival!',       fn: openTaekwondo },
   { id:'quiz',      icon:'💘', title:'Quiz do Casal',       desc:'Competição de perguntas em dupla!',    fn: openQuiz      },
@@ -132,6 +286,7 @@ let _roomCode      = null;
 let _syncInterval  = null;
 
 async function _createRoom(gameId, initData = {}) {
+  if (!_db) throw new Error('Firebase não inicializado');
   const code = String(Math.floor(1000 + Math.random() * 9000));
   _roomCode = code;
   await setDoc(doc(_db, 'game_rooms', code), {
@@ -156,11 +311,13 @@ async function _writeRoom(updates) {
 }
 
 function _listenRoom(code, cb) {
+  if (!_db) return () => {};
   if (_roomUnsub) { _roomUnsub(); _roomUnsub = null; }
   _roomCode = code;
   _roomUnsub = onSnapshot(doc(_db, 'game_rooms', code), snap => {
     if (snap.exists()) cb(snap.data());
   });
+  return _roomUnsub;
 }
 
 function _cleanupRoom() {
@@ -204,9 +361,29 @@ function _showOnlineLobby(game) {
   document.getElementById('gmo-create').addEventListener('click', async () => {
     const modal = mo.querySelector('.gm-modal');
     modal.innerHTML = `<div class="gm-loading">Criando sala…</div>`;
-    const initData = _getInitData(game.id);
-    const code = await _createRoom(game.id, initData);
-    _renderWaiting(modal, game, code);
+    try {
+      if (!_db) throw new Error('sem_conexao');
+      const initData = _getInitData(game.id);
+      const code = await _createRoom(game.id, initData);
+      _renderWaiting(modal, game, code);
+    } catch(e) {
+      modal.innerHTML = `
+        <button class="gm-x" id="gm-err-back">✕</button>
+        <div style="text-align:center;padding:1rem 0">
+          <div style="font-size:2rem;margin-bottom:.5rem">⚠️</div>
+          <div class="gm-modal-title" style="color:#f87171">Erro de Conexão</div>
+          <p style="color:rgba(255,255,255,.5);font-size:.8rem;margin:.5rem 0 1rem">
+            Verifique sua internet e tente novamente.<br>
+            <span style="font-size:.7rem;opacity:.6">${e.message}</span>
+          </p>
+          <button class="gm-choice-btn" id="gm-retry-btn">
+            <span class="gm-choice-icon">🔄</span>
+            <div><div class="gm-choice-label">Tentar de Novo</div></div>
+          </button>
+        </div>`;
+      document.getElementById('gm-err-back')?.addEventListener('click', () => { _closeModeOverlay(); _showOnlineLobby(game); });
+      document.getElementById('gm-retry-btn')?.addEventListener('click', () => { _closeModeOverlay(); _showOnlineLobby(game); });
+    }
   });
 
   document.getElementById('gmo-join').addEventListener('click', () => {
@@ -236,13 +413,34 @@ function _showOnlineLobby(game) {
       const code = (document.getElementById('gm-code-inp')?.value || '').trim();
       const err  = document.getElementById('gm-join-err');
       if (code.length !== 4) { if (err) err.textContent = 'Digite 4 dígitos'; return; }
-      _roomCode = code;
+      if (!_db) { if (err) err.textContent = 'Sem conexão com o servidor.'; return; }
+
+      const btn = document.getElementById('gm-join-ok');
+      if (btn) btn.disabled = true;
+      if (err) err.textContent = '';
+
       try {
-        await _writeRoom({ state: 'playing' });
+        // Verifica se a sala realmente existe antes de entrar
+        const snap = await getDoc(doc(_db, 'game_rooms', code));
+        if (!snap.exists()) {
+          if (err) err.textContent = 'Sala não encontrada. Verifique o código.';
+          if (btn) btn.disabled = false;
+          return;
+        }
+        const roomData = snap.data();
+        if (roomData.state === 'playing') {
+          if (err) err.textContent = 'Essa sala já está em jogo.';
+          if (btn) btn.disabled = false;
+          return;
+        }
+        // Sala existe e está aguardando — sinaliza que o guest entrou
+        _roomCode = code;
+        await setDoc(doc(_db, 'game_rooms', code), { state: 'playing', ts: Date.now() }, { merge: true });
         mo.remove();
         game.fn('online', { code, role: 'guest' });
       } catch (e) {
-        if (err) err.textContent = 'Sala não encontrada. Verifique o código.';
+        if (err) err.textContent = 'Erro de conexão. Tente novamente.';
+        if (btn) btn.disabled = false;
       }
     });
   });
@@ -303,15 +501,17 @@ function _getInitData(gameId) {
     return { phase: 'spin', turn: 0, s1: 0, s2: 0, sector: null, done: false, spinning: false };
   }
   if (gameId === 'quemsoueu') {
-    const deck = [...QSE_CARDS].sort(() => Math.random() - .5);
-    return { phase: 'pick', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 6, deck, cardIdx: 0, card: null, timeLeft: 60, asking: false };
+    const _cards = (typeof QSE_CARDS !== 'undefined') ? QSE_CARDS : [];
+    const deck = [..._cards].sort(() => Math.random() - .5);
+    return { phase: 'pick', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 6, deck, cardIdx: 0, card: null, timeLeft: 60 };
   }
   if (gameId === 'cacanivel') {
-    return { phase: 'idle', turn: 0, s1: 0, s2: 0, reels: ['💕','💕','💕'], spinning: false, reward: null, round: 0 };
+    return { phase: 'idle', turn: 0, s1: 0, s2: 0, reels: ['💕','💕','💕'], reward: null, round: 0 };
   }
   if (gameId === 'musica') {
-    const order = [...MUSICA_TRACKS].sort(() => Math.random() - .5).slice(0, 8);
-    return { phase: 'listen', qi: 0, tracks: order, turn: 0, s1: 0, s2: 0, answered: false, guess: '', result: null };
+    const _tracks = (typeof MUSICA_TRACKS !== 'undefined') ? MUSICA_TRACKS : [];
+    const order = [..._tracks].sort(() => Math.random() - .5).slice(0, 8);
+    return { phase: 'listen', qi: 0, tracks: order, turn: 0, s1: 0, s2: 0 };
   }
   // Real-time games: empty initial state (host sets up on start)
   return {};
@@ -1466,12 +1666,16 @@ function openCaraACara(mode = 'split', ctx = null) {
       btn.addEventListener('click', () => {
         const chosen = CHARS[Number(btn.dataset.ci)];
         const right  = chosen.name === correct.name;
+        const winner = right ? turn : (turn===0?1:0);
+        const newState = { ...state, phase: 'done', winner };
         if (isOnline) {
-          _writeRoom({ data: { ...state, phase: 'done', winner: right ? turn : (turn===0?1:0) } });
+          // Em modo online: escreve no Firebase e deixa o listener de ambos os lados
+          // chamar render() → renderDone() de forma sincronizada
+          _writeRoom({ data: newState });
+        } else {
+          state = newState;
+          render(); // renderDone() mostrará o resultado localmente
         }
-        _showResult(body, right?'🎉':'💔',
-          right?(turn===0?'Pietro acertou! 💙':'Emilly acertou! 💗'):'Errou! 😅',
-          `Era ${correct.name}`, ()=>openCaraACara(mode,ctx));
       });
     });
   }
@@ -2708,24 +2912,7 @@ function _injectGameStyles() {
 /* ══════════════════════════════════════════
    🎵 ADIVINHE A MÚSICA — tracks com preview real (Deezer)
 ══════════════════════════════════════════ */
-const MUSICA_TRACKS = [
-  { id:'blinding',  title:'Blinding Lights',      artist:'The Weeknd',       src:'https://cdns-preview-d.dzcdn.net/stream/c-deda7fa9316d9e9e880d2c6207e92260-8.mp3' },
-  { id:'shape',     title:'Shape of You',          artist:'Ed Sheeran',       src:'https://cdns-preview-e.dzcdn.net/stream/c-e77d23e0c8ed4bd4f65f324a90f40fab-6.mp3' },
-  { id:'levitate',  title:'Levitating',            artist:'Dua Lipa',         src:'https://cdns-preview-0.dzcdn.net/stream/c-0f2f8a2e4ddd3c4440f33e2e96c33d91-5.mp3' },
-  { id:'dancemon',  title:'Dance Monkey',          artist:'Tones and I',      src:'https://cdns-preview-4.dzcdn.net/stream/c-4dc5fd73ea0cf1e5e6a2bba8dad2cf77-6.mp3' },
-  { id:'sunflower', title:'Sunflower',             artist:'Post Malone',      src:'https://cdns-preview-7.dzcdn.net/stream/c-7aae2a73aef11acb8a46bc77c82ac57d-6.mp3' },
-  { id:'drivers',   title:'drivers license',       artist:'Olivia Rodrigo',   src:'https://cdns-preview-5.dzcdn.net/stream/c-5b12e46e0be62a34abef18be8eff9e8a-6.mp3' },
-  { id:'perfect',   title:'Perfect',               artist:'Ed Sheeran',       src:'https://cdns-preview-1.dzcdn.net/stream/c-1c11bf254e1cddcb0427b17dcfdb1bbb-6.mp3' },
-  { id:'someone',   title:'Someone Like You',      artist:'Adele',            src:'https://cdns-preview-2.dzcdn.net/stream/c-26b39a27a8f7b0abde4b41e7ec2a23f7-6.mp3' },
-  { id:'counting',  title:'Counting Stars',        artist:'OneRepublic',      src:'https://cdns-preview-6.dzcdn.net/stream/c-6e78ddacec8c9e72572e42b2d5eeac74-6.mp3' },
-  { id:'rolling',   title:'Rolling in the Deep',   artist:'Adele',            src:'https://cdns-preview-9.dzcdn.net/stream/c-9b4df7d455a25ff52b1e3d2b9df6ae45-6.mp3' },
-  { id:'stay',      title:'Stay',                  artist:'The Kid LAROI',    src:'https://cdns-preview-3.dzcdn.net/stream/c-3f1eb28b786d33e25b1b847dbf10ec9c-6.mp3' },
-  { id:'astronaut', title:'Astronaut in the Ocean',artist:'Masked Wolf',      src:'https://cdns-preview-8.dzcdn.net/stream/c-8f69e6c3a9d0bde5e22bcf55c82c6c36-6.mp3' },
-  { id:'peaches',   title:'Peaches',               artist:'Justin Bieber',    src:'https://cdns-preview-a.dzcdn.net/stream/c-a1cf3a4f0e2d5b6c7d8e9f0a1b2c3d4e-6.mp3' },
-  { id:'thunder',   title:'Thunder',               artist:'Imagine Dragons',  src:'https://cdns-preview-b.dzcdn.net/stream/c-b2d4f6a8c0e2f4a6c8e0f2a4c6e8f0a2-6.mp3' },
-  { id:'lovestory', title:'Love Story',            artist:'Taylor Swift',     src:'https://cdns-preview-c.dzcdn.net/stream/c-c3e5f7a9b1d3f5a7c9e1f3a5c7e9f1a3-6.mp3' },
-  { id:'bad',       title:'Bad Guy',               artist:'Billie Eilish',    src:'https://cdns-preview-f.dzcdn.net/stream/c-f4a6c8e0f2a4c6e8f0a2c4e6f8a0c2e4-6.mp3' },
-];
+/* __MUSICA_MOVED__ */
 
 /* ══════════════════════════════════════════
    🎵 ADIVINHE A MÚSICA — jogo
@@ -2740,29 +2927,11 @@ function openMusica(mode = 'split', ctx = null) {
 
   let state      = _getInitData('musica');
   let _roomUnsub = null;
-  let _audio     = null;
-  let _audioTimer = null;
   let _countdownInt = null;
 
   function stopAudio() {
-    if (_audio) { try { _audio.pause(); _audio.src = ''; } catch(e){} _audio = null; }
-    if (_audioTimer)    { clearTimeout(_audioTimer);  _audioTimer = null; }
-    if (_countdownInt)  { clearInterval(_countdownInt); _countdownInt = null; }
-  }
-
-  function playTrack(src, onEnded) {
-    stopAudio();
-    _audio = new Audio();
-    _audio.crossOrigin = 'anonymous';
-    _audio.volume = 0.9;
-    _audio.src = src;
-    _audio.play().catch(() => {
-      // fallback: tenta sem crossOrigin
-      _audio = new Audio(src);
-      _audio.volume = 0.9;
-      _audio.play().catch(() => { if (onEnded) onEnded(); });
-    });
-    _audioTimer = setTimeout(() => { stopAudio(); if (onEnded) onEnded(); }, PREVIEW_SEC * 1000);
+    _stopYT();
+    if (_countdownInt) { clearInterval(_countdownInt); _countdownInt = null; }
   }
 
   /* ─── render ─── */
@@ -2827,7 +2996,7 @@ function openMusica(mode = 'split', ctx = null) {
 
     /* ── play ── */
     let playing = false;
-    document.getElementById('m-play-btn')?.addEventListener('click', () => {
+    document.getElementById('m-play-btn')?.addEventListener('click', async () => {
       if (playing || !myTurn) return;
       playing = true;
       const disc    = document.getElementById('m-disc');
@@ -2837,9 +3006,9 @@ function openMusica(mode = 'split', ctx = null) {
       const playBtn = document.getElementById('m-play-btn');
       const waves   = document.getElementById('m-waves');
 
+      if (playBtn) { playBtn.disabled = true; playBtn.innerHTML = '🎵 Tocando…'; }
       disc.classList.add('musica-disc-spin');
       if (waves) waves.querySelectorAll('.musica-wave-bar').forEach(b => b.classList.add('active'));
-      if (playBtn) { playBtn.disabled = true; playBtn.innerHTML = '🎵 Tocando…'; }
       status.textContent = `Ouça e adivinhe — ${PREVIEW_SEC}s`;
 
       let sec = PREVIEW_SEC;
@@ -2851,7 +3020,8 @@ function openMusica(mode = 'split', ctx = null) {
         if (sec <= 0) clearInterval(_countdownInt);
       }, 1000);
 
-      playTrack(track.src, () => {
+      _playYT(track.ytId, PREVIEW_SEC, () => {
+        if (_countdownInt) { clearInterval(_countdownInt); _countdownInt = null; }
         disc.classList.remove('musica-disc-spin');
         if (waves) waves.querySelectorAll('.musica-wave-bar').forEach(b => b.classList.remove('active'));
         status.textContent = 'Qual é essa música?';
@@ -2919,42 +3089,7 @@ function openMusica(mode = 'split', ctx = null) {
 /* ══════════════════════════════════════════
    ⚡ QUEM SOU EU? — cartas
 ══════════════════════════════════════════ */
-const QSE_CARDS = [
-  { name: 'Cinderela',        cat: '🎬 Filme',     hints: ['sou uma princesa','uso sapatinho de cristal','minha madrasta é malvada'] },
-  { name: 'Simba',            cat: '🎬 Filme',     hints: ['sou um leão','meu pai se chama Mufasa','vivo no Rei Leão'] },
-  { name: 'Elsa',             cat: '🎬 Filme',     hints: ['tenho poderes de gelo','sou irmã da Anna','canto Let It Go'] },
-  { name: 'Jack Sparrow',     cat: '🎬 Filme',     hints: ['sou um pirata','adoro rum','sou do Caribe'] },
-  { name: 'Homem-Aranha',     cat: '🎬 Filme',     hints: ['sou um super-herói','tenho teia','moro em Nova York'] },
-  { name: 'Hermione Granger', cat: '🎬 Filme',     hints: ['sou bruxa','estudo em Hogwarts','sou amiga do Harry Potter'] },
-  { name: 'Shrek',            cat: '🎬 Filme',     hints: ['sou ogro','moro num pântano','meu melhor amigo é um burro'] },
-  { name: 'Woody',            cat: '🎬 Filme',     hints: ['sou um cowboy de brinquedo','tenho um laço','sou amigo do Buzz'] },
-  { name: 'Nemo',             cat: '🎬 Filme',     hints: ['sou um peixe laranja','moro no oceano','meu pai me procurou pelo mar'] },
-  { name: 'Batman',           cat: '🎬 Filme',     hints: ['sou herói','uso capa preta','moro em Gotham'] },
-  { name: 'Golfinho',         cat: '🐾 Animal',    hints: ['vivo no mar','sou muito inteligente','faço sons agudos'] },
-  { name: 'Pinguim',          cat: '🐾 Animal',    hints: ['não consigo voar','vivo no frio','pareço usar smoking'] },
-  { name: 'Girafa',           cat: '🐾 Animal',    hints: ['tenho pescoço enorme','sou o animal mais alto','como folhas no topo das árvores'] },
-  { name: 'Coala',            cat: '🐾 Animal',    hints: ['vivo na Austrália','durmo quase 20 horas por dia','como eucalipto'] },
-  { name: 'Panda',            cat: '🐾 Animal',    hints: ['sou preto e branco','como bambu','sou da China'] },
-  { name: 'Flamingo',         cat: '🐾 Animal',    hints: ['sou rosa','fico de pé numa perna só','sou uma ave'] },
-  { name: 'Pizza',            cat: '🍕 Comida',    hints: ['sou redonda','tenho queijo','fui inventada na Itália'] },
-  { name: 'Sorvete',          cat: '🍕 Comida',    hints: ['sou gelada','tenho vários sabores','derreto no calor'] },
-  { name: 'Sushi',            cat: '🍕 Comida',    hints: ['sou japonês','levo peixe cru','como com hashis'] },
-  { name: 'Brigadeiro',       cat: '🍕 Comida',    hints: ['sou um doce','sou feito de chocolate','sou tipicamente brasileiro'] },
-  { name: 'Hambúrguer',       cat: '🍕 Comida',    hints: ['tenho dois pães','levo carne','sou vendido no McDonald\'s'] },
-  { name: 'Pipoca',           cat: '🍕 Comida',    hints: ['sou feita de milho','estouro no calor','vou bem com filme'] },
-  { name: 'Astronauta',       cat: '💼 Profissão', hints: ['vou ao espaço','uso roupa especial','flutuo em gravidade zero'] },
-  { name: 'Chef de Cozinha',  cat: '💼 Profissão', hints: ['uso toque branco','cozinho para muitas pessoas','trabalho em restaurante'] },
-  { name: 'Mergulhador',      cat: '💼 Profissão', hints: ['trabalho embaixo d\'água','uso cilindro de oxigênio','vejo corais e peixes'] },
-  { name: 'Palhaço',          cat: '💼 Profissão', hints: ['uso nariz vermelho','faço as pessoas rirem','trabalho no circo'] },
-  { name: 'Arco-íris',        cat: '🌈 Coisa',     hints: ['apareço após a chuva','tenho 7 cores','estou no céu'] },
-  { name: 'Tesouro',          cat: '🌈 Coisa',     hints: ['estou escondido','sou feito de ouro','piratas me procuram'] },
-  { name: 'Bússola',          cat: '🌈 Coisa',     hints: ['aponto para o norte','ajudo a se orientar','sou usada em expedições'] },
-  { name: 'Foguete',          cat: '🌈 Coisa',     hints: ['vou para o espaço','faço muito barulho','uso combustível'] },
-  { name: 'Taylor Swift',     cat: '⭐ Famoso',    hints: ['sou cantora','tenho muitos álbuns','minhas fãs se chamam Swifties'] },
-  { name: 'Cristiano Ronaldo',cat: '⭐ Famoso',    hints: ['sou jogador de futebol','já fiz muitos gols','digo "Siiiuu!"'] },
-  { name: 'Beyoncé',          cat: '⭐ Famoso',    hints: ['sou cantora','fui do Destiny\'s Child','meu marido é rapper famoso'] },
-  { name: 'Elon Musk',        cat: '⭐ Famoso',    hints: ['sou bilionário','tenho empresa de foguetes','comprei uma rede social'] },
-];
+/* __QSE_MOVED__ */
 
 /* ══════════════════════════════════════════
    ⚡ QUEM SOU EU? — jogo
@@ -2990,6 +3125,9 @@ function openQuemSouEu(mode = 'split', ctx = null) {
     const s = state;
     const turnName = s.turn === 0 ? P1 : P2;
     const myTurn   = isOnline ? (isHost ? s.turn === 0 : s.turn === 1) : true;
+    // In split mode: after "Estou pronto", the OTHER person reads the card on screen
+    // We use s.splitViewer to track whose side is showing (0=guesser has phone on head, 1=viewer)
+    const splitIsViewer = !isOnline && s.phase === 'asking' && !myTurn;
 
     const scoreBar = `
       <div class="qse-score-bar">
@@ -3038,18 +3176,27 @@ function openQuemSouEu(mode = 'split', ctx = null) {
         <div class="qse-card-area">
           <div class="qse-turn-label">vez de <strong>${turnName}</strong></div>
 
-          ${!myTurn
+          ${(!isOnline)
             ? `<div class="qse-postit qse-postit-visible">
                 <div class="qse-postit-cat">${card.cat}</div>
                 <div class="qse-postit-name">${card.name}</div>
                 <div class="qse-hints">
                   ${card.hints.map(h=>`<div class="qse-hint-pill">💡 ${h}</div>`).join('')}
                 </div>
+                <div style="font-size:.72rem;color:rgba(0,0,0,.4);margin-top:6px">📱 Mostre para o outro — não deixe ${turnName} ver!</div>
                </div>`
-            : `<div class="qse-postit qse-postit-testa">
-                <div class="qse-postit-mark">?</div>
-                <div class="qse-testa-label">na sua testa! 🙆</div>
-               </div>`
+            : (!myTurn
+              ? `<div class="qse-postit qse-postit-visible">
+                  <div class="qse-postit-cat">${card.cat}</div>
+                  <div class="qse-postit-name">${card.name}</div>
+                  <div class="qse-hints">
+                    ${card.hints.map(h=>`<div class="qse-hint-pill">💡 ${h}</div>`).join('')}
+                  </div>
+                 </div>`
+              : `<div class="qse-postit qse-postit-testa">
+                  <div class="qse-postit-mark">?</div>
+                  <div class="qse-testa-label">na sua testa! 🙆</div>
+                 </div>`)
           }
 
           <div class="qse-timer-row">
@@ -3069,20 +3216,32 @@ function openQuemSouEu(mode = 'split', ctx = null) {
           }
         </div>`;
 
-      /* timer */
+      /* timer — apenas quem controla o turno roda o interval.
+         No online: somente o host (evita double-advance e reset loop no guest).
+         No split: sempre roda (myTurn = true). */
+      const runTimer = !isOnline || isHost;
       let t = s.timeLeft;
       const arc = document.getElementById('qse-arc');
       const txt = document.getElementById('qse-timer-txt');
-      _timerInt = setInterval(async () => {
-        t--;
+      if (runTimer) {
+        _timerInt = setInterval(async () => {
+          t--;
+          if (txt) txt.textContent = t;
+          if (arc) {
+            arc.setAttribute('stroke-dashoffset', String(Math.round(113 * (1 - t / 60))));
+            arc.setAttribute('stroke', t > 20 ? '#f9a8d4' : t > 10 ? '#fb923c' : '#f87171');
+          }
+          if (t <= 0) { stopTimer(); await advance(false); return; }
+          if (isOnline) await _writeRoom({ data: { ...state, timeLeft: t } });
+        }, 1000);
+      } else {
+        // guest: só atualiza o visual com o timeLeft recebido do Firebase
         if (txt) txt.textContent = t;
         if (arc) {
           arc.setAttribute('stroke-dashoffset', String(Math.round(113 * (1 - t / 60))));
           arc.setAttribute('stroke', t > 20 ? '#f9a8d4' : t > 10 ? '#fb923c' : '#f87171');
         }
-        if (t <= 0) { stopTimer(); await advance(false); }
-        if (isOnline && isHost) await _writeRoom({ data: { ...state, timeLeft: t } });
-      }, 1000);
+      }
 
       document.getElementById('qse-yes-btn')?.addEventListener('click', () => advance(true));
       document.getElementById('qse-no-btn')?.addEventListener('click',  () => advance(false));
@@ -3113,36 +3272,7 @@ function openQuemSouEu(mode = 'split', ctx = null) {
 /* ══════════════════════════════════════════
    🎰 CAÇA-NÍQUEL DO AMOR — dados
 ══════════════════════════════════════════ */
-const CN_SYMBOLS = ['💕','🌹','💋','🌸','💎','⭐','🍫','🎵'];
-
-const CN_REWARDS = {
-  '💕💕💕': { label:'JACKPOT DO AMOR! 💕',      pts:5, action:'Escolham juntos um programa especial para fazer hoje!' },
-  '🌹🌹🌹': { label:'ROSAS TRIPLAS! 🌹',         pts:4, action:'O outro fala 5 coisas lindas sobre você agora!' },
-  '💋💋💋': { label:'BEIJO TRIPLO! 💋',           pts:4, action:'Três beijos longos agora mesmo — sem escapatória!' },
-  '🌸🌸🌸': { label:'FLORZINHA TRIPLA! 🌸',      pts:3, action:'O outro te manda uma mensagem de voz fofa agora!' },
-  '💎💎💎': { label:'DIAMANTE! 💎',               pts:5, action:'Quem girou escolhe o próximo date — o outro banca!' },
-  '⭐⭐⭐': { label:'ESTRELA TRIPLA! ⭐',          pts:3, action:'Selfie juntos agora com coração feito com as mãos 🤳' },
-  '🍫🍫🍫': { label:'CHOCOLATE TRIPLO! 🍫',      pts:3, action:'Quem girou merece um docinho — o outro resolve!' },
-  '🎵🎵🎵': { label:'SERENATA! 🎵',              pts:4, action:'O outro canta uma música para você agora!' },
-  '💕💕':   { label:'Par de Corações 💕',          pts:2, action:'Abraço de 10 segundos — cronometrado!' },
-  '🌹🌹':   { label:'Par de Rosas 🌹',            pts:2, action:'Manda um áudio fofo de 15 segundos!' },
-  '💋💋':   { label:'Par de Beijos 💋',            pts:2, action:'Um beijo na bochecha e um no pescoço!' },
-  '💎💎':   { label:'Par de Diamantes 💎',         pts:2, action:'Dançem 30 segundos juntos!' },
-  '🌸🌸':   { label:'Par de Flores 🌸',           pts:1, action:'Troca uma mensagem carinhosa!' },
-  '⭐⭐':   { label:'Par de Estrelas ⭐',          pts:1, action:'Conta uma coisa que admira no outro!' },
-  '🍫🍫':   { label:'Par de Chocolates 🍫',       pts:1, action:'Manda um meme fofo agora!' },
-  '🎵🎵':   { label:'Par de Notas 🎵',            pts:1, action:'Manda a música que mais te lembra o outro!' },
-  'miss':    { label:'Quase lá… 😅',              pts:0, action:'Sem sorte dessa vez — passa a vez!' },
-};
-
-function _cnGetReward(reels) {
-  const [a, b, c] = reels;
-  if (a === b && b === c) return CN_REWARDS[`${a}${b}${c}`] || CN_REWARDS['miss'];
-  if (a === b) return CN_REWARDS[`${a}${b}`] || CN_REWARDS['miss'];
-  if (b === c) return CN_REWARDS[`${b}${c}`] || CN_REWARDS['miss'];
-  if (a === c) return CN_REWARDS[`${a}${c}`] || CN_REWARDS['miss'];
-  return CN_REWARDS['miss'];
-}
+/* __CN_DATA_MOVED__ */
 
 /* ══════════════════════════════════════════
    🎰 CAÇA-NÍQUEL DO AMOR — jogo (corrigido)
@@ -3176,7 +3306,7 @@ function openCacaNivel(mode = 'split', ctx = null) {
     const scoreBar = `
       <div class="cn-score-bar">
         <div class="cn-score-pill p1">💙 ${P1} <span>${s.s1}</span></div>
-        <div class="cn-round-badge">🎰 ${Math.min(s.round + 1, TOTAL_ROUNDS)}/${TOTAL_ROUNDS}</div>
+        <div class="cn-round-badge">🎰 ${Math.min(s.round, TOTAL_ROUNDS)}/${TOTAL_ROUNDS}</div>
         <div class="cn-score-pill p2">💗 ${P2} <span>${s.s2}</span></div>
       </div>`;
 
@@ -3210,7 +3340,7 @@ function openCacaNivel(mode = 'split', ctx = null) {
             <div class="cn-reward-label">${reward.label}</div>
             <div class="cn-reward-action">${reward.action}</div>
             ${reward.pts > 0
-              ? `<div class="cn-reward-pts">+${reward.pts} ${reward.pts === 1 ? 'ponto' : 'pontos'} para ${s.turn === 0 ? P2 : P1}!</div>`
+              ? `<div class="cn-reward-pts">+${reward.pts} ${reward.pts === 1 ? 'ponto' : 'pontos'} para ${s.turn === 1 ? P1 : P2}!</div>`
               : ''}
           </div>` : `<div style="height:8px"></div>`}
 
