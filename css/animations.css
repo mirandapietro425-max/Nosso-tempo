@@ -70,8 +70,7 @@
   50%       { opacity: 1;   transform: scale(1.2); }
 }
 
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(232,83,111,0.3); }
+/* glowPulse removido — box-shadow infinite repaint */
   50%       { box-shadow: 0 0 30px rgba(232,83,111,0.7), 0 0 60px rgba(232,83,111,0.3); }
 }
 
@@ -186,7 +185,7 @@ body.period-noite .dreams-input::placeholder {
 body.period-noite .section-title em { color: #c44dff; }
 
 body.period-noite .greeting-pill {
-  animation: glowPulse 3s ease infinite;
+  /* glowPulse removido */
 }
 
 /* Manhã — mantém o tema rosa mas mais suave */
@@ -201,18 +200,15 @@ body.period-madrugada .hero::after {
   content: '';
   position: absolute;
   inset: 0;
+  /* Reduzido de 9 para 4 gradientes — mesma magia, ~55% mais leve */
   background-image:
-    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.7) 0%, transparent 100%),
-    radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
-    radial-gradient(1px 1px at 80% 50%, rgba(255,255,255,0.4) 0%, transparent 100%),
-    radial-gradient(2px 2px at 10% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 50% 90%, rgba(255,255,255,0.4) 0%, transparent 100%),
-    radial-gradient(2px 2px at 30% 60%, rgba(200,180,255,0.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 70% 40%, rgba(200,180,255,0.5) 0%, transparent 100%);
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.65) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.55) 0%, transparent 100%),
+    radial-gradient(2px 2px at 80% 60%, rgba(255,255,255,0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 75%, rgba(200,180,255,0.45) 0%, transparent 100%);
   pointer-events: none;
-  animation: twinkle 4s ease-in-out infinite alternate;
+  will-change: opacity;
+  animation: twinkle 6s ease-in-out infinite alternate; /* mais lento = menos frames */
 }
 
 /* ── MINI PLAYER FLUTUANTE ── */
@@ -319,13 +315,11 @@ body.period-madrugada .hero::after {
   50%       { transform: translateY(-6px); }
 }
 
-@keyframes rosePulse {
-  0%, 100% { box-shadow: 0 4px 24px rgba(232,83,111,0.12); }
+/* rosePulse removido — box-shadow infinite repaint */
   50%       { box-shadow: 0 8px 48px rgba(232,83,111,0.32); }
 }
 
-@keyframes borderGlow {
-  0%, 100% { border-color: rgba(232,83,111,0.18); }
+/* borderGlow removido — box-shadow infinite repaint */
   50%       { border-color: rgba(232,83,111,0.5); }
 }
 
@@ -334,8 +328,7 @@ body.period-madrugada .hero::after {
   50%       { transform: scale(1.015) translateY(-1px); }
 }
 
-@keyframes dividerPulse {
-  0%, 100% { opacity: 0.4; transform: scaleX(1); }
+/* dividerPulse removido — applied to every divider */
   50%       { opacity: 0.9; transform: scaleX(1.04); }
 }
 
@@ -369,16 +362,16 @@ body.period-madrugada .hero::after {
 .pe-delay-5 { transition-delay: 0.35s; }
 
 /* ── ANNIV CARD — flutuação suave ── */
-.anniv-card { animation: floatYSlow 5s ease-in-out infinite; }
+.anniv-card { animation: floatYSlow 5s ease-in-out infinite; will-change: transform; }
 
 /* ── STAT CARDS — pulso de borda ── */
-.stat-card { animation: borderGlow 4s ease-in-out infinite; }
+.stat-card { /* borderGlow removido — era box-shadow em loop */ }
 
 /* ── SECTION LABEL — respira ── */
-.section-label { animation: scaleBreath 4s ease-in-out infinite; display: inline-block; }
+.section-label { animation: scaleBreath 4s ease-in-out infinite; display: inline-block; will-change: transform; }
 
 /* ── DIVIDER — pulso ── */
-.divider { animation: dividerPulse 3s ease-in-out infinite; }
+.divider { /* dividerPulse removido */ }
 
 /* ── HOVERS RICOS ── */
 .anniv-card,
@@ -434,7 +427,7 @@ body.period-madrugada .hero::after {
 }
 
 /* ── MINI-PLAYER TOGGLE — pulso vivo ── */
-.mini-player-toggle { animation: rosePulse 3s ease-in-out infinite; }
+.mini-player-toggle { /* rosePulse removido — box-shadow loop */ }
 
 /* ── HERO AMPERSAND — pulso de coração ── */
-.hero-ampersand { display: inline-block; animation: heartbeat 2.5s ease-in-out infinite; }
+.hero-ampersand { display: inline-block; animation: heartbeat 2.5s ease-in-out infinite; will-change: transform; }

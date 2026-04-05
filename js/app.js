@@ -2095,7 +2095,7 @@ window.shareLocation = shareLocation;
   function spawnElement() {
     // FIX Bug 11: limita elementos simultâneos no DOM para evitar acúmulo em sessões longas
     const existing = document.querySelectorAll('._event-spawn-el').length;
-    if (existing >= 40) return; // no máximo 40 elementos de evento no DOM ao mesmo tempo
+    if (existing >= 18) return; // no máximo 18 elementos de evento no DOM (reduzido para performance)
 
     const el = document.createElement('div');
     el.className = '_event-spawn-el'; // classe para contar e limpar
@@ -2114,8 +2114,8 @@ window.shareLocation = shareLocation;
 
   // Aniversários: efeito mais intenso (fogos)
   const isAniv = evento.id.startsWith('aniv-');
-  const qty    = isAniv ? 30 : 18;
-  const rate   = isAniv ? 300 : 700;
+  const qty    = isAniv ? 14 : 9; // reduzido: era 30/18
+  const rate   = isAniv ? 550 : 1100; // reduzido: era 300/700ms
   for (let i = 0; i < qty; i++) setTimeout(spawnElement, i * 200);
   // FIX Bug 5: intervalo gerenciado via _spawnIntervalId abaixo (pausa/retoma)
 
@@ -2123,7 +2123,7 @@ window.shareLocation = shareLocation;
   if (isAniv) {
     function spawnFirework() {
       const colors = ['#ff6b9d','#c44dff','#4dc8ff','#ffd93d','#ff6b6b','#6bcb77'];
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 4; i++) { // reduzido: era 8 pontos
         const dot = document.createElement('div');
         const angle = (i / 8) * Math.PI * 2;
         const dist  = Math.random() * 80 + 40;
@@ -2147,22 +2147,22 @@ window.shareLocation = shareLocation;
         setTimeout(() => dot.remove(), 1200);
       }
     }
-    for (let i = 0; i < 6; i++) setTimeout(spawnFirework, i * 400);
+    for (let i = 0; i < 3; i++) setTimeout(spawnFirework, i * 500); // reduzido: era 6 bursts
     // FIX Bug 5: usa intervalo mutável para poder pausar E retomar ao voltar para a aba
-    let _fireworkIntervalId = setInterval(spawnFirework, 2500);
+    let _fireworkIntervalId = setInterval(spawnFirework, 4500); // era 2500ms
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         clearInterval(_fireworkIntervalId);
         _fireworkIntervalId = null;
       } else {
         // Retoma ao voltar para a aba — { once:true } impedia isso
-        if (!_fireworkIntervalId) _fireworkIntervalId = setInterval(spawnFirework, 2500);
+        if (!_fireworkIntervalId) _fireworkIntervalId = setInterval(spawnFirework, 4500);
       }
     });
   }
 
   // FIX Bug 5: pausa E retoma o spawn de elementos ao minimizar/restaurar aba
-  let _spawnIntervalId = setInterval(spawnElement, rate);
+  let _spawnIntervalId = setInterval(spawnElement, rate); // rate já reduzido acima
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       clearInterval(_spawnIntervalId);
