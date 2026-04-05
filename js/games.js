@@ -634,7 +634,9 @@ function openTaekwondo(mode = 'split', ctx = null) {
       style="width:100%;max-width:380px;display:block;margin:0 auto;border-radius:8px;touch-action:none"></canvas>
     ${mode === 'split'
       ? `<div class="split-bot">${dpadP1}</div>`
-      : `<div style="display:flex;gap:6px;width:100%">${dpadP1}${dpadP2}</div>`}
+      : isHost
+        ? `<div style="display:flex;gap:6px;width:100%;justify-content:center">${dpadP1}</div>`
+        : `<div style="display:flex;gap:6px;width:100%;justify-content:center">${dpadP2}</div>`}
     <style>${TOUCH_BTN_STYLE}</style>`;
 
   const canvas = document.getElementById('tkd-canvas');
@@ -761,6 +763,8 @@ function openTaekwondo(mode = 'split', ctx = null) {
       if(rTimer===0){
         if(p1.wins>=3||p2.wins>=3){
           cancelAnimationFrame(animId); animId=null;
+          if(_syncInterval){clearInterval(_syncInterval);_syncInterval=null;}
+          _cleanupRoom();
           _showResult(body,'🥋',`${p1.wins>=3?'Pietro 💙':'Emilly 💗'} venceu o combate!`,
             `Pietro ${p1.wins} × ${p2.wins} Emilly`,()=>openTaekwondo(mode,ctx));
           return;
@@ -1078,7 +1082,9 @@ function openSnake(mode = 'split', ctx = null) {
       style="width:100%;max-width:320px;border-radius:10px;display:block;touch-action:none;border:2px solid rgba(255,255,255,.1)"></canvas>
     ${mode==='split'
       ? `<div class="split-bot">${dpadP1}</div>`
-      : `<div style="display:flex;gap:6px;width:100%">${dpadP1}${dpadP2}</div>`}`;
+      : isHost
+        ? `<div style="display:flex;gap:6px;width:100%;justify-content:center">${dpadP1}</div>`
+        : `<div style="display:flex;gap:6px;width:100%;justify-content:center">${dpadP2}</div>`}`;
 
   function bindDpad(pNum, setFn) {
     [['s'+pNum+'u',()=>setFn(0,-1)],['s'+pNum+'d',()=>setFn(0,1)],
@@ -1150,6 +1156,7 @@ function openSnake(mode = 'split', ctx = null) {
         running=false;
         _snakeDead = dead1&&dead2?'both':dead1?'p1':'p2';
         const w=dead1&&dead2?'Empate 💥':dead1?'Emilly venceu 💗':'Pietro venceu 💙';
+        if(isOnline){if(_syncInterval){clearInterval(_syncInterval);_syncInterval=null;}_cleanupRoom();}
         _showResult(body,'🐍',w,`Pietro ${sc1} × ${sc2} Emilly`,()=>openSnake(mode,ctx)); return;
       }
       s1.unshift(h1); s2.unshift(h2);
@@ -1326,7 +1333,9 @@ function openCorrida(mode = 'split', ctx = null) {
       style="width:100%;max-width:380px;display:block;margin:0 auto;border-radius:8px;touch-action:none"></canvas>
     ${mode==='split'
       ? `<div class="split-bot">${dpadP1}</div>`
-      : `<div style="display:flex;gap:6px;width:100%">${dpadP1}${dpadP2}</div>`}
+      : isHost
+        ? `<div style="display:flex;gap:6px;width:100%;justify-content:center">${dpadP1}</div>`
+        : `<div style="display:flex;gap:6px;width:100%;justify-content:center">${dpadP2}</div>`}
     <style>${TOUCH_BTN_STYLE}</style>`;
 
   const kMap={'1':k1,'2':k2};
@@ -1414,6 +1423,8 @@ function openCorrida(mode = 'split', ctx = null) {
     if(raceOver&&raceTimer>0){raceTimer--;
       if(raceTimer===0){
         if(w1>=3||w2>=3){cancelAnimationFrame(animId4);animId4=null;
+          if(_syncInterval){clearInterval(_syncInterval);_syncInterval=null;}
+          _cleanupRoom();
           _showResult(body,'🏃',`${w1>=3?'Pietro 💙':'Emilly 💗'} venceu a corrida!`,`Pietro ${w1} × ${w2} Emilly`,()=>openCorrida(mode,ctx));return;}
         const _w1=w1,_w2=w2;
         p1=makeP(28,'#4a90d9',1,CW-36);p1.won=false;
@@ -1989,22 +2000,23 @@ function openDesenho(mode = 'split', ctx = null) {
   /* ── modo online ── */
   _listenRoom(ctx.code, data => {
     if (!data.data || data.data.phase === undefined) return;
-    const prevStrokes = state.strokes?.length || 0;
-    const isDrawer    = (isHost && state.turn===0) || (!isHost && state.turn===1);
+    const isDrawer = (isHost && state.turn===0) || (!isHost && state.turn===1);
     state = { ...data.data };
-    /* se desenhista: não sobrescreve canvas local com dados remotos (evita flicker) */
-    if (state.phase === 'draw' && isDrawer) { /* mantém canvas, só atualiza estado */ }
-    else render();
-    if (state.phase === 'draw' && !isDrawer) {
-      /* atualiza canvas do adivinhador com novos strokes */
+    if (state.phase === 'draw' && isDrawer) {
+      /* desenhista: não re-renderiza (evita flicker do canvas local) */
+    } else if (state.phase === 'draw' && !isDrawer) {
+      /* adivinhador: renderiza a UI e depois atualiza o canvas com os strokes */
+      render();
       const canvas = document.getElementById('draw-canvas');
       if (canvas) {
         const c2 = canvas.getContext('2d');
         c2.fillStyle = '#1a1a2e'; c2.fillRect(0, 0, canvas.width, canvas.height);
         _replayStrokes(canvas, state.strokes || []);
       }
+    } else {
+      /* qualquer outra fase: renderiza uma única vez */
+      render();
     }
-    if (state.phase !== 'draw') render();
   });
   if (isHost) {
     state = _getInitData('desenho');
@@ -2294,19 +2306,24 @@ function openUno(mode = 'online', ctx = null) {
       _pickColor(); return;
     } else if (card.value === 'bloqueio') {
       skipOpp = true;
+      state.pendingDraw = 0;
       state.lastEffect = `${oppName} bloqueado! 🚫`;
     } else if (card.value === 'inverter') {
       state.dir *= -1;
       skipOpp = true; /* com 2 jogadores, inverter = pular */
+      state.pendingDraw = 0;
       state.lastEffect = `Sentido invertido! 🔄`;
     } else if (card.value === 'curinga') {
+      state.pendingDraw = 0;
       _pickColor(); return;
     } else if (card.value === 'beijo') {
       skipOpp = true;
+      state.pendingDraw = 0;
       state.lastEffect = `${oppName} manda um beijo! 💋`;
     } else if (card.value === 'abraco') {
       /* adversário compra 1 */
       _giveCards(oppIdx, 1);
+      state.pendingDraw = 0;
       state.lastEffect = `${oppName} ganhou 1 carta e um abraço! 🤗`;
     } else {
       state.pendingDraw = 0;
@@ -2568,6 +2585,7 @@ function openVDD(mode = 'split', ctx = null) {
     /* só quem está jogando pode confirmar */
     if (!state.answered) {
       document.getElementById('vdd-done')?.addEventListener('click', async () => {
+        if (!myTurn) return;
         if (state.turn===0) state.s1 = (state.s1||0)+1;
         else                state.s2 = (state.s2||0)+1;
         state.answered = true;
@@ -2576,6 +2594,7 @@ function openVDD(mode = 'split', ctx = null) {
         else render();
       });
       document.getElementById('vdd-skip')?.addEventListener('click', async () => {
+        if (!myTurn) return;
         state.answered = true;
         state.phase    = 'answered';
         if (isOnline) await _writeRoom({ data: state });
@@ -2844,6 +2863,7 @@ function openRoleta(mode = 'split', ctx = null) {
 
     /* cumpriu */
     document.getElementById('roleta-done')?.addEventListener('click', async () => {
+      if (!myTurn) return;
       if (state.turn===0) state.s1=(state.s1||0)+1;
       else                state.s2=(state.s2||0)+1;
       state.done = true;
@@ -2853,6 +2873,7 @@ function openRoleta(mode = 'split', ctx = null) {
 
     /* passou */
     document.getElementById('roleta-skip')?.addEventListener('click', async () => {
+      if (!myTurn) return;
       state.done = true;
       if (isOnline) await _writeRoom({ data: state });
       else render();
@@ -2860,6 +2881,7 @@ function openRoleta(mode = 'split', ctx = null) {
 
     /* próxima vez */
     document.getElementById('roleta-next')?.addEventListener('click', async () => {
+      if (!myTurn) return;
       state.turn   = state.turn===0 ? 1 : 0;
       state.phase  = 'spin';
       state.sector = null;
