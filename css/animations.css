@@ -31,10 +31,10 @@
 }
 
 @keyframes petalFall {
-  0%   { transform: translateY(-60px) translateX(0) rotate(0deg) scale(1); opacity: 1; }
-  25%  { transform: translateY(25vh) translateX(calc(var(--drift, 0px) * 0.4)) rotate(180deg) scale(0.9); }
-  60%  { transform: translateY(65vh) translateX(calc(var(--drift, 0px) * 0.85)) rotate(480deg) scale(0.75); }
-  100% { transform: translateY(110vh) translateX(var(--drift, 0px)) rotate(720deg) scale(0.6); opacity: 0; }
+  0%   { transform: translate3d(0, -60px, 0) rotate(0deg) scale(1); opacity: 1; }
+  25%  { transform: translate3d(calc(var(--drift, 0px) * 0.4), 25vh, 0) rotate(180deg) scale(0.9); }
+  60%  { transform: translate3d(calc(var(--drift, 0px) * 0.85), 65vh, 0) rotate(480deg) scale(0.75); }
+  100% { transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(720deg) scale(0.6); opacity: 0; }
 }
 
 @keyframes fadeIn {
@@ -208,7 +208,7 @@ body.period-madrugada .hero::after {
     radial-gradient(1px 1px at 40% 75%, rgba(200,180,255,0.45) 0%, transparent 100%);
   pointer-events: none;
   will-change: opacity;
-  animation: twinkle 6s ease-in-out infinite alternate; /* mais lento = menos frames */
+  animation: twinkle 10s ease-in-out infinite alternate; /* mais lento = menos frames */
 }
 
 /* ── MINI PLAYER FLUTUANTE ── */
@@ -312,7 +312,7 @@ body.period-madrugada .hero::after {
 
 @keyframes floatYSlow {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-6px); }
+  50%       { transform: translateY(-4px); }
 }
 
 /* rosePulse removido — box-shadow infinite repaint */
@@ -362,13 +362,13 @@ body.period-madrugada .hero::after {
 .pe-delay-5 { transition-delay: 0.35s; }
 
 /* ── ANNIV CARD — flutuação suave ── */
-.anniv-card { animation: floatYSlow 5s ease-in-out infinite; will-change: transform; }
+.anniv-card { animation: floatYSlow 8s ease-in-out infinite; }
 
 /* ── STAT CARDS — pulso de borda ── */
 .stat-card { /* borderGlow removido — era box-shadow em loop */ }
 
 /* ── SECTION LABEL — respira ── */
-.section-label { animation: scaleBreath 4s ease-in-out infinite; display: inline-block; will-change: transform; }
+.section-label { animation: scaleBreath 7s ease-in-out infinite; display: inline-block; }
 
 /* ── DIVIDER — pulso ── */
 .divider { /* dividerPulse removido */ }
@@ -430,4 +430,4 @@ body.period-madrugada .hero::after {
 .mini-player-toggle { /* rosePulse removido — box-shadow loop */ }
 
 /* ── HERO AMPERSAND — pulso de coração ── */
-.hero-ampersand { display: inline-block; animation: heartbeat 2.5s ease-in-out infinite; will-change: transform; }
+.hero-ampersand { display: inline-block; animation: heartbeat 4s ease-in-out infinite; }

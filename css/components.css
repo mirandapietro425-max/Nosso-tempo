@@ -437,7 +437,7 @@
 }
 
 .daily-overlay.show .daily-popup { transform: none; }
-.daily-popup-heart { font-size: 2.8rem; display: block; margin-bottom: 0.8rem; animation: heartbeat 1.4s ease infinite; }
+.daily-popup-heart { font-size: 2.8rem; display: block; margin-bottom: 0.8rem; animation: heartbeat 3s ease infinite; }
 .daily-popup-label { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
 .daily-popup-text { font-family: var(--font-italic); font-style: italic; font-size: 1.25rem; line-height: 1.8; color: #4a1020; margin-bottom: 1.5rem; }
 .daily-popup-close { background: var(--rose); color: white; border: none; padding: 0.7rem 2rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background var(--transition-fast), transform var(--transition-fast); }
@@ -472,7 +472,7 @@
   padding: 3rem 2rem; text-align: center; color: white;
 }
 
-.surprise-lock-icon { font-size: 3.5rem; margin-bottom: 1rem; animation: heartbeat 2s ease infinite; }
+.surprise-lock-icon { font-size: 3.5rem; margin-bottom: 1rem; animation: heartbeat 4s ease infinite; }
 .surprise-lock-title { font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 0.6rem; }
 .surprise-lock-sub { font-family: var(--font-italic); font-style: italic; font-size: 1.1rem; color: var(--gold); margin-bottom: 0.5rem; }
 .surprise-lock-hint { font-size: 0.78rem; opacity: 0.55; letter-spacing: 0.08em; margin-top: 0.8rem; }
@@ -575,7 +575,7 @@ body.dark-event .dreams-input:focus {
   box-shadow: 0 20px 60px rgba(89, 13, 34, 0.3);
 }
 
-.mural-lock-icon { font-size: 3.5rem; margin-bottom: 1rem; animation: heartbeat 2s ease infinite; }
+.mural-lock-icon { font-size: 3.5rem; margin-bottom: 1rem; animation: heartbeat 4s ease infinite; }
 .mural-lock-title { font-family: var(--font-serif); font-size: 1.4rem; margin-bottom: 0.5rem; }
 .mural-lock-sub { font-family: var(--font-italic); font-style: italic; font-size: 1rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 1.8rem; }
 

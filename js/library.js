@@ -31,255 +31,188 @@ export const BOOKS = [
     color: 'linear-gradient(135deg, #fff3cd, #ffe0a0)',
     icon: '🌹',
     chapters: [
-      { title: "Capítulo I — A Jiboia e o Chapéu", text: `Certa vez, quando tinha seis anos, vi num livro sobre a Floresta Virgem, "Histórias Vividas", uma imponente gravura. Representava ela uma jibóia que engolia uma fera. Dizia o livro: "As jibóias engolem, sem mastigar, a presa inteira. Em seguida, não podem mover-se e dormem os seis meses da digestão." Refleti muito então sobre as aventuras da selva, e fiz, com lápis de cor, o meu primeiro desenho.
+      { title: "Capítulo I — A Jiboia e o Chapéu", text: `Quando eu tinha seis anos vi uma vez uma imagem magnífica num livro sobre a Floresta Virgem. Representava uma jiboia a engolir um animal feroz. No livro se afirmava: "As jiboias engolem sua presa por inteiro, sem mastigá-la. Depois não podem se mover e dormem durante os seis meses que dura a digestão."
 
-Mostrei minha obra-prima às pessoas grandes e perguntei se o meu desenho lhes fazia medo. Responderam-me: "Por que é que um chapéu faria medo?" Meu desenho não representava um chapéu. Representava uma jibóia digerindo um elefante. Desenhei então o interior da jibóia, a fim de que as pessoas grandes pudessem compreender. Elas têm sempre necessidade de explicações.
+Refleti muito sobre as aventuras da selva, e, por minha vez, consegui traçar com um lápis de cor o meu primeiro desenho. Meu Desenho Nº 1. Mostrei minha obra-prima às pessoas grandes e perguntei se meu desenho lhes dava medo. Responderam-me: "Por que é que um chapéu daria medo?"
 
-As pessoas grandes aconselharam-me deixar de lado os desenhos de jibóias abertas ou fechadas, e dedicar-me de preferência à geografia, à história, ao cálculo, à gramática. Foi assim que abandonei, aos seis anos, uma esplêndida carreira de pintor. Eu fora desencorajado pelo insucesso do meu desenho número 1 e do meu desenho número 2. As pessoas grandes não compreendem nada sozinhas, e é cansativo, para as crianças, estar toda hora explicando.
+Meu desenho não representava um chapéu. Representava uma jiboia a digerir um elefante. Desenhei então o interior da jiboia, a fim de que as pessoas grandes pudessem compreender. Elas têm sempre necessidade de explicações.
 
-Tive pois de escolher uma outra profissão e aprendi a pilotar aviões. Voei, por assim dizer, por todo o mundo. E a geografia, é claro, me serviu muito. Sabia distinguir, num relance, a China e o Arizona. É muito útil, quando se está perdido na noite.
+As pessoas grandes me aconselharam a deixar de lado os desenhos de jiboias abertas ou fechadas, e a me dedicar de preferência à geografia, à história, ao cálculo e à gramática. Foi assim que abandonei, aos seis anos, uma magnífica carreira de pintor. Fora desencorajado pelo insucesso do meu Desenho Nº 1 e do meu Desenho Nº 2. As pessoas grandes não compreendem nada sozinhas, e é fatigante, para as crianças, estar toda hora explicando.
 
-Tive assim, no correr da vida, muitos contatos com muita gente séria. Vivi muito no meio das pessoas grandes. Vi-as muito de perto. Isso não melhorou, de modo algum, a minha antiga opinião. Quando encontrava uma que me parecia um pouco lúcida, fazia com ela a experiência do meu desenho número 1, que sempre conservei comigo. Eu queria saber se ela era verdadeiramente compreensiva. Mas respondia sempre: "É um chapéu". Então eu não lhe falava nem de jibóias, nem de florestas virgens, nem de estrelas. Punha-me ao seu alcance. Falava-lhe de bridge, de golfe, de política, de gravatas. E a pessoa grande ficava encantada de conhecer um homem tão razoável.` },
-      { title: "Capítulo II — O Carneiro", text: `Vivi portanto só, sem amigo com quem pudesse realmente conversar, até o dia, cerca de seis anos atrás, em que tive uma pane no deserto do Saara. Alguma coisa se quebrara no motor. E como não tinha comigo mecânico ou passageiro, preparei-me para empreender sozinho o difícil conserto. Era, para mim, questão de vida ou de morte. Só dava para oito dias a água que eu tinha.
+Tive então de escolher outra profissão e aprendi a pilotar aviões. Voei por quase todo o mundo. E a geografia, é verdade, me foi muito útil. Sabia distinguir, à primeira olhada, a China da Arizona.
 
-Na primeira noite adormeci pois sobre a areia, a milhas e milhas de qualquer terra habitada. Estava mais isolado que o náufrago numa tábua, perdido no meio do mar. Imaginem então a minha surpresa, quando, ao despertar do dia, uma vozinha estranha me acordou. Dizia: — Por favor... desenha-me um carneiro!
+Tive assim, no decurso de minha vida, muitos contatos com muita gente séria. Vivi muito com pessoas grandes. Vi-as bem de perto. O que não melhorou muito minha opinião a respeito delas.` },
+      { title: "Capítulo II — O Carneiro", text: `Vivi assim, sozinho, sem ninguém com quem poder realmente falar, até uma avaria no deserto do Saara, há seis anos. Alguma coisa havia quebrado no motor. E como não trazia nem mecânico nem passageiros, dispus-me a tentar realizar, sozinho, um conserto difícil. Era para mim questão de vida ou de morte. Tinha água para apenas oito dias.
 
-Pus-me de pé, como atingido por um raio. Esfreguei os olhos. Olhei bem. E vi um pedacinho de gente inteiramente extraordinário, que me considerava com gravidade.
+Na primeira noite adormeci sobre a areia a mil milhas de qualquer terra habitada. Estava mais isolado que um náufrago numa jangada no meio do oceano. Imaginam portanto a minha surpresa quando, ao amanhecer, uma vozinha estranha me acordou. Ela dizia:
 
-Não esqueçam que eu me achava a mil milhas de qualquer terra habitada. Ora, o meu homenzinho não me parecia nem perdido, nem morto de fadiga, nem morto de fome, de sede ou de medo. Não tinha absolutamente a aparência de uma criança perdida no deserto.
+— Por favor... desenha-me um carneiro!
 
-Como nunca houvesse desenhado um carneiro, refiz para ele um dos dois únicos desenhos que sabia. O da jibóia fechada. E fiquei estupefato de ouvir o garoto replicar: — Não! Não! Eu não quero um elefante numa jibóia. A jibóia é perigosa e o elefante toma muito espaço. Tudo é pequeno onde eu moro. Preciso é dum carneiro. Desenha-me um carneiro.
+Saltei de pé como se tivesse sido atingido por um raio. Esfreguei bem os olhos. Olhei ao redor. E vi um homenzinho muito extraordinário que me observava seriamente. Como nunca havia desenhado um carneiro, refiz para ele um dos únicos desenhos que era capaz de fazer: o da jiboia fechada. E fiquei estupefato de ouvir o homenzinho responder:
 
-Então eu desenhei. Olhou atentamente, e disse: — Não! Esse já está muito doente. Desenha outro. Desenhei de novo. Meu amigo sorriu com indulgência: — Bem vês que isto não é um carneiro. É um bode... Olha os chifres...
+— Não, não! Não quero um elefante dentro de uma jiboia. Uma jiboia é muito perigosa e um elefante é muito incômodo. Lá onde eu moro, tudo é muito pequeno. Preciso de um carneiro. Desenha-me um carneiro.
 
-Fiz mais uma vez o desenho. Mas ele foi recusado como os precedentes: — Este aí é muito velho. Quero um carneiro que viva muito.
+Então eu desenhei. Ele olhou atentamente e depois: — Não. Este está doente. Faz outro.
 
-Então, perdendo a paciência, como tinha pressa de desmontar o motor, rabisquei o desenho e arrisquei: — Esta é a caixa. O carneiro está dentro.
+Desenhei de novo. O meu amigo sorriu gentilmente: — Vês bem... não é um carneiro, é um bode. Tem chifres...
 
-Fiquei surpreso de ver iluminar-se a face do meu pequeno juiz: — Era assim mesmo que eu queria! Será preciso muito capim para esse carneiro? Qualquer coisa chega. Eu te dei um carneirinho de nada! Inclinou a cabeça sobre o desenho: — Não é tão pequeno assim... Olha! Adormeceu...
+Refiz portanto o meu desenho, uma vez mais. Mas foi recusado como os precedentes: — Este é muito velho. Quero um carneiro que viva muito tempo.
 
-E foi desse modo que eu travei conhecimento, um dia, com o pequeno príncipe.` },
-      { title: "Capítulo III — De Que Planeta Ele Vinha?", text: `Levei muito tempo para compreender de onde viera. O principezinho, que me fazia milhares de perguntas, não parecia sequer escutar as minhas. Palavras pronunciadas ao acaso e que foram, pouco a pouco, revelando tudo.
+Então, rabisquei um último desenho e joguei a declaração junto: — Esta é a caixa. O carneiro que quiseres está dentro.
 
-Assim, quando viu pela primeira vez meu avião, perguntou-me bruscamente: — Que coisa é aquela? — É um avião. O meu avião. Eu estava orgulhoso de lhe comunicar que eu voava. Então ele exclamou: — Como? Tu caíste do céu?
+Fiquei muito surpreso de ver o rosto do meu jovem juiz iluminar-se: — Era mesmo assim que eu queria! Achas que este carneiro precisa de muita erva?
 
-— Sim, disse eu modestamente. — Ah! como é engraçado... E o principezinho deu uma bela risada, que me irritou profundamente. Gosto que levem a sério as minhas desgraças. Em seguida acrescentou: — Então, tu também vens do céu! De que planeta és tu?
+E foi assim que travei conhecimento com o Pequeno Príncipe.` },
+      { title: "Capítulo III — De Que Planeta Ele Vinha?", text: `Levei muito tempo para saber de onde vinha. O principezinho, que me fazia milhares de perguntas, parecia nunca escutar as minhas. Palavras pronunciadas ao acaso foram, pouco a pouco, revelando tudo para mim.
 
-Vislumbrei um clarão no mistério da sua presença, e interroguei bruscamente: — Tu vens então de outro Planeta? Mas ele não me respondeu. Balançava lentamente a cabeça considerando o avião: — É verdade que, nisto aí, não podes ter vindo de longe...
+Assim, quando viu pela primeira vez meu avião, perguntou-me: — Que coisa é essa?
 
-Esforcei-me, então, por saber mais um pouco: — De onde vens, meu bem? Onde é tua casa? Para onde queres levar meu carneiro? Ficou meditando em silêncio, e respondeu depois: — O bom é que a caixa que me deste poderá, de noite, servir de casa.
+— É um avião. O meu avião. Eu voava.
 
-— Se tu não o amarras, ele vai-se embora e se perde... E meu amigo deu uma nova risada: — Mas onde queres que ele vá? — Não sei... Por aí... Andando sempre para frente. Então o principezinho observou, muito sério: — Não faz mal, é tão pequeno onde eu moro! E depois, talvez com um pouco de melancolia, acrescentou ainda: — Quando a gente anda sempre para frente, não pode mesmo ir longe...` },
-      { title: "Capítulo IV — O Asteróide B 612", text: `Eu aprendera, pois, uma segunda coisa, importantíssima: o seu planeta de origem era pouco maior que uma casa! Não era surpresa para mim. Sabia que além dos grandes planetas — Terra, Júpiter, Marte ou Vênus — havia centenas e centenas de outros, por vezes tão pequenos que mal se vêem no telescópio. Quando o astrônomo descobre um deles, dá-lhe por nome um número.
+Então ele exclamou: — Como? Tu caíste do céu?
 
-Tenho sérias razões para supor que o planeta de onde vinha o príncipe era o asteróide B 612. Esse asteróide só foi visto uma vez ao telescópio, em 1909, por um astrônomo turco. Ele fizera na época uma grande demonstração da sua descoberta num Congresso Internacional de Astronomia. Mas ninguém lhe dera crédito, por causa das roupas que usava. As pessoas grandes são assim.
+— Sim, disse eu modestamente.
 
-Felizmente para a reputação do asteróide B 612, um ditador turco obrigou o povo, sob pena de morte, a vestir-se à moda européia. O astrônomo repetiu sua demonstração em 1920, numa elegante casaca. Então, dessa vez, todo o mundo se convenceu.
+— Ah! Como é engraçado! E o principezinho deu uma bela risada. Depois acrescentou: — Então, tu também vens do céu! De que planeta és tu?
 
-Se lhes dou esses detalhes sobre o asteróide B 612 e lhes confio o seu número, é por causa das pessoas grandes. As pessoas grandes adoram os números. Quando a gente lhes fala de um novo amigo, elas jamais se informam do essencial. Não perguntam nunca: "Qual é o som da sua voz? Quais os brinquedos que prefere? Será que ele coleciona borboletas?" Mas perguntam: "Qual é sua idade? Quantos irmãos tem ele? Quanto pesa? Quanto ganha seu pai?"
+Vislumbrei um clarão no mistério da sua presença e interroguei bruscamente: — Tu vens então de outro planeta?
 
-É preciso não lhes querer mal por isso. As crianças devem ser muito indulgentes com as pessoas grandes. Mas nós, nós que compreendemos a vida, nós não ligamos aos números! Faz já seis anos que meu amigo se foi com seu carneiro. Se tento descrevê-lo aqui, é justamente porque não o quero esquecer. É triste esquecer um amigo. Nem todo o mundo tem amigos. E eu corro o risco de ficar como as pessoas grandes, que só se interessam por números.` },
-      { title: "Capítulo V — Os Baobás", text: `No terceiro dia, aprendi o drama dos baobás. Dessa vez ainda, foi graças ao carneiro. Pois bruscamente o principezinho me interrogou, tomado de grave dúvida: — É verdade que os carneiros comem arbustos? — Sim. É verdade. — Ah! Que bom!
+Mas ele não me respondeu. Balançava lentamente a cabeça, considerando o avião: — É verdade que, nisto aí, não podes ter vindo de muito longe...
 
-Não compreendi logo porque era tão importante que os carneiros comessem arbustos. Mas o principezinho acrescentou: — Por conseguinte eles comem também os baobás?
+Esforcei-me por saber mais. De onde vens, meu bem? Onde é tua casa? Para onde queres levar meu carneiro?
 
-Fiz notar ao principezinho que os baobás não são arbustos, mas árvores grandes como igrejas. E que mesmo que ele levasse consigo todo um rebanho de elefantes, eles não chegariam a dar cabo de um único baobá. A idéia de um rebanho de elefantes fez rir ao principezinho: — Seria preciso votar um por cima do outro... Mas notou, em seguida, sabiamente: — Os baobás, antes de crescer, são pequenos.
+Depois de um silêncio meditativo, respondeu: — O bom é que a caixa que me deste poderá, de noite, servir de casa para o carneiro.
 
-Com efeito, no planeta do principezinho havia, como em todos os outros planetas, ervas boas e más. Por conseguinte, sementes boas, de ervas boas; sementes más, de ervas más. Mas as sementes são invisíveis. Elas dormem no segredo da terra até que uma cisme de despertar. Então ela espreguiça, e lança timidamente para o sol um inofensivo galinho. Se é de roseira ou rabanete, podemos deixar que cresça à vontade. Mas quando se trata de uma planta ruim, é preciso arrancar logo, mal a tenhamos conhecido.
+— Mas se tu não o amarras, ele vai-se embora e se perde...
 
-Ora, havia sementes terríveis no planeta do principezinho: as sementes de baobá. O solo do planeta estava infestado. E um baobá, se a gente custa a descobri-lo, nunca mais se livra dele. Atravanca todo o planeta. Perfura-o com suas raízes. E se o planeta é pequeno e os baobás numerosos, o planeta acaba rachando.
+E meu amigo deu uma nova risada: — Mas onde queres que ele vá? — Não sei... Por aí, andando sempre para frente.
 
-"É uma questão de disciplina, disse-me mais tarde o principezinho. Quando a gente acaba a toalete da manhã, começa a fazer com cuidado a toalete do planeta. É preciso que a gente se conforme em arrancar regularmente os baobás logo que se distinguem das roseiras, com as quais muito se parecem quando pequenos. É um trabalho sem graça, mas de fácil execução."
+Então o principezinho observou, muito sério: — Não faz mal, é tão pequeno onde eu moro! E depois, com um pouco de melancolia, acrescentou: — Quando a gente anda sempre para frente, não pode mesmo ir muito longe...` },
+      { title: "Capítulo V — Os Baobás", text: `No terceiro dia, aprendi o drama dos baobás.
 
-"Meninos! Cuidado com os baobás!" Foi para advertir meus amigos de um perigo que há tanto tempo os ameaçava, como a mim, sem que pudéssemos suspeitar, que tanto caprichei naquele desenho.` },
-      { title: "Capítulo VI — Os Pores-do-Sol", text: `Assim eu comecei a compreender, pouco a pouco, meu pequeno principezinho, a tua vidinha melancólica. Muito tempo não tiveste outra distração que a doçura do pôr-do-sol. Aprendi esse novo detalhe quando me disseste, na manhã do quarto dia: — Gosto muito de pôr-do-sol. Vamos ver um...
+O principezinho me interrogou, tomado de grave dúvida: — É verdade que os carneiros comem arbustos?
 
-— Mas é preciso esperar. — Esperar o quê? — Esperar que o sol se ponha.
+— Sim. É verdade.
 
-Tu fizeste um ar de surpresa, e, logo depois, riste de ti mesmo. Disseste-me: — Eu imagino sempre estar em casa!
+— Ah! Que bom! Mas logo perguntou: — Por conseguinte, eles comem também os baobás?
 
-De fato. Quando é meio-dia nos Estados Unidos, o sol, todo mundo sabe, está se deitando na França. Bastaria ir à França num minuto para assistir ao pôr-do-sol. Infelizmente, a França é longe demais. Mas no teu pequeno planeta, bastava apenas recuar um pouco a cadeira. E contemplavas o crepúsculo todas as vezes que desejavas...
+Fiz notar ao principezinho que os baobás não são arbustos, mas árvores grandes como igrejas. E que mesmo que ele levasse consigo todo um rebanho de elefantes, eles não chegariam a dar cabo de um único baobá.
 
-— Um dia eu vi o sol se pôr quarenta e três vezes!
+— A ideia de um rebanho de elefantes fez rir ao principezinho: — Seria preciso colocá-los um por cima do outro...
 
-E um pouco mais tarde acrescentaste: — Quando a gente está triste demais, gosta do pôr-do-sol... — Estavas tão triste assim no dia dos quarenta e três? Mas o principezinho não respondeu.` },
-      { title: "Capítulo VII — A Flor e os Espinhos", text: `No quinto dia, sempre graças ao carneiro, este segredo da vida do pequeno príncipe foi de súbito revelado. Perguntou-me, sem preâmbulo: — Um carneiro, se come arbusto, come também as flores? — Um carneiro come tudo que encontra. — Mesmo as flores que tenham espinho? — Sim. Mesmo as que têm. — Então... para que servem os espinhos?
+Mas notou, em seguida, sabiamente: — Os baobás, antes de crescer, são pequenos.
 
-Eu não sabia. Estava ocupadíssimo naquele instante, tentando desatarraxar do motor um parafuso muito apertado. O principezinho jamais renunciava a uma pergunta, depois que a tivesse feito. Mas eu estava irritado com o parafuso e respondi qualquer coisa: — Espinho não serve para nada. São pura maldade das flores.
+— É fato! Mas por que desejas que os carneiros comam os baobás pequenos?
 
-— Oh! Mas após um silêncio, ele me disse com uma espécie de rancor: — Não acredito! As flores são fracas. Ingênuas. Defendem-se como podem. Elas se julgam terríveis com os seus espinhos...
+E foi-me preciso um grande esforço de inteligência para compreender sozinho esse problema. Com efeito, no planeta do principezinho havia, como em todos os outros planetas, ervas boas e más. Por conseguinte, sementes boas, de ervas boas; sementes más, de ervas más. Mas as sementes são invisíveis. Elas dormem no segredo da terra até que uma cisme de despertar.
 
-— Coisas sérias! Via-me, martelo em punho, dedos sujos de graxa, curvado sobre um feio objeto. — Tu falas como as pessoas grandes! Tu confundes todas as coisas... Misturas tudo!
+Havia sementes terríveis no planeta do principezinho: as sementes de baobás. E um baobá, se a gente custa a descobri-lo, nunca mais se livra dele. Atravanca todo o planeta. Perfura-o com suas raízes. E se o planeta é pequeno e os baobás numerosos, o planeta acaba rachando.
 
-Estava realmente muito irritado. Sacudia ao vento cabelos de ouro: — Eu conheço um planeta onde há um sujeito vermelho, quase roxo. Nunca cheirou uma flor. Nunca olhou uma estrela. Nunca amou ninguém. Nunca fez outra coisa senão somas. E o dia todo repete como tu: "Eu sou um homem sério!" e isso o faz inchar-se de orgulho. Mas ele não é um homem; é um cogumelo!
+"É uma questão de disciplina, disse-me mais tarde o principezinho. Quando a gente acaba a toalete da manhã, começa a fazer com cuidado a toalete do planeta. É preciso conformar-se em arrancar regularmente os baobás logo que se distinguem das roseiras, com as quais muito se parecem quando pequenos. É um trabalho sem graça, mas de fácil execução.` },
+      { title: "Capítulo VIII — A Rosa", text: `Pude bem cedo conhecer melhor aquela flor. Sempre houvera, no planeta do pequeno príncipe, flores muito simples, ornadas de uma só fileira de pétalas, e que não ocupavam lugar nem incomodavam ninguém. Mas aquela brotara um dia de um grão trazido não se sabe de onde.
 
-— Há milhões e milhões de anos que as flores fabricam espinhos. Há milhões e milhões de anos que os carneiros as comem, apesar de tudo. E não será sério procurar compreender por que perdem tanto tempo fabricando espinhos inúteis? Se alguém ama uma flor da qual só existe um exemplar em milhões e milhões de estrelas, isso basta para que seja feliz quando a contempla. Mas se o carneiro come a flor, é para ele, bruscamente, como se todas as estrelas se apagassem!
+O principezinho vigiara de perto o pequeno broto, tão diferente dos outros. Mas o arbusto logo parou de crescer, e começou então a preparar uma flor. O principezinho assistia à instalação de um enorme botão. A flor não acabava mais de preparar-se, de preparar sua beleza, no seu verde quarto. Escolhia as cores com cuidado. Vestia-se lentamente, ajustava uma a uma suas pétalas. Não queria sair amarrotada. Era vaidosa.
 
-A noite caíra. Larguei as ferramentas. Ria-me do martelo, do parafuso, da sede e da morte. Havia numa estrela, num planeta, o meu, a Terra, um principezinho a consolar! Tomei-o nos braços. Embalei-o. E lhe dizia: "A flor que tu amas não está em perigo..."` },
-      { title: "Capítulo VIII — A Rosa", text: `Pude bem cedo conhecer melhor aquela flor. Sempre houvera, no planeta do pequeno príncipe, flores muito simples, ornadas de uma só fileira de pétalas, e que não ocupavam lugar nem incomodavam ninguém. Mas aquela brotara um dia de um grão trazido não se sabe de onde, e o principezinho vigiara de perto o pequeno broto, tão diferente dos outros.
+E eis que uma bela manhã, justamente à hora do sol nascer, havia-se, afinal, mostrado. E ela, que se preparara com tanto esmero, disse, bocejando:
 
-O arbusto logo parou de crescer, e começou então a preparar uma flor. O principezinho assistia à instalação de um enorme botão. A flor não acabava mais de preparar-se, de preparar sua beleza, no seu verde quarto. Escolhia as cores com cuidado. Vestia-se lentamente, ajustava uma a uma suas pétalas. Não queria sair, como os cravos, amarrotada. Era vaidosa. Sua misteriosa toalete, portanto, durara dias e dias.
+— Ah! Eu acabo de despertar... Desculpa. Estou ainda toda despenteada...
 
-E eis que uma bela manhã, justamente à hora do sol nascer, havia-se, afinal, mostrado. E ela, que se preparara com tanto esmero, disse, bocejando: — Ah! eu acabo de despertar... Desculpa... Estou ainda toda despenteada...
+O principezinho, então, não pôde conter o seu espanto: — Como és bonita!
 
-O principezinho, então, não pôde conter o seu espanto: — Como és bonita! — Não é? respondeu a flor docemente. Nasci ao mesmo tempo que o sol...
+— Não é? respondeu a flor docemente. Nasci ao mesmo tempo que o sol...
 
-Assim ela o afligira logo com sua vaidade. Dissera ao pequeno príncipe: — É que eles podem vir, os tigres, com suas garras! — Não há tigres no meu planeta, objetara o principezinho. — Não sou uma erva. Não tenho receio dos tigres, mas tenho horror das correntes de ar. Não terias acaso um pára-vento?
+Assim ela o afligira logo com sua vaidade. Mas o principezinho, apesar da boa vontade do seu amor, logo duvidara dela.
 
-Assim o principezinho, apesar da boa vontade do seu amor, logo duvidara dela. "Não a devia ter escutado — confessou-me um dia — não se deve nunca escutar as flores. Basta olhá-las, aspirar o perfume. A minha embalsamava o planeta, mas eu não me contentava com isso. Não soube compreender coisa alguma! Devia tê-la julgado pelos atos, não pelas palavras. Ela me perfumava, me iluminava... Não devia jamais ter fugido. Deveria ter-lhe adivinhado a ternura sob os seus pobres ardis. São tão contraditórias as flores! Mas eu era jovem demais para saber amar."` },
-      { title: "Capítulo IX — A Partida", text: `Creio que ele aproveitou, para evadir-se, pássaros selvagens que emigravam. Na manhã da partida, pôs o planeta em ordem. Revolveu cuidadosamente seus dois vulcões em atividade. Possuía também um vulcão extinto. Mas, como ele dizia: "Quem é que pode garantir?", revolveu também o extinto. Se eles são bem revolvidos, os vulcões queimam lentamente, regularmente, sem erupções.
+— Não a devia ter escutado — confessou-me um dia — nunca se deve escutar as flores. Basta olhá-las, aspirar o perfume. A minha embalsamava o planeta, mas eu não sabia contentarme com isso.
 
-O principezinho arrancou também, não sem um pouco de melancolia, os últimos rebentos de baobá. Ele julgava nunca mais voltar. Mas todos esses trabalhos familiares lhe pareceram, aquela manhã, extremamente doces.
+Confessou-me ainda: — Não soube compreender coisa alguma! Devia tê-la julgado pelos atos, não pelas palavras. Ela me perfumava, me iluminava. Não devia jamais ter fugido! Deveria ter-lhe adivinhado a ternura sob os seus pobres ardis. São tão contraditórias as flores! Mas eu era jovem demais para saber amar.` },
+      { title: "Capítulo XXI — A Raposa", text: `Foi nessa época que apareceu a raposa.
 
-E, quando regou pela última vez a flor, e se dispunha a colocá-la sob a redoma, percebeu que estava com vontade de chorar. — Adeus, disse ele à flor. Mas a flor não respondeu. — Adeus, repetiu ele.
+— Bom dia, disse a raposa.
 
-A flor tossiu. — Eu fui uma tola, disse por fim. Peço-te perdão. Trata de ser feliz. A ausência de censuras o surpreendeu. Ficou parado, inteiramente sem jeito, com a redoma no ar.
+— Bom dia, respondeu polidamente o pequeno príncipe, virando-se para olhar. Mas não viu ninguém.
 
-— É claro que eu te amo, disse-lhe a flor. Foi por minha culpa que não soubeste de nada. Isso não tem importância. Foste tão tolo quanto eu. Trata de ser feliz... Mas pode deixar em paz a redoma. Não preciso mais dela.
+— Estou aqui, disse a voz, sob a macieira...
 
-— Mas o vento... — Não estou assim tão resfriada... O ar fresco da noite me fará bem. Eu sou uma flor. — Mas os bichos... — É preciso que eu suporte duas ou três larvas se quiser conhecer as borboletas. Dizem que são tão belas! Quanto aos bichos grandes, não tenho medo deles. Eu tenho as minhas garras. — Não demores assim, que é exasperante. Tu decidiste partir. Vai-te embora!
+— Sou uma raposa, disse a raposa. — Vem brincar comigo, propôs o pequeno príncipe. Estou tão triste...
 
-Pois ela não queria que ele a visse chorar. Era uma flor muito orgulhosa...` },
-      { title: "Capítulo X — O Rei", text: `Ele se achava na região dos asteróides 325, 326, 327, 328, 329, 330. Começou, pois, a visitá-los, para procurar uma ocupação e se instruir. O primeiro era habitado por um rei. O rei sentava-se, vestido de púrpura e arminho, num trono muito simples, posto que majestoso.
+— Não posso brincar contigo, disse a raposa. Não estou domesticada.
 
-— Ah! Eis um súdito, exclamou o rei ao dar com o principezinho. Como pode ele reconhecer-me, se jamais me viu? Ele não sabia que, para os reis, o mundo é muito simplificado. Todos os homens são súditos.
+— O que significa "domesticar"? — perguntou o pequeno príncipe.
 
-— Majestade... sobre quem é que reinais? — Sobre tudo, respondeu o rei, com uma grande simplicidade. Sobre tudo isso, designou seu planeta, os outros, e também as estrelas. — E as estrelas vos obedecem? — Sem dúvida. Obedecem prontamente. Eu não tolero indisciplina.
+— É uma coisa muito esquecida, disse a raposa. Significa "criar laços". Tu não és ainda para mim senão um rapazinho inteiramente igual a outros cem mil rapazinhos. E eu não tenho necessidade de ti. E tu não tens necessidade de mim. Não sou para ti senão uma raposa igual a cem mil outras raposas. Mas, se tu me domesticares, nós teremos necessidade um do outro. Tu serás para mim único no mundo. E eu serei para ti única no mundo...
 
-— Se eu ordenasse a meu general voar de uma flor a outra como borboleta, ou escrever uma tragédia, ou transformar-se em gaivota, e o general não executasse a ordem recebida, quem — ele ou eu — estaria errado? — Vós, respondeu com firmeza o principezinho.
+— Começo a compreender, disse o pequeno príncipe. Existe uma flor... Creio que ela me domesticou...
 
-— Exato. É preciso exigir de cada um o que cada um pode dar, replicou o rei. A autoridade repousa sobre a razão. Se ordenares a teu povo que ele se lance ao mar, farão todos revolução. Eu tenho o direito de exigir obediência porque minhas ordens são razoáveis.
+A raposa voltou à sua idéia: — A minha vida é monótona. Caço galinhas, os homens caçam-me. Mas, se tu me domesticares, minha vida ficará como que cheia de sol. Conhecerei o barulho de passadas que será diferente de todos os outros. E depois, olha! Vês lá embaixo os campos de trigo? Eu não como pão. O trigo para mim é inútil. Os campos de trigo não me lembram nada. E isso é triste! Mas tu tens cabelos cor de ouro. Então será maravilhoso quando tu me tiveres domesticado! O trigo, que é dourado, fará lembrar-me de ti. E eu amarei o barulho do vento no trigo...
 
-— Tu julgarás a ti mesmo, respondeu-lhe o rei. É o mais difícil. É bem mais difícil julgar a si mesmo que julgar os outros. Se consegues julgar-te bem, eis um verdadeiro sábio.
+— Por favor... domestica-me, disse ela.
 
-As pessoas grandes são muito esquisitas, pensava, durante a viagem, o principezinho.` },
-      { title: "Capítulo XI — O Vaidoso", text: `O segundo planeta, um vaidoso o habitava. — Ah! Ah! Um admirador vem visitar-me! exclamou de longe o vaidoso, mal vira o príncipe. Porque, para os vaidosos, os outros homens são sempre admiradores.
+Assim o pequeno príncipe domesticou a raposa. E quando chegou a hora da partida:
 
-— Bom dia. Você tem um chapéu engraçado. — É para agradecer, exclamou o vaidoso. Para agradecer quando me aclamam. Infelizmente não passa ninguém por aqui.
-
-— Bate as mãos uma na outra, aconselhou o vaidoso. O principezinho bateu as mãos uma na outra. O vaidoso agradeceu modestamente, erguendo o chapéu.
-
-— E para o chapéu cair, que é preciso fazer? Mas o vaidoso não ouviu. Os vaidosos só ouvem os elogios. — Não é verdade que tu me admiras muito? — Que quer dizer admirar? — Admirar significa reconhecer que eu sou o homem mais belo, mais rico, mais inteligente e mais bem vestido de todo o planeta. — Mas só há você no seu planeta! — Dá-me esse gosto. Admira-me mesmo assim!
-
-— Eu te admiro, disse o principezinho, dando de ombros. Mas como pode isso interessar-te? E o principezinho foi-se embora. As pessoas grandes são decididamente muito bizarras, ia pensando ele pela viagem afora.` },
-      { title: "Capítulo XII — O Bêbado", text: `O planeta seguinte era habitado por um bêbado. Esta visita foi muito curta, mas mergulhou o principezinho numa profunda melancolia.
-
-— Que fazes aí? perguntou ao bêbado, silenciosamente instalado diante de uma coleção de garrafas vazias e uma coleção de garrafas cheias. — Eu bebo, respondeu o bêbado, com ar lúgubre. — Por que é que bebes? — Para esquecer, respondeu o beberrão. — Esquecer o quê? indagou o principezinho, que já começava a sentir pena. — Esquecer que eu tenho vergonha, confessou o bêbado, baixando a cabeça. — Vergonha de quê? — Vergonha de beber! concluiu o beberrão, encerrando-se definitivamente no seu silêncio.
-
-E o principezinho foi-se embora, perplexo. As pessoas grandes são decididamente muito bizarras, dizia de si para si, durante a viagem.` },
-      { title: "Capítulo XIII — O Homem de Negócios", text: `O quarto planeta era o do homem de negócios. Estava tão ocupado que não levantou sequer a cabeça à chegada do príncipe.
-
-— Bom dia, disse-lhe este. O seu cigarro está apagado. — Três e dois são cinco. Cinco e sete, doze. Doze e três, quinze. Bom dia. Quinze e sete, vinte e dois. Não há tempo para acender de novo. São pois quinhentos e um milhões, seiscentos e vinte e dois mil, setecentos e trinta e um.
-
-— Quinhentos milhões de quê? — Esses que brilham. Ah — estrelas? — Isso mesmo. Estrelas. — E que fazes tu de quinhentos milhões de estrelas? — Que faço delas? — Nada. Eu as possuo. — Tu possuis as estrelas? — Sim.
-
-— E de que te serve possuir as estrelas? — Serve-me para ser rico. — E para que te serve ser rico? — Para comprar outras estrelas, se alguém achar.
-
-— Quando achas um diamante que não é de ninguém, ele é teu. Quando achas uma ilha que não é de ninguém, ela é tua. Quando tens uma idéia primeiro, tu a fazes registrar: ela é tua. E quanto a mim, eu possuo as estrelas, pois ninguém antes de mim teve a idéia de as possuir.
-
-— Eu, disse ele ainda, possuo uma flor que rego todos os dias. Possuo três vulcões que revolvo toda semana. É útil para os meus vulcões, e útil para a minha flor que eu os possua. Mas tu não és útil às estrelas... O homem de negócios abriu a boca, mas não achou nada a responder, e o principezinho se foi... As pessoas grandes são mesmo extraordinárias, repetia simplesmente no percurso da viagem.` },
-      { title: "Capítulo XIV — O Acendedor de Lampiões", text: `O quinto planeta era muito curioso. Era o menor de todos. Mal dava para um lampião e o acendedor de lampiões. O principezinho não podia atinar para que pudessem servir, no céu, num planeta sem casa e sem gente, um lampião e o acendedor de lampiões. No entanto, disse consigo mesmo: — Talvez esse homem seja mesmo absurdo. No entanto, é menos absurdo que o rei, que o vaidoso, que o homem de negócios, que o beberrão. Seu trabalho ao menos tem um sentido. Quando acende o lampião, é como se fizesse nascer mais uma estrela, mais uma flor.
-
-— Bom dia. Por que acabas de apagar teu lampião? — Eu executo uma tarefa terrível. É o regulamento. Bom dia. Que é o regulamento? É apagar meu lampião. Boa noite.
-
-— Eu executo uma tarefa terrível. Antigamente era razoável. Apagava de manhã e acendia à noite. Tinha o resto do dia para descansar e o resto da noite para dormir... Mas o planeta de ano em ano gira mais depressa, e o regulamento não muda! Agora, que ele dá uma volta por minuto, não tenho mais um segundo de repouso. Acendo e apago uma vez por minuto!
-
-O principezinho considerou-o, e amou aquele acendedor tão fiel ao regulamento. Esse aí seria desprezado por todos os Outros, o rei, o vaidoso, o beberrão, o homem de negócios. No entanto, é o único que não me parece ridículo. Talvez porque é o único que se ocupa de outra coisa que não seja ele próprio. Era o único que eu podia ter feito meu amigo. Mas seu planeta é mesmo pequeno demais.` },
-      { title: "Capítulo XV — O Geógrafo", text: `O sexto planeta era dez vezes maior. Era habitado por um velho que escrevia livros enormes.
-
-— Bravo! eis um explorador! exclamou ele, logo que viu o principezinho. — Sou geógrafo, respondeu o velho. — Que é um geógrafo? — É um sábio que sabe onde se encontram os mares, os rios, as cidades, as montanhas, os desertos.
-
-— O seu planeta é muito bonito. Haverá oceanos nele? — Como hei de saber? disse o geógrafo. — Ah! E montanhas? — Como hei de saber? — E cidades, e rios, e desertos? — Como hei de saber? — Mas o senhor é geógrafo! — É claro, disse o geógrafo; mas não sou explorador. Não é o geógrafo que vai contar as cidades, os rios, as montanhas, os mares, os oceanos, os desertos. O geógrafo é muito importante para estar passeando.
-
-— Tenho também uma flor. — Mas nós não anotamos as flores, disse o geógrafo. — Por que não? É o mais bonito! — Porque as flores são efêmeras. — Que quer dizer "efêmera"? — Quer dizer "ameaçada de próxima desaparição".
-
-— Minha flor está ameaçada de próxima desaparição? — Sem dúvida. Minha flor é efêmera, disse o principezinho, e não tem mais que quatro espinhos para defender-se do mundo! E eu a deixei sozinha!
-
-Foi seu primeiro movimento de remorso. — Que me aconselha a visitar? perguntou ele. — O planeta Terra, respondeu-lhe o geógrafo. Goza de grande reputação... E o principezinho se foi, pensando na flor.` },
-      { title: "Capítulo XVII — A Serpente", text: `O principezinho, uma vez na Terra, ficou, pois, muito surpreso de não ver ninguém. Já receara ter se enganado de planeta, quando um anel cor de lua remexeu na areia.
-
-— Boa noite, disse o principezinho, inteiramente ao acaso. — Boa noite, disse a serpente. — Em que planeta me encontro? — Na Terra, na África, respondeu a serpente. — Ah! E não há ninguém na Terra? — Aqui é o deserto. Não há ninguém nos desertos. A Terra é grande.
-
-— Onde estão os homens? A gente está um pouco só no deserto. — Entre os homens também, disse a serpente.
-
-— Tu não és tão poderosa assim... não tens sequer umas patas... não podes sequer viajar... — Eu posso levar-te mais longe que um navio, disse a serpente. Ela enrolou-se na perninha do príncipe, como um bracelete de ouro: — Aquele que eu toco, eu o devolvo à terra de onde veio. Mas tu és puro. Tu vens de uma estrela...
-
-— Posso ajudar-te um dia, se tiveres muita saudade do teu planeta. Posso... — Oh! Eu compreendi muito bem, disse o principezinho. Mas por que falas sempre por enigmas? — Eu os resolvo todos, disse a serpente.` },
-      { title: "Capítulo XXI — A Raposa", text: `E foi então que apareceu a raposa. — Bom dia, disse a raposa. — Bom dia, respondeu polidamente o principezinho, que se voltou, mas não viu nada. — Eu estou aqui, disse a voz, debaixo da macieira... — Sou uma raposa. — Vem brincar comigo, propôs o principezinho. Estou tão triste. — Eu não posso brincar contigo, disse a raposa. Não me cativaram ainda.
-
-— Que quer dizer "cativar"? — É uma coisa muito esquecida, disse a raposa. Significa "criar laços". Tu não és ainda para mim senão um garoto inteiramente igual a cem mil outros garotos. E eu não tenho necessidade de ti. E tu não tens também necessidade de mim. Não passo a teus olhos de uma raposa igual a cem mil outras raposas. Mas, se tu me cativas, nós teremos necessidade um do outro. Serás para mim o único no mundo. E eu serei para ti única no mundo...
-
-— Minha vida é monótona. Eu caço as galinhas e os homens me caçam. Todas as galinhas se parecem e todos os homens se parecem também. E por isso eu me aborreço um pouco. Mas se tu me cativas, minha vida será como que cheia de sol. Conhecerei um barulho de passos que será diferente dos outros. Os outros passos me fazem entrar debaixo da terra. O teu me chamará para fora da toca, como se fosse música.
-
-— A gente só conhece bem as coisas que cativou, disse a raposa. Os homens não têm mais tempo de conhecer coisa alguma. Compram tudo prontinho nas lojas. Mas como não existem lojas de amigos, os homens não têm mais amigos. Se tu queres um amigo, cativa-me!
-
-Assim o principezinho cativou a raposa. Mas, quando chegou a hora da partida, a raposa disse: — Ah! Eu vou chorar. — A culpa é tua, disse o principezinho, eu não te queria fazer mal; mas tu quiseste que eu te cativasse... — Quis, disse a raposa. — Então não sais lucrando nada! — Eu lucro, disse a raposa, por causa da cor do trigo.
+— Ah! Chorarei, disse a raposa.
 
 — Vai rever as rosas. Tu compreenderás que a tua é a única no mundo. Tu voltarás para me dizer adeus, e eu te farei presente de um segredo.
 
-— Vós não sois absolutamente iguais à minha rosa, vós não sois nada ainda. Ninguém ainda vos cativou, nem cativastes a ninguém. Sois belas, mas vazias, disse ele ainda. Não se pode morrer por vós. Minha rosa, sem dúvida um transeunte qualquer pensaria que se parece convosco. Ela sozinha é, porém, mais importante que vós todas, pois foi a ela que eu reguei. Foi a ela que pus sob a redoma.
+O pequeno príncipe foi rever as rosas: — Vós não sois absolutamente parecidas com a minha rosa, vós não sois nada ainda. Ninguém vos domesticou e vós não domesticastes ninguém. Sois como era a minha raposa. Era uma raposa igual a cem mil outras. Mas eu fiz dela minha amiga. Ela é agora única no mundo.
 
-— Adeus, disse ele... — Adeus, disse a raposa. Eis o meu segredo. É muito simples: só se vê bem com o coração. O essencial é invisível para os olhos.
+E voltou a encontrar a raposa:
 
-— Foi o tempo que perdeste com tua rosa que fez tua rosa tão importante. — Os homens esqueceram essa verdade, disse a raposa. Mas tu não a deves esquecer. Tu te tornas eternamente responsável por aquilo que cativas. Tu és responsável pela rosa...` },
-      { title: "Capítulo XXIV — O Poço", text: `Estávamos no oitavo dia de minha pane. Justamente quando bebia a última gota da minha provisão de água, foi que ouvi a história do vendedor. E o principezinho respondeu ao que eu pensava: — Tenho sede também... procuremos um poço...
+— Adeus, disse ela. Eis o meu segredo. É muito simples: só se vê bem com o coração. O essencial é invisível para os olhos.
 
-No entanto, pusemo-nos a caminho. Já tínhamos andado horas em silêncio quando a noite caiu e as estrelas começaram a brilhar. As palavras do principezinho dançavam-me na memória.
+— O essencial é invisível para os olhos, repetiu o pequeno príncipe, a fim de se lembrar.
 
-— A água pode ser boa para o coração... Não compreendi sua resposta e calei-me. Ele estava cansado. Sentou-se. Sentei-me junto dele. E, após um silêncio, disse ainda: — As estrelas são belas por causa de uma flor que não se vê...
+— Foi o tempo que dedicaste à tua rosa que fez tua rosa tão importante.
 
-— O que torna belo o deserto, disse o principezinho, é que ele esconde um poço nalgum lugar.
+— Os homens esqueceram essa verdade, disse a raposa. Mas tu não deves esquecer. Tu te tornas eternamente responsável por aquilo que cativas. Tu és responsável pela tua rosa...` },
+      { title: "Capítulo XXVI — O Adeus", text: `Havia, ao lado do poço, a ruína de um velho muro de pedra. Quando voltei do trabalho, no dia seguinte, vi, de longe, o principezinho sentado no alto, com as pernas balançando. E o escutei dizer:
 
-Fiquei surpreso por compreender de súbito essa misteriosa irradiação da areia. — Quer se trate da casa, das estrelas ou do deserto, disse eu ao principezinho, o que faz a sua beleza é invisível!
+— Tu não te lembras então? Não foi bem aqui o lugar...
 
-— Estou contente, disse ele, que estejas de acordo com a raposa. Como o principezinho adormecesse, tomei-o nos braços e prossegui a caminhada. Tinha a impressão de carregar um frágil tesouro. O mais importante é invisível. Eu o pressentia então mais frágil ainda. É preciso proteger as lâmpadas com cuidado: um sopro as pode apagar... E, caminhando assim, eu descobri o poço.` },
-      { title: "Capítulo XXV — A Água", text: `— Os homens se enfurnam nos rápidos, mas não sabem o que procuram. Então eles se agitam, ficam rodando à toa...
+Uma outra voz devia responder-lhe. Prossegui o caminho para o muro. Continuava a não ver ninguém. O principezinho disse ainda, após um silêncio: — O teu veneno é do bom? Estás certa de não me fazer sofrer muito tempo?
 
-O poço a que tínhamos chegado não se parecia de forma alguma com os poços do Saara. Os poços do Saara são simples buracos na areia. Aquele parecia um poço de aldeia. Ele riu, pegou a corda, fez girar a roldana. E a roldana gemeu como gemem os velhos cata-ventos quando o vento dormiu por muito tempo.
-
-— Tu escutas? disse o príncipe. Estamos acordando o poço, ele canta...
-
-Lentamente, içei o balde até em cima. — Tenho sede dessa água, disse o principezinho. Dá-me de beber... E eu compreendi o que ele havia buscado! Levantei-lhe o balde até a boca. Ele bebeu, de olhos fechados. Era doce como uma festa. Essa água era muito mais que um alimento. Nascera da caminhada sob as estrelas, do canto da roldana, do esforço do meu braço. Era boa para o coração, como um presente.
-
-— Os homens do teu planeta cultivam cinco mil rosas num mesmo jardim... e não encontram o que procuram... — Não encontram. E no entanto o que eles buscam poderia ser achado numa só rosa, ou num pouquinho d'água...
-
-— É verdade. E o principezinho acrescentou: — Mas os olhos são cegos. É preciso buscar com o coração...` },
-      { title: "Capítulo XXVI — O Adeus", text: `Havia, ao lado do poço, a ruína de um velho muro de pedra. Quando voltei do trabalho, no dia seguinte, vi, de longe, o principezinho sentado no alto, com as pernas balançando. E eu o escutei dizer: — Tu não te lembras então? Não foi bem aqui o lugar...
-
-Continuava a não ver ninguém. O principezinho disse ainda, após um silêncio: — O teu veneno é do bom? Estás certa de que não vou sofrer muito tempo?
+Parei, o coração apertado, sem compreender ainda.
 
 Então baixei os olhos para o pé do muro, e dei um salto! Lá estava, erguida para o principezinho, uma dessas serpentes amarelas que nos liquidam num minuto.
 
-Cheguei ao muro a tempo de receber nos braços o meu caro principezinho, pálido como a neve. Desatei o nó do seu eterno lenço dourado. Dei-lhe água. E agora, não ousava perguntar-lhe coisa alguma. Olhou-me gravemente e passou-me os bracinhos no pescoço. Sentia-lhe o coração bater de encontro ao meu, como o de um pássaro que morre.
+Cheguei ao muro a tempo de receber nos braços o meu caro principezinho, pálido como a neve: — Que história é essa? Tu conversas agora com as serpentes?
 
-— Estou contente de teres descoberto o defeito do maquinismo. Vais poder voltar para casa... — Eu também volto hoje para casa... É bem mais longe... bem mais difícil...
+Olhou-me gravemente e passou-me os bracinhos no pescoço. Sentia-lhe o coração bater como o de um pássaro que morre, atingido pela carabina.
 
-— Será como a flor. Se tu amas uma flor que se acha numa estrela, é doce, de noite, olhar o céu. Todas as estrelas estão floridas. Tu olharás, de noite, as estrelas. Onde eu moro é muito pequeno, para que eu possa te mostrar onde se encontra a minha. É melhor assim. Minha estrela será então qualquer das estrelas. Gostarás de olhar todas elas...
+— Estou contente de teres descoberto o defeito do maquinismo. Vais poder voltar para casa...
 
-— Quando olhares o céu de noite, porque habitarei uma delas, porque numa delas estarei rindo, então será como se todas as estrelas te rissem! E tu terás estrelas que sabem rir!
+— Como soubeste disso?
 
-— E quando te houveres consolado, tu te sentirás contente por me teres conhecido. Tu serás sempre meu amigo. E abrirás às vezes a janela à toa, por gosto... E teus amigos ficarão espantados de ouvir-te rir olhando o céu. Tu explicarás então: "Sim, as estrelas, elas sempre me fazem rir!" Será uma peça que te prego...
+Nada respondeu, mas acrescentou: — Eu também volto hoje para casa... É bem mais longe... bem mais difícil...
 
-— Esta noite... tu sabes... não venhas. Eu parecerei sofrer... eu parecerei morrer. É assim. Não venhas ver. Não vale a pena... Eu digo isto... também por causa da serpente. É preciso que não te morda.
+Eu percebia claramente que algo de extraordinário se passava. Apertava-o nos braços como se fosse uma criancinha; mas tinha a impressão de que ele ia deslizando no abismo...
 
-Ele me disse apenas: — Ah! estás aqui... E ele me tomou pela mão. Mas afligiu-se ainda: — Fizeste mal. Tu sofrerás. Eu parecerei morto e não será verdade... Tu compreendes. É longe demais. Eu não posso carregar esse corpo. É muito pesado.
+— Tenho o teu carneiro. E a caixa para o carneiro. E a mordaça...
 
-— É aqui. Deixa-me dar um passo sozinho. E sentou-se, porque tinha medo. Disse ainda: — Tu sabes... minha flor... eu sou responsável por ela! Ela é tão frágil! Tão ingênua! Tem quatro espinhos de nada para defendê-la do mundo...
+Ele sorriu com tristeza. Esperei muito tempo. Ele foi se aquecendo de novo, pouco a pouco:
 
-Eu não podia mover-me. Houve apenas um clarão amarelo perto da sua perna. Permaneceu, por um instante, imóvel. Não gritou. Tombou devagarinho como uma árvore tomba. Nem fez sequer barulho, por causa da areia.` },
+— Faz um ano esta noite. Minha estrela se achará justamente em cima do lugar onde eu caí no ano passado...
+
+Será como a flor. Se tu amas uma flor que se acha numa estrela, é doce, de noite, olhar o céu. Todas as estrelas estão floridas. Será como a água. Aquela que me deste parecia música, por causa da roldana e da corda...
+
+Tu olharás, de noite, as estrelas. Onde eu moro é muito pequeno, para que eu possa te mostrar onde se encontra a minha. Mas todas serão tuas amigas. E depois, eu vou fazer-te um presente... Quando olhares o céu de noite, porque habitarei uma delas, porque numa delas estarei rindo, então será como se todas as estrelas te rissem! E tu terás estrelas que sabem rir!` },
       { title: "Capítulo XXVII — Epílogo", text: `E agora, certamente, já se vão seis anos... Jamais contara essa história. Os camaradas ficaram contentes de ver-me são e salvo. Eu estava triste, mas dizia: É o cansaço...
 
-Agora já me consolei um pouco. Mas não de todo. Sei que ele voltou ao seu planeta; pois, ao raiar do dia, não lhe encontrei o corpo. Não era um corpo tão pesado assim... E gosto, à noite, de escutar as estrelas. Quinhentos milhões de guizos...
+Agora já me consolei um pouco. Mas não de todo. Sei que ele voltou ao seu planeta; pois, ao raiar do dia, não lhe encontrei o corpo. Não era um corpo tão pesado assim...
+
+E gosto, à noite, de escutar as estrelas. Quinhentos milhões de guizos...
 
 Mas eis que sucede uma coisa extraordinária. Na mordaça que desenhei para o principezinho, esqueci de juntar a correia! Não poderá jamais prendê-la no carneiro. E eu pergunto então: "Que se terá passado no planeta? Pode bem ser que o carneiro tenha comido a flor."
 
 Ora eu penso: "Certamente que não! O principezinho encerra a flor todas as noites na redoma de vidro e vigia bem o carneiro." Então, eu me sinto feliz. E todas as estrelas riem docemente.
 
-Ora eu digo: "Uma vez ou outra a gente se distrai e basta isto! Esqueceu uma noite a redoma de vidro ou o carneiro saiu de mansinho, sem que fosse notado." Então os guizos se transformam todos em lágrimas...
+Ora eu digo: "Uma vez ou outra a gente se distrai! Esqueceu uma noite a redoma de vidro ou o carneiro saiu de mansinho, sem que fosse notado!" Então os guizos se transformam todos em lágrimas...
 
-Eis aí um mistério bem grande. Para vocês, que amam também o principezinho, como para mim, todo o universo muda de sentido, se num lugar, que não sabemos onde, um carneiro, que não conhecemos, comeu ou não uma rosa...
+Eis aí um mistério bem grande. Para vocês, que amam também o principezinho, como para mim, todo o universo muda de sentido, se num lugar, que não sabemos onde, um carneiro que não conhecemos comeu ou não uma rosa...
 
-Olhem o céu. Perguntem: Terá ou não terá o carneiro comido a flor? E verão como tudo fica diferente... E nenhuma pessoa grande jamais compreenderá que isso tenha tanta importância!` }
+Olhem o céu. Perguntem: Terá ou não terá o carneiro comido a flor? E verão como tudo fica diferente...
+
+E nenhuma pessoa grande jamais compreenderá que isso tenha tanta importância!` }
     ],
   },
   {
