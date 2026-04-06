@@ -1934,6 +1934,17 @@ if (LOC_DOC) onSnapshot(
   (err) => console.warn('[Firebase] onSnapshot localização:', err.message)
 );
 
+// ── Mural: escuta em tempo real para atualizar automaticamente ──
+if (MURAL_DOC) onSnapshot(
+  MURAL_DOC,
+  (snap) => {
+    // Só re-renderiza se o mural estiver desbloqueado (senha já inserida)
+    if (!muralDesbloqueado) return;
+    renderMural();
+  },
+  (err) => console.warn('[Firebase] onSnapshot mural:', err.message)
+);
+
 // ── Compartilhar localização ──
 async function shareLocation(person) {
   const btn = document.getElementById(`loc-btn-${person}`);

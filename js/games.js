@@ -2018,8 +2018,9 @@ function openDesenho(mode = 'split', ctx = null) {
   /* ── modo online ── */
   _listenRoom(ctx.code, data => {
     if (!data.data || data.data.phase === undefined) return;
-    const isDrawer = (isHost && state.turn===0) || (!isHost && state.turn===1);
     state = { ...data.data };
+    // isDrawer calculado APÓS atualizar state, usando o turn mais recente
+    const isDrawer = (isHost && state.turn===0) || (!isHost && state.turn===1);
     if (state.phase === 'draw' && isDrawer) {
       /* desenhista: não re-renderiza (evita flicker do canvas local) */
     } else if (state.phase === 'draw' && !isDrawer) {
@@ -2185,7 +2186,8 @@ function openUno(mode = 'online', ctx = null) {
   function render() {
     if (!state) return;
     const { hands, discard, turn, chosenColor, pendingDraw, lastEffect, winner, deck } = state;
-    const top = _unoGetCard(state, discard[discard.length - 1]);
+    // discard contém objetos de carta — lê diretamente sem passar por _unoGetCard
+    const top = discard[discard.length - 1];
     const myHand    = (hands[myIdx]  || []).map(id => _unoGetCard(state, id)).filter(Boolean);
     const oppCount  = (hands[oppIdx] || []).length;
     const myTurn    = turn === myIdx;
@@ -2301,7 +2303,8 @@ function openUno(mode = 'online', ctx = null) {
   /* ── lógica de jogar carta ── */
   function playCard(card) {
     if (state.turn !== myIdx) return;
-    const top = _unoGetCard(state, state.discard[state.discard.length-1]);
+    // discard contém objetos de carta — lê diretamente
+    const top = state.discard[state.discard.length-1];
     if (!_unoCanPlay(card, top, state.chosenColor, state.pendingDraw)) return;
 
     /* remove da mão */
