@@ -191,7 +191,7 @@ const CATALOG = [
   { id:'cacanivel', icon:'🎰', title:'Caça-Níquel do Amor', desc:'Gire e ganhe recompensas românticas!',   fn: openCacaNivel },
   { id:'mimica',    icon:'🎭', title:'Mímica do Casal',     desc:'Faça gestos — sem falar a palavra!',      fn: openMimica    },
   { id:'karaoke',   icon:'🎤', title:'Karaokê Batalha',     desc:'Cante o trecho — o outro avalia!',         fn: openKaraoke   },
-  { id:'piano',     icon:'🎹', title:'Piano do Casal',       desc:'Toque as notas da música no tempo certo!',  fn: openPiano     },
+  { id:'tiles',     icon:'🎹', title:'Tiles Piano',           desc:'Bata nas telhas no ritmo da música!',        fn: openTiles     },
 ];
 
 function _renderGameCards() {
@@ -522,9 +522,9 @@ function _getInitData(gameId) {
     const deck = [...KARAOKE_TRACKS].sort(() => Math.random() - .5).slice(0, 8);
     return { phase: 'pick', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 8, deck, trackIdx: 0, voted: false };
   }
-  if (gameId === 'piano') {
-    const tracks = [...MUSICA_TRACKS].sort(() => Math.random() - .5).slice(0, 6);
-    return { phase: 'play', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 6, tracks, trackIdx: 0, seq: [], input: [], solved: false, failed: false };
+  if (gameId === 'tiles') {
+    const track = MUSICA_TRACKS[Math.floor(Math.random() * MUSICA_TRACKS.length)];
+    return { phase: 'ready', trackId: track.id, s1: 0, s2: 0 };
   }
   if (gameId === 'mimica') {
     const deck = [...MIMICA_CARDS].sort(() => Math.random() - .5);
@@ -4096,340 +4096,501 @@ function openKaraoke(mode = 'split', ctx = null) {
   render();
 }
 
+
 /* ══════════════════════════════════════════
-   🎹 PIANO DO CASAL
-   Ouça o trecho → toque as notas na ordem certa
-   Modo tela dividida: turnos alternados
-   Modo online: Firebase sincroniza turno/placar
+   🎹 TILES PIANO DO CASAL  v1
+   Telhas caem no ritmo da música do YouTube.
+   Tela dividida: Pietro em cima · Emilly embaixo
+   Online: Firebase sincroniza placar e estado
 ══════════════════════════════════════════ */
 
-/* ── Sequências de notas por música (escala: C D E F G A B C2) ──
-   Cada nota = índice 0-7 correspondendo às teclas do piano.
-   As sequências representam o riff/melodia mais icônico de cada faixa. */
-const PIANO_SEQUENCES = {
-  'blinding':   [4,4,3,2,1,2,3,4],   // Blinding Lights — riff sintetizador
-  'shape':      [2,3,4,3,2,0,0,2],   // Shape of You — intro
-  'levitate':   [3,3,4,5,4,3,2,3],   // Levitating
-  'dancemon':   [0,2,3,4,3,2,0,2],   // Dance Monkey
-  'sunflower':  [4,5,4,3,2,3,4,2],   // Sunflower
-  'drivers':    [2,2,3,4,3,2,1,0],   // drivers license
-  'perfect':    [0,2,3,5,4,3,2,3],   // Perfect
-  'someone':    [3,4,5,4,3,2,1,2],   // Someone Like You
-  'counting':   [4,3,2,0,2,3,4,5],   // Counting Stars
-  'rolling':    [0,0,2,3,2,0,5,5],   // Rolling in the Deep
-  'stay':       [2,3,4,3,2,3,4,5],   // Stay
-  'astronaut':  [4,4,3,4,5,4,3,2],   // Astronaut in the Ocean
-  'thunder':    [0,2,4,2,0,5,4,2],   // Thunder
-  'lovestory':  [3,4,5,4,3,2,3,4],   // Love Story
-  'bad':        [2,2,3,2,1,0,1,2],   // Bad Guy
-  'believer':   [0,0,2,4,0,0,2,4],   // Believer
+/* Padrões de telhas por música — cada array é uma faixa de tempo (BPM-based).
+   Formato: lista de beats [ coluna 0-3 ] por posição.
+   Os padrões são loops; a velocidade sobe com o tempo. */
+const TILES_PATTERNS = {
+  'blinding':  [[0],[2],[1],[3],[0,2],[1],[3],[2],[0],[1],[3],[0],[2],[1],[0,3]],
+  'shape':     [[1],[0],[2],[3],[1],[2],[0],[3],[1,3],[0],[2],[1],[3],[0],[2,0]],
+  'levitate':  [[0],[1],[2],[3],[0],[2],[1,3],[0],[2],[3],[1],[0],[2],[3],[0,1]],
+  'dancemon':  [[2],[0],[3],[1],[2],[3],[0],[1],[2,0],[3],[1],[0],[3],[2],[1,3]],
+  'sunflower': [[0],[3],[1],[2],[0],[1],[3],[2],[0,2],[1],[3],[0],[2],[1],[3,0]],
+  'drivers':   [[1],[2],[0],[3],[1],[0],[2],[3],[1,3],[2],[0],[1],[3],[0],[2,1]],
+  'perfect':   [[0],[1],[3],[2],[0],[2],[1],[3],[0,3],[1],[2],[0],[3],[1],[2,0]],
+  'someone':   [[2],[3],[0],[1],[2],[1],[3],[0],[2,0],[3],[1],[2],[0],[3],[1,2]],
+  'counting':  [[3],[0],[2],[1],[3],[2],[0],[1],[3,1],[0],[2],[3],[1],[0],[2,3]],
+  'rolling':   [[0],[2],[1],[3],[0],[3],[2],[1],[0,2],[3],[1],[0],[2],[3],[1,0]],
+  'stay':      [[1],[0],[3],[2],[1],[2],[0],[3],[1,3],[0],[2],[1],[3],[0],[2,1]],
+  'astronaut': [[3],[1],[0],[2],[3],[0],[1],[2],[3,1],[0],[2],[3],[1],[2],[0,3]],
+  'thunder':   [[0],[2],[3],[1],[0],[1],[2],[3],[0,2],[3],[1],[0],[2],[1],[3,0]],
+  'lovestory': [[2],[0],[1],[3],[2],[3],[0],[1],[2,0],[3],[1],[2],[0],[3],[1,2]],
+  'bad':       [[1],[3],[2],[0],[1],[0],[3],[2],[1,3],[0],[2],[1],[3],[0],[2,1]],
+  'believer':  [[0],[1],[2],[3],[0],[3],[1],[2],[0,1],[3],[2],[0],[1],[3],[2,0]],
 };
 
-const PIANO_NOTE_LABELS = ['C','D','E','F','G','A','B','C²'];
-const PIANO_NOTE_COLORS = [
-  '#e8536f','#f4a030','#f4d060','#6bcf7f',
-  '#4a9fe8','#9b78e8','#e87878','#e8536f',
-];
-/* Notas tocadas pelo AudioContext (frequências em Hz, oitava 4) */
-const PIANO_FREQS = [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25];
+const TILES_COLS   = 4;
+const TILES_COLORS = ['#4a90d9','#e8536f','#6bcf7f','#f4a030'];
+const TILES_MISS_LIMIT = 8; /* erros antes de game over */
 
-function openPiano(mode = 'split', ctx = null) {
-  const body     = _createOverlay('🎹 Piano do Casal');
+/* BPM → ms por beat (tempo de spawn) */
+function _bpmToMs(bpm) { return Math.round(60000 / bpm); }
+
+/* Spawn BPM por música (aproximado ao riff principal) */
+const TILES_BPM = {
+  'blinding':96,'shape':96,'levitate':103,'dancemon':98,'sunflower':90,
+  'drivers':88,'perfect':95,'someone':108,'counting':124,'rolling':105,
+  'stay':170,'astronaut':100,'thunder':168,'lovestory':119,'bad':135,'believer':125,
+};
+
+function openTiles(mode = 'split', ctx = null) {
+  const body     = _createOverlay('🎹 Tiles Piano');
   const isOnline = mode === 'online';
   const isHost   = ctx?.role === 'host';
-  const P1 = 'Pietro 💙', P2 = 'Emilly 💗';
 
-  let state     = null;
-  let _audioCtx = null;
-  let _ytActive = false;
+  /* ── Estado compartilhado (placar + fase) ── */
+  let sharedState = null; /* { phase, trackId, s1, s2 } */
 
-  /* ── AudioContext lazy ── */
-  function _getAudio() {
-    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    return _audioCtx;
+  /* ── Instância de um campo de tiles (uma "faixa") ── */
+  function _createField(trackId, playerIdx, onScore, onMiss) {
+    const track   = MUSICA_TRACKS.find(t => t.id === trackId) || MUSICA_TRACKS[0];
+    const pattern = TILES_PATTERNS[track.id] || TILES_PATTERNS['blinding'];
+    const bpm     = TILES_BPM[track.id] || 100;
+
+    /* Canvas */
+    const wrap   = document.createElement('div');
+    wrap.className = 'tiles-canvas-wrap';
+    const canvas = document.createElement('canvas');
+    canvas.className = 'tiles-canvas';
+    const W = 320, H = 200;
+    canvas.width = W; canvas.height = H;
+    wrap.appendChild(canvas);
+    const c = canvas.getContext('2d');
+
+    /* Botões de toque (hit zone) */
+    const hitZone = document.createElement('div');
+    hitZone.className = 'tiles-hit-zone';
+    for (let col = 0; col < TILES_COLS; col++) {
+      const btn = document.createElement('button');
+      btn.className = 'tiles-key-btn';
+      btn.dataset.col = col;
+      hitZone.appendChild(btn);
+    }
+    wrap.appendChild(hitZone);
+
+    /* Overlay de início */
+    const overlay = document.createElement('div');
+    overlay.className = 'tiles-overlay';
+    overlay.innerHTML = `
+      <div class="tiles-overlay-title">🎹</div>
+      <div style="font-size:.95rem;font-weight:700;color:white">${track.title}</div>
+      <div class="tiles-overlay-sub">${track.artist}</div>
+      <button class="tiles-overlay-btn" id="tiles-start-${playerIdx}">▶ Começar</button>`;
+    wrap.appendChild(overlay);
+
+    /* Estado do campo */
+    let tiles      = [];   /* [{col, y, hit, miss}] */
+    let patIdx     = 0;
+    let score      = 0;
+    let misses     = 0;
+    let combo      = 0;
+    let running    = false;
+    let animId     = null;
+    let spawnTimer = null;
+    let speed      = 1.5;  /* px por frame */
+    let speedTimer = null;
+
+    const TILE_H   = H * 0.22;
+    const HIT_Y    = H * 0.78;   /* topo da hit zone */
+    const COL_W    = W / TILES_COLS;
+
+    /* Desenha um frame */
+    function draw() {
+      c.fillStyle = '#0d0010';
+      c.fillRect(0, 0, W, H);
+
+      /* Linhas divisórias de colunas */
+      c.strokeStyle = 'rgba(255,255,255,.07)';
+      c.lineWidth   = 1;
+      for (let i = 1; i < TILES_COLS; i++) {
+        c.beginPath(); c.moveTo(i * COL_W, 0); c.lineTo(i * COL_W, H); c.stroke();
+      }
+
+      /* Hit zone */
+      c.fillStyle = 'rgba(255,255,255,.04)';
+      c.fillRect(0, HIT_Y, W, H - HIT_Y);
+      c.strokeStyle = 'rgba(255,255,255,.18)';
+      c.lineWidth   = 1;
+      c.beginPath(); c.moveTo(0, HIT_Y); c.lineTo(W, HIT_Y); c.stroke();
+
+      /* Telhas */
+      tiles.forEach(tile => {
+        const x = tile.col * COL_W;
+        const r = 6;
+        if (tile.hit) {
+          /* flash branco */
+          c.fillStyle = 'rgba(255,255,255,.7)';
+        } else if (tile.miss) {
+          c.fillStyle = 'rgba(248,113,113,.55)';
+        } else {
+          c.fillStyle = TILES_COLORS[tile.col];
+        }
+        /* rounded rect */
+        c.beginPath();
+        c.moveTo(x + r, tile.y);
+        c.lineTo(x + COL_W - r, tile.y);
+        c.quadraticCurveTo(x + COL_W, tile.y, x + COL_W, tile.y + r);
+        c.lineTo(x + COL_W, tile.y + TILE_H - r);
+        c.quadraticCurveTo(x + COL_W, tile.y + TILE_H, x + COL_W - r, tile.y + TILE_H);
+        c.lineTo(x + r, tile.y + TILE_H);
+        c.quadraticCurveTo(x, tile.y + TILE_H, x, tile.y + TILE_H - r);
+        c.lineTo(x, tile.y + r);
+        c.quadraticCurveTo(x, tile.y, x + r, tile.y);
+        c.closePath();
+        c.fill();
+      });
+
+      /* Score no canvas */
+      c.font = 'bold 20px sans-serif';
+      c.fillStyle = 'rgba(255,255,255,.85)';
+      c.textAlign = 'center';
+      c.fillText(score, W / 2, 26);
+      if (combo >= 3) {
+        c.font = 'bold 11px sans-serif';
+        c.fillStyle = '#ffd700';
+        c.fillText(`${combo}x combo! 🔥`, W / 2, 42);
+      }
+    }
+
+    /* Loop principal */
+    function loop() {
+      if (!running) return;
+      tiles.forEach(tile => {
+        if (!tile.hit && !tile.miss) tile.y += speed;
+      });
+
+      /* Detecta miss: telha saiu da tela sem ser tocada */
+      tiles.forEach(tile => {
+        if (!tile.hit && !tile.miss && tile.y > H) {
+          tile.miss = true;
+          misses++;
+          combo = 0;
+          onMiss(misses);
+          if (misses >= TILES_MISS_LIMIT) stopField('miss');
+        }
+      });
+
+      /* Remove telhas muito velhas */
+      tiles = tiles.filter(t => t.y < H + 60);
+
+      draw();
+      animId = requestAnimationFrame(loop);
+    }
+
+    /* Spawn de telhas */
+    function spawnBeat() {
+      if (!running) return;
+      const cols = pattern[patIdx % pattern.length];
+      cols.forEach(col => {
+        tiles.push({ col, y: -TILE_H, hit: false, miss: false });
+      });
+      patIdx++;
+      spawnTimer = setTimeout(spawnBeat, _bpmToMs(bpm));
+    }
+
+    /* Toque numa coluna */
+    function hitCol(col) {
+      if (!running) return;
+      /* Encontra a telha mais baixa nessa coluna que ainda está tocável */
+      const candidate = tiles
+        .filter(t => t.col === col && !t.hit && !t.miss && t.y + TILE_H >= HIT_Y - 30 && t.y < H + 10)
+        .sort((a, b) => b.y - a.y)[0];
+
+      /* Flash visual no botão */
+      const btn = hitZone.children[col];
+      btn.classList.add('tiles-hit-flash');
+      setTimeout(() => btn.classList.remove('tiles-hit-flash'), 120);
+
+      if (candidate) {
+        candidate.hit = true;
+        score++;
+        combo++;
+        onScore(score, combo);
+        /* Toca som curto */
+        _playTileNote(col);
+        /* Combo pop */
+        if (combo >= 3 && combo % 3 === 0) _showCombo(wrap, combo);
+      } else {
+        /* Miss voluntário (tocou coluna errada) */
+        misses++;
+        combo = 0;
+        onMiss(misses);
+        /* Flash vermelho no canvas */
+        wrap.classList.add('tiles-miss-flash');
+        setTimeout(() => wrap.classList.remove('tiles-miss-flash'), 250);
+        if (misses >= TILES_MISS_LIMIT) stopField('miss');
+      }
+    }
+
+    /* Eventos de toque/clique */
+    hitZone.addEventListener('pointerdown', e => {
+      const btn = e.target.closest('.tiles-key-btn');
+      if (!btn) return;
+      e.preventDefault();
+      hitCol(Number(btn.dataset.col));
+    });
+
+    /* Parar o campo */
+    function stopField(reason) {
+      running = false;
+      if (animId)     { cancelAnimationFrame(animId); animId = null; }
+      if (spawnTimer) { clearTimeout(spawnTimer); spawnTimer = null; }
+      if (speedTimer) { clearInterval(speedTimer); speedTimer = null; }
+    }
+
+    /* Iniciar o campo */
+    function startField() {
+      overlay.remove();
+      running = true;
+      spawnBeat();
+      loop();
+      /* Aumenta velocidade a cada 10s */
+      speedTimer = setInterval(() => { speed = Math.min(speed + 0.4, 6); }, 10000);
+    }
+
+    document.getElementById(`tiles-start-${playerIdx}`)?.addEventListener('click', startField);
+
+    return { wrap, stopField, getScore: () => score };
   }
 
-  /* ── Toca nota com Web Audio API ── */
-  function _playNote(noteIdx, duration = 0.35) {
+  /* ── Som de nota por Web Audio ── */
+  const TILES_FREQS_NOTE = [261.63, 329.63, 392.00, 523.25]; /* C E G C8 — acorde */
+  let _tileAudioCtx = null;
+  function _playTileNote(col) {
     try {
-      const ac   = _getAudio();
-      const osc  = ac.createOscillator();
-      const gain = ac.createGain();
-      osc.connect(gain);
-      gain.connect(ac.destination);
+      if (!_tileAudioCtx) _tileAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ac  = _tileAudioCtx;
+      const osc = ac.createOscillator();
+      const g   = ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
       osc.type = 'triangle';
-      osc.frequency.value = PIANO_FREQS[noteIdx];
-      gain.gain.setValueAtTime(0.5, ac.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
-      osc.start(ac.currentTime);
-      osc.stop(ac.currentTime + duration);
+      osc.frequency.value = TILES_FREQS_NOTE[col] || 440;
+      g.gain.setValueAtTime(0.35, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18);
+      osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.18);
     } catch(e) {}
   }
 
-  /* ── Toca a sequência inteira como demo ── */
-  function _playSequenceDemo(seq, onDone) {
-    seq.forEach((noteIdx, i) => {
-      setTimeout(() => {
-        _playNote(noteIdx, 0.4);
-        /* destaca visualmente a tecla */
-        const key = document.querySelector(`.piano-key[data-note="${noteIdx}"]`);
-        if (key) {
-          key.classList.add('piano-key-active');
-          setTimeout(() => key.classList.remove('piano-key-active'), 380);
-        }
-        if (i === seq.length - 1 && onDone) {
-          setTimeout(onDone, 500);
-        }
-      }, i * 450);
-    });
+  /* ── Combo pop visual ── */
+  function _showCombo(container, combo) {
+    const pop = document.createElement('div');
+    pop.className = 'tiles-combo-pop';
+    pop.textContent = `${combo}x 🔥`;
+    container.appendChild(pop);
+    setTimeout(() => pop.remove(), 650);
   }
 
-  /* ── Gera sequência para a faixa atual ── */
-  function _getSeq(track) {
-    return PIANO_SEQUENCES[track.id] || [0,1,2,3,4,3,2,1];
-  }
+  /* ── Monta a tela ── */
+  function buildUI(trackId) {
+    const track = MUSICA_TRACKS.find(t => t.id === trackId) || MUSICA_TRACKS[0];
+    let s1 = 0, s2 = 0;
+    let field1 = null, field2 = null;
+    let gameOver = false;
 
-  /* ── Render principal ── */
-  function render() {
-    if (!state) return;
-    const { phase, turn, s1, s2, round, totalRounds, tracks, trackIdx, seq, input, solved, failed } = state;
-    const track  = tracks[trackIdx] || tracks[0];
-    const myTurn = isOnline ? (isHost ? turn === 0 : turn === 1) : true;
-    const pName  = turn === 0 ? P1 : P2;
-    const pColor = turn === 0 ? '#4a90d9' : '#e8536f';
-
-    /* ── Fim de jogo ── */
-    if (phase === 'gameover') {
+    function checkEnd(who, reason) {
+      if (gameOver) return;
+      gameOver = true;
       _stopYT();
-      const emoji  = s1 > s2 ? '💙' : s2 > s1 ? '💗' : '🤝';
-      const winner = s1 > s2 ? 'Pietro venceu!' : s2 > s1 ? 'Emilly venceu!' : 'Empate!';
-      _showResult(body, emoji, winner, `Pietro ${s1} × ${s2} Emilly`, () => openPiano(mode, ctx));
+      if (field1) field1.stopField();
+      if (field2) field2.stopField();
+
+      const final1 = field1 ? field1.getScore() : s1;
+      const final2 = field2 ? field2.getScore() : s2;
+
+      setTimeout(() => {
+        const emoji  = final1 > final2 ? '💙' : final2 > final1 ? '💗' : '🤝';
+        const winner = final1 > final2 ? 'Pietro venceu!' : final2 > final1 ? 'Emilly venceu!' : 'Empate!';
+        _showResult(body, emoji, winner, `Pietro ${final1} × ${final2} Emilly`, () => openTiles(mode, ctx));
+        if (isOnline) _writeRoom({ data: { phase: 'gameover', trackId, s1: final1, s2: final2 } });
+      }, 800);
+    }
+
+    /* ── Tela dividida ── */
+    if (mode === 'split') {
+      body.innerHTML = '';
+
+      /* Campo Emilly (em cima — invertido visualmente) */
+      const wrapEmilly = document.createElement('div');
+      wrapEmilly.className = 'tiles-wrap';
+      const hdrEmilly = document.createElement('div');
+      hdrEmilly.className = 'tiles-header';
+      hdrEmilly.innerHTML = `
+        <span class="tiles-player-tag" style="color:#e8536f">💗 Emilly</span>
+        <span class="tiles-score-tag" id="tiles-score-2">0</span>
+        <span class="tiles-track-tag">${track.title}</span>`;
+      wrapEmilly.appendChild(hdrEmilly);
+
+      field2 = _createField(trackId, 2,
+        (sc, combo) => { s2 = sc; document.getElementById('tiles-score-2').textContent = sc; },
+        (misses)   => { if (misses >= TILES_MISS_LIMIT) checkEnd(2, 'miss'); }
+      );
+      /* Inverte o campo da Emilly de cabeça pra baixo */
+      field2.wrap.style.transform = 'rotate(180deg)';
+      field2.wrap.style.transformOrigin = 'center center';
+      wrapEmilly.appendChild(field2.wrap);
+      body.appendChild(wrapEmilly);
+
+      /* Divisória */
+      const divider = document.createElement('div');
+      divider.className = 'tiles-divider';
+      body.appendChild(divider);
+
+      /* Campo Pietro (embaixo — normal) */
+      const wrapPietro = document.createElement('div');
+      wrapPietro.className = 'tiles-wrap';
+      const hdrPietro = document.createElement('div');
+      hdrPietro.className = 'tiles-header';
+      hdrPietro.innerHTML = `
+        <span class="tiles-player-tag" style="color:#4a90d9">💙 Pietro</span>
+        <span class="tiles-score-tag" id="tiles-score-1">0</span>
+        <span class="tiles-track-tag">${track.title}</span>`;
+      wrapPietro.appendChild(hdrPietro);
+
+      field1 = _createField(trackId, 1,
+        (sc, combo) => { s1 = sc; document.getElementById('tiles-score-1').textContent = sc; },
+        (misses)   => { if (misses >= TILES_MISS_LIMIT) checkEnd(1, 'miss'); }
+      );
+      wrapPietro.appendChild(field1.wrap);
+      body.appendChild(wrapPietro);
+
+      /* Música: começa quando ambos os campos iniciarem
+         (cada campo tem seu botão de start) */
+      const startedPlayers = new Set();
+      const origStart1 = field1.wrap.querySelector('[id^=tiles-start-]');
+      const origStart2 = field2.wrap.querySelector('[id^=tiles-start-]');
+
+      function tryStartMusic(playerNum) {
+        startedPlayers.add(playerNum);
+        if (startedPlayers.size === 2) {
+          _playYT(track.ytId, 60, () => checkEnd(0, 'time'));
+        }
+      }
+      origStart1?.addEventListener('click', () => tryStartMusic(1));
+      origStart2?.addEventListener('click', () => tryStartMusic(2));
+
+      _activeCleanup = () => {
+        _stopYT();
+        if (field1) field1.stopField();
+        if (field2) field2.stopField();
+        if (_tileAudioCtx) { try { _tileAudioCtx.close(); } catch(e){} _tileAudioCtx = null; }
+      };
       return;
     }
 
-    const seqArr  = seq || _getSeq(track);
-    const inpArr  = input || [];
-    const nextIdx = inpArr.length; /* próxima nota esperada */
+    /* ── Online ── */
+    if (mode === 'online') {
+      body.innerHTML = '';
+      const myIdx = isHost ? 0 : 1;
+      const myName  = isHost ? 'Pietro 💙' : 'Emilly 💗';
+      const myColor = isHost ? '#4a90d9' : '#e8536f';
 
-    body.innerHTML = `
-      <div class="game-score-bar">
-        <div class="game-score-box" style="border:1px solid ${turn===0?'#4a90d9':'transparent'}">
-          <div class="game-score-label">Pietro 🎹</div>
-          <div class="game-score-num" style="color:#4a90d9">${s1}</div>
-        </div>
-        <div class="game-score-box">
-          <div class="game-score-label">Round</div>
-          <div class="game-score-num" style="font-size:.85rem">${round}/${totalRounds}</div>
-        </div>
-        <div class="game-score-box" style="border:1px solid ${turn===1?'#e8536f':'transparent'}">
-          <div class="game-score-label">Emilly 🎹</div>
-          <div class="game-score-num" style="color:#e8536f">${s2}</div>
-        </div>
-      </div>
+      const wrapMe = document.createElement('div');
+      wrapMe.className = 'tiles-wrap';
+      const hdrMe = document.createElement('div');
+      hdrMe.className = 'tiles-header';
+      hdrMe.innerHTML = `
+        <span class="tiles-player-tag" style="color:${myColor}">${myName}</span>
+        <span class="tiles-score-tag" id="tiles-score-me">0</span>
+        <span class="tiles-track-tag">${track.title}</span>`;
+      wrapMe.appendChild(hdrMe);
 
-      <div class="piano-track-info">
-        <div class="piano-track-title">${track.title}</div>
-        <div class="piano-track-artist">${track.artist}</div>
-        ${myTurn
-          ? `<button class="piano-listen-btn" id="piano-listen">▶ Ouvir trecho</button>`
-          : `<div class="piano-wait-msg">Aguardando <strong>${pName}</strong>…</div>`
+      const myField = _createField(trackId, myIdx,
+        (sc, combo) => {
+          document.getElementById('tiles-score-me').textContent = sc;
+          _writeRoom({ data: { ...sharedState, [isHost ? 's1' : 's2']: sc } });
+        },
+        (misses) => {
+          if (misses >= TILES_MISS_LIMIT) {
+            checkEnd(myIdx, 'miss');
+            _writeRoom({ data: { ...sharedState, phase: 'gameover' } });
+          }
         }
+      );
+      wrapMe.appendChild(myField.wrap);
+      body.appendChild(wrapMe);
+
+      /* Placar do oponente */
+      const oppWrap = document.createElement('div');
+      oppWrap.innerHTML = `
+        <div class="tiles-header" style="justify-content:space-between;padding:.3rem .5rem">
+          <span class="tiles-player-tag" style="color:${isHost?'#e8536f':'#4a90d9'}">${isHost?'Emilly 💗':'Pietro 💙'}</span>
+          <span class="tiles-score-tag" id="tiles-score-opp">0</span>
+          <span class="tiles-track-tag">adversário</span>
+        </div>`;
+      body.appendChild(oppWrap);
+
+      /* Sync listener */
+      _listenRoom(ctx.code, data => {
+        if (!data.data) return;
+        sharedState = data.data;
+        const oppScore = isHost ? data.data.s2 : data.data.s1;
+        const el = document.getElementById('tiles-score-opp');
+        if (el) el.textContent = oppScore || 0;
+        if (data.data.phase === 'gameover' && !gameOver) {
+          checkEnd(-1, 'remote');
+        }
+        if (data.data.phase === 'playing' && isHost) {
+          /* host inicia música quando guest confirmou start */
+          _playYT(track.ytId, 60, () => checkEnd(0, 'time'));
+        }
+      });
+
+      /* Botão start */
+      const startBtn = myField.wrap.querySelector('[id^=tiles-start-]');
+      startBtn?.addEventListener('click', () => {
+        sharedState = { ...sharedState, phase: 'playing' };
+        _writeRoom({ data: sharedState });
+        if (!isHost) _playYT(track.ytId, 60, () => checkEnd(0, 'time'));
+      });
+
+      if (isHost) {
+        sharedState = _getInitData('tiles');
+        _writeRoom({ data: sharedState });
+      }
+
+      _activeCleanup = () => {
+        _stopYT();
+        myField.stopField();
+        if (_tileAudioCtx) { try { _tileAudioCtx.close(); } catch(e){} _tileAudioCtx = null; }
+        if (_roomUnsub) { _roomUnsub(); _roomUnsub = null; }
+      };
+      return;
+    }
+  }
+
+  /* ── Escolha de música antes de jogar ── */
+  const trackOptions = [...MUSICA_TRACKS].sort(() => Math.random() - .5).slice(0, 6);
+  body.innerHTML = `
+    <div style="text-align:center;padding:.4rem 0 .8rem">
+      <div style="font-size:1rem;font-weight:700;color:white;margin-bottom:.2rem">🎵 Escolha a música</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.45);margin-bottom:.8rem">
+        ${mode==='split' ? 'Ambos jogam ao mesmo tempo — tela dividida!' : 'Online — placar sincronizado!'}
       </div>
-
-      <!-- Indicador de progresso da sequência -->
-      <div class="piano-seq-dots">
-        ${seqArr.map((n, i) => {
-          let cls = 'piano-dot';
-          if (i < inpArr.length) cls += inpArr[i] === n ? ' piano-dot-ok' : ' piano-dot-err';
-          else if (i === nextIdx) cls += ' piano-dot-cur';
-          return `<div class="${cls}" style="background:${i < inpArr.length ? (inpArr[i]===n?'#6bcf7f':'#f87171') : i===nextIdx?PIANO_NOTE_COLORS[n]:'rgba(255,255,255,.15)'}"></div>`;
-        }).join('')}
-      </div>
-
-      ${solved ? `<div class="piano-feedback piano-feedback-ok">🎉 Perfeito! +1 ponto!</div>` : ''}
-      ${failed ? `<div class="piano-feedback piano-feedback-err">💔 Errou! A sequência era: ${seqArr.map(n=>PIANO_NOTE_LABELS[n]).join(' ')}</div>` : ''}
-
-      <!-- Teclado -->
-      <div class="piano-keyboard" id="piano-kb" ${!myTurn || solved || failed ? 'style="pointer-events:none;opacity:.45"' : ''}>
-        ${PIANO_NOTE_LABELS.map((lbl, i) => `
-          <button class="piano-key" data-note="${i}"
-            style="--pk-color:${PIANO_NOTE_COLORS[i]}">
-            <span class="piano-key-label">${lbl}</span>
+      <div style="display:flex;flex-direction:column;gap:.45rem;max-width:300px;margin:0 auto">
+        ${trackOptions.map(t => `
+          <button class="game-restart-btn tiles-track-pick" data-id="${t.id}"
+            style="display:flex;align-items:center;gap:.7rem;padding:.55rem .9rem;text-align:left">
+            <span style="font-size:1.1rem">🎵</span>
+            <span>
+              <div style="font-weight:700;font-size:.88rem">${t.title}</div>
+              <div style="font-size:.68rem;opacity:.6">${t.artist}</div>
+            </span>
           </button>`).join('')}
       </div>
+    </div>`;
 
-      ${(myTurn && (solved || failed))
-        ? `<button class="game-restart-btn piano-next-btn" id="piano-next">
-            ${round >= totalRounds ? '🏆 Ver resultado' : 'Próxima música ▶'}
-           </button>`
-        : (!myTurn && (solved || failed))
-          ? `<div style="text-align:center;font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.5rem">Aguardando ${pName} continuar…</div>`
-          : ''
-      }`;
-
-    /* ── Eventos ── */
-
-    /* Botão ouvir */
-    document.getElementById('piano-listen')?.addEventListener('click', () => {
-      if (_ytActive) return;
-      _ytActive = true;
-      const btn = document.getElementById('piano-listen');
-      if (btn) { btn.disabled = true; btn.textContent = '🎵 Tocando…'; }
-      _playYT(track.ytId, 18, () => {
-        _ytActive = false;
-        /* depois de ouvir, mostra a demo das notas */
-        setTimeout(() => {
-          const infoEl = document.querySelector('.piano-track-info');
-          if (infoEl) {
-            const demoBtn = document.createElement('button');
-            demoBtn.className = 'piano-listen-btn';
-            demoBtn.style.background = 'rgba(255,255,255,.12)';
-            demoBtn.textContent = '🎹 Ver demo das notas';
-            demoBtn.addEventListener('click', () => {
-              demoBtn.disabled = true;
-              _playSequenceDemo(seqArr, () => { demoBtn.disabled = false; });
-            });
-            infoEl.appendChild(demoBtn);
-          }
-        }, 300);
-      });
+  body.querySelectorAll('.tiles-track-pick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      buildUI(btn.dataset.id);
     });
+  });
 
-    /* Teclas do piano */
-    document.getElementById('piano-kb')?.addEventListener('click', e => {
-      if (!myTurn || solved || failed) return;
-      const key = e.target.closest('.piano-key');
-      if (!key) return;
-      const noteIdx = Number(key.dataset.note);
-      _playNote(noteIdx);
-
-      /* Feedback visual */
-      key.classList.add('piano-key-active');
-      setTimeout(() => key.classList.remove('piano-key-active'), 300);
-
-      const newInput = [...inpArr, noteIdx];
-      const expected = seqArr[inpArr.length];
-
-      if (noteIdx !== expected) {
-        /* Erro */
-        const newState = { ...state, input: newInput, failed: true };
-        _applyState(newState);
-      } else if (newInput.length === seqArr.length) {
-        /* Completou! */
-        const newS1 = s1 + (turn === 0 ? 1 : 0);
-        const newS2 = s2 + (turn === 1 ? 1 : 0);
-        const newState = { ...state, input: newInput, solved: true, s1: newS1, s2: newS2 };
-        _applyState(newState);
-      } else {
-        /* Nota certa, continua */
-        const newState = { ...state, input: newInput };
-        _applyState(newState);
-      }
-    });
-
-    /* Próximo round */
-    document.getElementById('piano-next')?.addEventListener('click', () => {
-      if (!myTurn) return;
-      _stopYT();
-      _ytActive = false;
-      const nextTrackIdx = trackIdx + 1;
-      const nextRound    = round + 1;
-      const gameover     = nextRound > totalRounds;
-      const newState = {
-        ...state,
-        phase:     gameover ? 'gameover' : 'play',
-        turn:      isOnline ? (turn === 0 ? 1 : 0) : turn,
-        round:     nextRound,
-        trackIdx:  nextTrackIdx % tracks.length,
-        seq:       [],
-        input:     [],
-        solved:    false,
-        failed:    false,
-      };
-      _applyState(newState);
-    });
-  }
-
-  /* ── Aplica estado local ou sincroniza online ── */
-  function _applyState(newState) {
-    state = newState;
-    if (isOnline) {
-      _writeRoom({ data: _pianoSerialize(state) });
-    } else {
-      render();
-    }
-  }
-
-  /* ── Serialização (seq e input são flat arrays de números — sem problema) ── */
-  function _pianoSerialize(s) {
-    const track = s.tracks[s.trackIdx] || s.tracks[0];
-    return {
-      phase:      s.phase,
-      turn:       s.turn,
-      s1:         s.s1,
-      s2:         s.s2,
-      round:      s.round,
-      totalRounds:s.totalRounds,
-      trackIdx:   s.trackIdx,
-      trackIds:   s.tracks.map(t => t.id),   /* salva só IDs, sem nested objects */
-      seq:        s.seq && s.seq.length ? s.seq : _getSeq(track),
-      input:      s.input || [],
-      solved:     s.solved || false,
-      failed:     s.failed || false,
-    };
-  }
-
-  function _pianoDeserialize(d) {
-    const tracks = (d.trackIds || []).map(id => MUSICA_TRACKS.find(t => t.id === id)).filter(Boolean);
-    const safeT  = tracks.length ? tracks : [...MUSICA_TRACKS].slice(0, 6);
-    const track  = safeT[d.trackIdx || 0] || safeT[0];
-    return {
-      phase:      d.phase || 'play',
-      turn:       d.turn ?? 0,
-      s1:         d.s1 ?? 0,
-      s2:         d.s2 ?? 0,
-      round:      d.round ?? 1,
-      totalRounds:d.totalRounds ?? 6,
-      tracks:     safeT,
-      trackIdx:   d.trackIdx ?? 0,
-      seq:        d.seq && d.seq.length ? d.seq : _getSeq(track),
-      input:      d.input || [],
-      solved:     d.solved || false,
-      failed:     d.failed || false,
-    };
-  }
-
-  /* ── Modo online ── */
-  if (isOnline) {
-    _listenRoom(ctx.code, data => {
-      if (!data.data || data.data.phase === undefined) return;
-      state = _pianoDeserialize(data.data);
-      render();
-    });
-    if (isHost) {
-      state = _getInitData('piano');
-      state.seq = _getSeq(state.tracks[0]);
-      _writeRoom({ data: _pianoSerialize(state) });
-    } else {
-      body.innerHTML = `<div class="desenho-wait-box">
-        <div style="font-size:2.5rem">🎹</div>
-        <div class="desenho-wait-title">Aguardando Pietro iniciar…</div>
-      </div>`;
-    }
-    _activeCleanup = () => {
-      _stopYT();
-      if (_audioCtx) { try { _audioCtx.close(); } catch(e){} _audioCtx = null; }
-      if (_roomUnsub) { _roomUnsub(); _roomUnsub = null; }
-    };
-    return;
-  }
-
-  /* ── Modo tela dividida ── */
-  state = _getInitData('piano');
-  state.seq = _getSeq(state.tracks[0]);
-  _activeCleanup = () => {
-    _stopYT();
-    if (_audioCtx) { try { _audioCtx.close(); } catch(e){} _audioCtx = null; }
-  };
-  render();
+  _activeCleanup = () => { _stopYT(); };
 }
