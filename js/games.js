@@ -494,7 +494,9 @@ function _getInitData(gameId) {
     return { phase: 'choose', palavra: '', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 6, strokes: [], guess: '', guessed: false, palavras };
   }
   if (gameId === 'uno') {
-    return _unoInitState();
+    /* _unoInitState tem hands:[[...],[...]] — array aninhado que o Firestore rejeita.
+       Serializa antes de salvar no _createRoom. */
+    return _unoSerialize(_unoInitState());
   }
   if (gameId === 'vdd') {
     return { phase: 'spin', turn: 0, s1: 0, s2: 0, card: null, answered: false };
@@ -2116,6 +2118,43 @@ function _unoInitState() {
   };
 }
 
+/* ── Serialização global (usada em _getInitData e dentro de openUno) ──
+   Firestore não suporta arrays aninhados.
+   hands:[[...],[...]] é convertido em hand0/hand1 separados. */
+function _unoSerialize(s) {
+  return {
+    phase:       s.phase,
+    deck:        s.deck.map(c => c.id),
+    discard:     s.discard.map(c => c.id),
+    hand0:       s.hands[0] || [],
+    hand1:       s.hands[1] || [],
+    allCardData: s.allCards,
+    turn:        s.turn,
+    dir:         s.dir,
+    chosenColor: s.chosenColor,
+    pendingDraw: s.pendingDraw,
+    lastEffect:  s.lastEffect,
+    winner:      s.winner,
+  };
+}
+
+function _unoDeserialize(d) {
+  const allCards = d.allCardData || [];
+  return {
+    phase:       d.phase,
+    deck:        (d.deck    || []).map(id => allCards.find(c => c.id === id)).filter(Boolean),
+    discard:     (d.discard || []).map(id => allCards.find(c => c.id === id)).filter(Boolean),
+    hands:       [d.hand0 || [], d.hand1 || []],
+    allCards,
+    turn:        d.turn     ?? 0,
+    dir:         d.dir      ?? 1,
+    chosenColor: d.chosenColor || null,
+    pendingDraw: d.pendingDraw || 0,
+    lastEffect:  d.lastEffect || '',
+    winner:      d.winner     ?? null,
+  };
+}
+
 function _unoGetCard(state, id) {
   return state.allCards.find(c => c.id === id);
 }
@@ -2273,42 +2312,6 @@ function openUno(mode = 'online', ctx = null) {
     if (myTurn) {
       document.getElementById('uno-draw')?.addEventListener('click', drawCard);
     }
-  }
-
-  /* ── serialização (Firebase não aceita objetos profundos facilmente) ── */
-  function _unoSerialize(s) {
-    /* Firestore não suporta arrays aninhados — hands é serializado como hand0/hand1 */
-    return {
-      phase:       s.phase,
-      deck:        s.deck.map(c=>c.id),
-      discard:     s.discard.map(c=>c.id),
-      hand0:       s.hands[0] || [],
-      hand1:       s.hands[1] || [],
-      allCardData: s.allCards,
-      turn:        s.turn,
-      dir:         s.dir,
-      chosenColor: s.chosenColor,
-      pendingDraw: s.pendingDraw,
-      lastEffect:  s.lastEffect,
-      winner:      s.winner,
-    };
-  }
-
-  function _unoDeserialize(d) {
-    const allCards = d.allCardData || [];
-    return {
-      phase:       d.phase,
-      deck:        (d.deck    || []).map(id => allCards.find(c=>c.id===id)).filter(Boolean),
-      discard:     (d.discard || []).map(id => allCards.find(c=>c.id===id)).filter(Boolean),
-      hands:       [d.hand0 || [], d.hand1 || []],
-      allCards,
-      turn:        d.turn     ?? 0,
-      dir:         d.dir      ?? 1,
-      chosenColor: d.chosenColor || null,
-      pendingDraw: d.pendingDraw || 0,
-      lastEffect:  d.lastEffect || '',
-      winner:      d.winner     ?? null,
-    };
   }
 
   /* ── lógica de jogar carta ── */
