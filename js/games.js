@@ -3924,7 +3924,8 @@ function openKaraoke(mode = 'split', ctx = null) {
         </div>`;
 
       document.getElementById('kar-start')?.addEventListener('click', async () => {
-        const ns = { ...s, phase: 'singing', voted: false };
+        /* FIX: grava startedAt para o guest compensar latência do Firestore */
+        const ns = { ...s, phase: 'singing', voted: false, startedAt: Date.now() };
         if (isOnline) await _writeRoom({ data: ns });
         else { state = ns; render(); }
       });
@@ -3959,7 +3960,7 @@ function openKaraoke(mode = 'split', ctx = null) {
       /* waves animadas */
       document.querySelectorAll('#kar-waves .musica-wave-bar').forEach(b => b.classList.add('active'));
 
-      /* só o host/local controla o timer e o áudio */
+      /* host/local: controla timer e transição de fase */
       const runTimer = !isOnline || isHost;
       if (runTimer) {
         _playYT(track.ytId, SING_SEC, async () => {
@@ -3976,6 +3977,29 @@ function openKaraoke(mode = 'split', ctx = null) {
           if (txt) txt.textContent = t > 0 ? t : 0;
           if (arc) arc.setAttribute('stroke-dashoffset', String(Math.round(113 * (1 - t / SING_SEC))));
           if (t <= 0) { stopAudio(); }
+        }, 1000);
+      } else {
+        /* FIX: guest também ouve a música — compensa latência do Firestore com seek */
+        const elapsed = s.startedAt
+          ? Math.min(Math.floor((Date.now() - s.startedAt) / 1000), SING_SEC - 2)
+          : 0;
+        const remaining = SING_SEC - elapsed;
+        _playYT(track.ytId, remaining, () => { /* host controla transição de fase */ });
+        if (elapsed > 0) {
+          /* seek após o player carregar para sincronizar com o host */
+          setTimeout(() => {
+            try { if (_ytPlayer) _ytPlayer.seekTo(elapsed, true); } catch(e) {}
+          }, 1200);
+        }
+        /* timer visual para o guest */
+        let t = remaining;
+        const arc = document.getElementById('kar-arc');
+        const txt = document.getElementById('kar-timer');
+        if (txt) txt.textContent = t;
+        _singTimer = setInterval(() => {
+          t--;
+          if (txt) txt.textContent = t > 0 ? t : 0;
+          if (arc) arc.setAttribute('stroke-dashoffset', String(Math.round(113 * (1 - t / SING_SEC))));
         }, 1000);
       }
       return;
@@ -4355,7 +4379,9 @@ function openTiles(mode = 'split', ctx = null) {
       speedTimer = setInterval(() => { speed = Math.min(speed + 0.4, 6); }, 10000);
     }
 
-    document.getElementById(`tiles-start-${playerIdx}`)?.addEventListener('click', startField);
+    /* FIX: usa referência direta ao botão — document.getElementById falha porque
+       wrap ainda não está no DOM quando _createField retorna */
+    overlay.querySelector(`#tiles-start-${playerIdx}`)?.addEventListener('click', startField);
 
     return { wrap, stopField, getScore: () => score };
   }
