@@ -191,6 +191,7 @@ const CATALOG = [
   { id:'cacanivel', icon:'🎰', title:'Caça-Níquel do Amor', desc:'Gire e ganhe recompensas românticas!',   fn: openCacaNivel },
   { id:'mimica',    icon:'🎭', title:'Mímica do Casal',     desc:'Faça gestos — sem falar a palavra!',      fn: openMimica    },
   { id:'karaoke',   icon:'🎤', title:'Karaokê Batalha',     desc:'Cante o trecho — o outro avalia!',         fn: openKaraoke   },
+  { id:'piano',     icon:'🎹', title:'Piano do Casal',       desc:'Toque as notas da música no tempo certo!',  fn: openPiano     },
 ];
 
 function _renderGameCards() {
@@ -520,6 +521,10 @@ function _getInitData(gameId) {
   if (gameId === 'karaoke') {
     const deck = [...KARAOKE_TRACKS].sort(() => Math.random() - .5).slice(0, 8);
     return { phase: 'pick', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 8, deck, trackIdx: 0, voted: false };
+  }
+  if (gameId === 'piano') {
+    const tracks = [...MUSICA_TRACKS].sort(() => Math.random() - .5).slice(0, 6);
+    return { phase: 'play', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 6, tracks, trackIdx: 0, seq: [], input: [], solved: false, failed: false };
   }
   if (gameId === 'mimica') {
     const deck = [...MIMICA_CARDS].sort(() => Math.random() - .5);
@@ -4088,5 +4093,343 @@ function openKaraoke(mode = 'split', ctx = null) {
   /* ─── split ─── */
   _activeCleanup = () => stopAudio();
   state = _getInitData('karaoke');
+  render();
+}
+
+/* ══════════════════════════════════════════
+   🎹 PIANO DO CASAL
+   Ouça o trecho → toque as notas na ordem certa
+   Modo tela dividida: turnos alternados
+   Modo online: Firebase sincroniza turno/placar
+══════════════════════════════════════════ */
+
+/* ── Sequências de notas por música (escala: C D E F G A B C2) ──
+   Cada nota = índice 0-7 correspondendo às teclas do piano.
+   As sequências representam o riff/melodia mais icônico de cada faixa. */
+const PIANO_SEQUENCES = {
+  'blinding':   [4,4,3,2,1,2,3,4],   // Blinding Lights — riff sintetizador
+  'shape':      [2,3,4,3,2,0,0,2],   // Shape of You — intro
+  'levitate':   [3,3,4,5,4,3,2,3],   // Levitating
+  'dancemon':   [0,2,3,4,3,2,0,2],   // Dance Monkey
+  'sunflower':  [4,5,4,3,2,3,4,2],   // Sunflower
+  'drivers':    [2,2,3,4,3,2,1,0],   // drivers license
+  'perfect':    [0,2,3,5,4,3,2,3],   // Perfect
+  'someone':    [3,4,5,4,3,2,1,2],   // Someone Like You
+  'counting':   [4,3,2,0,2,3,4,5],   // Counting Stars
+  'rolling':    [0,0,2,3,2,0,5,5],   // Rolling in the Deep
+  'stay':       [2,3,4,3,2,3,4,5],   // Stay
+  'astronaut':  [4,4,3,4,5,4,3,2],   // Astronaut in the Ocean
+  'thunder':    [0,2,4,2,0,5,4,2],   // Thunder
+  'lovestory':  [3,4,5,4,3,2,3,4],   // Love Story
+  'bad':        [2,2,3,2,1,0,1,2],   // Bad Guy
+  'believer':   [0,0,2,4,0,0,2,4],   // Believer
+};
+
+const PIANO_NOTE_LABELS = ['C','D','E','F','G','A','B','C²'];
+const PIANO_NOTE_COLORS = [
+  '#e8536f','#f4a030','#f4d060','#6bcf7f',
+  '#4a9fe8','#9b78e8','#e87878','#e8536f',
+];
+/* Notas tocadas pelo AudioContext (frequências em Hz, oitava 4) */
+const PIANO_FREQS = [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25];
+
+function openPiano(mode = 'split', ctx = null) {
+  const body     = _createOverlay('🎹 Piano do Casal');
+  const isOnline = mode === 'online';
+  const isHost   = ctx?.role === 'host';
+  const P1 = 'Pietro 💙', P2 = 'Emilly 💗';
+
+  let state     = null;
+  let _audioCtx = null;
+  let _ytActive = false;
+
+  /* ── AudioContext lazy ── */
+  function _getAudio() {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return _audioCtx;
+  }
+
+  /* ── Toca nota com Web Audio API ── */
+  function _playNote(noteIdx, duration = 0.35) {
+    try {
+      const ac   = _getAudio();
+      const osc  = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.type = 'triangle';
+      osc.frequency.value = PIANO_FREQS[noteIdx];
+      gain.gain.setValueAtTime(0.5, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime + duration);
+    } catch(e) {}
+  }
+
+  /* ── Toca a sequência inteira como demo ── */
+  function _playSequenceDemo(seq, onDone) {
+    seq.forEach((noteIdx, i) => {
+      setTimeout(() => {
+        _playNote(noteIdx, 0.4);
+        /* destaca visualmente a tecla */
+        const key = document.querySelector(`.piano-key[data-note="${noteIdx}"]`);
+        if (key) {
+          key.classList.add('piano-key-active');
+          setTimeout(() => key.classList.remove('piano-key-active'), 380);
+        }
+        if (i === seq.length - 1 && onDone) {
+          setTimeout(onDone, 500);
+        }
+      }, i * 450);
+    });
+  }
+
+  /* ── Gera sequência para a faixa atual ── */
+  function _getSeq(track) {
+    return PIANO_SEQUENCES[track.id] || [0,1,2,3,4,3,2,1];
+  }
+
+  /* ── Render principal ── */
+  function render() {
+    if (!state) return;
+    const { phase, turn, s1, s2, round, totalRounds, tracks, trackIdx, seq, input, solved, failed } = state;
+    const track  = tracks[trackIdx] || tracks[0];
+    const myTurn = isOnline ? (isHost ? turn === 0 : turn === 1) : true;
+    const pName  = turn === 0 ? P1 : P2;
+    const pColor = turn === 0 ? '#4a90d9' : '#e8536f';
+
+    /* ── Fim de jogo ── */
+    if (phase === 'gameover') {
+      _stopYT();
+      const emoji  = s1 > s2 ? '💙' : s2 > s1 ? '💗' : '🤝';
+      const winner = s1 > s2 ? 'Pietro venceu!' : s2 > s1 ? 'Emilly venceu!' : 'Empate!';
+      _showResult(body, emoji, winner, `Pietro ${s1} × ${s2} Emilly`, () => openPiano(mode, ctx));
+      return;
+    }
+
+    const seqArr  = seq || _getSeq(track);
+    const inpArr  = input || [];
+    const nextIdx = inpArr.length; /* próxima nota esperada */
+
+    body.innerHTML = `
+      <div class="game-score-bar">
+        <div class="game-score-box" style="border:1px solid ${turn===0?'#4a90d9':'transparent'}">
+          <div class="game-score-label">Pietro 🎹</div>
+          <div class="game-score-num" style="color:#4a90d9">${s1}</div>
+        </div>
+        <div class="game-score-box">
+          <div class="game-score-label">Round</div>
+          <div class="game-score-num" style="font-size:.85rem">${round}/${totalRounds}</div>
+        </div>
+        <div class="game-score-box" style="border:1px solid ${turn===1?'#e8536f':'transparent'}">
+          <div class="game-score-label">Emilly 🎹</div>
+          <div class="game-score-num" style="color:#e8536f">${s2}</div>
+        </div>
+      </div>
+
+      <div class="piano-track-info">
+        <div class="piano-track-title">${track.title}</div>
+        <div class="piano-track-artist">${track.artist}</div>
+        ${myTurn
+          ? `<button class="piano-listen-btn" id="piano-listen">▶ Ouvir trecho</button>`
+          : `<div class="piano-wait-msg">Aguardando <strong>${pName}</strong>…</div>`
+        }
+      </div>
+
+      <!-- Indicador de progresso da sequência -->
+      <div class="piano-seq-dots">
+        ${seqArr.map((n, i) => {
+          let cls = 'piano-dot';
+          if (i < inpArr.length) cls += inpArr[i] === n ? ' piano-dot-ok' : ' piano-dot-err';
+          else if (i === nextIdx) cls += ' piano-dot-cur';
+          return `<div class="${cls}" style="background:${i < inpArr.length ? (inpArr[i]===n?'#6bcf7f':'#f87171') : i===nextIdx?PIANO_NOTE_COLORS[n]:'rgba(255,255,255,.15)'}"></div>`;
+        }).join('')}
+      </div>
+
+      ${solved ? `<div class="piano-feedback piano-feedback-ok">🎉 Perfeito! +1 ponto!</div>` : ''}
+      ${failed ? `<div class="piano-feedback piano-feedback-err">💔 Errou! A sequência era: ${seqArr.map(n=>PIANO_NOTE_LABELS[n]).join(' ')}</div>` : ''}
+
+      <!-- Teclado -->
+      <div class="piano-keyboard" id="piano-kb" ${!myTurn || solved || failed ? 'style="pointer-events:none;opacity:.45"' : ''}>
+        ${PIANO_NOTE_LABELS.map((lbl, i) => `
+          <button class="piano-key" data-note="${i}"
+            style="--pk-color:${PIANO_NOTE_COLORS[i]}">
+            <span class="piano-key-label">${lbl}</span>
+          </button>`).join('')}
+      </div>
+
+      ${(myTurn && (solved || failed))
+        ? `<button class="game-restart-btn piano-next-btn" id="piano-next">
+            ${round >= totalRounds ? '🏆 Ver resultado' : 'Próxima música ▶'}
+           </button>`
+        : (!myTurn && (solved || failed))
+          ? `<div style="text-align:center;font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.5rem">Aguardando ${pName} continuar…</div>`
+          : ''
+      }`;
+
+    /* ── Eventos ── */
+
+    /* Botão ouvir */
+    document.getElementById('piano-listen')?.addEventListener('click', () => {
+      if (_ytActive) return;
+      _ytActive = true;
+      const btn = document.getElementById('piano-listen');
+      if (btn) { btn.disabled = true; btn.textContent = '🎵 Tocando…'; }
+      _playYT(track.ytId, 18, () => {
+        _ytActive = false;
+        /* depois de ouvir, mostra a demo das notas */
+        setTimeout(() => {
+          const infoEl = document.querySelector('.piano-track-info');
+          if (infoEl) {
+            const demoBtn = document.createElement('button');
+            demoBtn.className = 'piano-listen-btn';
+            demoBtn.style.background = 'rgba(255,255,255,.12)';
+            demoBtn.textContent = '🎹 Ver demo das notas';
+            demoBtn.addEventListener('click', () => {
+              demoBtn.disabled = true;
+              _playSequenceDemo(seqArr, () => { demoBtn.disabled = false; });
+            });
+            infoEl.appendChild(demoBtn);
+          }
+        }, 300);
+      });
+    });
+
+    /* Teclas do piano */
+    document.getElementById('piano-kb')?.addEventListener('click', e => {
+      if (!myTurn || solved || failed) return;
+      const key = e.target.closest('.piano-key');
+      if (!key) return;
+      const noteIdx = Number(key.dataset.note);
+      _playNote(noteIdx);
+
+      /* Feedback visual */
+      key.classList.add('piano-key-active');
+      setTimeout(() => key.classList.remove('piano-key-active'), 300);
+
+      const newInput = [...inpArr, noteIdx];
+      const expected = seqArr[inpArr.length];
+
+      if (noteIdx !== expected) {
+        /* Erro */
+        const newState = { ...state, input: newInput, failed: true };
+        _applyState(newState);
+      } else if (newInput.length === seqArr.length) {
+        /* Completou! */
+        const newS1 = s1 + (turn === 0 ? 1 : 0);
+        const newS2 = s2 + (turn === 1 ? 1 : 0);
+        const newState = { ...state, input: newInput, solved: true, s1: newS1, s2: newS2 };
+        _applyState(newState);
+      } else {
+        /* Nota certa, continua */
+        const newState = { ...state, input: newInput };
+        _applyState(newState);
+      }
+    });
+
+    /* Próximo round */
+    document.getElementById('piano-next')?.addEventListener('click', () => {
+      if (!myTurn) return;
+      _stopYT();
+      _ytActive = false;
+      const nextTrackIdx = trackIdx + 1;
+      const nextRound    = round + 1;
+      const gameover     = nextRound > totalRounds;
+      const newState = {
+        ...state,
+        phase:     gameover ? 'gameover' : 'play',
+        turn:      isOnline ? (turn === 0 ? 1 : 0) : turn,
+        round:     nextRound,
+        trackIdx:  nextTrackIdx % tracks.length,
+        seq:       [],
+        input:     [],
+        solved:    false,
+        failed:    false,
+      };
+      _applyState(newState);
+    });
+  }
+
+  /* ── Aplica estado local ou sincroniza online ── */
+  function _applyState(newState) {
+    state = newState;
+    if (isOnline) {
+      _writeRoom({ data: _pianoSerialize(state) });
+    } else {
+      render();
+    }
+  }
+
+  /* ── Serialização (seq e input são flat arrays de números — sem problema) ── */
+  function _pianoSerialize(s) {
+    const track = s.tracks[s.trackIdx] || s.tracks[0];
+    return {
+      phase:      s.phase,
+      turn:       s.turn,
+      s1:         s.s1,
+      s2:         s.s2,
+      round:      s.round,
+      totalRounds:s.totalRounds,
+      trackIdx:   s.trackIdx,
+      trackIds:   s.tracks.map(t => t.id),   /* salva só IDs, sem nested objects */
+      seq:        s.seq && s.seq.length ? s.seq : _getSeq(track),
+      input:      s.input || [],
+      solved:     s.solved || false,
+      failed:     s.failed || false,
+    };
+  }
+
+  function _pianoDeserialize(d) {
+    const tracks = (d.trackIds || []).map(id => MUSICA_TRACKS.find(t => t.id === id)).filter(Boolean);
+    const safeT  = tracks.length ? tracks : [...MUSICA_TRACKS].slice(0, 6);
+    const track  = safeT[d.trackIdx || 0] || safeT[0];
+    return {
+      phase:      d.phase || 'play',
+      turn:       d.turn ?? 0,
+      s1:         d.s1 ?? 0,
+      s2:         d.s2 ?? 0,
+      round:      d.round ?? 1,
+      totalRounds:d.totalRounds ?? 6,
+      tracks:     safeT,
+      trackIdx:   d.trackIdx ?? 0,
+      seq:        d.seq && d.seq.length ? d.seq : _getSeq(track),
+      input:      d.input || [],
+      solved:     d.solved || false,
+      failed:     d.failed || false,
+    };
+  }
+
+  /* ── Modo online ── */
+  if (isOnline) {
+    _listenRoom(ctx.code, data => {
+      if (!data.data || data.data.phase === undefined) return;
+      state = _pianoDeserialize(data.data);
+      render();
+    });
+    if (isHost) {
+      state = _getInitData('piano');
+      state.seq = _getSeq(state.tracks[0]);
+      _writeRoom({ data: _pianoSerialize(state) });
+    } else {
+      body.innerHTML = `<div class="desenho-wait-box">
+        <div style="font-size:2.5rem">🎹</div>
+        <div class="desenho-wait-title">Aguardando Pietro iniciar…</div>
+      </div>`;
+    }
+    _activeCleanup = () => {
+      _stopYT();
+      if (_audioCtx) { try { _audioCtx.close(); } catch(e){} _audioCtx = null; }
+      if (_roomUnsub) { _roomUnsub(); _roomUnsub = null; }
+    };
+    return;
+  }
+
+  /* ── Modo tela dividida ── */
+  state = _getInitData('piano');
+  state.seq = _getSeq(state.tracks[0]);
+  _activeCleanup = () => {
+    _stopYT();
+    if (_audioCtx) { try { _audioCtx.close(); } catch(e){} _audioCtx = null; }
+  };
   render();
 }

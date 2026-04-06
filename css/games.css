@@ -1036,3 +1036,132 @@
 
 /* Quem sou eu: waiting com strong */
 .qse-waiting-txt strong { color: #f9a8d4; }
+
+/* ══════════════════════════════════════════
+   🎹 PIANO DO CASAL
+══════════════════════════════════════════ */
+
+.piano-track-info {
+  text-align: center;
+  margin: .6rem 0 .8rem;
+}
+.piano-track-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: .15rem;
+}
+.piano-track-artist {
+  font-size: .72rem;
+  color: rgba(255,255,255,.45);
+  margin-bottom: .6rem;
+}
+.piano-listen-btn {
+  background: linear-gradient(135deg, #e8536f, #590d22);
+  color: white;
+  border: none;
+  padding: .5rem 1.3rem;
+  border-radius: 50px;
+  font-size: .85rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin: .2rem .3rem;
+  transition: opacity .15s, transform .1s;
+}
+.piano-listen-btn:hover:not(:disabled) { opacity: .88; transform: scale(1.04); }
+.piano-listen-btn:disabled { opacity: .45; cursor: default; }
+.piano-wait-msg {
+  font-size: .8rem;
+  color: rgba(255,255,255,.45);
+  font-style: italic;
+}
+.piano-wait-msg strong { color: rgba(255,255,255,.7); }
+
+/* Bolinhas de progresso */
+.piano-seq-dots {
+  display: flex;
+  justify-content: center;
+  gap: .4rem;
+  margin: .5rem 0 .7rem;
+  flex-wrap: wrap;
+}
+.piano-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: background .2s, transform .15s;
+  border: 2px solid rgba(255,255,255,.2);
+}
+.piano-dot-cur {
+  transform: scale(1.3);
+  border-color: rgba(255,255,255,.6);
+}
+.piano-dot-ok  { border-color: #6bcf7f; }
+.piano-dot-err { border-color: #f87171; }
+
+/* Teclado */
+.piano-keyboard {
+  display: flex;
+  gap: .35rem;
+  justify-content: center;
+  padding: .4rem .2rem;
+  transition: opacity .2s;
+}
+.piano-key {
+  width: 44px;
+  height: 88px;
+  border-radius: 8px;
+  border: 2px solid rgba(255,255,255,.15);
+  background: linear-gradient(180deg, white 0%, #f0f0f0 100%);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: .45rem;
+  transition: transform .08s, box-shadow .08s, background .08s;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0,0,0,.4);
+}
+.piano-key:active,
+.piano-key.piano-key-active {
+  transform: scaleY(.94);
+  background: var(--pk-color, #e8536f) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.5) !important;
+}
+.piano-key:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fff 0%, var(--pk-color, #e8536f) 100%);
+}
+.piano-key-label {
+  font-size: .65rem;
+  font-weight: 700;
+  color: #590d22;
+  user-select: none;
+}
+.piano-key:active .piano-key-label,
+.piano-key.piano-key-active .piano-key-label {
+  color: white;
+}
+
+/* Feedback */
+.piano-feedback {
+  text-align: center;
+  font-size: .82rem;
+  font-weight: 700;
+  padding: .4rem .8rem;
+  border-radius: 12px;
+  margin: .3rem 0;
+}
+.piano-feedback-ok  { background: rgba(107,207,127,.2); color: #6bcf7f; }
+.piano-feedback-err { background: rgba(248,113,113,.2); color: #f87171; }
+
+.piano-next-btn {
+  width: 100%;
+  margin-top: .6rem;
+}
+
+/* Mobile: teclas um pouco menores */
+@media (max-width: 400px) {
+  .piano-key { width: 37px; height: 74px; }
+  .piano-key-label { font-size: .58rem; }
+}
