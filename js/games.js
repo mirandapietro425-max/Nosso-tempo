@@ -189,6 +189,8 @@ const CATALOG = [
   { id:'musica',    icon:'🎵', title:'Adivinhe a Música',   desc:'Ouça o trecho e adivinhe a música!',    fn: openMusica    },
   { id:'quemsoueu', icon:'⚡', title:'Quem Sou Eu?',        desc:'Post-it na testa — descubra quem é!',   fn: openQuemSouEu },
   { id:'cacanivel', icon:'🎰', title:'Caça-Níquel do Amor', desc:'Gire e ganhe recompensas românticas!',   fn: openCacaNivel },
+  { id:'mimica',    icon:'🎭', title:'Mímica do Casal',     desc:'Faça gestos — sem falar a palavra!',      fn: openMimica    },
+  { id:'fogo',      icon:'🌶️', title:'Fogo & Desejo',       desc:'Perguntas íntimas e desafios ousados 🔞',  fn: openFogo      },
 ];
 
 function _renderGameCards() {
@@ -512,6 +514,13 @@ function _getInitData(gameId) {
     const _tracks = (typeof MUSICA_TRACKS !== 'undefined') ? MUSICA_TRACKS : [];
     const order = [..._tracks].sort(() => Math.random() - .5).slice(0, 8);
     return { phase: 'listen', qi: 0, tracks: order, turn: 0, s1: 0, s2: 0 };
+  }
+  if (gameId === 'fogo') {
+    return { phase: 'spin', turn: 0, s1: 0, s2: 0, card: null, answered: false };
+  }
+  if (gameId === 'mimica') {
+    const deck = [...MIMICA_CARDS].sort(() => Math.random() - .5);
+    return { phase: 'pick', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 8, deck, cardIdx: 0, card: null, timeLeft: 45, guessed: false };
   }
   // Real-time games: empty initial state (host sets up on start)
   return {};
@@ -2267,12 +2276,13 @@ function openUno(mode = 'online', ctx = null) {
 
   /* ── serialização (Firebase não aceita objetos profundos facilmente) ── */
   function _unoSerialize(s) {
+    /* Firestore não suporta arrays aninhados — hands é serializado como hand0/hand1 */
     return {
       phase:       s.phase,
       deck:        s.deck.map(c=>c.id),
       discard:     s.discard.map(c=>c.id),
-      hands:       s.hands,
-      allCardIds:  s.allCards.map(c=>c.id),
+      hand0:       s.hands[0] || [],
+      hand1:       s.hands[1] || [],
       allCardData: s.allCards,
       turn:        s.turn,
       dir:         s.dir,
@@ -2287,9 +2297,9 @@ function openUno(mode = 'online', ctx = null) {
     const allCards = d.allCardData || [];
     return {
       phase:       d.phase,
-      deck:        (d.deck     || []).map(id => allCards.find(c=>c.id===id)).filter(Boolean),
-      discard:     (d.discard  || []).map(id => allCards.find(c=>c.id===id)).filter(Boolean),
-      hands:       d.hands || [[],[]],
+      deck:        (d.deck    || []).map(id => allCards.find(c=>c.id===id)).filter(Boolean),
+      discard:     (d.discard || []).map(id => allCards.find(c=>c.id===id)).filter(Boolean),
+      hands:       [d.hand0 || [], d.hand1 || []],
       allCards,
       turn:        d.turn     ?? 0,
       dir:         d.dir      ?? 1,
@@ -3506,5 +3516,497 @@ function openCacaNivel(mode = 'split', ctx = null) {
   /* ─── split ─── */
   _activeCleanup = () => stopAll();
   state = _getInitData('cacanivel');
+  render();
+}
+
+/* ══════════════════════════════════════════
+   🎭 MÍMICA DO CASAL — dados
+══════════════════════════════════════════ */
+const MIMICA_CARDS = [
+  /* 🎬 Filmes & Séries */
+  { word: 'Titanic',          cat: '🎬', tip: 'Filme' },
+  { word: 'Frozen',           cat: '🎬', tip: 'Filme' },
+  { word: 'Toy Story',        cat: '🎬', tip: 'Filme' },
+  { word: 'Harry Potter',     cat: '🎬', tip: 'Filme' },
+  { word: 'Vingadores',       cat: '🎬', tip: 'Filme' },
+  { word: 'A Bela e a Fera',  cat: '🎬', tip: 'Filme' },
+  { word: 'Shrek',            cat: '🎬', tip: 'Filme' },
+  { word: 'Ratatouille',      cat: '🎬', tip: 'Filme' },
+  { word: 'Divertida Mente',  cat: '🎬', tip: 'Filme' },
+  { word: 'O Rei Leão',       cat: '🎬', tip: 'Filme' },
+  { word: 'Moana',            cat: '🎬', tip: 'Filme' },
+  { word: 'Enrolados',        cat: '🎬', tip: 'Filme' },
+  { word: 'Procurando Nemo',  cat: '🎬', tip: 'Filme' },
+  { word: 'Up — Altas Aventuras', cat: '🎬', tip: 'Filme' },
+  { word: 'Matrix',           cat: '🎬', tip: 'Filme' },
+  /* 🎵 Músicas & Artistas */
+  { word: 'Taylor Swift',     cat: '🎵', tip: 'Artista' },
+  { word: 'Beyoncé',          cat: '🎵', tip: 'Artista' },
+  { word: 'Dançar no escuro', cat: '🎵', tip: 'Música' },
+  { word: 'Parabéns pra você',cat: '🎵', tip: 'Música' },
+  { word: 'Bolero',           cat: '🎵', tip: 'Dança/Música' },
+  { word: 'Rock',             cat: '🎵', tip: 'Gênero musical' },
+  { word: 'Ópera',            cat: '🎵', tip: 'Estilo musical' },
+  /* 🐾 Animais */
+  { word: 'Elefante',         cat: '🐾', tip: 'Animal' },
+  { word: 'Girafa',           cat: '🐾', tip: 'Animal' },
+  { word: 'Pinguim',          cat: '🐾', tip: 'Animal' },
+  { word: 'Macaco',           cat: '🐾', tip: 'Animal' },
+  { word: 'Tubarão',          cat: '🐾', tip: 'Animal' },
+  { word: 'Borboleta',        cat: '🐾', tip: 'Animal' },
+  { word: 'Canguru',          cat: '🐾', tip: 'Animal' },
+  { word: 'Flamingo',         cat: '🐾', tip: 'Animal' },
+  { word: 'Cobra',            cat: '🐾', tip: 'Animal' },
+  { word: 'Golfinho',         cat: '🐾', tip: 'Animal' },
+  { word: 'Tartaruga',        cat: '🐾', tip: 'Animal' },
+  { word: 'Leão',             cat: '🐾', tip: 'Animal' },
+  /* 💼 Profissões & Ações */
+  { word: 'Dentista',         cat: '💼', tip: 'Profissão' },
+  { word: 'Astronauta',       cat: '💼', tip: 'Profissão' },
+  { word: 'Chef de cozinha',  cat: '💼', tip: 'Profissão' },
+  { word: 'Bombeiro',         cat: '💼', tip: 'Profissão' },
+  { word: 'Pescador',         cat: '💼', tip: 'Profissão' },
+  { word: 'Pianista',         cat: '💼', tip: 'Profissão' },
+  { word: 'Palhaço',          cat: '💼', tip: 'Profissão' },
+  { word: 'Fotógrafo',        cat: '💼', tip: 'Profissão' },
+  { word: 'Mergulhador',      cat: '💼', tip: 'Profissão' },
+  { word: 'Mágico',           cat: '💼', tip: 'Profissão' },
+  /* 🌍 Lugares */
+  { word: 'Praia',            cat: '🌍', tip: 'Lugar' },
+  { word: 'Montanha',         cat: '🌍', tip: 'Lugar' },
+  { word: 'Parque de diversões', cat: '🌍', tip: 'Lugar' },
+  { word: 'Hospital',         cat: '🌍', tip: 'Lugar' },
+  { word: 'Restaurante',      cat: '🌍', tip: 'Lugar' },
+  { word: 'Academia',         cat: '🌍', tip: 'Lugar' },
+  { word: 'Biblioteca',       cat: '🌍', tip: 'Lugar' },
+  { word: 'Aeroporto',        cat: '🌍', tip: 'Lugar' },
+  /* 💕 Romântico (tema do casal) */
+  { word: 'Primeiro beijo',   cat: '💕', tip: 'Momento' },
+  { word: 'Pedido de namoro', cat: '💕', tip: 'Momento' },
+  { word: 'Surpresa romântica', cat: '💕', tip: 'Ação' },
+  { word: 'Jantar à luz de velas', cat: '💕', tip: 'Programa' },
+  { word: 'Abraço longo',     cat: '💕', tip: 'Ação' },
+  { word: 'Ciúme',            cat: '💕', tip: 'Sentimento' },
+  { word: 'Declaração de amor', cat: '💕', tip: 'Ação' },
+  { word: 'Selfie do casal',  cat: '💕', tip: 'Ação' },
+  /* ⚡ Ações cotidianas */
+  { word: 'Escovar os dentes', cat: '⚡', tip: 'Ação' },
+  { word: 'Tomar banho',      cat: '⚡', tip: 'Ação' },
+  { word: 'Cozinhar',         cat: '⚡', tip: 'Ação' },
+  { word: 'Dormir',           cat: '⚡', tip: 'Ação' },
+  { word: 'Tirar selfie',     cat: '⚡', tip: 'Ação' },
+  { word: 'Dirigir',          cat: '⚡', tip: 'Ação' },
+  { word: 'Nadar',            cat: '⚡', tip: 'Ação' },
+  { word: 'Voar de avião',    cat: '⚡', tip: 'Ação' },
+  { word: 'Pescar',           cat: '⚡', tip: 'Ação' },
+  { word: 'Esquiar',          cat: '⚡', tip: 'Ação' },
+  { word: 'Meditar',          cat: '⚡', tip: 'Ação' },
+  { word: 'Fazer yoga',       cat: '⚡', tip: 'Ação' },
+];
+
+/* ══════════════════════════════════════════
+   🎭 MÍMICA DO CASAL — jogo
+══════════════════════════════════════════ */
+function openMimica(mode = 'split', ctx = null) {
+  const body     = _createOverlay('🎭 Mímica do Casal');
+  const isOnline = mode === 'online';
+  const isHost   = ctx?.role === 'host';
+  const P1 = 'Pietro', P2 = 'Emilly';
+
+  let state    = _getInitData('mimica');
+  let _timerInt = null;
+
+  function stopTimer() { if (_timerInt) { clearInterval(_timerInt); _timerInt = null; } }
+
+  async function advance(won) {
+    stopTimer();
+    const ns = { ...state };
+    if (won) { if (ns.turn === 0) ns.s1++; else ns.s2++; }
+    ns.round++;
+    ns.turn     = (ns.turn + 1) % 2;
+    ns.phase    = ns.round > ns.totalRounds ? 'gameover' : 'pick';
+    ns.card     = null;
+    ns.cardIdx  = (ns.cardIdx + 1) % ns.deck.length;
+    ns.timeLeft = 45;
+    ns.guessed  = false;
+    if (isOnline) await _writeRoom({ data: ns });
+    else { state = ns; render(); }
+  }
+
+  function render() {
+    stopTimer();
+    const s = state;
+    const turnName = s.turn === 0 ? P1 : P2;
+    const turnColor = s.turn === 0 ? '#4a90d9' : '#e8536f';
+    const myTurn = isOnline ? (isHost ? s.turn === 0 : s.turn === 1) : true;
+
+    const scoreBar = `
+      <div class="qse-score-bar">
+        <div class="qse-score-pill p1">💙 ${P1} <span>${s.s1}</span></div>
+        <div class="qse-round-badge">🎭 ${Math.min(s.round, s.totalRounds)}/${s.totalRounds}</div>
+        <div class="qse-score-pill p2">💗 ${P2} <span>${s.s2}</span></div>
+      </div>`;
+
+    /* ── gameover ── */
+    if (s.phase === 'gameover') {
+      const w = s.s1 > s.s2 ? `${P1} 💙` : s.s2 > s.s1 ? `${P2} 💗` : 'Empate 💕';
+      _showResult(body, '🎭', `${w} venceu!`, `${P1} ${s.s1} × ${s.s2} ${P2}`, () => openMimica(mode, ctx));
+      return;
+    }
+
+    /* ── pick: quem vai fazer a mímica se prepara ── */
+    if (s.phase === 'pick') {
+      body.innerHTML = scoreBar + `
+        <div class="qse-card-area">
+          <div class="qse-turn-label">vez de <strong style="color:${turnColor}">${turnName}</strong> fazer mímica</div>
+          <div style="font-size:3rem;margin:.6rem 0">🎭</div>
+          <div style="font-size:.78rem;color:rgba(255,255,255,.7);text-align:center;line-height:1.5;margin-bottom:.8rem">
+            ${myTurn
+              ? `<p style="margin:0 0 .3rem">Você vai fazer a mímica!</p>
+                 <p style="margin:0;color:rgba(255,255,255,.45);font-size:.7rem">Sem falar nada — só gestos 🙌</p>
+                 <button class="qse-btn-primary" id="mim-ready-btn" style="margin-top:.8rem">👀 Ver minha palavra</button>`
+              : `<p style="margin:0">Aguarde <strong>${turnName}</strong> ver a palavra…</p>
+                 <p style="margin:.2rem 0 0;color:rgba(255,255,255,.4);font-size:.7rem">Você vai adivinhar! 🤔</p>`
+            }
+          </div>
+        </div>`;
+      document.getElementById('mim-ready-btn')?.addEventListener('click', async () => {
+        const card = s.deck[s.cardIdx % s.deck.length];
+        const ns = { ...s, phase: 'act', card, timeLeft: 45 };
+        if (isOnline) await _writeRoom({ data: ns });
+        else { state = ns; render(); }
+      });
+      return;
+    }
+
+    /* ── act: fazendo mímica + adivinhando ── */
+    if (s.phase === 'act') {
+      const card = s.card || s.deck[s.cardIdx % s.deck.length];
+      const t    = s.timeLeft;
+
+      body.innerHTML = scoreBar + `
+        <div class="qse-card-area">
+          <div class="qse-turn-label" style="color:${turnColor}">
+            ${myTurn ? '🎭 Faça a mímica!' : '🤔 Adivinhe a palavra!'}
+          </div>
+
+          ${myTurn
+            ? `<div style="background:rgba(255,255,255,.08);border-radius:14px;padding:.8rem 1rem;margin:.5rem 0;text-align:center">
+                <div style="font-size:.6rem;color:${turnColor};font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.3rem">${card.cat} ${card.tip}</div>
+                <div style="font-size:1.4rem;font-weight:800;color:#fff;line-height:1.2">${card.word}</div>
+                <div style="font-size:.6rem;color:rgba(255,255,255,.3);margin-top:.4rem">Sem falar — só gestos! 🙅</div>
+               </div>`
+            : `<div style="background:rgba(255,255,255,.06);border-radius:14px;padding:.8rem 1rem;margin:.5rem 0;text-align:center">
+                <div style="font-size:.6rem;color:rgba(255,255,255,.4);margin-bottom:.3rem">${card.cat} ${card.tip}</div>
+                <div style="font-size:2.2rem;letter-spacing:.15em;color:rgba(255,255,255,.15)">
+                  ${'_ '.repeat(card.word.replace(/ /g,'').length).trim()}
+                </div>
+                <div style="font-size:.62rem;color:rgba(255,255,255,.35);margin-top:.4rem">Grite quando souber! 📢</div>
+               </div>`
+          }
+
+          <div class="qse-timer-row">
+            <div class="qse-timer-ring">
+              <svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/><circle id="mim-arc" cx="22" cy="22" r="18" fill="none" stroke="#f9a8d4" stroke-width="4" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0" style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .9s linear,stroke .3s"/></svg>
+              <span id="mim-timer-txt">${t}</span>
+            </div>
+            <span class="qse-timer-label">segundos</span>
+          </div>
+
+          <div class="qse-btn-row">
+            <button class="qse-btn-wrong"   id="mim-no-btn">❌ Não acertou</button>
+            <button class="qse-btn-correct" id="mim-yes-btn">✅ Acertou!</button>
+          </div>
+        </div>`;
+
+      /* timer — host ou modo local */
+      const runTimer = !isOnline || isHost;
+      let tick = t;
+      const arc = document.getElementById('mim-arc');
+      const txt = document.getElementById('mim-timer-txt');
+      if (runTimer) {
+        _timerInt = setInterval(async () => {
+          tick--;
+          if (txt) txt.textContent = tick;
+          if (arc) {
+            arc.setAttribute('stroke-dashoffset', String(Math.round(113 * (1 - tick / 45))));
+            arc.setAttribute('stroke', tick > 20 ? '#f9a8d4' : tick > 10 ? '#fb923c' : '#f87171');
+          }
+          if (tick <= 0) { stopTimer(); await advance(false); return; }
+          if (isOnline) await _writeRoom({ data: { ...state, timeLeft: tick } });
+        }, 1000);
+      } else {
+        if (txt) txt.textContent = t;
+        if (arc) {
+          arc.setAttribute('stroke-dashoffset', String(Math.round(113 * (1 - t / 45))));
+          arc.setAttribute('stroke', t > 20 ? '#f9a8d4' : t > 10 ? '#fb923c' : '#f87171');
+        }
+      }
+
+      document.getElementById('mim-yes-btn')?.addEventListener('click', () => advance(true));
+      document.getElementById('mim-no-btn')?.addEventListener('click',  () => advance(false));
+      return;
+    }
+  }
+
+  /* ─── online ─── */
+  if (isOnline) {
+    _roomUnsub = _listenRoom(ctx.code, data => {
+      if (!data.data) return;
+      state = { ...state, ...data.data };
+      render();
+    });
+    if (isHost) { state = _getInitData('mimica'); _writeRoom({ data: state }); }
+    else {
+      body.innerHTML = `<div class="desenho-wait-box"><div style="font-size:2.5rem">🎭</div><div class="desenho-wait-title">Aguardando Pietro iniciar…</div></div>`;
+    }
+    _activeCleanup = () => { stopTimer(); if (_roomUnsub) { _roomUnsub(); _roomUnsub = null; } };
+    return;
+  }
+
+  /* ─── split ─── */
+  _activeCleanup = () => stopTimer();
+  state = _getInitData('mimica');
+  render();
+}
+
+/* ══════════════════════════════════════════
+   🌶️ FOGO & DESEJO — dados
+══════════════════════════════════════════ */
+const FOGO_CARDS = {
+  atrevido: [
+    /* Verdades íntimas */
+    { type: 'verdade', text: 'Qual parte do meu corpo você mais fica olhando sem eu perceber?' },
+    { type: 'verdade', text: 'Qual foi o beijo nosso que mais te deixou com o coração disparado?' },
+    { type: 'verdade', text: 'O que você pensa quando me vejo saindo do banho?' },
+    { type: 'verdade', text: 'Qual roupa ou look meu te deixa mais louco(a)?' },
+    { type: 'verdade', text: 'Tem alguma fantasia que você nunca me contou ainda?' },
+    { type: 'verdade', text: 'Qual carinho meu você mais sente falta quando estamos longe?' },
+    { type: 'verdade', text: 'Onde você mais gosta de ser beijado(a)?' },
+    { type: 'verdade', text: 'Qual cheiro meu te deixa mais com vontade de me abraçar?' },
+    { type: 'verdade', text: 'Qual é o lugar mais inusitado onde já pensou em me beijar?' },
+    { type: 'verdade', text: 'Me conta uma coisa que te atrai em mim que você nunca disse.' },
+    { type: 'verdade', text: 'Qual foi a vez que mais precisou de força pra não me beijar?' },
+    { type: 'verdade', text: 'O que mais te deixa com vontade de ficar comigo?' },
+    { type: 'verdade', text: 'Qual momento nosso você revive na cabeça com mais frequência?' },
+    { type: 'verdade', text: 'Se pudesse escolher um lugar do mundo pra ficarmos sozinhos, qual seria?' },
+    { type: 'verdade', text: 'Qual coisa pequena que eu faço te deixa com borboletas no estômago?' },
+    /* Desafios ousados */
+    { type: 'desafio', text: 'Manda um áudio de voz falando o que mais te atrai fisicamente em mim — sem cortar.' },
+    { type: 'desafio', text: 'Dá um beijo demorado no pescoço do outro agora.' },
+    { type: 'desafio', text: 'Sussurra no ouvido do outro algo que te deixa com desejo.' },
+    { type: 'desafio', text: 'Massageie os ombros e a nuca do outro por 2 minutos sem parar.' },
+    { type: 'desafio', text: 'Olha nos olhos do outro por 30 segundos sem piscar e sem rir.' },
+    { type: 'desafio', text: 'Descreve em detalhes o encontro perfeito que gostaria de ter comigo.' },
+    { type: 'desafio', text: 'Manda uma mensagem atrevida pro celular do outro agora mesmo.' },
+    { type: 'desafio', text: 'Faz uma pose de modelo e pede pro outro tirar uma foto.' },
+    { type: 'desafio', text: 'Diz 3 coisas que faria se estivéssemos completamente sozinhos.' },
+    { type: 'desafio', text: 'Beija o outro por pelo menos 10 segundos — sem pressa.' },
+  ],
+  quente: [
+    /* Verdades quentes */
+    { type: 'verdade', text: 'Qual é a coisa mais ousada que você já quis fazer comigo mas ficou com vergonha?' },
+    { type: 'verdade', text: 'Me conta um pensamento sobre mim que você guardou segredo.' },
+    { type: 'verdade', text: 'Se eu aparecesse na sua porta às 11 da noite com uma surpresa, o que você esperaria?' },
+    { type: 'verdade', text: 'Qual é a sua fantasia favorita que envolve nós dois?' },
+    { type: 'verdade', text: 'Qual parte do seu corpo você mais quer que eu beije?' },
+    { type: 'verdade', text: 'Qual foi o momento que mais sentiu vontade de ficar comigo e não pôde?' },
+    { type: 'verdade', text: 'Me descreve o que você faria se tivéssemos uma noite toda só pra nós dois.' },
+    { type: 'verdade', text: 'Qual coisa minha te enlouquece do jeito bom?' },
+    { type: 'verdade', text: 'O que você faria comigo se não tivesse nenhum limite?' },
+    { type: 'verdade', text: 'Qual é o toque que mais te faz perder a cabeça?' },
+    /* Desafios quentes */
+    { type: 'desafio', text: 'Escreve uma mensagem descrevendo o que faria se estivéssemos completamente sozinhos agora.' },
+    { type: 'desafio', text: 'Beija o outro onde você mais queria — e toma o tempo que quiser.' },
+    { type: 'desafio', text: 'Sussurra no ouvido do outro a sua fantasia favorita que envolve nós dois.' },
+    { type: 'desafio', text: 'Dá uma massagem de 3 minutos onde o outro pedir.' },
+    { type: 'desafio', text: 'Manda um áudio de voz descrevendo o que quer fazer com o outro hoje à noite.' },
+    { type: 'desafio', text: 'Olha nos olhos do outro e diz exatamente o que você mais deseja nele/nela agora.' },
+    { type: 'desafio', text: 'Troca de roupa com o outro — só pra ver como fica. Foto obrigatória.' },
+    { type: 'desafio', text: 'Deixa o outro te abraçar por trás e fica quieto(a) por 1 minuto completo.' },
+    { type: 'desafio', text: 'Escreve no corpo do outro (com o dedo) uma palavra que representa o que você sente.' },
+    { type: 'desafio', text: 'Faz o outro rir usando só beijos — onde e como quiser.' },
+  ],
+};
+
+/* ══════════════════════════════════════════
+   🌶️ FOGO & DESEJO — jogo
+══════════════════════════════════════════ */
+function openFogo(mode = 'split', ctx = null) {
+  const body     = _createOverlay('🌶️ Fogo & Desejo');
+  const isOnline = mode === 'online';
+  const isHost   = ctx?.role === 'host';
+
+  let state = _getInitData('fogo');
+
+  const CAT_CFG = {
+    atrevido: { label: 'Atrevido',  emoji: '🌶️', color: '#ff6b35', bg: 'rgba(255,107,53,.18)', border: 'rgba(255,107,53,.45)' },
+    quente:   { label: '🔥 Quente', emoji: '🔥', color: '#e8536f', bg: 'rgba(232,83,111,.18)', border: 'rgba(232,83,111,.45)' },
+  };
+
+  function renderSpin() {
+    const myTurn   = !isOnline || (isHost && state.turn===0) || (!isHost && state.turn===1);
+    const turnName = state.turn===0 ? 'Pietro 💙' : 'Emilly 💗';
+    const turnClr  = state.turn===0 ? '#4a90d9' : '#e8536f';
+
+    body.innerHTML = `
+      <div class="game-score-bar">
+        <div class="game-score-box" style="border:1px solid ${state.turn===0?'#4a90d9':'transparent'}">
+          <div class="game-score-label">Pietro 💙</div>
+          <div class="game-score-num" style="color:#4a90d9">${state.s1||0}</div>
+        </div>
+        <div class="game-score-box">
+          <div class="game-score-label" style="font-size:.65rem">🌶️ Fogo</div>
+          <div class="game-score-num" style="font-size:.8rem">😈</div>
+        </div>
+        <div class="game-score-box" style="border:1px solid ${state.turn===1?'#e8536f':'transparent'}">
+          <div class="game-score-label">Emilly 💗</div>
+          <div class="game-score-num" style="color:#e8536f">${state.s2||0}</div>
+        </div>
+      </div>
+
+      <div style="text-align:center;font-size:.78rem;color:rgba(255,255,255,.6);margin:.3rem 0 .6rem">
+        ${myTurn
+          ? `<span style="color:${turnClr};font-weight:700">Sua vez, ${turnName.split(' ')[0]}!</span> Escolha o nível:` 
+          : `Vez de <span style="color:${turnClr};font-weight:700">${turnName}</span> escolher…`}
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:300px;margin:0 auto">
+        ${Object.entries(CAT_CFG).map(([cat, cfg]) => `
+          <button class="vdd-cat-btn ${myTurn?'':'vdd-disabled'}" data-cat="${cat}"
+            style="border:1.5px solid ${cfg.border};background:${cfg.bg};border-radius:14px;padding:.8rem 1rem;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:${myTurn?'pointer':'default'}">
+            <span style="font-size:2rem">${cfg.emoji}</span>
+            <span style="font-weight:700;color:${cfg.color};font-size:.92rem">${cfg.label}</span>
+            <span style="font-size:.65rem;color:rgba(255,255,255,.35)">${FOGO_CARDS[cat].length} cartas</span>
+          </button>`).join('')}
+      </div>
+
+      ${!myTurn ? `<div class="vdd-wait-msg" style="margin-top:.8rem">Aguardando ${turnName}… 🔥</div>` : ''}`;
+
+    if (myTurn) {
+      body.querySelectorAll('[data-cat]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const cat  = btn.dataset.cat;
+          const pool = FOGO_CARDS[cat];
+          const card = pool[Math.floor(Math.random() * pool.length)];
+          state.card     = { cat, type: card.type, text: card.text };
+          state.phase    = 'card';
+          state.answered = false;
+          if (isOnline) await _writeRoom({ data: state });
+          else render();
+        });
+      });
+    }
+  }
+
+  function renderCard() {
+    if (!state.card) { renderSpin(); return; }
+    const { cat, type, text } = state.card;
+    const cfg      = CAT_CFG[cat];
+    const myTurn   = !isOnline || (isHost && state.turn===0) || (!isHost && state.turn===1);
+    const turnName = state.turn===0 ? 'Pietro 💙' : 'Emilly 💗';
+    const typeIcon = type === 'verdade' ? '💬' : '🎯';
+    const typeLabel = type === 'verdade' ? 'Verdade' : 'Desafio';
+
+    body.innerHTML = `
+      <div class="game-score-bar">
+        <div class="game-score-box"><div class="game-score-label">Pietro 💙</div><div class="game-score-num" style="color:#4a90d9">${state.s1||0}</div></div>
+        <div class="game-score-box"><div class="game-score-label" style="font-size:.65rem">🌶️ Fogo</div><div class="game-score-num" style="font-size:.8rem">😈</div></div>
+        <div class="game-score-box"><div class="game-score-label">Emilly 💗</div><div class="game-score-num" style="color:#e8536f">${state.s2||0}</div></div>
+      </div>
+
+      <div class="vdd-card-display" style="border:1.5px solid ${cfg.border};background:${cfg.bg};border-radius:16px;padding:1rem;margin:.4rem 0;text-align:center">
+        <div style="font-size:.68rem;font-weight:700;color:${cfg.color};margin-bottom:.4rem;letter-spacing:.05em">
+          ${cfg.emoji} ${cfg.label} &nbsp;·&nbsp; ${typeIcon} ${typeLabel}
+        </div>
+        <div style="font-size:.88rem;color:#fff;line-height:1.55;font-weight:500">${text}</div>
+        <div style="font-size:.65rem;color:rgba(255,255,255,.4);margin-top:.6rem">Para: <strong style="color:${cfg.color}">${turnName}</strong></div>
+      </div>
+
+      ${!state.answered ? `
+        <div class="vdd-action-row">
+          <button class="vdd-action-btn vdd-btn-done" id="fogo-done">✅ Cumpriu! +1</button>
+          <button class="vdd-action-btn vdd-btn-skip" id="fogo-skip">⏭️ Pulou</button>
+        </div>` : `<div class="vdd-answered-tag">✅ Cumprido 🔥</div>`}`;
+
+    if (!state.answered) {
+      document.getElementById('fogo-done')?.addEventListener('click', async () => {
+        if (!myTurn) return;
+        if (state.turn===0) state.s1 = (state.s1||0)+1;
+        else                state.s2 = (state.s2||0)+1;
+        state.answered = true;
+        state.phase    = 'answered';
+        if (isOnline) await _writeRoom({ data: state });
+        else render();
+      });
+      document.getElementById('fogo-skip')?.addEventListener('click', async () => {
+        if (!myTurn) return;
+        state.answered = true;
+        state.phase    = 'answered';
+        if (isOnline) await _writeRoom({ data: state });
+        else render();
+      });
+    }
+  }
+
+  function renderAnswered() {
+    const myTurn   = !isOnline || (isHost && state.turn===0) || (!isHost && state.turn===1);
+    const turnName = state.turn===0 ? 'Pietro 💙' : 'Emilly 💗';
+    const cfg      = state.card ? CAT_CFG[state.card.cat] : CAT_CFG.atrevido;
+
+    body.innerHTML = `
+      <div class="game-score-bar">
+        <div class="game-score-box"><div class="game-score-label">Pietro 💙</div><div class="game-score-num" style="color:#4a90d9">${state.s1||0}</div></div>
+        <div class="game-score-box"><div class="game-score-label" style="font-size:.65rem">🌶️ Fogo</div><div class="game-score-num" style="font-size:.8rem">😈</div></div>
+        <div class="game-score-box"><div class="game-score-label">Emilly 💗</div><div class="game-score-num" style="color:#e8536f">${state.s2||0}</div></div>
+      </div>
+
+      <div style="border:1.5px solid ${cfg.border};background:${cfg.bg};border-radius:14px;padding:.8rem;margin:.4rem 0;opacity:.55;text-align:center">
+        <div style="font-size:.72rem;color:${cfg.color};margin-bottom:.3rem">${cfg.emoji} ${cfg.label}</div>
+        <div style="font-size:.78rem;color:rgba(255,255,255,.8);line-height:1.5">${state.card?.text||''}</div>
+      </div>
+
+      <div style="text-align:center;font-size:.75rem;color:rgba(255,255,255,.45);margin:.3rem 0">
+        ${myTurn ? 'Passe a vez pra continuar 🌶️' : `Aguardando ${turnName}…`}
+      </div>
+
+      ${myTurn ? `<button class="game-restart-btn" id="fogo-next" style="margin-top:.4rem">Próxima 🔥</button>` : ''}`;
+
+    document.getElementById('fogo-next')?.addEventListener('click', async () => {
+      state.turn  = state.turn===0 ? 1 : 0;
+      state.phase = 'spin';
+      state.card  = null;
+      if (isOnline) await _writeRoom({ data: state });
+      else render();
+    });
+  }
+
+  function render() {
+    if      (state.phase === 'spin')     renderSpin();
+    else if (state.phase === 'card')     renderCard();
+    else if (state.phase === 'answered') renderAnswered();
+  }
+
+  if (isOnline) {
+    _listenRoom(ctx.code, data => {
+      if (!data.data || data.data.phase === undefined) return;
+      state = { phase:'spin', turn:0, s1:0, s2:0, card:null, answered:false, ...data.data };
+      render();
+    });
+    if (isHost) {
+      state = _getInitData('fogo');
+      _writeRoom({ data: state });
+    } else {
+      state = { phase:'spin', turn:0, s1:0, s2:0, card:null, answered:false };
+      body.innerHTML = `<div class="desenho-wait-box">
+        <div style="font-size:2.5rem">🌶️</div>
+        <div class="desenho-wait-title">Aguardando Pietro iniciar…</div>
+      </div>`;
+    }
+    _activeCleanup = () => { if(_roomUnsub){_roomUnsub();_roomUnsub=null;} };
+    return;
+  }
+
+  state = _getInitData('fogo');
   render();
 }
