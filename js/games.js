@@ -4526,6 +4526,9 @@ function openTiles(mode = 'split', ctx = null) {
         </div>`;
       body.appendChild(oppWrap);
 
+      /* FIX: flag para evitar que o host inicie a música duas vezes */
+      let musicStarted = false;
+
       /* Sync listener */
       _listenRoom(ctx.code, data => {
         if (!data.data) return;
@@ -4536,8 +4539,9 @@ function openTiles(mode = 'split', ctx = null) {
         if (data.data.phase === 'gameover' && !gameOver) {
           checkEnd(-1, 'remote');
         }
-        if (data.data.phase === 'playing' && isHost) {
-          /* host inicia música quando guest confirmou start */
+        if (data.data.phase === 'playing' && isHost && !musicStarted) {
+          /* host inicia música quando guest confirmou start — apenas uma vez */
+          musicStarted = true;
           _playYT(track.ytId, 60, () => checkEnd(0, 'time'));
         }
       });
@@ -4545,13 +4549,15 @@ function openTiles(mode = 'split', ctx = null) {
       /* Botão start */
       const startBtn = myField.wrap.querySelector('[id^=tiles-start-]');
       startBtn?.addEventListener('click', () => {
-        sharedState = { ...sharedState, phase: 'playing' };
+        /* FIX: guarda contra sharedState null antes do primeiro snapshot */
+        sharedState = { ...(sharedState || { trackId, s1: 0, s2: 0 }), phase: 'playing' };
         _writeRoom({ data: sharedState });
-        if (!isHost) _playYT(track.ytId, 60, () => checkEnd(0, 'time'));
+        if (!isHost && !musicStarted) { musicStarted = true; _playYT(track.ytId, 60, () => checkEnd(0, 'time')); }
       });
 
       if (isHost) {
-        sharedState = _getInitData('tiles');
+        /* FIX: usa o trackId escolhido pelo host no picker, não um aleatório */
+        sharedState = { phase: 'ready', trackId, s1: 0, s2: 0 };
         _writeRoom({ data: sharedState });
       }
 
