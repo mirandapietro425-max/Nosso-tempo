@@ -853,7 +853,7 @@ async function addMural() {
     if (input) input.value = '';
     _muralPhotoUrl = null;
     window.removeMuralPhoto();
-    renderMural();
+    // onSnapshot dispara renderMural() automaticamente após saveMural — sem chamada manual aqui
     showToast('💌 Recado enviado com amor!');
     try { window.awardCoins('mural', 15, muralAuthor); } catch(e) {}
   } finally {
@@ -875,7 +875,7 @@ async function deleteMural(idOrIndex) {
     if (Number.isNaN(idx) || idx < 0 || idx >= msgs.length) return;
     msgs.splice(idx, 1);
     await saveMural(msgs);
-    renderMural();
+    // onSnapshot dispara renderMural() automaticamente após saveMural
   } finally { _deletingMural = false; }
 }
 
@@ -1159,8 +1159,7 @@ async function confirmMood() {
     if (labelEl) labelEl.textContent = _d.label;
     if (timeEl)  timeEl.textContent  = _d.time ? `às ${_d.time}` : '';
   }
-  // Atualiza histórico em background (não bloqueia a UI)
-  initMoodDisplay();
+  // onSnapshot disparará initMoodDisplay() automaticamente após setDoc — sem chamada manual aqui
 
   // Moedas pela casinha — usa `person` (já é lowercase) em vez de moodPickerTarget
   // (closeMoodPicker() zeraria moodPickerTarget antes desta linha)
@@ -1943,6 +1942,16 @@ if (MURAL_DOC) onSnapshot(
     renderMural();
   },
   (err) => console.warn('[Firebase] onSnapshot mural:', err.message)
+);
+
+// ── Mood: escuta em tempo real para ver o humor do outro automaticamente ──
+if (MOOD_DOC) onSnapshot(
+  MOOD_DOC,
+  (snap) => {
+    if (!snap.exists()) return;
+    initMoodDisplay();
+  },
+  (err) => console.warn('[Firebase] onSnapshot mood:', err.message)
 );
 
 // ── Compartilhar localização ──
