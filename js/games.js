@@ -190,7 +190,7 @@ const CATALOG = [
   { id:'quemsoueu', icon:'⚡', title:'Quem Sou Eu?',        desc:'Post-it na testa — descubra quem é!',   fn: openQuemSouEu },
   { id:'cacanivel', icon:'🎰', title:'Caça-Níquel do Amor', desc:'Gire e ganhe recompensas românticas!',   fn: openCacaNivel },
   { id:'mimica',    icon:'🎭', title:'Mímica do Casal',     desc:'Faça gestos — sem falar a palavra!',      fn: openMimica    },
-  { id:'fogo',      icon:'🌶️', title:'Fogo & Desejo',       desc:'Perguntas íntimas e desafios ousados 🔞',  fn: openFogo      },
+  { id:'karaoke',   icon:'🎤', title:'Karaokê Batalha',     desc:'Cante o trecho — o outro avalia!',         fn: openKaraoke   },
 ];
 
 function _renderGameCards() {
@@ -515,8 +515,9 @@ function _getInitData(gameId) {
     const order = [..._tracks].sort(() => Math.random() - .5).slice(0, 8);
     return { phase: 'listen', qi: 0, tracks: order, turn: 0, s1: 0, s2: 0 };
   }
-  if (gameId === 'fogo') {
-    return { phase: 'spin', turn: 0, s1: 0, s2: 0, card: null, answered: false };
+  if (gameId === 'karaoke') {
+    const deck = [...KARAOKE_TRACKS].sort(() => Math.random() - .5).slice(0, 8);
+    return { phase: 'pick', turn: 0, s1: 0, s2: 0, round: 1, totalRounds: 8, deck, trackIdx: 0, voted: false };
   }
   if (gameId === 'mimica') {
     const deck = [...MIMICA_CARDS].sort(() => Math.random() - .5);
@@ -2503,6 +2504,7 @@ const VDD_CARDS = {
     'Faça uma pose de modelo e mande a foto.',
   ],
   quente: [
+    /* originais */
     'Qual é o seu lugar favorito para me abraçar?',
     'Descreva o beijo perfeito pra você.',
     'Qual parte do meu corpo você mais adora?',
@@ -2513,6 +2515,45 @@ const VDD_CARDS = {
     'Descreva com detalhes o abraço perfeito.',
     'O que mais te atrai em mim fisicamente?',
     'Qual sensação que só eu consigo te dar?',
+    /* atrevido */
+    'Qual parte do meu corpo você mais fica olhando sem eu perceber?',
+    'Qual foi o beijo nosso que mais te deixou com o coração disparado?',
+    'O que você pensa quando me vê saindo do banho?',
+    'Qual roupa ou look meu te deixa mais louco(a)?',
+    'Tem alguma fantasia que você nunca me contou ainda?',
+    'Qual carinho meu você mais sente falta quando estamos longe?',
+    'Onde você mais gosta de ser beijado(a)?',
+    'Qual cheiro meu te deixa mais com vontade de me abraçar?',
+    'Qual é o lugar mais inusitado onde já pensou em me beijar?',
+    'Me conta uma coisa que te atrai em mim que você nunca disse.',
+    'Qual foi a vez que mais precisou de força pra não me beijar?',
+    'O que mais te deixa com vontade de ficar comigo?',
+    'Qual momento nosso você revive na cabeça com mais frequência?',
+    'Qual coisa pequena que eu faço te deixa com borboletas no estômago?',
+    'Qual é a coisa mais ousada que já quis fazer comigo mas ficou com vergonha?',
+    'Me conta um pensamento sobre mim que você guardou segredo.',
+    'Qual é a sua fantasia favorita que envolve nós dois?',
+    'Qual parte do seu corpo você mais quer que eu beije?',
+    'Qual foi o momento que mais sentiu vontade de ficar comigo e não pôde?',
+    'Qual coisa minha te enlouquece do jeito bom?',
+    'Qual é o toque que mais te faz perder a cabeça?',
+    /* desafios atrevidos */
+    'Manda um áudio de voz falando o que mais te atrai fisicamente em mim — sem cortar.',
+    'Dá um beijo demorado no pescoço do outro agora.',
+    'Sussurra no ouvido do outro algo que te deixa com desejo.',
+    'Massageie os ombros e a nuca do outro por 2 minutos sem parar.',
+    'Olha nos olhos do outro por 30 segundos sem piscar e sem rir.',
+    'Descreve em detalhes o encontro perfeito que gostaria de ter comigo.',
+    'Manda uma mensagem atrevida pro celular do outro agora mesmo.',
+    'Diz 3 coisas que faria se estivéssemos completamente sozinhos.',
+    'Beija o outro por pelo menos 10 segundos — sem pressa.',
+    'Escreve uma mensagem descrevendo o que faria se estivéssemos completamente sozinhos agora.',
+    'Beija o outro onde você mais queria — e toma o tempo que quiser.',
+    'Sussurra no ouvido do outro a sua fantasia favorita que envolve nós dois.',
+    'Dá uma massagem de 3 minutos onde o outro pedir.',
+    'Olha nos olhos do outro e diz exatamente o que você mais deseja nele/nela agora.',
+    'Deixa o outro te abraçar por trás e fica quieto(a) por 1 minuto completo.',
+    'Faz o outro rir usando só beijos — onde e como quiser.',
   ],
 };
 
@@ -3769,244 +3810,280 @@ function openMimica(mode = 'split', ctx = null) {
   state = _getInitData('mimica');
   render();
 }
+/* ══════════════════════════════════════════
+   🎤 KARAOKÊ BATALHA — dados
+   ytId = vídeo com letra na tela (karaoke/lyrics)
+   startSec = segundo de entrada da parte mais conhecida
+══════════════════════════════════════════ */
+const KARAOKE_TRACKS = [
+  { title: 'Blinding Lights',       artist: 'The Weeknd',       ytId: 'fHI8X4OXluQ', startSec: 50,  singerHint: 'I\'ve been on my own for long enough…' },
+  { title: 'Shape of You',           artist: 'Ed Sheeran',       ytId: 'JGwWNGJdvx8', startSec: 55,  singerHint: 'I\'m in love with the shape of you…' },
+  { title: 'Levitating',             artist: 'Dua Lipa',         ytId: 'TUVcZfQe-Kw', startSec: 43,  singerHint: 'I got you, moonlight, you\'re my starlight…' },
+  { title: 'Dance Monkey',           artist: 'Tones and I',      ytId: 'q0hyYWKXF0Q', startSec: 30,  singerHint: 'They say oh my god I see the way you shine…' },
+  { title: 'Sunflower',              artist: 'Post Malone',      ytId: 'ApXoWvfEYVU', startSec: 40,  singerHint: 'Needless to say, I keep her in check…' },
+  { title: 'Someone Like You',       artist: 'Adele',            ytId: 'hLQl3WQQoQ0', startSec: 45,  singerHint: 'Never mind, I\'ll find someone like you…' },
+  { title: 'Rolling in the Deep',    artist: 'Adele',            ytId: 'rYEDA3JcQqw', startSec: 42,  singerHint: 'We could have had it all…' },
+  { title: 'Stay',                   artist: 'The Kid LAROI',    ytId: 'kTJczUoc26U', startSec: 35,  singerHint: 'I do the same thing I told you that I never would…' },
+  { title: 'Thunder',                artist: 'Imagine Dragons',  ytId: 'fKopy74weus', startSec: 38,  singerHint: 'Thunder, thunder, thunder…' },
+  { title: 'Love Story',             artist: 'Taylor Swift',     ytId: '8xg3vE8Ie_E', startSec: 55,  singerHint: 'Romeo, save me, they\'re trying to tell me how to feel…' },
+  { title: 'Bad Guy',                artist: 'Billie Eilish',    ytId: 'DyDfgMOUjCI', startSec: 42,  singerHint: 'I\'m the bad guy — duh!' },
+  { title: 'Believer',               artist: 'Imagine Dragons',  ytId: '7wtfhZwyrcc', startSec: 40,  singerHint: 'First things first, I\'ma say all the words inside my head…' },
+  { title: 'Counting Stars',         artist: 'OneRepublic',      ytId: 'hT_nvWreIhg', startSec: 48,  singerHint: 'Lately I been, I been losing sleep…' },
+  { title: 'Perfect',                artist: 'Ed Sheeran',       ytId: '2Vv-BfVoq4g', startSec: 50,  singerHint: 'I found a love for me…' },
+];
+
+/* notas de avaliação */
+const KARAOKE_SCORES = [
+  { pts: 10, label: '🌟 Perfeito!',       msg: 'Profissional demais — foi lindo!' },
+  { pts: 8,  label: '🎤 Arrasou!',        msg: 'Tá no nível dos grandes!' },
+  { pts: 6,  label: '😄 Boa!',            msg: 'Animação nota 10, afinação… passável!' },
+  { pts: 4,  label: '😅 Quase lá…',       msg: 'Fez o melhor que podia — e tá bom!' },
+  { pts: 2,  label: '😬 Com esforço…',    msg: 'Tentou, falhou, mas a coragem conta!' },
+  { pts: 0,  label: '💀 Meus ouvidos!',   msg: 'Até o microfone pediu socorro 😂' },
+];
 
 /* ══════════════════════════════════════════
-   🌶️ FOGO & DESEJO — dados
+   🎤 KARAOKÊ BATALHA — jogo
 ══════════════════════════════════════════ */
-const FOGO_CARDS = {
-  atrevido: [
-    /* Verdades íntimas */
-    { type: 'verdade', text: 'Qual parte do meu corpo você mais fica olhando sem eu perceber?' },
-    { type: 'verdade', text: 'Qual foi o beijo nosso que mais te deixou com o coração disparado?' },
-    { type: 'verdade', text: 'O que você pensa quando me vejo saindo do banho?' },
-    { type: 'verdade', text: 'Qual roupa ou look meu te deixa mais louco(a)?' },
-    { type: 'verdade', text: 'Tem alguma fantasia que você nunca me contou ainda?' },
-    { type: 'verdade', text: 'Qual carinho meu você mais sente falta quando estamos longe?' },
-    { type: 'verdade', text: 'Onde você mais gosta de ser beijado(a)?' },
-    { type: 'verdade', text: 'Qual cheiro meu te deixa mais com vontade de me abraçar?' },
-    { type: 'verdade', text: 'Qual é o lugar mais inusitado onde já pensou em me beijar?' },
-    { type: 'verdade', text: 'Me conta uma coisa que te atrai em mim que você nunca disse.' },
-    { type: 'verdade', text: 'Qual foi a vez que mais precisou de força pra não me beijar?' },
-    { type: 'verdade', text: 'O que mais te deixa com vontade de ficar comigo?' },
-    { type: 'verdade', text: 'Qual momento nosso você revive na cabeça com mais frequência?' },
-    { type: 'verdade', text: 'Se pudesse escolher um lugar do mundo pra ficarmos sozinhos, qual seria?' },
-    { type: 'verdade', text: 'Qual coisa pequena que eu faço te deixa com borboletas no estômago?' },
-    /* Desafios ousados */
-    { type: 'desafio', text: 'Manda um áudio de voz falando o que mais te atrai fisicamente em mim — sem cortar.' },
-    { type: 'desafio', text: 'Dá um beijo demorado no pescoço do outro agora.' },
-    { type: 'desafio', text: 'Sussurra no ouvido do outro algo que te deixa com desejo.' },
-    { type: 'desafio', text: 'Massageie os ombros e a nuca do outro por 2 minutos sem parar.' },
-    { type: 'desafio', text: 'Olha nos olhos do outro por 30 segundos sem piscar e sem rir.' },
-    { type: 'desafio', text: 'Descreve em detalhes o encontro perfeito que gostaria de ter comigo.' },
-    { type: 'desafio', text: 'Manda uma mensagem atrevida pro celular do outro agora mesmo.' },
-    { type: 'desafio', text: 'Faz uma pose de modelo e pede pro outro tirar uma foto.' },
-    { type: 'desafio', text: 'Diz 3 coisas que faria se estivéssemos completamente sozinhos.' },
-    { type: 'desafio', text: 'Beija o outro por pelo menos 10 segundos — sem pressa.' },
-  ],
-  quente: [
-    /* Verdades quentes */
-    { type: 'verdade', text: 'Qual é a coisa mais ousada que você já quis fazer comigo mas ficou com vergonha?' },
-    { type: 'verdade', text: 'Me conta um pensamento sobre mim que você guardou segredo.' },
-    { type: 'verdade', text: 'Se eu aparecesse na sua porta às 11 da noite com uma surpresa, o que você esperaria?' },
-    { type: 'verdade', text: 'Qual é a sua fantasia favorita que envolve nós dois?' },
-    { type: 'verdade', text: 'Qual parte do seu corpo você mais quer que eu beije?' },
-    { type: 'verdade', text: 'Qual foi o momento que mais sentiu vontade de ficar comigo e não pôde?' },
-    { type: 'verdade', text: 'Me descreve o que você faria se tivéssemos uma noite toda só pra nós dois.' },
-    { type: 'verdade', text: 'Qual coisa minha te enlouquece do jeito bom?' },
-    { type: 'verdade', text: 'O que você faria comigo se não tivesse nenhum limite?' },
-    { type: 'verdade', text: 'Qual é o toque que mais te faz perder a cabeça?' },
-    /* Desafios quentes */
-    { type: 'desafio', text: 'Escreve uma mensagem descrevendo o que faria se estivéssemos completamente sozinhos agora.' },
-    { type: 'desafio', text: 'Beija o outro onde você mais queria — e toma o tempo que quiser.' },
-    { type: 'desafio', text: 'Sussurra no ouvido do outro a sua fantasia favorita que envolve nós dois.' },
-    { type: 'desafio', text: 'Dá uma massagem de 3 minutos onde o outro pedir.' },
-    { type: 'desafio', text: 'Manda um áudio de voz descrevendo o que quer fazer com o outro hoje à noite.' },
-    { type: 'desafio', text: 'Olha nos olhos do outro e diz exatamente o que você mais deseja nele/nela agora.' },
-    { type: 'desafio', text: 'Troca de roupa com o outro — só pra ver como fica. Foto obrigatória.' },
-    { type: 'desafio', text: 'Deixa o outro te abraçar por trás e fica quieto(a) por 1 minuto completo.' },
-    { type: 'desafio', text: 'Escreve no corpo do outro (com o dedo) uma palavra que representa o que você sente.' },
-    { type: 'desafio', text: 'Faz o outro rir usando só beijos — onde e como quiser.' },
-  ],
-};
-
-/* ══════════════════════════════════════════
-   🌶️ FOGO & DESEJO — jogo
-══════════════════════════════════════════ */
-function openFogo(mode = 'split', ctx = null) {
-  const body     = _createOverlay('🌶️ Fogo & Desejo');
+function openKaraoke(mode = 'split', ctx = null) {
+  const body     = _createOverlay('🎤 Karaokê Batalha');
   const isOnline = mode === 'online';
   const isHost   = ctx?.role === 'host';
+  const P1 = 'Pietro', P2 = 'Emilly';
 
-  let state = _getInitData('fogo');
+  let state      = _getInitData('karaoke');
+  let _roomUnsub = null;
+  let _singTimer = null;
+  let _feedbackLock = false;
 
-  const CAT_CFG = {
-    atrevido: { label: 'Atrevido',  emoji: '🌶️', color: '#ff6b35', bg: 'rgba(255,107,53,.18)', border: 'rgba(255,107,53,.45)' },
-    quente:   { label: '🔥 Quente', emoji: '🔥', color: '#e8536f', bg: 'rgba(232,83,111,.18)', border: 'rgba(232,83,111,.45)' },
-  };
-
-  function renderSpin() {
-    const myTurn   = !isOnline || (isHost && state.turn===0) || (!isHost && state.turn===1);
-    const turnName = state.turn===0 ? 'Pietro 💙' : 'Emilly 💗';
-    const turnClr  = state.turn===0 ? '#4a90d9' : '#e8536f';
-
-    body.innerHTML = `
-      <div class="game-score-bar">
-        <div class="game-score-box" style="border:1px solid ${state.turn===0?'#4a90d9':'transparent'}">
-          <div class="game-score-label">Pietro 💙</div>
-          <div class="game-score-num" style="color:#4a90d9">${state.s1||0}</div>
-        </div>
-        <div class="game-score-box">
-          <div class="game-score-label" style="font-size:.65rem">🌶️ Fogo</div>
-          <div class="game-score-num" style="font-size:.8rem">😈</div>
-        </div>
-        <div class="game-score-box" style="border:1px solid ${state.turn===1?'#e8536f':'transparent'}">
-          <div class="game-score-label">Emilly 💗</div>
-          <div class="game-score-num" style="color:#e8536f">${state.s2||0}</div>
-        </div>
-      </div>
-
-      <div style="text-align:center;font-size:.78rem;color:rgba(255,255,255,.6);margin:.3rem 0 .6rem">
-        ${myTurn
-          ? `<span style="color:${turnClr};font-weight:700">Sua vez, ${turnName.split(' ')[0]}!</span> Escolha o nível:` 
-          : `Vez de <span style="color:${turnClr};font-weight:700">${turnName}</span> escolher…`}
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:10px;max-width:300px;margin:0 auto">
-        ${Object.entries(CAT_CFG).map(([cat, cfg]) => `
-          <button class="vdd-cat-btn ${myTurn?'':'vdd-disabled'}" data-cat="${cat}"
-            style="border:1.5px solid ${cfg.border};background:${cfg.bg};border-radius:14px;padding:.8rem 1rem;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:${myTurn?'pointer':'default'}">
-            <span style="font-size:2rem">${cfg.emoji}</span>
-            <span style="font-weight:700;color:${cfg.color};font-size:.92rem">${cfg.label}</span>
-            <span style="font-size:.65rem;color:rgba(255,255,255,.35)">${FOGO_CARDS[cat].length} cartas</span>
-          </button>`).join('')}
-      </div>
-
-      ${!myTurn ? `<div class="vdd-wait-msg" style="margin-top:.8rem">Aguardando ${turnName}… 🔥</div>` : ''}`;
-
-    if (myTurn) {
-      body.querySelectorAll('[data-cat]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const cat  = btn.dataset.cat;
-          const pool = FOGO_CARDS[cat];
-          const card = pool[Math.floor(Math.random() * pool.length)];
-          state.card     = { cat, type: card.type, text: card.text };
-          state.phase    = 'card';
-          state.answered = false;
-          if (isOnline) await _writeRoom({ data: state });
-          else render();
-        });
-      });
-    }
+  function stopAudio() {
+    _stopYT();
+    if (_singTimer) { clearInterval(_singTimer); _singTimer = null; }
   }
 
-  function renderCard() {
-    if (!state.card) { renderSpin(); return; }
-    const { cat, type, text } = state.card;
-    const cfg      = CAT_CFG[cat];
-    const myTurn   = !isOnline || (isHost && state.turn===0) || (!isHost && state.turn===1);
-    const turnName = state.turn===0 ? 'Pietro 💙' : 'Emilly 💗';
-    const typeIcon = type === 'verdade' ? '💬' : '🎯';
-    const typeLabel = type === 'verdade' ? 'Verdade' : 'Desafio';
-
-    body.innerHTML = `
-      <div class="game-score-bar">
-        <div class="game-score-box"><div class="game-score-label">Pietro 💙</div><div class="game-score-num" style="color:#4a90d9">${state.s1||0}</div></div>
-        <div class="game-score-box"><div class="game-score-label" style="font-size:.65rem">🌶️ Fogo</div><div class="game-score-num" style="font-size:.8rem">😈</div></div>
-        <div class="game-score-box"><div class="game-score-label">Emilly 💗</div><div class="game-score-num" style="color:#e8536f">${state.s2||0}</div></div>
-      </div>
-
-      <div class="vdd-card-display" style="border:1.5px solid ${cfg.border};background:${cfg.bg};border-radius:16px;padding:1rem;margin:.4rem 0;text-align:center">
-        <div style="font-size:.68rem;font-weight:700;color:${cfg.color};margin-bottom:.4rem;letter-spacing:.05em">
-          ${cfg.emoji} ${cfg.label} &nbsp;·&nbsp; ${typeIcon} ${typeLabel}
-        </div>
-        <div style="font-size:.88rem;color:#fff;line-height:1.55;font-weight:500">${text}</div>
-        <div style="font-size:.65rem;color:rgba(255,255,255,.4);margin-top:.6rem">Para: <strong style="color:${cfg.color}">${turnName}</strong></div>
-      </div>
-
-      ${!state.answered ? `
-        <div class="vdd-action-row">
-          <button class="vdd-action-btn vdd-btn-done" id="fogo-done">✅ Cumpriu! +1</button>
-          <button class="vdd-action-btn vdd-btn-skip" id="fogo-skip">⏭️ Pulou</button>
-        </div>` : `<div class="vdd-answered-tag">✅ Cumprido 🔥</div>`}`;
-
-    if (!state.answered) {
-      document.getElementById('fogo-done')?.addEventListener('click', async () => {
-        if (!myTurn) return;
-        if (state.turn===0) state.s1 = (state.s1||0)+1;
-        else                state.s2 = (state.s2||0)+1;
-        state.answered = true;
-        state.phase    = 'answered';
-        if (isOnline) await _writeRoom({ data: state });
-        else render();
-      });
-      document.getElementById('fogo-skip')?.addEventListener('click', async () => {
-        if (!myTurn) return;
-        state.answered = true;
-        state.phase    = 'answered';
-        if (isOnline) await _writeRoom({ data: state });
-        else render();
-      });
-    }
-  }
-
-  function renderAnswered() {
-    const myTurn   = !isOnline || (isHost && state.turn===0) || (!isHost && state.turn===1);
-    const turnName = state.turn===0 ? 'Pietro 💙' : 'Emilly 💗';
-    const cfg      = state.card ? CAT_CFG[state.card.cat] : CAT_CFG.atrevido;
-
-    body.innerHTML = `
-      <div class="game-score-bar">
-        <div class="game-score-box"><div class="game-score-label">Pietro 💙</div><div class="game-score-num" style="color:#4a90d9">${state.s1||0}</div></div>
-        <div class="game-score-box"><div class="game-score-label" style="font-size:.65rem">🌶️ Fogo</div><div class="game-score-num" style="font-size:.8rem">😈</div></div>
-        <div class="game-score-box"><div class="game-score-label">Emilly 💗</div><div class="game-score-num" style="color:#e8536f">${state.s2||0}</div></div>
-      </div>
-
-      <div style="border:1.5px solid ${cfg.border};background:${cfg.bg};border-radius:14px;padding:.8rem;margin:.4rem 0;opacity:.55;text-align:center">
-        <div style="font-size:.72rem;color:${cfg.color};margin-bottom:.3rem">${cfg.emoji} ${cfg.label}</div>
-        <div style="font-size:.78rem;color:rgba(255,255,255,.8);line-height:1.5">${state.card?.text||''}</div>
-      </div>
-
-      <div style="text-align:center;font-size:.75rem;color:rgba(255,255,255,.45);margin:.3rem 0">
-        ${myTurn ? 'Passe a vez pra continuar 🌶️' : `Aguardando ${turnName}…`}
-      </div>
-
-      ${myTurn ? `<button class="game-restart-btn" id="fogo-next" style="margin-top:.4rem">Próxima 🔥</button>` : ''}`;
-
-    document.getElementById('fogo-next')?.addEventListener('click', async () => {
-      state.turn  = state.turn===0 ? 1 : 0;
-      state.phase = 'spin';
-      state.card  = null;
-      if (isOnline) await _writeRoom({ data: state });
-      else render();
-    });
+  function scoreBar() {
+    const s = state;
+    return `
+      <div class="musica-score-bar">
+        <div class="musica-score-pill p1">💙 ${P1} <span>${s.s1}</span></div>
+        <div class="musica-round-badge">🎤 ${Math.min(s.round, s.totalRounds)}/${s.totalRounds}</div>
+        <div class="musica-score-pill p2">💗 ${P2} <span>${s.s2}</span></div>
+      </div>`;
   }
 
   function render() {
-    if      (state.phase === 'spin')     renderSpin();
-    else if (state.phase === 'card')     renderCard();
-    else if (state.phase === 'answered') renderAnswered();
+    stopAudio();
+    const s = state;
+    const singerIdx  = s.turn;                        // quem canta neste round
+    const judgeIdx   = singerIdx === 0 ? 1 : 0;      // quem julga
+    const singerName = singerIdx === 0 ? P1 : P2;
+    const judgeName  = judgeIdx  === 0 ? P1 : P2;
+    const singerClr  = singerIdx === 0 ? '#4a90d9' : '#e8536f';
+    const iAmSinger  = isOnline ? (isHost ? singerIdx === 0 : singerIdx === 1) : true;
+    const iAmJudge   = isOnline ? (isHost ? judgeIdx  === 0 : judgeIdx  === 1) : false;
+
+    /* gameover */
+    if (s.phase === 'gameover') {
+      const w = s.s1 > s.s2 ? `${P1} 💙` : s.s2 > s.s1 ? `${P2} 💗` : 'Empate 💕';
+      _showResult(body, '🎤', `${w} venceu!`, `${P1} ${s.s1} × ${s.s2} ${P2}`, () => openKaraoke(mode, ctx));
+      return;
+    }
+
+    const track = s.deck[s.trackIdx % s.deck.length];
+
+    /* ── pick: preparação ── */
+    if (s.phase === 'pick') {
+      body.innerHTML = scoreBar() + `
+        <div class="qse-card-area" style="text-align:center">
+          <div class="qse-turn-label">vez de <strong style="color:${singerClr}">${singerName}</strong> cantar</div>
+          <div style="font-size:2.8rem;margin:.5rem 0">🎤</div>
+          <div style="background:rgba(255,255,255,.08);border-radius:14px;padding:.7rem 1rem;margin:.4rem 0">
+            <div style="font-size:.65rem;color:rgba(255,255,255,.4);margin-bottom:.2rem">🎵 Música do round</div>
+            <div style="font-size:1rem;font-weight:800;color:#fff">${track.title}</div>
+            <div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:.2rem">${track.artist}</div>
+            <div style="font-size:.62rem;color:rgba(255,255,255,.3);margin-top:.5rem;font-style:italic">"${track.singerHint}"</div>
+          </div>
+          <div style="font-size:.7rem;color:rgba(255,255,255,.45);margin:.4rem 0;line-height:1.5">
+            ${iAmSinger
+              ? `<p style="margin:0">Você vai cantar! Toque em <strong>▶ Iniciar</strong> quando estiver pronto.<br>
+                 <span style="color:rgba(255,255,255,.3)">A música toca por 30 segundos — cante junto!</span></p>`
+              : `<p style="margin:0">Aguarde <strong>${singerName}</strong> iniciar…<br>
+                 <span style="color:rgba(255,255,255,.3)">Depois você vai avaliar a performance 🎯</span></p>`}
+          </div>
+          ${iAmSinger
+            ? `<button class="musica-play-btn" id="kar-start" style="margin-top:.5rem">▶ Iniciar Karaokê</button>`
+            : `<div class="musica-play-btn" style="opacity:.3;cursor:default">▶ Iniciar Karaokê</div>`}
+        </div>`;
+
+      document.getElementById('kar-start')?.addEventListener('click', async () => {
+        const ns = { ...s, phase: 'singing', voted: false };
+        if (isOnline) await _writeRoom({ data: ns });
+        else { state = ns; render(); }
+      });
+      return;
+    }
+
+    /* ── singing: música tocando, cantor canta ── */
+    if (s.phase === 'singing') {
+      const SING_SEC = 30;
+      body.innerHTML = scoreBar() + `
+        <div class="qse-card-area" style="text-align:center">
+          <div class="qse-turn-label" style="color:${singerClr}">🎤 ${singerName} está cantando!</div>
+          <div style="background:rgba(255,255,255,.08);border-radius:14px;padding:.6rem 1rem;margin:.5rem 0">
+            <div style="font-size:.95rem;font-weight:800;color:#fff">${track.title}</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.4)">${track.artist}</div>
+          </div>
+          <div class="musica-waves" id="kar-waves" style="justify-content:center;margin:.4rem 0">
+            ${[.9,.5,.8,.4,.7,.6,.9,.4,.8,.5].map((d,i)=>`<div class="musica-wave-bar" style="--spd:${(0.4+d*0.5).toFixed(2)}s;animation-delay:${(i*.06).toFixed(2)}s"></div>`).join('')}
+          </div>
+          <div class="qse-timer-row" style="justify-content:center;margin:.3rem 0">
+            <div class="qse-timer-ring">
+              <svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/><circle id="kar-arc" cx="22" cy="22" r="18" fill="none" stroke="${singerClr}" stroke-width="4" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0" style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .9s linear"/></svg>
+              <span id="kar-timer">${SING_SEC}</span>
+            </div>
+            <span class="qse-timer-label">segundos</span>
+          </div>
+          <div style="font-size:.7rem;color:rgba(255,255,255,.4);margin-top:.3rem">
+            ${iAmSinger ? '🎤 Cante junto com a música!' : `👂 Ouça ${singerName} cantar e prepare sua nota!`}
+          </div>
+        </div>`;
+
+      /* waves animadas */
+      document.querySelectorAll('#kar-waves .musica-wave-bar').forEach(b => b.classList.add('active'));
+
+      /* só o host/local controla o timer e o áudio */
+      const runTimer = !isOnline || isHost;
+      if (runTimer) {
+        _playYT(track.ytId, SING_SEC, async () => {
+          stopAudio();
+          const ns = { ...s, phase: 'judge', voted: false };
+          if (isOnline) await _writeRoom({ data: ns });
+          else { state = ns; render(); }
+        });
+        let t = SING_SEC;
+        const arc = document.getElementById('kar-arc');
+        const txt = document.getElementById('kar-timer');
+        _singTimer = setInterval(async () => {
+          t--;
+          if (txt) txt.textContent = t > 0 ? t : 0;
+          if (arc) arc.setAttribute('stroke-dashoffset', String(Math.round(113 * (1 - t / SING_SEC))));
+          if (t <= 0) { stopAudio(); }
+        }, 1000);
+      }
+      return;
+    }
+
+    /* ── judge: juiz avalia ── */
+    if (s.phase === 'judge') {
+      /* em modo split, ambos veem as notas; quem avalia é o "judge" mas como não é online,
+         usamos uma UI simples onde qualquer um pode votar */
+      const canVote = !s.voted && (!isOnline || iAmJudge);
+
+      body.innerHTML = scoreBar() + `
+        <div class="qse-card-area" style="text-align:center">
+          <div class="qse-turn-label">🎯 <strong style="color:${singerIdx===0?'#e8536f':'#4a90d9'}">${judgeName}</strong>, dê a nota!</div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,.5);margin:.3rem 0">
+            ${iAmJudge || !isOnline ? 'Avalie a performance de ' : 'Aguardando nota de '}<strong>${singerName}</strong>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin:.5rem 0;max-width:290px;margin-left:auto;margin-right:auto">
+            ${KARAOKE_SCORES.map((sc, i) => `
+              <button class="quiz-opt ${canVote?'':'vdd-disabled'}" data-sci="${i}"
+                style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .9rem;font-size:.8rem;${canVote?'':'opacity:.45;cursor:default'}">
+                <span>${sc.label}</span>
+                <span style="font-size:.7rem;color:rgba(255,255,255,.5);font-weight:400">${sc.pts} pts</span>
+              </button>`).join('')}
+          </div>
+          ${s.voted ? `<div class="vdd-answered-tag">✅ Nota dada!</div>` : ''}
+          ${!canVote && !s.voted ? `<div class="vdd-wait-msg">Aguardando ${judgeName} avaliar… 🎯</div>` : ''}
+        </div>`;
+
+      if (canVote) {
+        body.querySelectorAll('[data-sci]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const sc  = KARAOKE_SCORES[Number(btn.dataset.sci)];
+            const pts = sc.pts;
+            const ns  = { ...s,
+              s1: s.s1 + (singerIdx === 0 ? pts : 0),
+              s2: s.s2 + (singerIdx === 1 ? pts : 0),
+              voted: true,
+              lastLabel: sc.label,
+              lastMsg:   sc.msg,
+              phase: 'result',
+            };
+            _feedbackLock = true;
+            if (isOnline) await _writeRoom({ data: ns });
+            else { state = ns; render(); }
+          });
+        });
+      }
+      return;
+    }
+
+    /* ── result: mostra nota e passa a vez ── */
+    if (s.phase === 'result') {
+      const nextRound = s.round + 1;
+      const gameover  = nextRound > s.totalRounds;
+      const canAdvance = !isOnline || iAmJudge;
+
+      body.innerHTML = scoreBar() + `
+        <div class="qse-card-area" style="text-align:center">
+          <div style="font-size:2.2rem;margin:.4rem 0">${(s.lastLabel||'').split(' ')[0]}</div>
+          <div style="font-size:1rem;font-weight:800;color:#fff;margin-bottom:.2rem">${s.lastLabel||''}</div>
+          <div style="font-size:.75rem;color:rgba(255,255,255,.55);margin-bottom:.7rem">${s.lastMsg||''}</div>
+          <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:.5rem .8rem;font-size:.72rem;color:rgba(255,255,255,.45)">
+            <strong style="color:${singerClr}">${singerName}</strong> cantou · <strong>${track.title}</strong>
+          </div>
+          <div style="font-size:.7rem;color:rgba(255,255,255,.35);margin:.5rem 0">
+            ${canAdvance
+              ? (gameover ? 'Último round! Veja o resultado final 👇' : 'Passe a vez para continuar 🎤')
+              : `Aguardando ${judgeName}…`}
+          </div>
+          ${canAdvance
+            ? `<button class="game-restart-btn" id="kar-next" style="margin-top:.3rem">
+                ${gameover ? '🏆 Ver resultado final' : 'Próxima música 🎤'}
+               </button>`
+            : ''}
+        </div>`;
+
+      document.getElementById('kar-next')?.addEventListener('click', async () => {
+        const ns = {
+          ...s,
+          round:    s.round + 1,
+          turn:     (s.turn + 1) % 2,
+          trackIdx: s.trackIdx + 1,
+          phase:    gameover ? 'gameover' : 'pick',
+          voted:    false,
+          lastLabel: null,
+          lastMsg:   null,
+        };
+        if (isOnline) await _writeRoom({ data: ns });
+        else { state = ns; render(); }
+      });
+      return;
+    }
   }
 
+  /* ─── online ─── */
   if (isOnline) {
-    _listenRoom(ctx.code, data => {
-      if (!data.data || data.data.phase === undefined) return;
-      state = { phase:'spin', turn:0, s1:0, s2:0, card:null, answered:false, ...data.data };
+    _roomUnsub = _listenRoom(ctx.code, data => {
+      if (!data.data) return;
+      if (_feedbackLock) return;
+      state = { ...state, ...data.data };
       render();
     });
-    if (isHost) {
-      state = _getInitData('fogo');
-      _writeRoom({ data: state });
-    } else {
-      state = { phase:'spin', turn:0, s1:0, s2:0, card:null, answered:false };
+    if (isHost) { state = _getInitData('karaoke'); _writeRoom({ data: state }); }
+    else {
       body.innerHTML = `<div class="desenho-wait-box">
-        <div style="font-size:2.5rem">🌶️</div>
+        <div style="font-size:2.5rem">🎤</div>
         <div class="desenho-wait-title">Aguardando Pietro iniciar…</div>
       </div>`;
     }
-    _activeCleanup = () => { if(_roomUnsub){_roomUnsub();_roomUnsub=null;} };
+    _activeCleanup = () => { stopAudio(); if (_roomUnsub) { _roomUnsub(); _roomUnsub = null; } };
     return;
   }
 
-  state = _getInitData('fogo');
+  /* ─── split ─── */
+  _activeCleanup = () => stopAudio();
+  state = _getInitData('karaoke');
   render();
 }
