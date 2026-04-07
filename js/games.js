@@ -1145,7 +1145,7 @@ function openSnake(mode = 'split', ctx = null) {
         _showResult(body,'🐍',w,`Pietro ${sc1} × ${sc2} Emilly`,()=>openSnake(mode,ctx));
       }
     });
-    _syncInterval = setInterval(()=>{ _writeRoom({p2input:{x:nd2.x,y:nd2.y}}); },120);
+    _syncInterval = setInterval(()=>{ _writeRoom({p2input:{x:nd2.x,y:nd2.y}}); },200); // OPT: era 120ms
     _activeCleanup=()=>{ clearInterval(_syncInterval);_syncInterval=null;if(_roomUnsub){_roomUnsub();_roomUnsub=null;}window.removeEventListener('keydown',onKeySnake); };
     return;
   }
@@ -1154,7 +1154,7 @@ function openSnake(mode = 'split', ctx = null) {
     _listenRoom(ctx.code, data => { if(data.p2input&&(data.p2input.x||data.p2input.y)) setD2(data.p2input.x,data.p2input.y); });
     _syncInterval = setInterval(()=>{
       _writeRoom({data:{s1,s2,food,sc1,sc2,dead:running?null:_snakeDead}});
-    },150);
+    },200); // OPT: era 120ms
   }
 
   function _drawSnake(){
@@ -1170,6 +1170,7 @@ function openSnake(mode = 'split', ctx = null) {
   let lastT=0;
   function loop2(ts){
     if(!running)return;
+    if(document.hidden){animId2=requestAnimationFrame(loop2);return;} // OPT
     if(ts-lastT>135){
       lastT=ts;
       d1={...nd1};d2={...nd2};
@@ -1276,7 +1277,7 @@ function openAlvo(mode = 'split', ctx = null) {
     });
     _activeCleanup=()=>{running3=false;cancelAnimationFrame(animId3);if(_roomUnsub){_roomUnsub();_roomUnsub=null;}canvas.removeEventListener('click',onClick);canvas.removeEventListener('touchend',onTouch);};
     running3=true; animId3=requestAnimationFrame(drawOnly);
-    function drawOnly(){if(!running3)return;drawTargets();animId3=requestAnimationFrame(drawOnly);}
+    function drawOnly(){if(!running3)return;if(document.hidden){animId3=requestAnimationFrame(drawOnly);return;}drawTargets();animId3=requestAnimationFrame(drawOnly);} // OPT
     return;
   }
 
@@ -1299,6 +1300,7 @@ function openAlvo(mode = 'split', ctx = null) {
 
   function loop3(ts){
     if(!running3)return;
+    if(document.hidden){animId3=requestAnimationFrame(loop3);return;} // OPT
     const now=Date.now();
     if(now-lastSec>=1000){
       timeLeft--;lastSec=now;
@@ -1393,7 +1395,7 @@ function openCorrida(mode = 'split', ctx = null) {
         _showResult(body,'🏃',`${w1>=3?'Pietro 💙':'Emilly 💗'} venceu!`,`Pietro ${w1} × ${w2} Emilly`,()=>openCorrida(mode,ctx));
       }
     });
-    _syncInterval=setInterval(()=>_writeRoom({p2input:{...k2}}),120);
+    _syncInterval=setInterval(()=>_writeRoom({p2input:{...k2}}),200); // OPT: era 120ms
     _activeCleanup=()=>{cancelAnimationFrame(animId4);clearInterval(_syncInterval);_syncInterval=null;if(_roomUnsub){_roomUnsub();_roomUnsub=null;}window.removeEventListener('keydown',onKey4);window.removeEventListener('keyup',onKey4);};
     return;
   }
@@ -1404,7 +1406,7 @@ function openCorrida(mode = 'split', ctx = null) {
       _writeRoom({data:{p1:{x:p1.x,y:p1.y,vx:p1.vx,vy:p1.vy,onGround:p1.onGround,dir:p1.dir,anim:p1.anim,won:p1.won},
         p2:{x:p2.x,y:p2.y,vx:p2.vx,vy:p2.vy,onGround:p2.onGround,dir:p2.dir,anim:p2.anim,won:p2.won},
         w1,w2,raceOver,raceMsg,done:(w1>=3||w2>=3)}});
-    },150);
+    },200); // OPT: era 120ms
   }
 
   const canvas=document.getElementById('cr-canvas'),ctx4=canvas.getContext('2d');
@@ -1439,6 +1441,7 @@ function openCorrida(mode = 'split', ctx = null) {
   }
 
   function loop4(){
+    if(document.hidden){animId4=requestAnimationFrame(loop4);return;} // OPT
     moveRunner(p1,k1);moveRunner(p2,k2);
     if(!raceOver&&(p1.won||p2.won)){
       raceOver=true;

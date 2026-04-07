@@ -159,7 +159,7 @@ const EVENT_PARTICLES = {
   },
   'namorados': {
     elements: ['💕', '❤️', '💗', '💝', '🌹', '💌', '✨'],
-    rate: 400,
+    rate: 600, // OPT: era 400
     size: [12, 24],
     speed: [5, 9],
     canvas: { color: 'rgba(232,83,111,', shape: 'heart' },
@@ -173,7 +173,7 @@ const EVENT_PARTICLES = {
   },
   carnaval: {
     elements: ['🎊', '🎉', '🎭', '🎶', '✨', '🌈', '💃'],
-    rate: 300,
+    rate: 600, // OPT: era 300
     size: [14, 22],
     speed: [4, 8],
     canvas: { color: 'rgba(255,200,0,', shape: 'star' },
@@ -194,21 +194,21 @@ const EVENT_PARTICLES = {
   },
   mesversario: {
     elements: ['💕', '🥂', '🌹', '💍', '✨', '🌸', '💌'],
-    rate: 500,
+    rate: 600, // OPT: era 500
     size: [12, 22],
     speed: [5, 9],
     canvas: { color: 'rgba(232,83,111,', shape: 'heart' },
   },
   'aniv-pietro': {
     elements: ['🎂', '🎈', '🎁', '🎊', '💙', '⭐', '✨'],
-    rate: 350,
+    rate: 600, // OPT: era 350
     size: [14, 24],
     speed: [4, 8],
     canvas: { color: 'rgba(74,144,217,', shape: 'star' },
   },
   'aniv-emilly': {
     elements: ['🎂', '🎀', '🎁', '🎊', '💗', '🌸', '✨'],
-    rate: 350,
+    rate: 600, // OPT: era 350
     size: [14, 24],
     speed: [4, 8],
     canvas: { color: 'rgba(232,83,111,', shape: 'star' },
@@ -217,8 +217,8 @@ const EVENT_PARTICLES = {
 
 const PERIOD_PARTICLES = {
   madrugada: { elements: ['⭐', '✨', '💫', '🌙', '💜'], rate: 550, size: [10, 18], speed: [8, 14] },
-  manha:     { elements: ['🌸', '✨', '🌺', '💕', '🌷'], rate: 480, size: [10, 18], speed: [6, 12] },
-  tarde:     { elements: ['💕', '🌹', '💗', '🌸', '❤️'], rate: 450, size: [10, 20], speed: [5, 10] },
+  manha:     { elements: ['🌸', '✨', '🌺', '💕', '🌷'], rate: 600, size: [10, 18], speed: [6, 12] }, // OPT: era 480
+  tarde:     { elements: ['💕', '🌹', '💗', '🌸', '❤️'], rate: 600, size: [10, 20], speed: [5, 10] }, // OPT: era 450
   noite:     { elements: ['⭐', '💜', '🌟', '💫', '✨'], rate: 550, size: [10, 18], speed: [7, 13] },
 };
 
@@ -233,7 +233,7 @@ export function initAdaptiveParticles(activeEventId = null) {
   _particleConfig = config;
 
   // Spawn inicial — 18 partículas escalonadas a cada 120ms
-  for (let i = 0; i < 18; i++) setTimeout(() => _spawnParticle(config), i * 120);
+  for (let i = 0; i < 8; i++) setTimeout(() => _spawnParticle(config), i * 150); // OPT: era 18×120ms
 
   // Spawn contínuo
   _particleInterval = setInterval(() => { if (!document.hidden) _spawnParticle(config); }, config.rate);
@@ -247,7 +247,7 @@ export function initAdaptiveParticles(activeEventId = null) {
   window._peVisibilityHandler = () => {
     if (!document.hidden) {
       const cfg = _particleConfig;
-      for (let i = 0; i < 8; i++) setTimeout(() => _spawnParticle(cfg), i * 80);
+      for (let i = 0; i < 3; i++) setTimeout(() => _spawnParticle(cfg), i * 200); // OPT: era 8×80ms
     }
   };
   document.addEventListener('visibilitychange', window._peVisibilityHandler);
