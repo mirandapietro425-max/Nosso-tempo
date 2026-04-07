@@ -233,7 +233,7 @@ export function initAdaptiveParticles(activeEventId = null) {
   _particleConfig = config;
 
   // Spawn inicial — 18 partículas escalonadas a cada 120ms
-  for (let i = 0; i < 8; i++) setTimeout(() => _spawnParticle(config), i * 150); // OPT: era 18×120ms
+  for (let i = 0; i < 5; i++) setTimeout(() => _spawnParticle(config), i * 200); // OPT: era 8×150ms
 
   // Spawn contínuo
   _particleInterval = setInterval(() => { if (!document.hidden) _spawnParticle(config); }, config.rate);

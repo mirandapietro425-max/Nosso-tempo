@@ -697,8 +697,9 @@ function openTaekwondo(mode = 'split', ctx = null) {
     });
     /* guest sends k2 to firebase */
     _syncInterval = setInterval(async () => {
+      if (document.hidden) return; // OPT: pausa em background
       await _writeRoom({ p2input: {...k2} });
-    }, 120);
+    }, 200); // OPT: era 120ms
     _activeCleanup = () => {
       cancelAnimationFrame(animId);
       clearInterval(_syncInterval); _syncInterval = null;
@@ -717,10 +718,11 @@ function openTaekwondo(mode = 'split', ctx = null) {
     });
     /* host syncs state */
     _syncInterval = setInterval(async () => {
+      if (document.hidden) return; // OPT: pausa em background
       await _writeRoom({ data: { p1:{x:p1.x,y:p1.y,hp:p1.hp,dir:p1.dir,kick:p1.kick,block:p1.block,wins:p1.wins},
         p2:{x:p2.x,y:p2.y,hp:p2.hp,dir:p2.dir,kick:p2.kick,block:p2.block,wins:p2.wins},
         rOver, rMsg } });
-    }, 150);
+    }, 200); // OPT: era 150ms
     // BUG-H3: _activeCleanup definido imediatamente após o interval do host
     // para que qualquer chamada de cleanup entre aqui e o _activeCleanup final (linha ~551) não vaze o interval
     _activeCleanup = () => { if(_syncInterval){clearInterval(_syncInterval);_syncInterval=null;} if(_roomUnsub){_roomUnsub();_roomUnsub=null;} };
@@ -769,6 +771,7 @@ function openTaekwondo(mode = 'split', ctx = null) {
 
   function loop(ts) {
     if(!animId&&animId!==0) return;
+    if(document.hidden){animId=requestAnimationFrame(loop);return;} // OPT
     moveP(p1,k1); moveP(p2,k2);
     checkHit(p1,p2); checkHit(p2,p1);
     p1.hp=Math.max(0,p1.hp); p2.hp=Math.max(0,p2.hp);
@@ -1386,8 +1389,8 @@ function openCorrida(mode = 'split', ctx = null) {
       if(!data.data||!data.data.p1)return;
       const d=data.data; p1={...p1,...d.p1};p2={...p2,...d.p2};
       w1=d.w1||0;w2=d.w2||0;raceOver=d.raceOver;raceMsg=d.raceMsg||'';
-      document.getElementById('cr-w1').textContent='🏆 '+w1;
-      document.getElementById('cr-w2').textContent='🏆 '+w2;
+      const _elW1=document.getElementById('cr-w1'); if(_elW1) _elW1.textContent='🏆 '+w1;
+      const _elW2=document.getElementById('cr-w2'); if(_elW2) _elW2.textContent='🏆 '+w2;
       _drawCorrida(ctx4,canvas,CW,CH,GND,PW,PH);
       if(d.done && !_guestResultShown){
         _guestResultShown = true;
@@ -1449,9 +1452,9 @@ function openCorrida(mode = 'split', ctx = null) {
       else if(p2.won&&!p1.won){w2++;raceMsg='Emilly chegou! 💗';}
       else raceMsg='Empate! 🤝';
       raceTimer=120;round++;
-      document.getElementById('cr-w1').textContent='🏆 '+w1;
-      document.getElementById('cr-w2').textContent='🏆 '+w2;
-      document.getElementById('cr-round').textContent='Round '+round;
+      const _w1el=document.getElementById('cr-w1'); if(_w1el) _w1el.textContent='🏆 '+w1;
+      const _w2el=document.getElementById('cr-w2'); if(_w2el) _w2el.textContent='🏆 '+w2;
+      const _rndEl=document.getElementById('cr-round'); if(_rndEl) _rndEl.textContent='Round '+round;
     }
     if(raceOver&&raceTimer>0){raceTimer--;
       if(raceTimer===0){
@@ -1834,7 +1837,7 @@ function openDesenho(mode = 'split', ctx = null) {
   /* ── start online sync (desenhista envia strokes) ── */
   function _startSync() {
     _syncTick = setInterval(async () => {
-      if (!_strokeBuf.length || !isOnline) return;
+      if (document.hidden || !_strokeBuf.length || !isOnline) return; // OPT: pausa em background
       const toSend = _strokeBuf.splice(0);
       const merged = [...(state.strokes||[]), ...toSend];
       state.strokes = merged;
@@ -4289,6 +4292,7 @@ function openTiles(mode = 'split', ctx = null) {
     /* Loop principal */
     function loop() {
       if (!running) return;
+      if (document.hidden) { animId = requestAnimationFrame(loop); return; } // OPT
       tiles.forEach(tile => {
         if (!tile.hit && !tile.miss) tile.y += speed;
       });
