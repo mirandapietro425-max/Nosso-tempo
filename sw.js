@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v63';
+const CACHE_VERSION = 'v64'; // BUG-SW6: adicionados 7 JS faltantes + corrigido cinema-tmdb→cinema-playlt
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -61,7 +61,14 @@ const STATIC_ASSETS = [
   '/js/cinema/cinema-state.js',
   '/js/cinema/cinema-player.js',
   '/js/cinema/cinema-catalog.js',
-  '/js/cinema/cinema-tmdb.js',
+  '/js/cinema/cinema-playlt.js',
+  '/js/emotional-state.js',
+  '/js/event-unlock.js',
+  '/js/living-moments.js',
+  '/js/love-city-core.js',
+  '/js/memory-anniversaries.js',
+  '/js/memory-of-day.js',
+  '/js/museum.js',
   '/js/progress.js',
   '/js/watchparty.js',
   '/assets/favicon.png',

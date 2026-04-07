@@ -42,7 +42,7 @@ export const EMILLY_BDAY_MONTH = 3;  // Abril (0-indexed) — aniversário Emill
 export const EMILLY_BDAY_DAY   = 24;
 
 // ── Senha do Mural ──
-export const SENHA_MURAL = 'Sody6';
+export const SENHA_MURAL = 'sody';
 
 // ── Galeria ──
 export const GALLERY_SLOTS = 6;
