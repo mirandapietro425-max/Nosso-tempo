@@ -6,6 +6,16 @@
 import { startTracking, stopTracking, getResumeTime } from '../progress.js';
 import { cinemaState }  from './cinema-state.js';
 import { sanitizeTmdb, fetchSources, PLAYLT_ENABLED } from './cinema-playlt.js';
+import {
+  TLN_ENABLED,
+  getProviders,
+  getSource,
+  selectPreferredProvider,
+  autoResolveSource,
+  saveProgress,
+  startProgressSync,
+  stopProgressSync,
+} from './cinema-tln.js';
 
 export const PLAYER_SERVERS = [
   /* ══════════════════════════════════════════════════════════════
@@ -633,6 +643,9 @@ export function destroyPlayer() {
   if (cinemaState.playerDestroyed) return;
   cinemaState.playerDestroyed = true;
 
+  // TLN: para sincronização de progresso
+  stopProgressSync();
+
   // F7: clear ALL registered timers
   cinemaState.activeTimers.forEach(t => { try { clearTimeout(t); } catch (_) {} });
   cinemaState.activeTimers = [];
@@ -807,8 +820,14 @@ export async function buildPlayer(item, epIdx, onWatched) {
   const episodes = dynEps || item.episodes;
   const ep       = episodes?.[epIdx] ?? null;
 
-  // ID para a PlayLT: usa contentId do episódio se disponível, senão tmdbId
+  // ID para a PlayLT/TLN: usa contentId do episódio se disponível, senão tmdbId
   const playltId = ep?.contentId ?? item.tmdbId ?? null;
+
+  // ── TLN: tenta primeiro — fallback automático para embed servers se falhar ──
+  if (playltId && TLN_ENABLED) {
+    _buildFromTLN(playerEl, item, epIdx, ep, playltId, onWatched);
+    return;
+  }
 
   if (playltId && PLAYLT_ENABLED) {
     _buildFromPlayLT(playerEl, item, epIdx, ep, playltId, onWatched);
@@ -836,6 +855,317 @@ export async function buildPlayer(item, epIdx, onWatched) {
   }
 
   _buildFromServer(playerEl, item, epIdx, ep, onWatched);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TLN: resolve providers → source → inject → play
+   Fallback automático entre providers, depois embed servers.
+══════════════════════════════════════════════════════════════ */
+
+async function _buildFromTLN(playerEl, item, epIdx, ep, contentId, onWatched) {
+  // F1: snapshot generation
+  const myGeneration = cinemaState.generation;
+
+  playerEl.appendChild(_makeSkeleton('🎬 Carregando…'));
+
+  // Inicia watchdog + early-exit como no PlayLT path
+  _startWatchdog(playerEl, item, epIdx, onWatched);
+  _startEarlyExit(playerEl, item, epIdx, onWatched);
+  _startSlowNetworkTimer();
+
+  const ctrl = new AbortController();
+
+  let result = null;
+  try {
+    result = await autoResolveSource(contentId, ctrl.signal);
+  } catch (err) {
+    console.warn('[TLN] autoResolveSource threw:', err?.message || err);
+  }
+
+  // F1: generation guard
+  if (myGeneration !== cinemaState.generation) {
+    _stopWatchdog(); _clearEarlyExit(); _clearSlowNetworkTimer();
+    ctrl.abort();
+    return;
+  }
+  if (!cinemaState.isModalOpen || cinemaState.currentItem !== item) {
+    _stopWatchdog(); _clearEarlyExit(); _clearSlowNetworkTimer();
+    ctrl.abort();
+    return;
+  }
+
+  _stopWatchdog();
+  _clearEarlyExit();
+  _clearSlowNetworkTimer();
+  document.getElementById('cinema-player-skeleton')?.remove();
+
+  if (result?.source) {
+    const { source, providers } = result;
+    _injectTlnSource(playerEl, item, epIdx, ep, contentId, source, providers, 0, onWatched);
+    _startTrackingAfterBuild(item, epIdx, ep, onWatched);
+    return;
+  }
+
+  // TLN sem resultado → fallback para embed servers
+  console.warn('[TLN] Sem source para id=' + contentId + ' — usando fallback embed');
+  playerEl.innerHTML = '';
+  // Reset server idx para garantir seleção limpa
+  cinemaState.failedServers.clear();
+  cinemaState.lastAutoSwitchTs = 0;
+  _buildFromServer(playerEl, item, epIdx, ep, onWatched);
+}
+
+/**
+ * Injeta um source TLN no player.
+ * Se o stream falhar, tenta o próximo provider automaticamente.
+ * Se todos falharem, cai para embed servers.
+ *
+ * @param {HTMLElement} playerEl
+ * @param {object}      item
+ * @param {number}      epIdx
+ * @param {object|null} ep
+ * @param {string}      contentId
+ * @param {object}      source        — resposta normalizada da TLN
+ * @param {Array}       providers     — lista completa de providers
+ * @param {number}      providerIdx   — índice atual na lista de providers
+ * @param {Function}    onWatched
+ */
+function _injectTlnSource(playerEl, item, epIdx, ep, contentId, source, providers, providerIdx, onWatched) {
+  const streamUrl = source.stream;
+
+  // ── HLS / MP4 nativo ───────────────────────────────────────
+  if (source.type === 'hls' || source.type === 'mp4' || streamUrl.includes('.m3u8') || streamUrl.includes('.mp4')) {
+    const wrap  = _createTlnStreamPlayer(streamUrl, item.title, source);
+
+    const video = wrap.querySelector('video');
+
+    // Detecta erro de stream → tenta próximo provider
+    const _onError = () => {
+      console.warn('[TLN] stream error — tentando próximo provider');
+      wrap.remove();
+      _tryNextTlnProvider(playerEl, item, epIdx, ep, contentId, providers, providerIdx + 1, onWatched);
+    };
+
+    if (video) {
+      video.addEventListener('error', _onError, { once: true });
+
+      // Confirma play bem-sucedido → salva progresso
+      video.addEventListener('playing', () => {
+        try { navigator.vibrate?.(10); } catch (_) {}
+        saveProgress({
+          contentId,
+          episodeId: ep?.contentId ?? contentId,
+          position:  Math.floor(video.currentTime),
+          duration:  source.duration || Math.floor(video.duration) || 0,
+        });
+      }, { once: true });
+
+      // Sincronização de progresso a cada 15s
+      startProgressSync(() => ({
+        contentId,
+        episodeId: ep?.contentId ?? contentId,
+        position:  Math.floor(video.currentTime || 0),
+        duration:  source.duration || Math.floor(video.duration || 0),
+      }));
+
+      // Salva ao pausar
+      video.addEventListener('pause', () => {
+        saveProgress({
+          contentId,
+          episodeId: ep?.contentId ?? contentId,
+          position:  Math.floor(video.currentTime),
+          duration:  source.duration || Math.floor(video.duration) || 0,
+        });
+      });
+    }
+
+    playerEl.innerHTML = '';
+    playerEl.appendChild(wrap);
+    return;
+  }
+
+  // ── Iframe (se TLN retornar type=iframe) ───────────────────
+  if (source.type === 'iframe') {
+    const iframe = createIframe(streamUrl, item.title);
+
+    iframe.onload = () => {
+      document.getElementById('cinema-player-skeleton')?.remove();
+      iframe.style.opacity = '1';
+      cinemaState.liveIframe = iframe;
+      try { navigator.vibrate?.(10); } catch (_) {}
+      _startFakeLoadDetector(playerEl, item, epIdx, onWatched);
+      _startFreezeDetector(playerEl, item, epIdx, onWatched);
+    };
+
+    // Watchdog: se iframe não carregar em tempo → próximo provider
+    const watchdogMs = 20_000;
+    const wdTimer = setTimeout(() => {
+      console.warn('[TLN] iframe timeout — próximo provider');
+      _tryNextTlnProvider(playerEl, item, epIdx, ep, contentId, providers, providerIdx + 1, onWatched);
+    }, watchdogMs);
+
+    iframe.onload = () => {
+      clearTimeout(wdTimer);
+      document.getElementById('cinema-player-skeleton')?.remove();
+      iframe.style.opacity = '1';
+      cinemaState.liveIframe = iframe;
+      try { navigator.vibrate?.(10); } catch (_) {}
+    };
+
+    playerEl.innerHTML = '';
+    playerEl.appendChild(iframe);
+    return;
+  }
+
+  // Tipo desconhecido → próximo provider
+  console.warn('[TLN] tipo desconhecido:', source.type, '— próximo provider');
+  _tryNextTlnProvider(playerEl, item, epIdx, ep, contentId, providers, providerIdx + 1, onWatched);
+}
+
+/**
+ * Tenta o próximo provider TLN silenciosamente.
+ * Se esgotar todos → fallback para embed servers.
+ */
+async function _tryNextTlnProvider(playerEl, item, epIdx, ep, contentId, providers, nextIdx, onWatched) {
+  if (nextIdx >= providers.length) {
+    // Todos os providers TLN falharam → embed servers
+    console.warn('[TLN] Todos os providers falharam — usando embed servers');
+    if (cinemaState.silentSwitching) _showSilentSwitchBadge();
+    playerEl.innerHTML = '';
+    cinemaState.failedServers.clear();
+    cinemaState.lastAutoSwitchTs = 0;
+    _buildFromServer(playerEl, item, epIdx, ep, onWatched);
+    return;
+  }
+
+  const provider = providers[nextIdx];
+  _showSilentSwitchBadge();
+
+  let source = null;
+  try {
+    source = await getSource(contentId, provider.id);
+  } catch (err) {
+    console.warn('[TLN] getSource threw para provider ' + (provider.name || provider.id) + ':', err?.message || err);
+  }
+
+  if (!source) {
+    // Este provider também falhou → próximo
+    _tryNextTlnProvider(playerEl, item, epIdx, ep, contentId, providers, nextIdx + 1, onWatched);
+    return;
+  }
+
+  _injectTlnSource(playerEl, item, epIdx, ep, contentId, source, providers, nextIdx, onWatched);
+}
+
+/**
+ * Cria o elemento de vídeo nativo com suporte a HLS, legendas e skip intro/outro.
+ * Não altera o layout externo — apenas o conteúdo do playerEl.
+ */
+function _createTlnStreamPlayer(url, title, source) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'width:100%;aspect-ratio:16/9;background:#000;position:relative;overflow:hidden;';
+
+  const video = document.createElement('video');
+  video.controls    = true;
+  video.autoplay    = true;
+  video.playsInline = true;
+  video.title       = title || 'Player';
+  video.style.cssText = 'width:100%;height:100%;display:block;';
+
+  // ── Legendas ────────────────────────────────────────────────
+  if (Array.isArray(source.subtitles) && source.subtitles.length > 0) {
+    source.subtitles.forEach(sub => {
+      const track = document.createElement('track');
+      track.kind    = 'subtitles';
+      track.label   = sub.label || 'Legenda';
+      track.src     = sub.file  || sub.url || '';
+      track.srclang = sub.lang  || 'pt';
+      if (sub.default) track.default = true;
+      if (track.src) video.appendChild(track);
+    });
+  }
+
+  // ── HLS.js para browsers sem suporte nativo ─────────────────
+  const isHLS = url.includes('.m3u8');
+  if (isHLS && !video.canPlayType('application/vnd.apple.mpegurl')) {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js';
+    script.onload = () => {
+      if (window.Hls?.isSupported()) {
+        const hls = new window.Hls({ maxBufferLength: 30 });
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        video._hls = hls;
+      } else {
+        video.src = url;
+      }
+    };
+    script.onerror = () => { video.src = url; };
+    document.head.appendChild(script);
+  } else {
+    video.src = url;
+  }
+
+  wrap.appendChild(video);
+
+  // ── Skip Intro ──────────────────────────────────────────────
+  if (source.intro?.end) {
+    const skipBtn = document.createElement('button');
+    skipBtn.textContent = '⏩ Pular intro';
+    skipBtn.style.cssText = [
+      'position:absolute', 'bottom:56px', 'right:12px',
+      'background:rgba(255,255,255,.18)', 'backdrop-filter:blur(4px)',
+      'color:#fff', 'border:1px solid rgba(255,255,255,.35)',
+      'padding:6px 14px', 'border-radius:6px', 'cursor:pointer',
+      'font-size:13px', 'font-family:inherit', 'z-index:10',
+      'display:none', 'transition:opacity .25s',
+    ].join(';');
+
+    skipBtn.onclick = () => {
+      video.currentTime = source.intro.end;
+      skipBtn.style.display = 'none';
+    };
+
+    video.addEventListener('timeupdate', () => {
+      const t = video.currentTime;
+      const show = t >= (source.intro.start || 0) && t < source.intro.end;
+      skipBtn.style.display = show ? 'block' : 'none';
+    });
+
+    wrap.appendChild(skipBtn);
+  }
+
+  // ── Skip Outro ──────────────────────────────────────────────
+  if (source.outro?.start && source.nextEpisodeId) {
+    const skipOutroBtn = document.createElement('button');
+    skipOutroBtn.textContent = '⏭ Próximo episódio';
+    skipOutroBtn.style.cssText = [
+      'position:absolute', 'bottom:56px', 'right:12px',
+      'background:rgba(232,83,111,.88)', 'backdrop-filter:blur(4px)',
+      'color:#fff', 'border:none',
+      'padding:6px 14px', 'border-radius:6px', 'cursor:pointer',
+      'font-size:13px', 'font-family:inherit', 'z-index:10',
+      'display:none',
+    ].join(';');
+
+    skipOutroBtn.onclick = () => {
+      // Dispara o mesmo evento de next-episode do player existente
+      document.dispatchEvent(new CustomEvent('cinema:next-episode', {
+        detail: { nextEpisodeId: source.nextEpisodeId },
+      }));
+      skipOutroBtn.style.display = 'none';
+    };
+
+    video.addEventListener('timeupdate', () => {
+      const t    = video.currentTime;
+      const show = t >= source.outro.start && (!source.outro.end || t < source.outro.end);
+      skipOutroBtn.style.display = show ? 'block' : 'none';
+    });
+
+    wrap.appendChild(skipOutroBtn);
+  }
+
+  return wrap;
 }
 
 /* ── PlayLT: busca /sources e renderiza ────────── */
