@@ -55,7 +55,7 @@ export function answerFromProjectKnowledge(question) {
  if (asksAdd && /\b(como|sem tocar|so|apenas|significa|quer dizer)\b/.test(q)) {
   return ITEMS.find(item => item[0] === 'adicionar musica')[2];
  }
- if (asksPlay && /\b(como|significa|quer dizer)\b/.test(q)) {
+ if (asksPlay && /\b(como|significa|quer dizer|o que acontece|quando eu digo|qual comando)\b/.test(q)) {
   return ITEMS.find(item => item[0] === 'tocar musica')[2];
  }
  if (/\b(exemplo|explica melhor|mais detalhes|aprofund|nao entendi|resumo|resume)\b/.test(q) && lastEntry) {
