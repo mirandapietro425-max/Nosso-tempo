@@ -28,6 +28,8 @@ jobs:
           node-version: 22
       - name: Intenções musicais
         run: node --experimental-default-type=module tests/pestinha-music-intents.mjs
+      - name: Sessão de voz conversacional
+        run: node --experimental-default-type=module tests/pestinha-voice-session.mjs
       - name: Conhecimento dos projetos
         run: node --experimental-default-type=module tests/pestinha-project-knowledge-smoke.mjs
       - name: Cérebro neural
