@@ -32,6 +32,12 @@ O endpoint `/api/pestinha/music-search` usa a YouTube Data API v3. Configure `YO
 
 A chave precisa ter acesso à YouTube Data API v3 e o projeto Google Cloud pode aplicar cotas. A disponibilidade dos vídeos e as restrições do YouTube continuam valendo.
 
+## Proteções dos endpoints
+
+As rotas server-side exigem uma requisição POST com `Origin` correspondente ao host servido pelo site. O corpo da conversa é limitado a 24 KB e o corpo da busca musical a 4 KB. Há limites de frequência e de concorrência por instância, além de timeout nas chamadas para OpenAI e YouTube; esses limites locais reduzem abuso e custo, mas não substituem uma cota compartilhada do provedor ou um gateway persistente em uma implantação distribuída.
+
+Quando uma resposta de IA é interrompida no navegador — por uma nova pergunta, pelo comando de silêncio, pelo fechamento do painel ou pela troca de sessão — a requisição pendente é abortada e sua geração é invalidada para impedir que uma resposta atrasada volte a falar.
+
 ## IA natural e memórias
 
 O endpoint de conversa existente continua usando `OPENAI_API_KEY` server-side. O modo de IA natural continua sendo opcional e inicia desligado, conforme os controles existentes. A autorização para usar IA externa e a autorização para enviar lembranças continuam separadas. A base de projetos é uma coleção local pesquisada por termos; ela não é um modelo de linguagem e não aprende automaticamente fatos novos. Quando a opção de IA natural estiver ligada, o tópico local correspondente também é enviado como contexto factual para essa conversa. Esse contexto técnico não inclui o caderno pessoal; as lembranças continuam sob autorização separada.
@@ -47,6 +53,7 @@ node --experimental-default-type=module tests/pestinha-project-knowledge-smoke.m
 node tests/companion-neural-smoke.mjs
 node tests/memory-search-smoke.mjs
 node tests/ui-wiring-smoke.mjs
+node tests/pestinha-safety-smoke.mjs
 ```
 
 Os testes automatizados não substituem testes reais em Chrome/Edge/Firefox, HTTPS, celular, permissões do microfone, YouTube IFrame API, cotas da API e comportamento das bolhas. A busca do YouTube só pode ser validada end-to-end depois de configurar a chave no ambiente de teste.

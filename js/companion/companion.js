@@ -65,6 +65,7 @@ let brain = new SpikingBrain();
 let chatMessages = [];
 let aiSessionMessageIds = new Set();
 let activeReplyController = null;
+let replyGeneration = 0;
 let saveTimer = null;
 let saveQueue = Promise.resolve();
 let recognition = null;
@@ -632,7 +633,7 @@ function openPanel(open = true) {
   if (panel) panel.setAttribute('role', 'dialog');
   const launcher = document.getElementById('nt-companion-launcher');
   if (panel) panel.hidden = !isOpen;
-  if (!isOpen) { stopListening(); try { window.speechSynthesis?.cancel(); } catch (_) {} }
+  if (!isOpen) { stopListening(); stopWakeListening(); try { window.speechSynthesis?.cancel(); } catch (_) {} }
   if (launcher) {
     launcher.setAttribute('aria-expanded', String(isOpen));
     launcher.classList.toggle('is-open', isOpen);
@@ -753,9 +754,14 @@ function endWakeConversation() {
   if (wakeConversationTimer) window.clearTimeout(wakeConversationTimer);
   wakeConversationTimer = null;
 }
-
+function cancelActiveReply() {
+  replyGeneration += 1;
+  try { activeReplyController?.abort(); } catch (_) {}
+  activeReplyController = null;
+}
 function stopWakeListening({ announce = false } = {}) {
   wakeListeningEnabled = false;
+  cancelActiveReply();
   if (isSpeaking) {
     speechSequence++;
     isSpeaking = false;
@@ -1014,6 +1020,8 @@ async function requestNaturalReply(messages, memoryContext = [], answerMessage =
 async function submitQuestion(rawText, fromVoice = false) {
   const question = String(rawText || '').trim();
   if (!question) return;
+  // Uma nova pergunta não deve deixar uma resposta anterior pendurada.
+  cancelActiveReply();
   // Uma fala nova interrompe a resposta de voz em andamento; ecos da própria fala
   // já são filtrados no reconhecimento antes de chegar a esta função.
   if (isSpeaking) {
@@ -1054,14 +1062,19 @@ async function submitQuestion(rawText, fromVoice = false) {
       ? retrieveMemories(question, 5).filter(item => item.confidence >= 0.12)
       : [];
     const controller = new AbortController();
+    const generation = replyGeneration;
     activeReplyController = controller;
     try {
       const projectContext = answerFromProjectKnowledge(question) || '';
       const reply = await requestNaturalReply(history, memories, answerMessage, controller.signal, projectContext);
+      if (controller.signal.aborted || generation !== replyGeneration) return;
       updatePendingReply(answerMessage, reply, false);
       if (state.speakResponses) speak(reply);
     } catch (error) {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || generation !== replyGeneration) {
+        updatePendingReply(answerMessage, 'Resposta interrompida.', false);
+        return;
+      }
       const local = responseFor(question);
       const fallback = `Não consegui conectar minha IA natural (${error.message}). Por enquanto, estou respondendo pelo meu modo local: ${local}`;
       updatePendingReply(answerMessage, fallback, false);

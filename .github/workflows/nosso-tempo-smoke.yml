@@ -29,6 +29,8 @@ jobs:
         run: node --experimental-default-type=module tests/pestinha-music-integration.mjs
       - name: Voz e interpretação musical
         run: node --experimental-default-type=module tests/pestinha-voice-music-smoke.mjs
+      - name: Segurança e cancelamento do Pestinha
+        run: node --experimental-default-type=module tests/pestinha-safety-smoke.mjs
       - name: Integração da interface e consentimentos
         run: node --experimental-default-type=module tests/ui-wiring-smoke.mjs
       - name: Sintaxe dos endpoints

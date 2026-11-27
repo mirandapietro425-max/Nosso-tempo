@@ -6,7 +6,10 @@
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 18;
 const MAX_BODY_BYTES = 24_000;
+const PROVIDER_TIMEOUT_MS = 15_000;
 const requestWindows = new Map();
+let activeRequests = 0;
+const MAX_CONCURRENT_REQUESTS = 3;
 
 const SYSTEM_INSTRUCTIONS = `Você é Pestinha, o mascote-companheiro do site Nosso-tempo. Sua função principal é manter uma conversa coerente, próxima e útil ao longo de vários turnos — não agir como um menu de comandos nem responder cada frase como se fosse uma conversa nova.
 
@@ -40,12 +43,19 @@ function sendJson(res, status, payload) {
 
 function isSameOrigin(req) {
   const origin = req.headers.origin;
-  if (!origin) return true;
+  if (!origin) return false;
   try {
     const originHost = new URL(origin).host.toLowerCase();
     const requestHost = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim().toLowerCase();
     return Boolean(requestHost) && originHost === requestHost;
   } catch (_) { return false; }
+}
+
+async function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+  try { return await fetch(url, { ...options, signal: controller.signal }); }
+  finally { clearTimeout(timer); }
 }
 
 function withinRateLimit(req) {
@@ -90,7 +100,7 @@ function cleanMemories(value) {
 async function moderateInput(apiKey, messages) {
   const recentUserText = messages.filter(item => item.role === 'user').slice(-4).map(item => item.content).join('\n');
   if (!recentUserText.trim()) return false;
-  const response = await fetch('https://api.openai.com/v1/moderations', {
+  const response = await fetchWithTimeout('https://api.openai.com/v1/moderations', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'omni-moderation-latest', input: recentUserText }),
@@ -113,6 +123,7 @@ export default async function handler(req, res) {
     return sendJson(res, 405, { error: 'Método não permitido.' });
   }
   if (!isSameOrigin(req)) return sendJson(res, 403, { error: 'Origem não autorizada.' });
+  if (activeRequests >= MAX_CONCURRENT_REQUESTS) return sendJson(res, 429, { error: 'O Pestinha está atendendo muitas conversas agora. Tente novamente em instantes.' });
   if (!withinRateLimit(req)) return sendJson(res, 429, { error: 'Muitas mensagens em pouco tempo. Espere um minutinho e tente novamente.' });
   if (Number(req.headers['content-length'] || 0) > MAX_BODY_BYTES) return sendJson(res, 413, { error: 'A conversa enviada ficou grande demais.' });
 
@@ -130,6 +141,7 @@ export default async function handler(req, res) {
   const memories = cleanMemories(body.memories);
   const projectContext = typeof body.projectContext === 'string' ? body.projectContext.slice(0, 4000) : '';
 
+  activeRequests += 1;
   try {
     const flagged = await moderateInput(apiKey, messages);
     if (flagged) {
@@ -152,7 +164,7 @@ export default async function handler(req, res) {
       : '';
     const contextualInstructions = `${SYSTEM_INSTRUCTIONS}\n\nPerfil selecionado na interface: ${profile}. Isso não confirma a identidade de quem está usando.${memoryBlock}${projectKnowledgeBlock}`;
 
-    const upstream = await fetch('https://api.openai.com/v1/responses', {
+    const upstream = await fetchWithTimeout('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -203,5 +215,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('[Pestinha API] Falha inesperada:', error?.message || error);
     streamError(res, 'A conexão com a IA falhou. Tente novamente em instantes.');
+  } finally {
+    activeRequests = Math.max(0, activeRequests - 1);
   }
 }
