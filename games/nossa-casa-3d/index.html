@@ -262,13 +262,6 @@ const LOJA_INTERIOR = [
   { id:"banheira",       cat:"especial",icon:"🛁", nome:"Banheira",            desc:"Fim de semana especial",   preco:80,  xp:48 },
 ];
 
-const GATOS_ADOCAO = [
-  { id:"laranja", nome:"Brigadeiro",  raca:"Vira-lata laranja",   emoji:"🐱",   cor:"#ff9800", personalidade:"Dengoso e come tudo que vê" },
-  { id:"preto",   nome:"Merlot",      raca:"Gato preto",          emoji:"🐈‍⬛",  cor:"#212121", personalidade:"Misterioso, dorme onde quer" },
-  { id:"cinza",   nome:"Névoa",       raca:"Azul russo",          emoji:"🐈",   cor:"#90a4ae", personalidade:"Elegante e introspectivo" },
-  { id:"rajado",  nome:"Farofa",      raca:"Tigrado",             emoji:"🐱",   cor:"#795548", personalidade:"Brincalhão e irrequieto" },
-  { id:"branco",  nome:"Marshmallow", raca:"Angora branco",       emoji:"🐱",   cor:"#eeeeee", personalidade:"Delicado, ama colo" },
-];
 
 const DIALOGOS = {
   introducao: [
@@ -464,11 +457,10 @@ const DAILY_PICK_CAP=10,PICK_VALUE=5;
 
 const LS='nossotempo3d:v1';
 const DEFP=()=>({gamePhase:'intro',currentSave:0,saves:[],coins:300,
-  pet:{adopted:false,gatoId:null,nome:null,hunger:80,energy:80,happy:80,love:80,lastDecay:null},
   quiz:{lastDate:null},earnedToday:{date:null},picked:{date:null,n:0},dialogoVisto:{},eventoDiarioVisto:null,mural:[],mood:null});
 let S={player:null,pietro:null,emilly:null,muted:false};
 try{const r=JSON.parse(localStorage.getItem(LS)||'null');if(r&&typeof r==='object')S=Object.assign(S,r)}catch(e){}
-['pietro','emilly'].forEach(p=>{if(S[p])S[p]=Object.assign(DEFP(),S[p],{pet:Object.assign(DEFP().pet,S[p].pet||{})})});
+['pietro','emilly'].forEach(p=>{if(S[p])S[p]=Object.assign(DEFP(),S[p])});
 let _st=0;
 const save=()=>{clearTimeout(_st);_st=setTimeout(flush,250)};
 function flush(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
@@ -480,8 +472,6 @@ const ps=()=>S.player?S[S.player]:null;
 const sv=()=>{const p=ps();return p?(p.saves[p.currentSave]||null):null};
 const owned=()=>new Set(sv()?sv().items:[]);
 const terrenoOf=id=>TERRENOS.find(t=>t.id===id)||null;
-const gatoOf=id=>GATOS_ADOCAO.find(g=>g.id===id)||null;
-const gatoAtual=()=>{const p=ps();return p&&p.pet.adopted?gatoOf(p.pet.gatoId):null};
 function earnedKey(k){const p=ps();if(!p)return true;if(p.earnedToday.date!==today())p.earnedToday={date:today()};return !!p.earnedToday[k]}
 function markEarned(k){const p=ps();earnedKey(k);p.earnedToday[k]=true}
 
@@ -931,42 +921,6 @@ function buildStory(v,has){
   if(memOn('natal')){for(let i=0;i<14;i++){const m=sp(G,.06,'#ffffff',-3.2+i*.49,2.52,2.55,{nc:1,m:{em:['#ff4081','#69f0ae','#ffd740','#40c4ff'][i%4],ei:.9}},6);xm.push(m)}}
 }
 
-/* ═══════ GATO ═══════ */
-const cat=new T.Group(),catM={fur:[],dark:[]};let legs=[],tail=null,head=null;
-(function(){
-  const f=(m,r)=>{catM[r].push(m);return m};
-  f(mk(cat,SP(.28,12),'#f4a03b',0,.34,0,{s:[1,.85,1.45]}),'fur');
-  f(mk(cat,SP(.2,10),'#f4a03b',0,.36,.3,{nc:1}),'fur');
-  head=new T.Group();head.position.set(0,.55,.42);cat.add(head);
-  f(mk(head,SP(.21,12),'#f4a03b',0,0,0),'fur');
-  [-1,1].forEach(s=>{f(mk(head,CN(.075,.16,4),'#f4a03b',s*.12,.2,-.02),'fur');mk(head,SP(.04,8),'#2fcf6b',s*.085,.04,.18,{nc:1,m:{em:'#1b8f46',ei:.6}});mk(head,SP(.018,6),'#111',s*.085,.04,.215,{nc:1})});
-  mk(head,SP(.03,6),'#f48fb1',0,-.03,.205,{nc:1});
-  [[-1,1],[1,1],[-1,-1],[1,-1]].forEach(p=>{const l=new T.Group();l.position.set(p[0]*.13,.27,p[1]*.26);cat.add(l);f(mk(l,CY(.055,.045,.27,8),'#f4a03b',0,-.13,0,{nc:1}),'fur');legs.push(l)});
-  tail=new T.Group();tail.position.set(0,.4,-.4);cat.add(tail);f(mk(tail,CY(.035,.03,.5,8),'#f4a03b',0,.14,-.17,{r:[-.9,0,0],nc:1}),'fur');
-  [-.12,0,.12].forEach(z=>f(mk(cat,BX(.34,.02,.06),'#d9821f',0,.6,z,{nc:1}),'dark'));
-  cat.scale.setScalar(.85);cat.visible=false;scene.add(cat);
-})();
-function paintCat(){
-  const g=gatoAtual();const pal={laranja:['#f4a03b','#d9821f'],preto:['#2b2b2b','#151515'],cinza:['#9aa7b0','#7d8b94'],rajado:['#a1887f','#5d4037'],branco:['#f7f7f7','#d9d9d9']}[g?g.id:'laranja'];
-  catM.fur.forEach(m=>m.material=M(pal[0]));catM.dark.forEach(m=>{m.material=M(pal[1]);m.visible=!!g&&g.id==='rajado'});cat.visible=!!g;
-}
-const WP_OUT=[[-1.8,3.7],[1.9,3.9],[0,3.2],[3.3,2.8],[-3.2,2.9],[0,4.5],[-3.8,.5]],WP_IN=[[-1.0,-.6],[.4,-.9],[1.0,.9],[-.2,1.6],[-.4,.3],[1.1,-.9]];
-const catS={x:1.3,z:3.5,tx:1.3,tz:3.5,wait:1,moving:false};
-function catHome(){const w=inside?WP_IN:WP_OUT,p=w[(Math.random()*w.length)|0];catS.x=catS.tx=p[0];catS.z=catS.tz=p[1];catS.wait=1}
-function catUpdate(dt,t){
-  if(!cat.visible)return;
-  const p=ps(),sleepy=p&&p.pet.energy<25;
-  if(catS.wait>0){catS.wait-=dt;catS.moving=false;if(catS.wait<=0&&!sleepy){const w=inside?WP_IN:WP_OUT,q=w[(Math.random()*w.length)|0];catS.tx=q[0];catS.tz=q[1]}else if(catS.wait<=0)catS.wait=4}
-  else{const dx=catS.tx-catS.x,dz=catS.tz-catS.z,d=Math.hypot(dx,dz);if(d<.08){catS.wait=2+Math.random()*5;catS.moving=false}else{catS.moving=true;const s=.75*dt;catS.x+=dx/d*s;catS.z+=dz/d*s;let a=Math.atan2(dx,dz)-cat.rotation.y;while(a>Math.PI)a-=6.283;while(a<-Math.PI)a+=6.283;cat.rotation.y+=a*Math.min(1,dt*6)}}
-  const baseY=inside?HG.position.y+FY:.03;
-  cat.position.set(catS.x,baseY+(jump>0?Math.sin((1-jump)*Math.PI)*.35:0),catS.z);
-  legs.forEach((l,i)=>l.rotation.x=catS.moving?Math.sin(t*9+(i%2?Math.PI:0)+(i>1?Math.PI/2:0))*.6:0);
-  tail.rotation.z=Math.sin(t*(catS.moving?3:1.5))*.4;head.rotation.y=Math.sin(t*.8)*.25;
-  const k=sleepy&&!catS.moving?.65:1;cat.scale.y+=(0.85*k-cat.scale.y)*Math.min(1,dt*5);head.position.y=sleepy&&!catS.moving?.42:.55;
-  if(jump>0)jump=Math.max(0,jump-dt*2);
-}
-let jump=0;
-
 /* ═══════ MOEDAS COLETÁVEIS ═══════ */
 const coinsA=[];let coinTimer=10;
 function spawnCoin(){
@@ -1005,7 +959,7 @@ function applyNight(){
 function setInside(v,keepCam){
   inside=!!v;$('#bin').textContent=inside?'🌳':'🏠';$('#bin').classList.toggle('on',inside);
   if(!keepCam)camMode(inside?'in':'out');
-  catHome();applyNight();
+  applyNight();
 }
 
 /* ═══════ CÂMERA E ENTRADA ═══════ */
@@ -1028,7 +982,6 @@ cvs.addEventListener('pointerup',e=>{ptr.delete(e.pointerId);
     const r=cvs.getBoundingClientRect(),vv=new T.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),rc=new T.Raycaster();rc.setFromCamera(vv,cam);
     const hc=rc.intersectObjects(coinsA,true);
     if(hc.length){let o=hc[0].object;while(o&&!o.userData.coin)o=o.parent;if(o){collectCoin(o,e.clientX,e.clientY);return}}
-    if(cat.visible&&rc.intersectObject(cat,true).length)onCatTap(e.clientX,e.clientY);
   }});
 cvs.addEventListener('pointercancel',e=>ptr.delete(e.pointerId));
 cvs.addEventListener('wheel',e=>{e.preventDefault();rad=clamp(rad+e.deltaY*.01,5,22)},{passive:false});
@@ -1054,7 +1007,6 @@ function loop(){
   for(let i=anims.length-1;i>=0;i--){const a=anims[i];a.t+=dt*2.2;const k=a.t>=1?1:easeBack(a.t);a.g.scale.setScalar(Math.max(k,.001));if(a.t>=1)anims.splice(i,1)}
   if(pulseT>0){pulseT=Math.max(0,pulseT-dt*2.5);HG.scale.setScalar(1+.03*Math.sin(pulseT*Math.PI))}else HG.scale.setScalar(1);
   /* vida */
-  catUpdate(dt,t);
   if(waterM)waterM.position.y=1.28+Math.sin(t*3)*.05;
   if(windmill)windmill.rotation.z=t*.8;
   clouds.forEach(c=>{c.position.x+=dt*.25;if(c.position.x>18)c.position.x=-18});
@@ -1070,14 +1022,14 @@ function loop(){
 }
 
 /* ═══════════════════════════════════════════════
-   JOGO: fases, loja, gato, moedas, história
+   JOGO: fases, loja, moedas, história
    ═══════════════════════════════════════════════ */
 const layer=$('#layer');
 const ov=(html,cls)=>{const d=document.createElement('div');d.className='ov '+(cls||'');d.innerHTML=html;layer.appendChild(d);return d};
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2900)};
 function fx(txt,x,y,color){const e=document.createElement('div');e.className='fx';e.textContent=txt;e.style.left=x+'px';e.style.top=y+'px';if(color)e.style.color=color;document.body.appendChild(e);setTimeout(()=>e.remove(),1150)}
 function hearts(x,y,n=4){for(let i=0;i<n;i++)setTimeout(()=>fx(['💗','💕','❤️','💖'][i%4],x+(Math.random()-.5)*60,y),i*100)}
-const hintEl=$('#hint'),HINT='Arraste para girar · pinça para zoom · toque no gatinho e nas moedinhas';
+const hintEl=$('#hint'),HINT='Arraste para girar · pinça para zoom · toque nas moedinhas';
 function say(m,ms=2800){hintEl.textContent=m;clearTimeout(say.t);say.t=setTimeout(()=>hintEl.textContent=HINT,ms)}
 hintEl.textContent=HINT;
 
@@ -1122,7 +1074,7 @@ function addXp(n){
 }
 function levelUp(l){
   sfx.up();
-  const d=ov(`<div class="card ctr"><div class="lv-stars">⭐⭐⭐</div><h2>Nível ${l}!</h2><div style="font-size:1.1rem;margin-bottom:.8rem">${LVN[l]}</div>${l===2?'<p class="sub">🐱 Adoção de gatinho desbloqueada! Veja a aba Pet.</p>':''}${l===3?'<p class="sub">✝️ A cruz na parede da sala foi desbloqueada.</p>':''}<button class="btn pri big" id="lvok">Continuar 🏡</button></div>`);
+  const d=ov(`<div class="card ctr"><div class="lv-stars">⭐⭐⭐</div><h2>Nível ${l}!</h2><div style="font-size:1.1rem;margin-bottom:.8rem">${LVN[l]}</div>${l===3?'<p class="sub">✝️ A cruz na parede da sala foi desbloqueada.</p>':''}<button class="btn pri big" id="lvok">Continuar 🏡</button></div>`);
   d.querySelector('#lvok').onclick=()=>d.remove();hearts(innerWidth/2,innerHeight/3,10);
 }
 function award(key,amt,why){
@@ -1187,7 +1139,7 @@ let tab='loja',shopView=null,panelMin=false;
 function enterBuilding(snap){
   const p=ps(),s=sv();if(!s){p.gamePhase='terreno';return route()}
   setStage(true);window.__prev=null;s.level=s.level||1;s.items=s.items||[];s.bought=s.bought||[];
-  buildEnv(s.terrenoId);buildLot(snap);paintCat();petDecay();setInside(false);shopView=s.fase;
+  buildEnv(s.terrenoId);buildLot(snap);setInside(false);shopView=s.fase;
   renderPanel();hud();dailyEvent();say('Bem-vindo à '+s.nome+'! 🏡',3500);
 }
 const phaseOf=id=>PH.find(k=>SHOP[k].some(x=>x.id===id));
@@ -1195,12 +1147,12 @@ function doneIn(ph,own){return SHOP[ph].filter(i=>own.has(i.id)).length}
 function renderPanel(){
   const p=ps();if(!p||!sv())return;
   $('#panel').classList.toggle('min',panelMin);
-  const T_=[['loja','🛒 Loja'],['pet','🐱 Pet'],['ganhar','🪙 Ganhar'],['hist','💞 Memórias']];
+  const T_=[['loja','🛒 Loja'],['ganhar','🪙 Ganhar'],['hist','💞 Memórias']];
   $('#tabs').innerHTML=T_.map(t=>`<button class="tab${t[0]===tab?' on':''}" data-t="${t[0]}">${t[1]}</button>`).join('')+`<button class="tab" id="pmin" aria-label="Recolher painel">${panelMin?'▴':'▾'}</button>`;
   $('#tabs').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;panelMin=false;renderPanel()});
   $('#pmin').onclick=()=>{panelMin=!panelMin;renderPanel();setTimeout(size,30)};
   const body=$('#pbody');body.innerHTML='';
-  ({loja:renderLoja,pet:renderPet,ganhar:renderGanhar,hist:renderHist})[tab](body);
+  ({loja:renderLoja,ganhar:renderGanhar,hist:renderHist})[tab](body);
   setTimeout(size,30);
 }
 function renderLoja(body){
@@ -1246,53 +1198,11 @@ function advance(){
   }
 }
 
-/* ═══════ PET ═══════ */
-const PET_MSG={happy:['Miau! 😸 Tô tão feliz!','Purrrr… ♡'],hungry:['Miau! Comiiida! 😿','Cadê meu petisco?'],sleepy:['Zzzzz… 💤','Tô cansado…'],loved:['Purrrr ♡','*ronrona muito*'],playing:['Brinca mais!','*pula em tudo*']};
 const rnd=a=>a[(Math.random()*a.length)|0];
-function petMood(){const q=ps().pet;if(q.happy>80&&q.hunger>60)return'happy';if(q.hunger<30)return'hungry';if(q.energy<25)return'sleepy';if(q.love>75)return'loved';return'idle'}
-function petDecay(){
-  const p=ps();if(!p||!p.pet.adopted)return;const q=p.pet,last=q.lastDecay?new Date(q.lastDecay):null;
-  if(last){const h=Math.min((Date.now()-last.getTime())/3600000,8);if(h>.033){q.hunger=Math.max(0,q.hunger-Math.round(h*8));q.energy=Math.max(0,q.energy-Math.round(h*5));q.happy=Math.max(0,q.happy-Math.round(h*4));q.lastDecay=new Date().toISOString()}}
-  else q.lastDecay=new Date().toISOString();
-  save();
-}
-setInterval(()=>{if(document.hidden||!ps()||!sv())return;petDecay();if(tab==='pet')renderPanel()},5*60*1000);
-function petAct(kind,x,y){
-  const p=ps(),q=p&&p.pet;if(!q||!q.adopted)return;const nm=q.nome||'Bolinha';
-  if(kind==='feed'){if(q.hunger>=95){say(nm+': Estou cheio! 😸');return}q.hunger=Math.min(100,q.hunger+25);q.happy=Math.min(100,q.happy+10);say(nm+': '+rnd(PET_MSG.happy));beep(600,.1,'triangle')}
-  else if(kind==='pet'){q.love=Math.min(100,q.love+15);q.happy=Math.min(100,q.happy+12);jump=1;say(nm+': '+rnd(PET_MSG.loved));sfx.meow()}
-  else if(kind==='play'){if(q.energy<15){say(nm+': Tô cansado demais… 😴');return}q.happy=Math.min(100,q.happy+20);q.energy=Math.max(0,q.energy-15);q.love=Math.min(100,q.love+8);jump=1;say(nm+': '+rnd(PET_MSG.playing));sfx.meow()}
-  else if(kind==='sleep'){q.energy=Math.min(100,q.energy+30);say(nm+': Zzz… 💤')}
-  hearts(x||innerWidth/2,y||innerHeight/2,kind==='pet'?6:3);q.lastDecay=new Date().toISOString();save();if(tab==='pet')renderPanel();
-}
-function onCatTap(x,y){petAct('pet',x,y)}
 function collectCoin(o,x,y){
   const p=ps();if(!p)return;if(p.picked.date!==today())p.picked={date:today(),n:0};
   removeCoin(o);p.picked.n++;p.coins+=PICK_VALUE;save();hud();sfx.coin();fx('+'+PICK_VALUE+' 🪙',x,y,'#ffc107');
   say('Moedinha coletada! ('+p.picked.n+'/'+DAILY_PICK_CAP+' hoje)');if(tab==='ganhar')renderPanel();
-}
-function renderPet(body){
-  const p=ps(),q=p.pet;
-  if(!q.adopted){
-    const mx=Math.max(...p.saves.map(s=>s.level||1),0);
-    if(mx<2){body.innerHTML=`<div class="ctr" style="padding:1rem"><div class="big-emoji">🔒</div><p>Alcance o <b>Nível 2</b> (você está no ${mx||1}) para adotar um gatinho!</p><p class="sub">Compre itens da Fachada para ganhar XP.</p></div>`;return}
-    body.innerHTML=`<h2 style="margin:.2rem 0;font-family:Georgia,serif">🐱 Escolha seu gatinho!</h2><p class="sub">Adoção gratuita 🏡</p><div class="grid">${GATOS_ADOCAO.map(g=>`<div class="item" data-g="${g.id}"><div class="ic">${g.emoji}</div><div class="nm">${g.nome}</div><div class="ds">${g.raca}<br>${g.personalidade}</div><div class="pr" style="color:var(--ac)">Adotar 🐾</div></div>`).join('')}</div>`;
-    body.querySelectorAll('[data-g]').forEach(e=>e.onclick=()=>adotar(e.dataset.g));return;
-  }
-  const mood=petMood(),bt={happy:'😸 Feliz e satisfeito!',hungry:'🍖 Com fominha!',sleepy:'💤 Com sono…',loved:'💕 Cheio de amor!',idle:'🐾 Querendo atenção'};
-  const g=gatoAtual();
-  body.innerHTML=`<div style="display:flex;align-items:center;gap:.6rem"><div class="big-emoji" style="font-size:2.2rem">${g?g.emoji:'🐱'}</div><div><b style="font-size:1.05rem">✦ ${esc(q.nome||'Bolinha')} ✦</b><div class="sub" style="margin:0">${bt[mood]}</div></div></div>
-  ${[['hunger','Fome','🍖',''],['energy','Energia','⚡','en'],['happy','Felicidade','😊','hp'],['love','Amor','💗','love']].map(r=>`<div class="stat ${r[3]}"><span>${r[2]} ${r[1]}</span><div class="bar"><i style="width:${q[r[0]]}%"></i></div><span>${Math.round(q[r[0]])}%</span></div>`).join('')}
-  <div class="row" style="margin-top:.6rem"><button class="btn" data-a="feed">🍖 Alimentar</button><button class="btn" data-a="pet">🤲 Carinho</button><button class="btn" data-a="play">🧶 Brincar</button><button class="btn" data-a="sleep">💤 Dormir</button></div><p class="sub">Você também pode tocar no gatinho na cena 😸</p>`;
-  body.querySelectorAll('[data-a]').forEach(b=>b.onclick=e=>petAct(b.dataset.a,e.clientX,e.clientY));
-}
-function adotar(gid){
-  const gato=gatoOf(gid);if(!gato)return;
-  once('adocao_gato',()=>{
-    const d=ov(`<div class="card ctr" style="max-width:340px"><div class="big-emoji">${gato.emoji}</div><h2>Que nome pra ele?</h2><p class="sub">${gato.raca}</p><input type="text" id="gn" maxlength="20" value="${esc(gato.nome)}"><p></p><button class="btn pri big" id="ok">Adotar! 🐾</button></div>`);
-    const inp=d.querySelector('#gn');setTimeout(()=>{inp.focus();inp.select()},80);
-    d.querySelector('#ok').onclick=()=>{const p=ps(),nome=inp.value.trim()||gato.nome;p.pet=Object.assign(p.pet,{adopted:true,gatoId:gid,nome,hunger:80,energy:80,happy:80,love:80,lastDecay:new Date().toISOString()});d.remove();save();paintCat();catHome();toast('🐱 '+nome+' foi adotado!');hearts(innerWidth/2,innerHeight/3,10);renderPanel()};
-  });
 }
 
 /* ═══════ GANHAR MOEDAS ═══════ */
@@ -1313,7 +1223,7 @@ function openQuiz(){
     if(answered)return;answered=true;const i=+b.dataset.i,ok=i===q.ans;
     d.querySelectorAll('.qopt')[q.ans].classList.add('ok');if(!ok)b.classList.add('bad');
     d.querySelector('#qf').textContent=ok?'✓ Correto! +30 🪙 para a casinha!':'✗ Era “'+q.opts[q.ans]+'” — mas tudo bem!';
-    p.quiz.lastDate=today();markEarned('quiz');if(ok){p.coins+=30;sfx.coin();fx('+30 🪙',innerWidth/2-30,innerHeight/3,'#ffc107');if(p.pet.adopted)p.pet.happy=Math.min(100,p.pet.happy+10)}
+    p.quiz.lastDate=today();markEarned('quiz');if(ok){p.coins+=30;sfx.coin();fx('+30 🪙',innerWidth/2-30,innerHeight/3,'#ffc107')}
     save();hud();setTimeout(()=>{d.remove();renderPanel()},2200);
   });
 }
@@ -1381,7 +1291,7 @@ $('#bdn').onclick=()=>{night=!night;applyNight()};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sv()&&$('#daily')&&ps().eventoDiarioVisto!==today())dailyEvent()});
 
 /* ═══════ INÍCIO ═══════ */
-size();buildEnv('urlandia');buildLot(true);paintCat();loop();route();
+size();buildEnv('urlandia');buildLot(true);loop();route();
 
 </script>
 </body>
