@@ -5,11 +5,12 @@ function normalize(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
-const QUESTION_START = /^(como|qual|quais|o que|oq|por que|porque|quando|onde|me explica|me diz|me conta|me fala|me ensina|me ajuda|explica|explique|conta|fala|ensina|ajuda|pode explicar|pode me explicar|sabe me dizer|quero saber|queria saber|quero entender|gostaria de saber|uma pergunta|pergunta sobre)\b/;
+const QUESTION_START = /^(como|qual|quais|o que|oq|por que|porque|quando|onde|me explica|me explicar|me diz|me dizer|me conta|me contar|me fala|me falar|me ensina|me ensinar|me ajuda|me ajudar|explica|explique|conta|fala|ensina|ajuda|pode explicar|pode me explicar|sabe me dizer|quero saber|queria saber|quero entender|nao entendi|nao sei|gostaria de saber|uma pergunta|pergunta sobre)\b/;
 const VERBS = /^(adiciona|adicionar|coloca|colocar|bota|botar|inclui|incluir|toca|tocar|reproduz|reproduzir|pesquisa|pesquisar|procura|procurar|busca|buscar|remove|remover|exclui|excluir|pausa|pausar|continua|continuar|retoma|retomar|proxima|proximo|avanca|volta|anterior)\b/;
 function extractQuery(raw) {
   let query = String(raw || '').trim().replace(/^(?:ei\s+)?pestinha\b[,: ]*/i, '');
   query = query.replace(/^(?:por favor[, ]*)?/i, '');
+  query = query.replace(/^(?:pode|poderia)\\s+/i, '');
   query = query.replace(/^(?:adiciona|adicionar|coloca|colocar|bota|botar|inclui|incluir|toca|tocar|reproduz|reproduzir|pesquisa|pesquisar|procura|procurar|busca|buscar|remove|remover|exclui|excluir)\b/i, '');
   query = query.replace(/^\s*(?:e\s+)?(?:adiciona|adicionar|coloca|colocar|bota|botar|inclui|incluir|toca|tocar|reproduz|reproduzir)\b/i, '');
   query = query.replace(/^\s*(?:(?:a|o|uma|um)\s+)?(?:m[uú]sica|faixa|can[cç][aã]o)\s+/i, '');
@@ -21,8 +22,9 @@ export function classifyMusicIntent(input) {
   const text = normalize(original);
   const commandText = original.replace(/^\s*(?:ei\s+)?pestinha\b[,: ]*/i, '');
   const normalizedCommand = normalize(commandText);
+  const commandLead = normalizedCommand.replace(/^(?:por favor|por gentileza|pode|poderia)\\s+/, '');
   const questionPunctuation = /[?？]/.test(original);
-  if (!text || questionPunctuation || QUESTION_START.test(normalizedCommand) || (!VERBS.test(text) && !/^(?:ei )?pestinha\b/.test(text))) return null;
+  if (!text || questionPunctuation || QUESTION_START.test(normalizedCommand) || !VERBS.test(commandLead)) return null;
   const command = text.replace(/^(?:ei )?pestinha\s*/, '');
   if (/^(pausa|pausar)( a)?( musica)?$/.test(command)) return { type: 'pause' };
   if (/^(continua|continuar|retoma|retomar)( a)?( musica)?$/.test(command)) return { type: 'resume' };
