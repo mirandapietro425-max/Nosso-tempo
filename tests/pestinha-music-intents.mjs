@@ -4,6 +4,8 @@ import { classifyMusicIntent, parseMusicChoice } from '../js/companion/music-int
 assert.equal(classifyMusicIntent('Como adicionar música Photograph?'), null);
 assert.equal(classifyMusicIntent('Qual a diferença entre adicionar e tocar música?'), null);
 assert.equal(classifyMusicIntent('Uma pergunta sobre adicionar música'), null);
+assert.equal(classifyMusicIntent('Adicionar música sem tocar é diferente de tocar música?'), null);
+assert.equal(classifyMusicIntent('Adicionar Photograph?'), null);
 assert.deepEqual(classifyMusicIntent('adiciona Photograph'), { type: 'track', actions: ['add'], query: 'Photograph' });
 assert.deepEqual(classifyMusicIntent('toca Photograph'), { type: 'track', actions: ['play'], query: 'Photograph' });
 assert.deepEqual(classifyMusicIntent('adiciona e toca Photograph'), { type: 'track', actions: ['add', 'play'], query: 'Photograph' });
