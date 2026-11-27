@@ -853,7 +853,7 @@ function toggleWakeListening() {
   enableWakeListening();
 }
 
-function enableWakeListening() {
+async function enableWakeListening() {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) {
     showReplyBubble('Para falar comigo, este navegador precisa oferecer reconhecimento de voz. Enquanto isso, podes escrever no painel.');
@@ -862,6 +862,18 @@ function enableWakeListening() {
   if (!window.isSecureContext) {
     showReplyBubble('A chamada por voz precisa de HTTPS para pedir permissão ao microfone.');
     return;
+  }
+  // SpeechRecognition pode ser bloqueado quando é iniciado no carregamento.
+  // Pedir a permissão primeiro torna o fluxo automático possível depois que a
+  // pessoa autoriza o microfone uma única vez no navegador.
+  if (navigator.mediaDevices?.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+    } catch (_) {
+      showReplyBubble('Para eu ouvir “Pestinha”, permita o microfone neste site. Depois disso, a escuta inicia sozinha quando você entrar.');
+      return;
+    }
   }
   wakeListeningEnabled = true;
   endWakeConversation();
