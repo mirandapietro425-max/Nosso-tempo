@@ -20,6 +20,7 @@ let activePlaylist = PLAYLIST;
 const ADDED_TRACKS_KEY = 'nt_music_added_tracks_v1';
 const REMOVED_TRACKS_KEY = 'nt_music_removed_tracks_v1';
 let pendingExternalTrack = null;
+let currentExternalTrack = null;
 let usingEventPlaylist = false;
 
 function readSavedArray(key) {
@@ -119,6 +120,7 @@ window.onYouTubeIframeAPIReady = function () {
 // ── Funções internas ──
 function _doPlay(idx) {
   currentIdx = idx;
+  currentExternalTrack = null;
   const track = activePlaylist[idx];
   if (!track) return;
 
@@ -161,6 +163,7 @@ function _updateActiveClass(idx) {
 function _doPlayExternal(track) {
   if (!track || !/^[a-zA-Z0-9_-]{11}$/.test(String(track.ytId || ''))) return false;
   currentIdx = -1;
+  currentExternalTrack = track;
   const area = document.getElementById('yt-embed-area');
   if (area) {
     area.style.display = 'block';
@@ -227,7 +230,7 @@ export function pauseMusic() {
 export function resumeMusic() {
   if (!ytPlayer || !ytReady) return false;
   try {
-    if (currentIdx >= 0) ytPlayer.playVideo();
+    if (currentIdx >= 0 || currentExternalTrack) ytPlayer.playVideo();
     else if (pendingExternalTrack) _doPlayExternal(pendingExternalTrack);
     else return false;
     return true;
