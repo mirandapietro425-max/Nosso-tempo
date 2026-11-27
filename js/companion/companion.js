@@ -10,7 +10,7 @@ import { SpikingBrain, NEURON_COUNT, SYNAPSE_COUNT } from './neural-brain.js';
 import { searchMemories, normalizeMemoryText, selectMemoriesForSpeaker } from './memory-search.js';
 import { answerFromKnowledge, getKnowledgeStats } from './knowledge-base.js';
 import { answerFromProjectKnowledge } from './project-knowledge.js';
-import { handleMusicCommand, clearPendingMusicSelection } from './music-assistant.js';
+import { handleMusicCommand } from './music-assistant.js';
 
 const STORAGE_REF = doc(getFirestore(), 'companion', 'pestinha-v1');
 const MAX_MEMORIES = 240;
@@ -913,7 +913,6 @@ async function submitQuestion(rawText, fromVoice = false) {
   try {
     const musicResult = await handleMusicCommand(question);
     if (musicResult?.handled) {
-      clearPendingMusicSelection();
       createMessage('assistant', musicResult.reply, { questionSignals: signals, questionText: question });
       showReplyBubble(musicResult.reply);
       if (state.speakResponses) speak(musicResult.reply);
