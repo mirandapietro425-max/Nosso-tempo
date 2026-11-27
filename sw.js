@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v78
+   PIETRO & EMILLY — sw.js v91
    Service Worker · Cache · Offline Support
 
    BUGS CORRIGIDOS nesta versão (v57):
@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v90'; // Memórias com IA e Piano das Estrelas com teclado tátil no cache offline
+const CACHE_VERSION = 'v91'; // Corrige o boot do Pestinha e invalida o JavaScript antigo
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;

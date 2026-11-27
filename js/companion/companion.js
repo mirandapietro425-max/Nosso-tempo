@@ -1612,10 +1612,6 @@ function bindEvents() {
     }
     scheduleSave();
   });
-    scheduleSave();
-    if (state.aiEnabled) showReplyBubble('Agora posso tentar conversar com uma IA mais natural. ✨');
-  });
-  refreshAIControls();
 }
 
 function clampNumber(value, min, max) {
