@@ -39,6 +39,11 @@ assert.equal(classifyMusicIntent('Pestinha, me diz como adicionar Photograph'), 
 assert.equal(classifyMusicIntent('Pestinha, explica como toca Photograph'), null);
 assert.equal(classifyMusicIntent('Pestinha, me conta como pesquisar Photograph'), null);
 assert.equal(classifyMusicIntent('Pestinha, me ajuda a adicionar Photograph'), null);
+assert.equal(classifyMusicIntent('Pestinha, não entendi se adicionar toca Photograph'), null);
+assert.equal(classifyMusicIntent('Pestinha, como eu faço para adicionar Photograph'), null);
+assert.deepEqual(classifyMusicIntent('Pestinha, por favor, adiciona Photograph'), { type: 'track', actions: ['add'], query: 'Photograph' });
+assert.deepEqual(classifyMusicIntent('Pestinha, pode tocar Photograph'), { type: 'track', actions: ['play'], query: 'Photograph' });
+
 assert.equal(classifyMusicIntent('Pestinha, pode tocar Photograph?'), null);
 
 
