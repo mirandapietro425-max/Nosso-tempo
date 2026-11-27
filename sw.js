@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v71'; // Novas artes de fantasia e ajustes mobile
+const CACHE_VERSION = 'v72'; // Fotos do casal e lembrança Coraline
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -83,6 +83,11 @@ const STATIC_ASSETS = [
   '/assets/cinema-noite.webp',
   '/assets/fantasia-luar-1.webp',
   '/assets/fantasia-luar-2.webp',
+  '/assets/memorias/casal-paz.webp',
+  '/assets/memorias/casal-sorriso.webp',
+  '/assets/memorias/selfie-casal.webp',
+  '/assets/memorias/emilly-infancia.webp',
+  '/assets/memorias/presente-de-aniversario.webp',
   '/emojis/Ariel/Ariel_Happy.png',
   '/emojis/Ariel/Ariel_Sad.png',
   '/emojis/Ariel/Ariel_Scared.png',

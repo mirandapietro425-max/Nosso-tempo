@@ -105,6 +105,57 @@
   text-align: center;
 }
 
+.memory-gallery-intro {
+  max-width: 48ch;
+  margin: -0.35rem auto 1.25rem;
+  color: #8a4057;
+  font-size: 0.96rem;
+  line-height: 1.65;
+  text-align: center;
+}
+
+.memory-photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto 1.5rem;
+}
+
+.memory-photo-card,
+.coraline-memory-art {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(232, 83, 111, 0.16);
+  border-radius: 20px;
+  background: #fff8f9;
+  box-shadow: 0 12px 32px rgba(89, 13, 34, 0.08);
+}
+
+.memory-photo-card img,
+.coraline-memory-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.memory-photo-card figcaption,
+.coraline-memory-art figcaption {
+  padding: 0.7rem 0.9rem 0.8rem;
+  color: #8a4057;
+  font-family: var(--font-italic);
+  font-size: 0.98rem;
+  font-style: italic;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.coraline-memory-art {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
 @media (max-width: 600px) {
   #page-wrap {
     min-height: 100svh;
@@ -204,6 +255,15 @@
   .fantasy-card { border-radius: 18px; }
   .fantasy-card img { border-radius: 17px 17px 0 0; }
   .fantasy-card figcaption { padding: 0.55rem 0.8rem 0.65rem; font-size: 0.94rem; }
+
+  .memory-gallery-intro { margin: -0.25rem auto 1rem; font-size: 0.92rem; }
+  .memory-photo-gallery { grid-template-columns: 1fr; gap: 0.9rem; }
+  .memory-photo-card,
+  .coraline-memory-art { border-radius: 18px; }
+  .memory-photo-card img,
+  .coraline-memory-art img { border-radius: 17px 17px 0 0; }
+  .memory-photo-card figcaption,
+  .coraline-memory-art figcaption { padding: 0.55rem 0.8rem 0.65rem; font-size: 0.94rem; }
 
   .cinema-tabs {
     gap: 0.35rem;
