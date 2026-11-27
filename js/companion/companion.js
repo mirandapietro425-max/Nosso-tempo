@@ -11,7 +11,7 @@ import { searchMemories, normalizeMemoryText, selectMemoriesForSpeaker } from '.
 import { answerFromKnowledge, getKnowledgeStats } from './knowledge-base.js';
 import { answerFromProjectKnowledge } from './project-knowledge.js';
 import { handleMusicCommand } from './music-assistant.js';
-import { classifyWakeUtterance, VOICE_CONVERSATION_IDLE_MS } from './voice-session.js';
+import { classifyWakeUtterance, isLikelySpeechEcho as isSpeechEcho, VOICE_CONVERSATION_IDLE_MS } from './voice-session.js';
 
 const STORAGE_REF = doc(getFirestore(), 'companion', 'pestinha-v1');
 const MAX_MEMORIES = 240;
@@ -76,6 +76,7 @@ let wakeConversationActive = false;
 let wakeConversationTimer = null;
 let isSpeaking = false;
 let lastSpokenText = '';
+let lastSpokenAt = 0;
 let speechSequence = 0;
 let isOpen = false;
 let currentMood = 'curioso';
@@ -647,11 +648,13 @@ function speak(text) {
   window.speechSynthesis.cancel();
   const spoken = String(text).slice(0, 900);
   lastSpokenText = normalizeText(spoken);
+  lastSpokenAt = 0;
   isSpeaking = true;
   const finishSpeaking = () => {
     if (sequence !== speechSequence) return;
     isSpeaking = false;
-    lastSpokenText = '';
+    // O reconhecimento pode entregar o eco depois do evento onend da síntese.
+    lastSpokenAt = Date.now();
   };
   const utterance = new SpeechSynthesisUtterance(spoken);
   utterance.lang = 'pt-BR';
@@ -666,15 +669,7 @@ function speak(text) {
 }
 
 function isLikelySpeechEcho(transcript) {
-  if (!isSpeaking || !lastSpokenText) return false;
-  const heard = normalizeText(transcript);
-  if (heard.length < 14) return false;
-  if (lastSpokenText.includes(heard)) return true;
-  const heardWords = heard.split(/\s+/).filter(word => word.length > 2);
-  if (heardWords.length < 4) return false;
-  const spokenWords = new Set(lastSpokenText.split(/\s+/));
-  const matches = heardWords.filter(word => spokenWords.has(word)).length;
-  return matches / heardWords.length >= 0.88;
+  return isSpeechEcho(transcript, lastSpokenText, lastSpokenAt, isSpeaking);
 }
 
 function stopListening() {
@@ -763,6 +758,7 @@ function stopWakeListening({ announce = false } = {}) {
     speechSequence++;
     isSpeaking = false;
     lastSpokenText = '';
+    lastSpokenAt = 0;
     try { window.speechSynthesis?.cancel(); } catch (_) {}
   }
   endWakeConversation();
@@ -984,6 +980,7 @@ async function submitQuestion(rawText, fromVoice = false) {
     speechSequence++;
     isSpeaking = false;
     lastSpokenText = '';
+    lastSpokenAt = 0;
     try { window.speechSynthesis?.cancel(); } catch (_) {}
   }
   const signals = buildSensoryInput({ action: 'conversa', text: question, voice: fromVoice }).signals;
