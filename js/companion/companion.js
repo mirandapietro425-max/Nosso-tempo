@@ -366,7 +366,7 @@ function isPersonalMemoryQuestion(question) {
 function localUnknownReply(question) {
   const clean = String(question || '').replace(/\s+/g, ' ').trim();
   const short = clean.length > 100 ? `“${clean.slice(0, 96)}…”` : `“${clean}”`;
-  return `Entendi o que tu está perguntando: ${short}. No meu modo local ainda não tenho informação suficiente para responder isso com segurança, e prefiro não inventar. Se tu me der um pouco mais de contexto, tento organizar a ideia contigo. Para conversar livremente sobre assuntos gerais, a opção “Respostas naturais com IA” precisa estar ativada e configurada no servidor. 💛`;
+  return `Entendi o que tu está perguntando: ${short}. Ainda não tenho uma resposta confiável para esse assunto no meu caderno local, e prefiro não inventar. Se tu me der um pouco mais de contexto, posso organizar a ideia contigo; se for algo sobre o Nosso-tempo ou as histórias de vocês, também posso procurar nas fontes que foram guardadas aqui. 💛`;
 }
 
 function responseFor(question) {
@@ -956,6 +956,7 @@ async function requestNaturalReply(messages, memoryContext = [], answerMessage =
     headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
     body: JSON.stringify({
       profile: state.activeSpeaker,
+      aiMemoryConsent: Boolean(state.aiMemoryConsent),
       projectContext: String(projectContext || '').slice(0, 4000),
       messages: messages.map(item => ({ role: item.role, content: item.text })).slice(-12),
       memories: memoryContext.map(item => ({
@@ -1804,9 +1805,8 @@ export async function initCompanion() {
     : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
   setMood('curioso', 'Oi! Sou o Pestinha. 🐾');
   startIdleBehavior();
-  document.addEventListener('pointerdown', armVoiceOnFirstGesture, { once: true, capture: true });
-  // Com permissão previamente concedida, começa sem abrir o painel nem clicar.
-  // Sem permissão, não abre prompt no carregamento e não bloqueia o site.
-  window.setTimeout(autoStartWakeListening, 900);
-  console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas; IA natural opcional pelo backend`);
+  // O microfone só começa pelo botão explícito de chamada por voz. Uma
+  // permissão antiga do navegador não deve transformar uma visita silenciosa
+  // em escuta automática.
+  console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas; modo local durável e IA externa opcional`);
 }

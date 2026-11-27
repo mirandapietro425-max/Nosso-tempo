@@ -427,6 +427,26 @@
   .nt-companion-ai-controls { gap: .3rem .55rem; }
   .nt-companion-ai-controls label { font-size: .61rem; }
 }
+@media (max-width: 420px) {
+  .nt-companion-panel {
+    right: max(.35rem, env(safe-area-inset-right));
+    width: min(390px, calc(100vw - .7rem));
+    bottom: max(5.6rem, calc(env(safe-area-inset-bottom) + 5.35rem));
+    height: min(680px, 76dvh);
+  }
+  .nt-companion-header { min-height: 72px; padding: .65rem .72rem; gap: .55rem; }
+  .nt-companion-avatar { flex-basis: 48px; width: 48px; height: 48px; border-radius: 15px 15px 15px 6px; }
+  .nt-companion-heading strong { font-size: 1rem; }
+  .nt-companion-heading small { font-size: .65rem; }
+  .nt-companion-tabs { padding-inline: .4rem; }
+  .nt-companion-tabs button { padding-inline: .18rem; font-size: .66rem; }
+  .nt-companion-chat-toolbar { padding-inline: .65rem; }
+  .nt-companion-messages { min-height: 155px; max-height: none; padding-inline: .65rem; }
+  .nt-companion-composer { gap: .3rem; padding: .45rem .55rem; }
+  .nt-companion-composer input { height: 42px; padding-inline: .65rem; font-size: 16px; }
+  .nt-companion-composer button { flex-basis: 36px; width: 36px; height: 36px; border-radius: 11px; }
+  .nt-companion-privacy-note { padding-inline: .7rem; font-size: .56rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   .nt-chat-typing { animation: none; }
 }
@@ -467,4 +487,15 @@
   background: #fce5f0;
   border-color: #bd6b97;
   color: #713255;
+}
+@media (max-height: 520px) {
+  .nt-companion-panel {
+    bottom: max(4.6rem, calc(env(safe-area-inset-bottom) + 4.25rem));
+    height: min(92dvh, 520px);
+    min-height: 300px;
+  }
+  .nt-companion-header { min-height: 62px; padding-block: .45rem; }
+  .nt-companion-avatar { flex-basis: 42px; width: 42px; height: 42px; }
+  .nt-companion-messages { min-height: 110px; }
+  .nt-companion-prompts { display: none; }
 }

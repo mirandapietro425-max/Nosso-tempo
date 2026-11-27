@@ -153,7 +153,7 @@ export function createMusicAssistant({
       }
       if (local.length) {
         pendingSelection = { items: local.map(item => item.track), actions: ['search'] };
-        return { handled: true, reply: `${result.error || 'A busca integrada não retornou resultados.'}\nNa playlist do site, encontrei:\n${listReply(pendingSelection.items, '').trim()}\nBusca direta: ${result.fallbackUrl}` };
+        return { handled: true, reply: `${result.error ? `${result.error}\n` : ''}Na playlist local do site, encontrei:\n${listReply(pendingSelection.items, '').trim()}\nSe quiser ampliar a busca, abre: ${result.fallbackUrl}` };
       }
       return { handled: true, reply: `${result.error || 'Não consegui consultar o YouTube agora.'}\nBusca direta: ${result.fallbackUrl}` };
     }
