@@ -40,6 +40,11 @@ assert.match(source, /data-action="toggle-wake-listening"/, 'o controle de chama
 assert.match(appSource, /initCompanion/, 'o módulo do Pestinha deve continuar inicializado pelo app');
 
 assert.match(source, /const memories = state\.aiMemoryConsent/, 'memórias só podem seguir com consentimento explícito');
+assert.match(source, /aiMemoryConsent: false/, 'consentimento de memórias começa desligado');
+assert.match(source, /if \(!state\.aiEnabled\) state\.aiMemoryConsent = false/, 'desligar IA também encerra o consentimento de memórias');
+assert.match(chatApiSource, /cleanMemories\(body\.memories\)/, 'o backend deve receber apenas memórias enviadas explicitamente');
+assert.match(source, /lastSpokenAt = Date\.now\(\)/, 'o filtro de eco deve manter uma janela após a síntese');
+
 assert.match(source, /aiEnabled: false/, 'a IA deve iniciar desligada por padrão');
 assert.match(appSource, /sessionStorage\.getItem\('pe_welcome_shown'\)/, 'a cartinha deve ser preservada por sessão');
 assert.doesNotMatch(appSource, /localStorage\.setItem\('pe_welcome_dismissed'/, 'a cartinha não deve ser escondida permanentemente');
