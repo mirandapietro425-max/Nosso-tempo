@@ -11,6 +11,7 @@ import { searchMemories, normalizeMemoryText, selectMemoriesForSpeaker } from '.
 import { answerFromKnowledge, getKnowledgeStats } from './knowledge-base.js';
 import { answerFromProjectKnowledge } from './project-knowledge.js';
 import { handleMusicCommand } from './music-assistant.js';
+import { classifyWakeUtterance, VOICE_CONVERSATION_IDLE_MS } from './voice-session.js';
 
 const STORAGE_REF = doc(getFirestore(), 'companion', 'pestinha-v1');
 const MAX_MEMORIES = 240;
@@ -71,6 +72,8 @@ let isListening = false;
 let wakeRecognition = null;
 let wakeListeningEnabled = false;
 let wakeRestartTimer = null;
+let wakeConversationActive = false;
+let wakeConversationTimer = null;
 let isOpen = false;
 let currentMood = 'curioso';
 let lastQuestionSignals = null;
@@ -686,16 +689,37 @@ function updateWakeButton() {
   const status = document.getElementById('nt-companion-wake-status');
   if (button) {
     button.classList.toggle('is-listening', wakeListeningEnabled);
+    button.classList.toggle('is-conversation-active', wakeConversationActive);
     button.setAttribute('aria-pressed', String(wakeListeningEnabled));
     button.textContent = wakeListeningEnabled ? '🔴 Desligar chamada por voz' : '🎧 Chamar “Pestinha”';
   }
-  if (status) status.textContent = wakeListeningEnabled
-    ? 'Chamada ativa: diga “Pestinha” antes do pedido. “Agora não” ou “fica quietinho” desliga o microfone.'
-    : 'Chamada por voz desligada. Ative aqui e depois diga “Pestinha” para chamar.';
+  if (status) {
+    if (!wakeListeningEnabled) status.textContent = 'Chamada por voz desligada. Ative aqui e depois diga “Pestinha” para começar.';
+    else if (wakeConversationActive) status.textContent = 'Conversa ativa: pode falar normalmente, sem repetir “Pestinha”. Se ficarmos 45 segundos sem conversar, volto a aguardar a chamada. “Agora não” ou “fica quietinho” desliga o microfone.';
+    else status.textContent = 'Estou aguardando “Pestinha”. Depois da chamada, podemos conversar sem repetir o nome em cada frase.';
+  }
+}
+
+function keepWakeConversationAlive() {
+  wakeConversationActive = true;
+  if (wakeConversationTimer) window.clearTimeout(wakeConversationTimer);
+  wakeConversationTimer = window.setTimeout(() => {
+    wakeConversationActive = false;
+    wakeConversationTimer = null;
+    updateWakeButton();
+  }, VOICE_CONVERSATION_IDLE_MS);
+  updateWakeButton();
+}
+
+function endWakeConversation() {
+  wakeConversationActive = false;
+  if (wakeConversationTimer) window.clearTimeout(wakeConversationTimer);
+  wakeConversationTimer = null;
 }
 
 function stopWakeListening({ announce = false } = {}) {
   wakeListeningEnabled = false;
+  endWakeConversation();
   if (wakeRestartTimer) window.clearTimeout(wakeRestartTimer);
   wakeRestartTimer = null;
   const current = wakeRecognition;
@@ -729,22 +753,23 @@ function startWakeRecognition() {
       if (!result.isFinal) continue;
       const transcript = String(result[0]?.transcript || '').trim();
       if (!transcript) continue;
-      const normalized = normalizeText(transcript);
-      const stopPhrase = /^(?:(?:ei )?pestinha[ ,:]*)?(?:agora nao|fica quietinho|fica quieto|pode parar|para(?: pestinha)?|silencio)(\b|$)/.test(normalized);
-      if (stopPhrase) {
+      const turn = classifyWakeUtterance(transcript, wakeConversationActive);
+      if (turn.type === 'stop') {
         stopWakeListening({ announce: true });
         return;
       }
-      const wakeMatch = normalized.match(/^(?:ei )?pestinha\b/);
-      if (!wakeMatch) continue;
-      const command = transcript.replace(/^\s*(?:ei\s+)?pestinha\b[\s,:;.-]*/i, '').trim();
-      if (!command) {
-        const reply = 'Oi! Estou aqui. O que tu quer fazer? 🐾';
+      if (turn.type === 'ignore') continue;
+
+      // A primeira chamada abre uma sessão conversacional. As próximas frases
+      // são tratadas como turnos normais até 45 s de silêncio, sem repetir o nome.
+      keepWakeConversationAlive();
+      if (turn.text) {
+        submitQuestion(turn.text, true);
+      } else if (turn.type === 'wake') {
+        const reply = 'Oi! Estou aqui. Pode falar normalmente, não precisa repetir meu nome a cada frase. 🐾';
         createMessage('assistant', reply);
         showReplyBubble(reply);
         if (state.speakResponses) speak(reply);
-      } else {
-        submitQuestion(command, true);
       }
     }
   };
@@ -789,8 +814,9 @@ function toggleWakeListening() {
   }
   // O navegador exige uma ativação explícita do usuário para liberar o microfone.
   wakeListeningEnabled = true;
+  endWakeConversation();
   updateWakeButton();
-  setMood('escutando', 'Chamada por voz ativa. Quando ouvires “Pestinha”, pode falar comigo. 🎙️');
+  setMood('escutando', 'Estou aguardando a chamada. Depois podemos conversar normalmente, sem repetir meu nome. 🎙️');
   startWakeRecognition();
 }
 
