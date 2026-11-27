@@ -147,13 +147,20 @@ function scene(t){gl.clearColor(.08,.045,.12,.0);gl.clear(gl.COLOR_BUFFER_BIT|gl
   draw(box,[0,-.5,-.4],[15,.3,7.2],'#47334f');draw(box,[0,-.32,-.35],[13.6,.12,6.1],'#8d647e');
   // distant soft stars
   for(let i=0;i<23;i++){const x=Math.sin(i*12.31)*8.4,z=-3.7+(i%5)*.65,y=3.1+(i%4)*.55;const flick=.012*Math.sin(t*.0015+i);draw(sphere,[x,y+flick,z],[.045+(i%3)*.012,.045+(i%3)*.012,.045+(i%3)*.012],i%3===0?'#ffd98b':'#ead1ff',undefined,.35);}
-  // piano case and lid
-  draw(box,[0,.39,-.02],[12.15,.72,3.1],'#4c304f');draw(box,[0,.77,-.1],[11.9,.16,2.9],'#7f4d72');draw(box,[0,1.02,-1.23],[11.8,.1,.25],'#d9a7c4');draw(box,[-.2,1.08,-1.02],[5.65,.12,1.98],'#57364f',[.08,0,-.13]);draw(box,[-.2,1.16,-1.02],[5.45,.045,1.78],'#a77b9f',[.08,0,-.13]);
+  // piano body: a readable baby-grand silhouette with a deep case and front keyboard.
+  draw(box,[0,.28,-.28],[10.8,.5,3.4],'#4a263f');
+  draw(box,[0,.67,-.35],[10.45,.26,3.16],'#9f4f78');
+  draw(box,[0,1.12,-.88],[9.9,.86,.18],'#592b49');
+  draw(box,[0,1.62,-.55],[10.05,2.02,2.34],'#7c3e62');
+  draw(box,[0,2.68,-.55],[10.32,.22,2.52],'#d388a9');
+  draw(box,[0,1.5,.64],[9.5,1.0,.16],'#4a263f');
+  draw(box,[-5.05,.72,1.12],[.45,.5,2.34],'#6a3456');draw(box,[5.05,.72,1.12],[.45,.5,2.34],'#6a3456');
   // legs, pedals and stool
-  for(const x of [-5.2,5.2])for(const z of [-1.08,1.02])draw(box,[x,-.47,z],[.32,1.35,.34],'#55374d',[0,0,(x<0?-.04:.04)]);
-  draw(box,[0,-.07,1.75],[3.3,.13,.55],'#c48cae');draw(box,[0,.12,1.75],[3.45,.26,.65],'#e9c2d5');for(const x of [-1.15,0,1.15])draw(box,[x,-.31,1.75],[.11,.55,.12],'#76506d');
+  for(const x of [-4.55,4.55])for(const z of [-1.02,1.12])draw(box,[x,-.47,z],[.36,1.45,.4],'#503047',[0,0,(x<0?-.04:.04)]);
+  draw(box,[0,-.08,1.92],[3.55,.14,.62],'#b96d93');draw(box,[0,.1,1.92],[3.7,.28,.72],'#edbfd3');for(const x of [-1.25,0,1.25])draw(box,[x,-.31,1.92],[.12,.55,.13],'#70405c');
+  for(const x of [-.42,0,.42])draw(box,[x,-.2,1.43],[.16,.1,.58],'#d6a66f',[0,0,x===0?0:(x<0?-.12:.12)],.18);
   // piano keys (white behind, then black)
-  for(const k of keyMeshes){const down=pressed.has(k.midi),y=k.black?.78:.65,dep=down?.11:0;draw(box,[k.x,y-dep,k.z+(down?.07:0)],k.black?[.42,.23,1.05]:[.72,.17,1.82],k.black?(down?'#a77a9c':'#221a2c'):(down?'#ffe0ec':'#fff7fa'));if(!k.black&&!down)draw(box,[k.x,y-.091,k.z+.1],[.56,.018,.66],'#f2e3ec');if(down)draw(box,[k.x,y+.15,k.z+.14],[.32,.025,.32],'#ffc4df',undefined,.28);}
+  for(const k of keyMeshes){const down=pressed.has(k.midi),y=k.black?.82:.69,dep=down?.11:0;draw(box,[k.x,y-dep,k.z+(down?.07:0)],k.black?[.48,.27,1.18]:[.82,.19,2.12],k.black?(down?'#a77a9c':'#17131f'):(down?'#ffe0ec':'#fffafb'));if(!k.black&&!down)draw(box,[k.x,y-.1,k.z+.12],[.64,.018,.72],'#f0dce7');if(down)draw(box,[k.x,y+.16,k.z+.16],[.34,.025,.34],'#ffc4df',undefined,.28);}
   // music stand
   draw(box,[0,1.42,-1.1],[2.3,.11,.22],'#b98aa9',[-.25,0,0]);draw(box,[0,1.73,-1.25],[1.75,.7,.08],'#d9b9d2',[-.25,0,0]);
   // cat in warm colors and tiny kitten by the piano
