@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v76'; // Redesign visual editorial global
+const CACHE_VERSION = 'v77'; // Redesign visual editorial global
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -51,6 +51,7 @@ const STATIC_ASSETS = [
   '/css/mobile.css',
   '/css/games.css',
   '/css/cinema.css',
+  '/css/companion.css',
   '/css/time-capsule.css',
   '/css/redesign.css',
   '/js/app.js',
@@ -77,6 +78,9 @@ const STATIC_ASSETS = [
   '/js/memory-anniversaries.js',
   '/js/time-capsule.js',
   '/js/memory-of-day.js',
+  '/js/companion/companion.js',
+  '/js/companion/neural-brain.js',
+  '/js/companion/memory-search.js',
   '/js/museum.js',
   '/js/memory-album.js',
   '/css/memory-album.css',

@@ -73,6 +73,7 @@ window.addEventListener('load', () => {
 
 // ── Home (casinha + pet + quiz) ──
 import { initHome, awardCoins as _awardCoins } from './home.js';
+import { initCompanion } from './companion/companion.js';
 
 // ── Biblioteca ──
 import { initLibrary } from './library.js';
@@ -198,6 +199,7 @@ try { initEventUnlock(); } catch(e) { console.error('initEventUnlock:', e); }
 try { initEmotionalState(); } catch(e) { console.error('initEmotionalState:', e); }
 try { initLivingMoments(); } catch(e) { console.error('initLivingMoments:', e); }
 try { initMemoryAnniversaries(); } catch(e) { console.error('initMemoryAnniversaries:', e); }
+try { initCompanion().catch(e => console.error('initCompanion:', e)); } catch(e) { console.error('initCompanion:', e); }
 try { initTimeCapsule(); } catch(e) { console.error('initTimeCapsule:', e); }
 try { initLibrary(db, () => { try { return localStorage.getItem('pe_active_player'); } catch { return null; } }); } catch(e) { console.error('initLibrary:', e); }
 try { initCinema(db); } catch(e) { console.error('initCinema:', e); }

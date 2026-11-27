@@ -82,7 +82,7 @@ const GATOS_ADOCAO = [
   { id:"branco",  nome:"Marshmallow", raca:"Angora branco",       emoji:"🐱",   cor:"#eeeeee", personalidade:"Delicado, ama colo" },
 ];
 
-const DIALOGOS = {
+export const DIALOGOS = {
   introducao: [
     { quem:"pietro", texto:"Escola Maria Rocha. Técnico em Informática. Primeira semana de aula." },
     { quem:"pietro", texto:"Ela entrou na turma e eu nem imaginava que aquilo ia mudar tudo." },
