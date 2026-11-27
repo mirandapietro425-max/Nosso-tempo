@@ -691,13 +691,9 @@ export function initRomanticMessages(activeEventId = null) {
     ...(activeEventId && ROMANTIC_MESSAGES[activeEventId] ? ROMANTIC_MESSAGES[activeEventId] : []),
   ];
 
-  // Primeira mensagem: após 45 segundos
-  setTimeout(() => _showRomanticMessage(msgs), 45000);
-
-  // Depois, a cada 4-6 minutos
-  _msgInterval = setInterval(() => {
-    _showRomanticMessage(msgs);
-  }, (4 + Math.random() * 2) * 60000);
+  // Mensagens românticas não aparecem sozinhas: a página permanece calma.
+  // A função continua preparada para ser chamada por uma ação explícita futura.
+  _msgInterval = null;
 }
 
 let _lastMsgIdx = -1;

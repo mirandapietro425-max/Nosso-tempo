@@ -571,3 +571,67 @@ html body.event-mode #main-content > section {
     padding-block-start: calc(3.7rem + 52px);
   }
 }
+
+/* ── Entrada calma e navegação progressiva ── */
+.hero-nav-more {
+  width: min(100%, 520px);
+  margin-top: 0.7rem;
+  color: var(--velvet);
+  animation: fadeSlideDown 1.3s 0.7s ease both;
+}
+.hero-nav-more summary {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--rose-alpha-20);
+  border-radius: var(--radius-pill);
+  background: rgba(255,255,255,.62);
+  color: var(--velvet);
+  cursor: pointer;
+  font-size: .76rem;
+  font-weight: 600;
+  list-style: none;
+  transition: background .2s ease, transform .2s ease;
+}
+.hero-nav-more summary::-webkit-details-marker { display: none; }
+.hero-nav-more summary:hover { background: rgba(255,255,255,.92); transform: translateY(-1px); }
+.hero-nav-more[open] summary { background: var(--velvet); color: white; }
+.hero-nav-secondary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .45rem;
+  margin: .7rem auto 0;
+  padding: .65rem;
+  border: 1px solid var(--rose-alpha-15);
+  border-radius: 18px;
+  background: rgba(255,255,255,.7);
+  box-shadow: var(--shadow-rose-sm);
+}
+.hero-nav-secondary a {
+  padding: .5rem .35rem;
+  border-radius: 10px;
+  color: var(--velvet);
+  font-size: .7rem;
+  text-decoration: none;
+  text-align: center;
+  transition: background .2s ease;
+}
+.hero-nav-secondary a:hover { background: var(--rose-alpha-10); }
+
+@media (min-width: 900px) {
+  .hero { padding-inline: 3rem; }
+  .hero-nav { max-width: 620px; gap: .65rem; }
+  .hero-nav-btn { padding-inline: 1.05rem; }
+  section { max-width: 980px; }
+}
+
+@media (max-width: 600px) {
+  .hero-nav-more { width: min(100%, 380px); }
+  .hero-nav-more summary { min-height: 44px; display: flex; align-items: center; justify-content: center; }
+  .hero-nav-secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 35vh; overflow-y: auto; }
+  .hero-nav-secondary a { min-height: 42px; display: flex; align-items: center; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #particles, .hero-nav-more, .greeting-pill, .hero-title, .hero-subtitle, .counter-hero, .hero-nav { animation: none !important; }
+}

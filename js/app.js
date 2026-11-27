@@ -2153,7 +2153,8 @@ window.shareLocation = shareLocation;
    ════════════════════════════════════════════ */
 (function showWelcomeLetter() {
   // Só mostra uma vez por sessão
-  if (sessionStorage.getItem('pe_welcome_shown')) return;
+  // Mostra a carta apenas uma vez por dispositivo, não a cada nova aba/sessão.
+  if (localStorage.getItem('pe_welcome_dismissed') === '1') return;
   sessionStorage.setItem('pe_welcome_shown', '1');
 
   const now     = new Date();
@@ -2215,18 +2216,15 @@ window.shareLocation = shareLocation;
       overlay.style.transition = 'opacity 0.3s ease';
       setTimeout(() => {
         overlay.remove();
-        // Sinaliza que a carta foi dispensada — popup diário pode abrir agora
-        // (cancela o timer de 8.5s e abre em 1s)
+        // Registra o fechamento para não repetir a carta em novas visitas.
         window._welcomeClosed = true;
+        try { localStorage.setItem('pe_welcome_dismissed', '1'); } catch (e) {}
       }, 300);
     }
     document.getElementById('welcome-close-btn').addEventListener('click', closeWelcome);
     overlay.addEventListener('click', e => { if (e.target === overlay) closeWelcome(); });
 
-    // Toca música ao abrir a carta (se não tiver evento ativo)
-    if (!document.body.classList.contains('event-mode')) {
-      setTimeout(() => { try { window.playTrack(0); } catch(err) {} }, 1500);
-    }
+    // Música só começa quando a pessoa escolher tocar no player.
   }, 800);
 })();
 

@@ -170,31 +170,9 @@ export function initDaily() {
   if (popupText) popupText.textContent = msg;
   if (popupDate) popupDate.textContent = getDailyDate();
 
-  // Mostra popup automaticamente (uma vez por dia)
-  const seen = localStorage.getItem(LS_DAILY_POPUP);
-  if (seen !== new Date().toDateString()) {
-    // FIX: só abre o popup diário depois que a carta de boas-vindas for dispensada
-    // (a carta aparece na primeira visita da sessão com z-index 99998 — o popup diário
-    // tem z-index 100000 e cobria a carta, causando confusão de UX)
-    const welcomeAlreadySeen = sessionStorage.getItem('pe_welcome_shown');
-    if (welcomeAlreadySeen) {
-      // Carta já foi vista nesta sessão (reload, segunda aba) — abre normalmente
-      setTimeout(() => openDailyPopup(), 1800);
-    } else {
-      // Primeira visita da sessão: carta de boas-vindas vai aparecer em 800ms
-      // FIX Bug C7: limpa intervalo anterior antes de criar novo (evita vazamento se initDaily re-executa à meia-noite)
-      if (initDaily._welcomeInterval) clearInterval(initDaily._welcomeInterval);
-      let _dailyAttempts = 0;
-      initDaily._welcomeInterval = setInterval(() => {
-        _dailyAttempts++;
-        if (window._welcomeClosed || _dailyAttempts >= 30) {
-          clearInterval(initDaily._welcomeInterval);
-          initDaily._welcomeInterval = null;
-          setTimeout(() => openDailyPopup(), 600);
-        }
-      }, 500);
-    }
-  }
+  // O recadinho fica disponível no card e abre apenas quando a pessoa toca nele.
+  // Não interrompemos a entrada com um segundo modal automático.
+  try { localStorage.setItem(LS_DAILY_POPUP, new Date().toDateString()); } catch (e) {}
 
   // Agenda atualização automática à meia-noite
   const now       = new Date();
