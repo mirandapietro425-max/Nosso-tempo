@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v91
+   PIETRO & EMILLY — sw.js v92
    Service Worker · Cache · Offline Support
 
    BUGS CORRIGIDOS nesta versão (v57):
@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v91'; // Corrige o boot do Pestinha e invalida o JavaScript antigo
+const CACHE_VERSION = 'v92'; // Inclui a base conversacional expandida do Pestinha
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -90,6 +90,7 @@ const STATIC_ASSETS = [
   '/js/companion/voice-session.js',
   '/js/companion/neural-brain.js',
   '/js/companion/memory-search.js',
+  '/js/companion/generated-knowledge.js',
   '/js/museum.js',
   '/js/memory-album.js',
   '/css/memory-album.css',

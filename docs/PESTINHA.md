@@ -1,6 +1,6 @@
 # Pestinha — voz, música e conhecimento de projetos
 
-O Pestinha conversa localmente no navegador, usando a base de conhecimento, o cérebro LIF, o contexto curto, o caderno de memórias e o player que já existe no Nosso-tempo. Não depende de chave, crédito ou serviço de IA pago.
+O Pestinha conversa localmente no navegador, usando a base de conhecimento, o cérebro LIF, o contexto curto, o caderno de memórias e o player que já existe no Nosso-tempo. A base combina conteúdo curado do projeto com 69 tópicos em português gerados com GPT no Sandbox e incorporados como JavaScript estático. O site publicado não depende de chave, crédito ou serviço de IA pago para responder.
 
 ## Chamada por palavra-chave
 
@@ -38,7 +38,7 @@ A busca musical server-side exige uma requisição POST com `Origin` corresponde
 
 ## Conversa local e memórias
 
-A conversa usa somente JavaScript local. O Pestinha combina respostas sociais, contexto curto da conversa, conhecimento geral, conhecimento do projeto e busca automática nas memórias relevantes. Quando não sabe, admite a limitação em vez de inventar. As memórias ficam no armazenamento local do navegador e podem ser consultadas normalmente; não são enviadas para uma IA externa.
+A conversa usa somente JavaScript local. O Pestinha combina respostas sociais, contexto curto da conversa, conhecimento geral, conhecimento do projeto e busca automática nas memórias relevantes. O recuperador aceita variações naturais, sinônimos, perguntas sem acento e continuações como “me dá um exemplo”, “explica mais simples”, “resume” e “aprofund[a]”. Quando não sabe, admite a limitação em vez de inventar. As memórias ficam no armazenamento local do navegador e podem ser consultadas normalmente; não são enviadas para uma IA externa.
 
 ## Validação
 
@@ -52,6 +52,7 @@ node tests/companion-neural-smoke.mjs
 node tests/memory-search-smoke.mjs
 node tests/ui-wiring-smoke.mjs
 node tests/pestinha-safety-smoke.mjs
+node tests/pestinha-knowledge-smoke.mjs
 ```
 
 Os testes automatizados não substituem testes reais em Chrome/Edge/Firefox, HTTPS, celular, permissões do microfone, YouTube IFrame API, cotas da API e comportamento das bolhas. A busca do YouTube só pode ser validada end-to-end depois de configurar a chave no ambiente de teste.

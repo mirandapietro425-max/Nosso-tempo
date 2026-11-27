@@ -1,9 +1,11 @@
+import { GENERATED_KNOWLEDGE } from './generated-knowledge.js';
+
 /*
  * Biblioteca inicial de conhecimento geral do Pestinha.
  * Conteúdo autoral, local e editável. Não depende de chave, servidor ou API.
  * O mecanismo recupera conceitos por palavras-chave e sinônimos; não é um LLM.
  */
-const KNOWLEDGE = [
+const CURATED_KNOWLEDGE = [
   // Ciências e natureza
   ['fotossíntese','biologia plantas clorofila luz','Fotossíntese é o processo pelo qual plantas, algas e algumas bactérias usam energia da luz para transformar água e gás carbônico em açúcares. Nesse processo, muitas plantas liberam oxigênio. É como se a planta fabricasse parte do próprio alimento usando a luz.'],
   ['respiração celular','biologia mitocondria energia glicose','Respiração celular é o conjunto de reações em que as células obtêm energia aproveitável a partir de nutrientes, como a glicose. Nas células humanas, grande parte desse processo ocorre nas mitocôndrias. Ela não é simplesmente respirar com os pulmões: é um processo que acontece dentro das células.'],
@@ -275,6 +277,14 @@ const KNOWLEDGE = [
 
 ];
 
+// A camada gerada amplia variações naturais sem tirar do site a capacidade de
+// responder offline. O quarto campo é um exemplo opcional, preservado para a
+// continuação da conversa e ignorado pelo ranking.
+const KNOWLEDGE = [
+  ...CURATED_KNOWLEDGE,
+  ...GENERATED_KNOWLEDGE,
+];
+
 const STOP = new Set('a o os as um uma de da do das dos em no na nos nas e ou que qual quais quem como quando onde por para com sem sobre me te se eu voce voces ele ela isso essa esse aquele aquela foi era ser estar tem tinha sao sendo mais muito muita pouco pouca tambem ja ainda nao sim aqui ali la pra pro porque pq ne ta to eh entre sobre'.split(' '));
 const SHORT_WORDS = new Set(['pi', 'ia', 'ph', 'pib', 'onu', 'dna', 'html', 'css', 'lgpd', '2fa']);
 const norm = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
@@ -284,7 +294,7 @@ const closeWord = (a, b) => a === b || (a.length > 4 && b.length > 4 && (a.start
 function rankKnowledge(question) {
   const qWords = words(question);
   if (!qWords.length) return [];
-  return KNOWLEDGE.map(([title, aliases, answer]) => {
+  return KNOWLEDGE.map(([title, aliases, answer, example = '']) => {
     const titleWords = words(title);
     const allWords = words(`${title} ${aliases}`);
     let score = 0;
@@ -299,7 +309,7 @@ function rankKnowledge(question) {
     else if (titleMatched) score += 2.5;
     if (norm(question).includes(norm(title))) score += 8; // prioriza o nome completo do conceito
     const coverage = score / Math.max(2, Math.min(qWords.length, 5));
-    return { title, answer, score: coverage, titleMatched, completeTitleMatch, matchedWords };
+    return { title, answer, example, score: coverage, titleMatched, completeTitleMatch, matchedWords };
   }).sort((a, b) => b.score - a.score);
 }
 
@@ -346,7 +356,7 @@ export function answerFromKnowledge(question) {
   const followup = /^(e um exemplo|me da um exemplo|da um exemplo|exemplo|por exemplo|explica melhor|explica de novo|explica de um jeito simples|me explica (mais detalhes|melhor|de novo|de um jeito simples)|nao entendi|mais simples|de um jeito simples|explica como se eu fosse crianca|mais detalhes|aprofund[a-z]*|continua|resume|resuma|faz um resumo|resumo)\b/.test(q);
   if (followup && lastKnowledgeEntry) {
     const key = norm(lastKnowledgeEntry.title).replace(/ /g, ' ');
-    if (/\b(exemplo|por exemplo)\b/.test(q)) return EXAMPLES[key] || `Um exemplo relacionado a ${lastKnowledgeEntry.title}: pense em uma situação cotidiana em que esse conceito aparece. ${lastKnowledgeEntry.answer}`;
+    if (/\b(exemplo|por exemplo)\b/.test(q)) return lastKnowledgeEntry.example || EXAMPLES[key] || `Um exemplo relacionado a ${lastKnowledgeEntry.title}: pense em uma situação cotidiana em que esse conceito aparece. ${lastKnowledgeEntry.answer}`;
     if (/\b(resume|resuma|resumo)\b/.test(q)) return `${lastKnowledgeEntry.title}: ${lastKnowledgeEntry.answer.split(/[.!?]/).slice(0, 2).join('. ').trim()}.`;
     if (/\b(mais detalhes|aprofund|continua)\b/.test(q)) return `${lastKnowledgeEntry.answer}${DETAILS[key] ? `\n\nUm pouco mais a fundo: ${DETAILS[key]}` : '\n\nA ideia central é observar a definição, as condições em que ela vale e como se aplica a situações concretas.'}`;
     if (/\b(nao entendi|mais simples|de um jeito simples|explica como se eu fosse crianca|explica melhor|explica de novo|explica de um jeito simples|me explica (mais detalhes|melhor|de novo|de um jeito simples))\b/.test(q)) return `Vamos por partes. ${EXAMPLES[key] || lastKnowledgeEntry.answer} O ponto principal é: ${lastKnowledgeEntry.answer.split(/[.!?]/)[0]}.`;
@@ -372,8 +382,8 @@ export function answerFromKnowledge(question) {
     }
   }
 
-  lastKnowledgeEntry = { title: best.title, answer: best.answer };
-  if (/\b(exemplo|por exemplo)\b/.test(q)) return `${best.answer}\n\n${EXAMPLES[norm(best.title)] || 'Um jeito de visualizar é pensar em uma situação real em que esse conceito aparece.'}`;
+  lastKnowledgeEntry = { title: best.title, answer: best.answer, example: best.example };
+    if (/\b(exemplo|por exemplo)\b/.test(q)) return `${best.answer}\n\n${best.example || EXAMPLES[norm(best.title)] || 'Um jeito de visualizar é pensar em uma situação real em que esse conceito aparece.'}`;
   if (/\b(resumo|resuma|resumidamente)\b/.test(q)) return `${titleCase(best.title)}: ${best.answer.split(/[.!?]/).slice(0, 2).join('. ').trim()}.`;
   if (/\b(mais detalhes|aprofund[a-z]*)\b/.test(q) && DETAILS[norm(best.title)]) return `${best.answer}\n\nUm pouco mais a fundo: ${DETAILS[norm(best.title)]}`;
   if (/\b(mais simples|de um jeito simples|como se eu fosse crianca)\b/.test(q) && EXAMPLES[norm(best.title)]) return `${best.answer}\n\nDe um jeito mais simples: ${EXAMPLES[norm(best.title)]}`;
