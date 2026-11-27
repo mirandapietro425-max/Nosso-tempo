@@ -44,6 +44,7 @@ assert.match(source, /aiMemoryConsent: false/, 'consentimento de memórias come�
 assert.match(source, /if \(!state\.aiEnabled\) state\.aiMemoryConsent = false/, 'desligar IA também encerra o consentimento de memórias');
 assert.match(chatApiSource, /cleanMemories\(body\.memories\)/, 'o backend deve receber apenas memórias enviadas explicitamente');
 assert.match(source, /lastSpokenAt = Date\.now\(\)/, 'o filtro de eco deve manter uma janela após a síntese');
+assert.match(source, /lastSpokenText = '';[\s\S]*lastSpokenAt = 0/, 'a janela de eco deve ser limpa ao parar ou iniciar outro turno');
 
 assert.match(source, /aiEnabled: false/, 'a IA deve iniciar desligada por padrão');
 assert.match(appSource, /sessionStorage\.getItem\('pe_welcome_shown'\)/, 'a cartinha deve ser preservada por sessão');
