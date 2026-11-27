@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v59
+   PIETRO & EMILLY — sw.js v78
    Service Worker · Cache · Offline Support
 
    BUGS CORRIGIDOS nesta versão (v57):
@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v77'; // Redesign visual editorial global
+const CACHE_VERSION = 'v78'; // Ilustrações originais e melhorias de navegação
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -54,6 +54,7 @@ const STATIC_ASSETS = [
   '/css/companion.css',
   '/css/time-capsule.css',
   '/css/redesign.css',
+  '/css/visual-refresh.css',
   '/js/app.js',
   '/js/local-db.js',
   '/js/local-media.js',
@@ -90,7 +91,10 @@ const STATIC_ASSETS = [
   '/assets/icon-192.png',
   '/assets/icon-512.png',
   '/assets/hero-romantico.webp',
+  '/assets/hero-nosso-tempo.webp',
   '/assets/storybook-memories.webp',
+  '/assets/time-capsule-vignette.webp',
+  '/assets/memory-album-vignette.webp',
   '/assets/cinema-noite.webp',
   '/assets/fantasia-luar-1.webp',
   '/assets/fantasia-luar-2.webp',

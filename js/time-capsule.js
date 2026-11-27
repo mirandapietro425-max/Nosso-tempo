@@ -19,7 +19,10 @@ export function initTimeCapsule() {
         <button class="nt-capsule-close" type="button" aria-label="Fechar">×</button>
         <div class="nt-capsule-kicker">UM PRESENTE PARA O FUTURO</div>
         <h2 id="nt-capsule-title">Cápsula do tempo 💌</h2>
-        <p class="nt-capsule-intro">Guardem cartas, planos e lembranças para abrir no momento escolhido.</p>
+        <div class="nt-capsule-intro-row">
+          <p class="nt-capsule-intro">Guardem cartas, planos e lembranças para abrir no momento escolhido.</p>
+          <figure class="nt-capsule-art"><img src="/assets/time-capsule-vignette.webp" alt="Envelope selado e cartas guardadas em um pote para o futuro." width="1200" height="900" loading="lazy" decoding="async"><figcaption>Uma palavra de hoje, para abraçar amanhã.</figcaption></figure>
+        </div>
         <div class="nt-capsule-stats" aria-live="polite"><span><strong class="nt-capsule-total">0</strong> cartas</span><span><strong class="nt-capsule-ready">0</strong> liberadas</span><span><strong class="nt-capsule-waiting">0</strong> esperando</span></div>
         <form class="nt-capsule-form">
           <label>Quem está escrevendo?

@@ -23,7 +23,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
 
   <!-- CSS Modular -->
-  <link rel="stylesheet" href="css/main.css?v=64">
+  <link rel="stylesheet" href="css/main.css?v=65">
   <link rel="stylesheet" href="css/components.css?v=66">
   <link rel="stylesheet" href="css/modals.css?v=63">
   <link rel="stylesheet" href="css/animations.css?v=63">
@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="css/mobile.css?v=2">
   <link rel="stylesheet" href="css/retrospectiva.css?v=1">
   <link rel="stylesheet" href="css/time-capsule.css?v=1">
-  <link rel="preload" as="image" href="assets/hero-romantico.webp" type="image/webp" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/hero-nosso-tempo.webp" type="image/webp" fetchpriority="high">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
   <style>
@@ -215,6 +215,7 @@
     .location-card-time{font-size:.65rem;color:#c9a9b0}
   </style>
   <link rel="stylesheet" href="css/redesign.css?v=1">
+  <link rel="stylesheet" href="css/visual-refresh.css?v=1">
 </head>
 <body>
 <!-- ── MODAL FILME ── -->
@@ -370,10 +371,11 @@
 <!-- ════════════════════════════════════════
      SCROLL CONTAINER — só este rola
      ════════════════════════════════════════ -->
+<a class="skip-link" href="#main-content">Pular para o conteúdo</a>
 <div id="page-wrap">
 
 <!-- ── HERO ── -->
-<div class="hero">
+<header class="hero">
   <span class="greeting-pill" id="greeting">Carregando...</span>
   <h1 class="hero-title">
     <em>Pietro</em>
@@ -381,6 +383,10 @@
     <em>Emilly</em>
   </h1>
   <p class="hero-subtitle">Uma história de amor que cresce a cada segundo ✨</p>
+  <nav class="hero-actions" aria-label="Acessos rápidos">
+    <a class="hero-cta hero-cta-primary" href="#sec-carta"><span aria-hidden="true">💌</span> Ler nossa cartinha</a>
+    <a class="hero-cta hero-cta-secondary" href="#sec-museu"><span aria-hidden="true">📖</span> Revisitar memórias</a>
+  </nav>
 
   <div class="counter-hero">
     <div class="counter-unit"><span class="counter-num" id="c-dias">0</span><span class="counter-label">Dias</span></div>
@@ -426,10 +432,12 @@
     <a class="hero-nav-btn" href="#sec-casinha">    <span class="hero-nav-icon">🏡</span><span class="hero-nav-label">Casinha</span></a>
     <a class="hero-nav-btn" href="#sec-dados-locais"><span class="hero-nav-icon">💾</span><span class="hero-nav-label">Backup</span></a>
   </nav>
+  <p class="hero-nav-hint"><span aria-hidden="true">↔</span> Deslize para explorar mais atalhos</p>
 
   <div class="scroll-hint" aria-hidden="true">↓</div>
-</div>
+</header>
 
+<main id="main-content" tabindex="-1">
 <!-- ── PRÓXIMO MESVERSÁRIO ── -->
 <section aria-labelledby="sec-anniv-title">
   <div class="section-label">Próxima Comemoração</div>
@@ -1220,7 +1228,12 @@
 <section id="sec-album-memorias" aria-labelledby="sec-album-title">
   <div class="section-label">Nossas lembranças</div>
   <h2 class="section-title" id="sec-album-title">Álbum de <em>Momentos</em> 📷</h2>
-  <p class="memory-album-intro">Cada foto guarda um pedacinho da história de vocês. Adicionem uma imagem, contem o que aconteceu e revisitem esses momentos quando quiserem.</p>
+  <div class="memory-album-intro-row">
+    <p class="memory-album-intro">Cada foto guarda um pedacinho da história de vocês. Adicionem uma imagem, contem o que aconteceu e revisitem esses momentos quando quiserem.</p>
+    <figure class="memory-album-art">
+      <img src="assets/memory-album-vignette.webp" alt="Um álbum aquarelado aberto, pronto para receber fotos e histórias." width="1200" height="900" loading="lazy" decoding="async">
+    </figure>
+  </div>
   <form id="memory-album-form" class="memory-album-form">
     <label class="memory-album-field full">Foto <input name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required></label>
     <label class="memory-album-field full">Legenda <input name="caption" maxlength="240" placeholder="O que torna esse momento especial?" autocomplete="off"></label>
@@ -1252,7 +1265,7 @@
     <small class="data-tools-note">O salvamento é automático neste navegador e não sincroniza outros aparelhos. Apagar os dados do navegador pode removê-los; faça backups para transferir ou proteger suas lembranças. Os arquivos de backup contêm seus dados; guarde-os com cuidado. O cadeado do mural é apenas visual, e os dados locais não são criptografados.</small>
   </div>
 </section>
-
+ </main>
 <!-- ── FOOTER ── -->
 <footer>
   <span class="footer-heart">❤</span>

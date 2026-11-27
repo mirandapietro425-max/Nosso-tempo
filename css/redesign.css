@@ -59,7 +59,7 @@ body {
   isolation: isolate;
   background:
     linear-gradient(180deg, rgba(35, 24, 34, .24) 0%, rgba(39, 25, 36, .53) 55%, rgba(39, 25, 36, .88) 100%),
-    url('../assets/hero-romantico.webp') center 58% / cover no-repeat,
+    url('../assets/hero-nosso-tempo.webp') center 58% / cover no-repeat,
     #382735;
 }
 .hero::before {
@@ -126,7 +126,7 @@ body {
 .scroll-hint { color: #fff6f0; margin-top: 1.6rem; }
 
 /* Ritmo editorial consistente em todas as seções, sem mexer na ordem. */
-#page-wrap > section {
+#main-content > section {
   width: min(100%, 1120px);
   max-width: 1120px;
   padding: clamp(3.75rem, 8vw, 6.25rem) clamp(1.1rem, 4vw, 3rem);
@@ -134,7 +134,7 @@ body {
   border-bottom: 1px solid rgba(91, 59, 78, .075);
   scroll-margin-top: 1.2rem;
 }
-#page-wrap > section:last-of-type { border-bottom: 0; }
+#main-content > section:last-of-type { border-bottom: 0; }
 .section-label {
   margin-bottom: .7rem;
   color: var(--gold);
@@ -403,7 +403,7 @@ footer {
 .toast { background: #382735; box-shadow: 0 12px 34px rgba(38, 23, 34, .24); }
 
 @media (max-width: 760px) {
-  #page-wrap > section {
+  #main-content > section {
     padding: 3.7rem 1.15rem;
   }
   .hero {
@@ -464,7 +464,7 @@ footer {
 }
 
 @media (max-width: 390px) {
-  #page-wrap > section { padding-inline: .9rem; }
+  #main-content > section { padding-inline: .9rem; }
   .section-title { font-size: clamp(1.8rem, 9vw, 2.4rem); }
   .hero-title { font-size: clamp(2.7rem, 11vw, 3.3rem); }
   .hero-nav-btn { padding-inline: .75rem; }
@@ -563,11 +563,11 @@ html body.period-madrugada .counter-label {
 }
 
 /* Conserva a área segura sob a faixa fixa de datas especiais. */
-html body.event-mode #page-wrap > section {
+html body.event-mode #main-content > section {
   padding-block-start: calc(clamp(3.75rem, 8vw, 6.25rem) + 52px);
 }
 @media (max-width: 760px) {
-  html body.event-mode #page-wrap > section {
+  html body.event-mode #main-content > section {
     padding-block-start: calc(3.7rem + 52px);
   }
 }
