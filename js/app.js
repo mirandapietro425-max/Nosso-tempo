@@ -100,6 +100,7 @@ import { initEmotionalState } from './emotional-state.js';
 import { initLivingMoments } from './living-moments.js';
 import { initMemoryAnniversaries } from './memory-anniversaries.js';
 import { initTimeCapsule } from './time-capsule.js';
+import { initDatePassport } from './date-passport.js';
 window.awardCoins = _awardCoins;
 
 /* ════════════════════════════════════════════
@@ -201,6 +202,7 @@ try { initLivingMoments(); } catch(e) { console.error('initLivingMoments:', e); 
 try { initMemoryAnniversaries(); } catch(e) { console.error('initMemoryAnniversaries:', e); }
 try { initCompanion().catch(e => console.error('initCompanion:', e)); } catch(e) { console.error('initCompanion:', e); }
 try { initTimeCapsule(); } catch(e) { console.error('initTimeCapsule:', e); }
+try { initDatePassport(db); } catch(e) { console.error('initDatePassport:', e); }
 try { initLibrary(db, () => { try { return localStorage.getItem('pe_active_player'); } catch { return null; } }); } catch(e) { console.error('initLibrary:', e); }
 try { initCinema(db); } catch(e) { console.error('initCinema:', e); }
 try {
