@@ -1,0 +1,44 @@
+name: Pestinha checks
+
+on:
+  pull_request:
+    paths:
+      - 'js/companion/**'
+      - 'js/music.js'
+      - 'api/pestinha/**'
+      - 'tests/**'
+      - 'sw.js'
+      - '.github/workflows/pestinha-checks.yml'
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Intenções musicais
+        run: node --experimental-default-type=module tests/pestinha-music-intents.mjs
+      - name: Sessão de voz conversacional
+        run: node --experimental-default-type=module tests/pestinha-voice-session.mjs
+      - name: Conhecimento dos projetos
+        run: node --experimental-default-type=module tests/pestinha-project-knowledge-smoke.mjs
+      - name: Cérebro neural
+        run: node --experimental-default-type=module tests/companion-neural-smoke.mjs
+      - name: Busca de memórias
+        run: node --experimental-default-type=module tests/memory-search-smoke.mjs
+      - name: Integração da interface
+        run: node --experimental-default-type=module tests/ui-wiring-smoke.mjs
+      - name: Sintaxe do endpoint de busca
+        run: node --check api/pestinha/music-search.mjs
+      - name: Sintaxe do endpoint de conversa
+        run: node --check api/pestinha/chat.mjs
