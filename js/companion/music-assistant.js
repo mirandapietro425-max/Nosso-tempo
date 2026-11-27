@@ -19,14 +19,19 @@ function findLocal(query) {
     .filter(item => item.score >= 0.5).sort((a, b) => b.score - a.score).slice(0, 5);
 }
 async function searchYouTube(query) {
-  const response = await fetch('/api/pestinha/music-search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ query }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) return { items: [], fallbackUrl: data.fallbackUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, error: data.error || 'A busca do YouTube não está configurada.' };
-  return { items: Array.isArray(data.items) ? data.items : [], fallbackUrl: data.fallbackUrl || '' };
+  const fallbackUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  try {
+    const response = await fetch('/api/pestinha/music-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { items: [], fallbackUrl: data.fallbackUrl || fallbackUrl, error: data.error || 'A busca do YouTube não está configurada.' };
+    return { items: Array.isArray(data.items) ? data.items : [], fallbackUrl: data.fallbackUrl || fallbackUrl };
+  } catch (_) {
+    return { items: [], fallbackUrl, error: 'Não consegui acessar a busca do YouTube agora.' };
+  }
 }
 function listReply(items, prefix) {
   return `${prefix}\n${items.map((item, index) => `${index + 1}. ${item.name} — ${item.artist || 'YouTube'}`).join('\n')}\nResponde com o número da opção para escolher.`;
@@ -100,10 +105,6 @@ export async function handleMusicCommand(input) {
     }
     return { handled: true, reply: confirmRemoval(local[0]) };
   }
-  if (intent.type === 'search' && local.length) {
-    pendingSelection = { items: local.map(item => item.track), actions: ['search'] };
-    return { handled: true, reply: listReply(pendingSelection.items, 'Encontrei estas faixas na playlist do site:') };
-  }
   if (intent.type === 'track' && local.length === 1 && local[0].score >= 0.8) {
     return { handled: true, reply: executeTrack(local[0].track, intent.actions) };
   }
@@ -120,6 +121,10 @@ export async function handleMusicCommand(input) {
     if (result.items.length) {
       pendingSelection = { items: result.items, actions: ['search'] };
       return { handled: true, reply: listReply(result.items, 'Resultados do YouTube:') };
+    }
+    if (local.length) {
+      pendingSelection = { items: local.map(item => item.track), actions: ['search'] };
+      return { handled: true, reply: `${result.error || 'A busca integrada não retornou resultados.'}\nNa playlist do site, encontrei:\n${listReply(pendingSelection.items, '').trim()}\nBusca direta: ${result.fallbackUrl}` };
     }
     return { handled: true, reply: `${result.error || 'Não consegui consultar o YouTube agora.'}\nBusca direta: ${result.fallbackUrl}` };
   }
