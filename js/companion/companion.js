@@ -757,10 +757,11 @@ function stopWakeListening({ announce = false } = {}) {
   if (isSpeaking) {
     speechSequence++;
     isSpeaking = false;
-    lastSpokenText = '';
-    lastSpokenAt = 0;
     try { window.speechSynthesis?.cancel(); } catch (_) {}
   }
+  // A próxima ativação não deve herdar a janela de eco da sessão anterior.
+  lastSpokenText = '';
+  lastSpokenAt = 0;
   endWakeConversation();
   if (wakeRestartTimer) window.clearTimeout(wakeRestartTimer);
   wakeRestartTimer = null;
@@ -979,10 +980,11 @@ async function submitQuestion(rawText, fromVoice = false) {
   if (isSpeaking) {
     speechSequence++;
     isSpeaking = false;
-    lastSpokenText = '';
-    lastSpokenAt = 0;
     try { window.speechSynthesis?.cancel(); } catch (_) {}
   }
+  // Uma nova fala encerra a janela de eco da resposta anterior.
+  lastSpokenText = '';
+  lastSpokenAt = 0;
   const signals = buildSensoryInput({ action: 'conversa', text: question, voice: fromVoice }).signals;
   recordInteraction('conversa', question, fromVoice);
   createMessage('user', question, { author: state.activeSpeaker });
