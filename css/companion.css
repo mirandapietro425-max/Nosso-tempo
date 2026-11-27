@@ -277,3 +277,143 @@
 .nt-companion-prompts button { border: 1px solid #efd7e2; border-radius: 99px; padding: .32rem .55rem; color: #8f5670; background: #fff8fb; font-size: .59rem; cursor: pointer; }
 .nt-companion-prompts button:hover { border-color: #dca1b8; background: #fff0f5; }
 .nt-companion-prompts button:focus-visible { outline: 2px solid #86aedd; outline-offset: 2px; }
+
+
+/* Pestinha Plus — ferramentas do caderno */
+#nt-companion-widget .nt-memory-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .4rem;
+  margin: .65rem .75rem .25rem;
+}
+#nt-companion-widget .nt-memory-tools input,
+#nt-companion-widget .nt-memory-tools select {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid #ead1dd;
+  border-radius: 10px;
+  padding: .58rem .62rem;
+  color: var(--nt-ink);
+  background: #fffafd;
+  font-size: .68rem;
+}
+#nt-companion-widget .nt-memory-tools input { grid-column: 1 / -1; }
+#nt-companion-widget .nt-memory-card-actions { display: flex; align-items: center; gap: .8rem; margin-top: .35rem; }
+#nt-companion-widget .nt-memory-edit,
+#nt-companion-widget .nt-memory-remove {
+  border: 0;
+  padding: .2rem 0;
+  color: #98516f;
+  background: transparent;
+  font-size: .64rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+#nt-companion-widget .nt-memory-remove { color: #b34d69; }
+#nt-companion-widget .nt-memory-backup > div { display: flex; flex-wrap: wrap; gap: .4rem; }
+#nt-companion-widget .nt-memory-danger {
+  margin-top: .45rem;
+  border: 1px solid #efc7d1;
+  border-radius: 9px;
+  padding: .4rem .6rem;
+  color: #a33e5b;
+  background: #fff7f8;
+  font-size: .64rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+#nt-companion-widget .nt-memory-danger:hover { background: #ffedf1; }
+@media (max-width: 420px) {
+  #nt-companion-widget .nt-memory-tools { grid-template-columns: 1fr 1fr; }
+  #nt-companion-widget .nt-memory-tools input { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #nt-companion-widget *,
+  #nt-companion-widget *::before,
+  #nt-companion-widget *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Conversa natural no próprio personagem: resposta progressiva no balão. */
+.nt-companion-bubble {
+  z-index: 10003;
+  max-width: min(330px, calc(100vw - 112px));
+  max-height: 38vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-align: left;
+  scrollbar-width: thin;
+}
+.nt-companion-bubble.is-reply {
+  pointer-events: none;
+  border: 1px solid #f1d3df;
+  box-shadow: 0 8px 28px rgba(89,13,34,.19);
+}
+.nt-companion-bubble.is-reply::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  bottom: 12px;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-top: 1px solid #f1d3df;
+  border-right: 1px solid #f1d3df;
+  transform: rotate(45deg);
+}
+.nt-companion-ai-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem .75rem;
+  margin: 0 .75rem .45rem;
+  padding: .52rem .65rem;
+  border: 1px solid #eed6e0;
+  border-radius: 12px;
+  background: linear-gradient(120deg,#fff8fb,#f8f7ff);
+}
+.nt-companion-ai-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: .32rem;
+  color: #81516a;
+  font-size: .64rem;
+  font-weight: 700;
+}
+.nt-companion-ai-controls label:first-child { color: #8b3d60; }
+.nt-companion-ai-controls small {
+  flex: 1 0 100%;
+  color: #9b7b8a;
+  font-size: .57rem;
+  line-height: 1.35;
+}
+.nt-companion-ai-controls input:disabled + * { opacity: .5; }
+.nt-chat-typing {
+  display: inline-flex;
+  align-items: center;
+  margin-top: .3rem;
+  color: #af7590;
+  font-size: .66rem;
+  animation: nt-think-pulse 1.1s ease-in-out infinite;
+}
+.nt-companion-composer input::placeholder { color: #b28d9e; }
+@keyframes nt-think-pulse { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
+@media (max-width: 560px) {
+  .nt-companion-bubble {
+    right: max(5.4rem, calc(env(safe-area-inset-right) + 5.3rem));
+    max-width: min(300px, calc(100vw - 104px));
+    max-height: 32vh;
+    bottom: max(6.3rem, calc(env(safe-area-inset-bottom) + 6rem));
+    font-size: .75rem;
+  }
+  .nt-companion-ai-controls { gap: .3rem .55rem; }
+  .nt-companion-ai-controls label { font-size: .61rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nt-chat-typing { animation: none; }
+}

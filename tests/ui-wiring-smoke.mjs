@@ -20,5 +20,7 @@ assert.match(source, /if \(state\.speakResponses\) speak\(reply\)/, 'preferênci
 assert.match(source, /saveMessageAsMemory\(button\.dataset\.message\)/, 'ação de guardar mensagem não está ligada');
 assert.match(source, /exportCompanionBackup\(\)/, 'ação de exportar backup não está ligada');
 assert.match(source, /getElementById\('nt-companion-backup-file'\)\?\.click\(\)/, 'ação de escolher backup não está ligada');
-assert.doesNotMatch(source, /\bfetch\s*\(/, 'o módulo não deve enviar memórias via fetch');
-console.log('OK — botões, preferências, salvamento individual de memórias e ausência de envio HTTP próprio verificados.');
+assert.match(source, /fetch\('\/api\/pestinha\/chat'/, 'a conversa natural deve usar o endpoint server-side');
+assert.match(source, /const memories = state\.aiMemoryConsent/, 'memórias só podem seguir com consentimento explícito');
+assert.match(source, /aiEnabled: false/, 'a IA deve iniciar desligada por padrão');
+console.log('OK — botões, preferências, salvamento individual e consentimento da conversa natural verificados.');

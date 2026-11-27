@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v78'; // Ilustrações originais e melhorias de navegação
+const CACHE_VERSION = 'v79'; // Ilustrações originais e melhorias de navegação
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -165,6 +165,7 @@ const STATIC_ASSETS = [
   '/emojis/Princesas/Tiana_Happy_2.png',
   '/emojis/Princesas/Tiana_Sad.png',
   '/emojis/Rapunzel/Rapunzel_Scared.png',
+  '/js/companion/knowledge-base.js',
 ];
 
 // ── INSTALL ──

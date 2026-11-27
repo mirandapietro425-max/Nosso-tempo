@@ -1,13 +1,14 @@
 /*
  * Pestinha do Nosso-tempo — companheiro virtual local.
- * O cérebro LIF é original; a conversa consulta somente memórias que o casal
- * importou ou escreveu. Não envia mensagens, fotos ou lembranças para servidor.
+ * O cérebro LIF e o modo local são originais. A conversa por IA é opcional;
+ * só envia mensagens da sessão atual e memórias relacionadas com autorização.
  */
 import { getFirestore, doc, getDoc, setDoc } from '../local-db.js';
 import { DIALOGOS } from '../home.js';
 import { SEEDED_MEMORIES } from '../memory-of-day.js';
 import { SpikingBrain, NEURON_COUNT, SYNAPSE_COUNT } from './neural-brain.js';
 import { searchMemories, normalizeMemoryText, selectMemoriesForSpeaker } from './memory-search.js';
+import { answerFromKnowledge, getKnowledgeStats } from './knowledge-base.js';
 
 const STORAGE_REF = doc(getFirestore(), 'companion', 'pestinha-v1');
 const MAX_MEMORIES = 240;
@@ -28,6 +29,8 @@ const DEFAULT_STATE = Object.freeze({
   messages: [],
   rememberConversation: false,
   speakResponses: false,
+  aiEnabled: false,
+  aiMemoryConsent: false,
   brainWeights: null,
   brainTrainingEvents: 0,
   brainSeed: null,
@@ -57,6 +60,8 @@ const STOP_WORDS = new Set([
 let state = { ...DEFAULT_STATE, memories: [], messages: [], learnedTopics: {}, importedSources: [] };
 let brain = new SpikingBrain();
 let chatMessages = [];
+let aiSessionMessageIds = new Set();
+let activeReplyController = null;
 let saveTimer = null;
 let saveQueue = Promise.resolve();
 let recognition = null;
@@ -71,6 +76,9 @@ let wanderTimer = null;
 let needsTimer = null;
 let lastRetrievedMemoryIds = [];
 let lastRetrievedMemoryIndex = 0;
+let memorySearchQuery = '';
+let memoryAuthorFilter = 'todos';
+let memorySortMode = 'recentes';
 
 function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -138,6 +146,9 @@ async function loadState() {
         version: 2,
         activeSpeaker: ['Pietro', 'Emilly', 'Pietro e Emilly'].includes(loaded.activeSpeaker) ? loaded.activeSpeaker : 'Pietro',
         speakResponses: Boolean(loaded.speakResponses),
+        // Cada carregamento exige uma nova ativação antes de enviar mensagens ao serviço externo.
+        aiEnabled: false,
+        aiMemoryConsent: false,
         rememberConversation: Boolean(loaded.rememberConversation),
         energy: clampNumber(loaded.energy ?? DEFAULT_STATE.energy, 24, 100),
         joy: clampNumber(loaded.joy ?? DEFAULT_STATE.joy, 30, 100),
@@ -202,6 +213,8 @@ function setMood(mood, bubbleText = '') {
   if (pet) pet.dataset.mood = currentMood;
   const bubble = document.getElementById('nt-companion-bubble');
   if (bubble && bubbleText) {
+    clearTimeout(showReplyBubble.timer);
+    bubble.classList.remove('is-reply', 'is-thinking');
     bubble.textContent = bubbleText;
     bubble.classList.add('is-visible');
     clearTimeout(setMood.bubbleTimer);
@@ -359,15 +372,18 @@ function responseFor(question) {
     const titles = top.map(memory => `“${memory.title || memory.sourceLabel || 'uma lembrança'}”`).join(', ');
     return `Tenho ${state.memories.length} lembranças guardadas. Entre as histórias do meu caderno estão ${titles}. Perguntem por uma delas que eu procuro os detalhes. 📚`;
   }
+  const generalAnswer = answerFromKnowledge(question);
+  if (generalAnswer) return generalAnswer;
   return answerFromMemories(question);
 }
 
 function createMessage(role, text, options = {}) {
   const message = { role, text: String(text), time: Date.now(), id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...options };
   chatMessages.push(message);
+  if (state.aiEnabled && !message.welcome && ['user', 'assistant'].includes(role)) aiSessionMessageIds.add(message.id);
   chatMessages = chatMessages.slice(-60);
   if (state.rememberConversation) {
-    state.messages = chatMessages.filter(item => !item.welcome).slice(-MAX_SAVED_MESSAGES);
+    state.messages = chatMessages.filter(item => !item.welcome && !item.pending).slice(-MAX_SAVED_MESSAGES);
   }
   renderChat();
   scheduleSave();
@@ -381,6 +397,7 @@ function renderChat() {
   for (const message of chatMessages) {
     const item = document.createElement('article');
     item.className = `nt-chat-message is-${message.role}`;
+    item.dataset.messageId = message.id;
     if (message.role === 'user' && message.author) {
       const author = document.createElement('small');
       author.className = 'nt-chat-author';
@@ -390,6 +407,13 @@ function renderChat() {
     const content = document.createElement('p');
     content.textContent = message.text;
     item.appendChild(content);
+    if (message.pending && !message.text) {
+      const typing = document.createElement('span');
+      typing.className = 'nt-chat-typing';
+      typing.textContent = 'Pestinha está pensando';
+      typing.setAttribute('aria-label', 'Pestinha está escrevendo uma resposta');
+      item.appendChild(typing);
+    }
     if (message.role === 'user' && !message.savedMemoryId && message.text.trim().length >= 12) {
       const saveButton = document.createElement('button');
       saveButton.type = 'button';
@@ -399,7 +423,7 @@ function renderChat() {
       saveButton.textContent = 'Guardar como lembrança';
       item.appendChild(saveButton);
     }
-    if (message.role === 'assistant' && !message.welcome && message.questionSignals) {
+    if (message.role === 'assistant' && !message.welcome && !message.pending && message.questionSignals) {
       const feedback = document.createElement('div');
       feedback.className = 'nt-chat-feedback';
       if (message.feedbackGiven) {
@@ -425,34 +449,125 @@ function renderMemories() {
   const list = document.getElementById('nt-companion-memory-list');
   const count = document.getElementById('nt-companion-memory-count');
   if (!list || !count) return;
-  count.textContent = `${state.memories.length} de ${MAX_MEMORIES} lembranças`;
+  const query = normalizeText(memorySearchQuery);
+  const visible = state.memories.filter(memory => {
+    const authorOK = memoryAuthorFilter === 'todos' || memory.author === memoryAuthorFilter;
+    const haystack = normalizeText(`${memory.title || ''} ${memory.text || memory.summary || ''} ${(memory.tags || []).join(' ')} ${memory.sourceLabel || ''}`);
+    return authorOK && (!query || haystack.includes(query));
+  });
+  visible.sort((a, b) => {
+    if (memorySortMode === 'titulo') return String(a.title || '').localeCompare(String(b.title || ''), 'pt-BR');
+    const aDate = Number(a.ts || a.createdAt || 0), bDate = Number(b.ts || b.createdAt || 0);
+    return memorySortMode === 'antigas' ? aDate - bDate : bDate - aDate;
+  });
+  count.textContent = `${visible.length} de ${state.memories.length}`;
   list.replaceChildren();
-  if (!state.memories.length) {
+  if (!visible.length) {
     const empty = document.createElement('p');
     empty.className = 'nt-memory-empty';
-    empty.textContent = 'Ainda não guardamos histórias. Vocês podem importar as memórias do site ou escrever a primeira aqui.';
+    empty.textContent = state.memories.length
+      ? 'Nenhuma lembrança corresponde a essa busca ou filtro.'
+      : 'Ainda não guardamos histórias. Vocês podem importar as memórias do site ou escrever a primeira aqui.';
     list.appendChild(empty);
     return;
   }
 
-  [...state.memories].slice().reverse().forEach(memory => {
+  visible.forEach(memory => {
     const card = document.createElement('article');
     card.className = 'nt-memory-card';
     const title = document.createElement('h4');
     title.textContent = memory.title || memory.sourceLabel || 'Lembrança';
     const body = document.createElement('p');
-    body.textContent = String(memory.text || memory.summary || '').slice(0, 420);
+    body.textContent = String(memory.text || memory.summary || '').slice(0, 620);
     const meta = document.createElement('small');
     meta.textContent = [memory.author, memory.sourceLabel, dateLabel(memory.ts || memory.createdAt)].filter(Boolean).join(' · ');
+    const actions = document.createElement('div');
+    actions.className = 'nt-memory-card-actions';
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'nt-memory-edit';
+    edit.dataset.action = 'edit-memory';
+    edit.dataset.memory = memory.id;
+    edit.textContent = 'Editar';
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'nt-memory-remove';
     remove.dataset.action = 'remove-memory';
     remove.dataset.memory = memory.id;
     remove.textContent = 'Remover';
-    card.append(title, body, meta, remove);
+    actions.append(edit, remove);
+    card.append(title, body, meta, actions);
     list.appendChild(card);
   });
+}
+
+function editMemory(id) {
+  const memory = state.memories.find(item => item.id === id);
+  if (!memory) return;
+  const title = window.prompt('Título da lembrança:', memory.title || '');
+  if (title === null) return;
+  const text = window.prompt('Texto da lembrança:', memory.text || memory.summary || '');
+  if (text === null) return;
+  const cleanTitle = title.trim().slice(0, 100);
+  const cleanText = text.trim().slice(0, 1800);
+  if (cleanText.length < 3) {
+    createMessage('assistant', 'A lembrança precisa ter pelo menos três caracteres. Não alterei o registro.');
+    return;
+  }
+  const duplicate = state.memories.some(item => item.id !== id &&
+    normalizeText(`${item.title || ''} ${item.text || item.summary || ''}`) === normalizeText(`${cleanTitle} ${cleanText}`));
+  if (duplicate) {
+    createMessage('assistant', 'Já existe uma lembrança com esse mesmo conteúdo. Não salvei uma cópia.');
+    return;
+  }
+  memory.title = cleanTitle || 'Lembrança';
+  memory.text = cleanText;
+  memory.tags = classifyTopics(`${cleanTitle} ${cleanText}`);
+  memory.editedAt = Date.now();
+  renderMemories();
+  scheduleSave();
+  createMessage('assistant', 'Atualizei essa lembrança no caderno. 📖');
+}
+
+function exportReadableMemories() {
+  const lines = [
+    'PESTINHA — CADERNO DE MEMÓRIAS',
+    `Exportado em ${new Date().toLocaleString('pt-BR')}`,
+    `Total: ${state.memories.length} lembranças`,
+    '',
+  ];
+  for (const [index, memory] of state.memories.entries()) {
+    lines.push(`${index + 1}. ${memory.title || memory.sourceLabel || 'Lembrança'}`);
+    lines.push(`Autor: ${memory.author || 'Não informado'} | Data: ${dateLabel(memory.ts || memory.createdAt) || 'Não informada'}`);
+    lines.push(`Origem: ${memory.sourceLabel || 'Registro local'}`);
+    lines.push(String(memory.text || memory.summary || '').trim());
+    lines.push('');
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `pestinha-caderno-${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  createMessage('assistant', 'Preparei uma versão em texto do caderno, fácil de ler e imprimir. Lembrem-se de que ela contém histórias pessoais.');
+}
+
+function clearAllMemories() {
+  if (!state.memories.length) {
+    createMessage('assistant', 'Meu caderno já está vazio.');
+    return;
+  }
+  if (!window.confirm(`Apagar definitivamente as ${state.memories.length} lembranças guardadas pelo Pestinha neste aparelho? Essa ação não pode ser desfeita sem um backup.`)) return;
+  state.memories = [];
+  state.importedSources = [];
+  lastRetrievedMemoryIds = [];
+  lastRetrievedMemoryIndex = 0;
+  renderMemories();
+  scheduleSave();
+  createMessage('assistant', 'O caderno do Pestinha foi esvaziado neste aparelho. Isso não apaga as memórias originais da Casinha, do Love City ou de outras áreas do site.');
 }
 
 function renderBrainStats() {
@@ -558,17 +673,152 @@ function startListening() {
   catch (_) { stopListening(); }
 }
 
-function submitQuestion(rawText, fromVoice = false) {
+function showReplyBubble(text, thinking = false) {
+  const bubble = document.getElementById('nt-companion-bubble');
+  if (!bubble) return;
+  bubble.textContent = String(text || '');
+  bubble.scrollTop = bubble.scrollHeight;
+  bubble.classList.toggle('is-thinking', Boolean(thinking));
+  bubble.classList.add('is-visible', 'is-reply');
+  clearTimeout(showReplyBubble.timer);
+  clearTimeout(setMood.bubbleTimer);
+  if (!thinking) showReplyBubble.timer = window.setTimeout(() => {
+    bubble.classList.remove('is-visible', 'is-reply', 'is-thinking');
+  }, 12000);
+}
+
+function updatePendingReply(message, text, pending = false) {
+  message.text = String(text || '');
+  message.pending = Boolean(pending);
+  if (state.rememberConversation) state.messages = chatMessages.filter(item => !item.welcome && !item.pending).slice(-MAX_SAVED_MESSAGES);
+  const list = document.getElementById('nt-companion-messages');
+  if (!message.pending) {
+    renderChat();
+  }
+  const item = list ? Array.from(list.children).find(node => node.dataset.messageId === message.id) : null;
+  if (message.pending && item) {
+    let paragraph = item.querySelector('p');
+    if (!paragraph) { paragraph = document.createElement('p'); item.appendChild(paragraph); }
+    paragraph.textContent = message.text;
+    const typing = item.querySelector('.nt-chat-typing');
+    if (message.pending && !message.text && !typing) {
+      const indicator = document.createElement('span');
+      indicator.className = 'nt-chat-typing';
+      indicator.textContent = 'Pestinha está pensando';
+      item.appendChild(indicator);
+    } else if ((!message.pending || message.text) && typing) typing.remove();
+    list.scrollTop = list.scrollHeight;
+  } else if (!item) renderChat();
+  if (message.text) showReplyBubble(message.text, pending);
+  scheduleSave();
+}
+
+async function requestNaturalReply(messages, memoryContext = [], answerMessage = null, signal = undefined) {
+  const response = await fetch('/api/pestinha/chat', {
+    method: 'POST',
+    signal,
+    headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+    body: JSON.stringify({
+      profile: state.activeSpeaker,
+      messages: messages.map(item => ({ role: item.role, content: item.text })).slice(-12),
+      memories: memoryContext.map(item => ({
+        title: String(item.memory.title || item.memory.sourceLabel || 'Lembrança').slice(0, 100),
+        text: String(item.memory.text || item.memory.summary || '').slice(0, 1000),
+        author: String(item.memory.author || 'Não informado').slice(0, 60),
+        date: dateLabel(item.memory.ts || item.memory.createdAt),
+      })),
+    }),
+  });
+  if (!response.ok) {
+    let detail = 'Não consegui acessar a IA agora.';
+    try { detail = (await response.json()).error || detail; } catch (_) {}
+    throw new Error(detail);
+  }
+  if (!response.body?.getReader) throw new Error('Este navegador não oferece resposta em transmissão.');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let answer = '';
+  const consume = block => {
+    const data = block.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5).trim()).join('\n');
+    if (!data || data === '[DONE]') return;
+    let event;
+    try { event = JSON.parse(data); } catch (_) { return; }
+    if (event.error) throw new Error(event.error);
+    if (typeof event.delta === 'string' && event.delta) {
+      answer += event.delta;
+
+    }
+  };
+  let carry = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    carry += decoder.decode(value, { stream: true });
+    const blocks = carry.split(/\r?\n\r?\n/);
+    carry = blocks.pop() || '';
+    for (const block of blocks) {
+      const previousLength = answer.length;
+      consume(block);
+      if (answer.length !== previousLength) {
+        if (answerMessage) answerMessage.text = answer;
+        const list = document.getElementById('nt-companion-messages');
+        const pending = list ? Array.from(list.children).find(node => node.dataset.messageId === answerMessage?.id) : null;
+        if (pending) {
+          const paragraph = pending.querySelector('p');
+          if (paragraph) paragraph.textContent = answer;
+          else { const p = document.createElement('p'); p.textContent = answer; pending.appendChild(p); }
+          pending.querySelector('.nt-chat-typing')?.remove();
+          list.scrollTop = list.scrollHeight;
+        }
+        showReplyBubble(answer, true);
+      }
+    }
+  }
+  carry += decoder.decode();
+  if (carry.trim()) consume(carry);
+  if (!answer.trim()) throw new Error('A IA não retornou uma resposta. Tente novamente.');
+  return answer.trim();
+}
+
+async function submitQuestion(rawText, fromVoice = false) {
   const question = String(rawText || '').trim();
   if (!question) return;
   const signals = buildSensoryInput({ action: 'conversa', text: question, voice: fromVoice }).signals;
   recordInteraction('conversa', question, fromVoice);
   createMessage('user', question, { author: state.activeSpeaker });
-  const reply = responseFor(question);
-  createMessage('assistant', reply, { questionSignals: signals, questionText: question });
-  if (state.speakResponses) speak(reply);
   const input = document.getElementById('nt-companion-input');
   if (input) input.value = '';
+
+  if (state.aiEnabled) {
+    const answerMessage = createMessage('assistant', '', { questionSignals: signals, questionText: question, pending: true });
+    showReplyBubble('Estou pensando…', true);
+    const history = chatMessages
+      .filter(item => aiSessionMessageIds.has(item.id) && !item.welcome && !item.pending && ['user', 'assistant'].includes(item.role))
+      .slice(-12);
+    const memories = state.aiMemoryConsent
+      ? retrieveMemories(question, 5).filter(item => item.confidence >= 0.12)
+      : [];
+    const controller = new AbortController();
+    activeReplyController = controller;
+    try {
+      const reply = await requestNaturalReply(history, memories, answerMessage, controller.signal);
+      updatePendingReply(answerMessage, reply, false);
+      if (state.speakResponses) speak(reply);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      const local = responseFor(question);
+      const fallback = `Não consegui conectar minha IA natural (${error.message}). Por enquanto, estou respondendo pelo meu modo local: ${local}`;
+      updatePendingReply(answerMessage, fallback, false);
+      if (state.speakResponses) speak(fallback);
+    } finally {
+      if (activeReplyController === controller) activeReplyController = null;
+    }
+  } else {
+    const reply = responseFor(question);
+    createMessage('assistant', reply, { questionSignals: signals, questionText: question });
+    showReplyBubble(reply);
+    if (state.speakResponses) speak(reply);
+  }
   renderBrainStats();
   renderStatus();
 }
@@ -833,7 +1083,19 @@ async function importCompanionBackup(file) {
   state.interactions = Math.max(state.interactions, Math.min(1_000_000, Number(backup.interactions) || 0));
   if (['Pietro', 'Emilly', 'Pietro e Emilly'].includes(backup.activeSpeaker)) {
     state.activeSpeaker = backup.activeSpeaker;
-    const speakerSelect = document.getElementById('nt-companion-speaker');
+    document.getElementById('nt-companion-memory-search')?.addEventListener('input', event => {
+    memorySearchQuery = event.target.value.slice(0, 100);
+    renderMemories();
+  });
+  document.getElementById('nt-companion-memory-filter')?.addEventListener('change', event => {
+    memoryAuthorFilter = event.target.value;
+    renderMemories();
+  });
+  document.getElementById('nt-companion-memory-sort')?.addEventListener('change', event => {
+    memorySortMode = event.target.value;
+    renderMemories();
+  });
+  const speakerSelect = document.getElementById('nt-companion-speaker');
     if (speakerSelect) speakerSelect.value = state.activeSpeaker;
   }
   renderMemories();
@@ -858,7 +1120,7 @@ function createWidget() {
         <div class="nt-companion-heading">
           <strong>Pestinha <span>✦</span></strong>
           <small>companheiro das memórias</small>
-          <div class="nt-companion-presence"><i></i> cérebro local ativo · ${NEURON_COUNT} neurônios</div>
+          <div class="nt-companion-presence"><i></i> conhecimento local · ${getKnowledgeStats().topics} temas · ${NEURON_COUNT} neurônios</div>
         </div>
         <button class="nt-companion-close" type="button" data-action="close" aria-label="Fechar">×</button>
       </header>
@@ -873,10 +1135,15 @@ function createWidget() {
           <label><input type="checkbox" id="nt-companion-speak-enabled"> 🔊 Voz</label>
           <button type="button" data-action="clear-chat">Apagar conversa</button>
         </div>
+        <div class="nt-companion-ai-controls">
+          <label><input type="checkbox" id="nt-companion-ai-enabled"> ✨ Respostas naturais com IA</label>
+          <label><input type="checkbox" id="nt-companion-ai-memories"> Usar lembranças selecionadas</label>
+          <small id="nt-companion-ai-note">Modo local: tenho conhecimentos básicos de vários assuntos e posso consultar as lembranças autorizadas. Minhas respostas são limitadas, mas não preciso de chave para funcionar.</small>
+        </div>
         <div class="nt-companion-messages" id="nt-companion-messages" aria-live="polite" aria-relevant="additions"></div>
         <form class="nt-companion-composer" id="nt-companion-form">
           <label class="nt-sr-only" for="nt-companion-input">Escreva para o Pestinha</label>
-          <input id="nt-companion-input" name="message" maxlength="500" placeholder="Pergunte sobre uma lembrança…" autocomplete="off">
+          <input id="nt-companion-input" name="message" maxlength="500" placeholder="Converse comigo sobre qualquer assunto…" autocomplete="off">
           <button type="button" id="nt-companion-mic" aria-label="Falar com o Pestinha" title="Falar">🎙️</button>
           <button type="submit" aria-label="Enviar mensagem">➤</button>
         </form>
@@ -885,7 +1152,7 @@ function createWidget() {
           <button type="button" data-action="quick-question" data-question="O que temos guardado sobre música e piano?">Música e piano</button>
           <button type="button" data-action="quick-question" data-question="O que está registrado sobre taekwondo e campeonatos?">Taekwondo</button>
         </div>
-        <p class="nt-companion-privacy-note">As respostas consultam apenas lembranças importadas ou escritas aqui. O histórico fica salvo somente quando vocês ativam essa opção em Memórias.</p>
+        <p class="nt-companion-privacy-note">A IA usa um serviço externo e pode errar. Não envie senhas, endereços ou dados sensíveis. Peça a um responsável para configurar e revisar a ferramenta. As lembranças só são enviadas com autorização separada.</p>
       </div>
       <div class="nt-companion-view" data-companion-view="memorias" hidden>
         <div class="nt-memory-intro">
@@ -897,7 +1164,8 @@ function createWidget() {
         <div class="nt-memory-backup">
           <strong>Levar as lembranças para outro aparelho</strong>
           <p>Exporte um arquivo privado e importe-o no outro navegador. O site não sincroniza esses dados automaticamente.</p>
-          <div><button type="button" data-action="export-backup">Exportar caderno</button><button type="button" data-action="pick-backup">Importar backup</button></div>
+          <div><button type="button" data-action="export-backup">Exportar backup completo</button><button type="button" data-action="export-readable">Exportar histórias em texto</button><button type="button" data-action="pick-backup">Importar backup</button></div>
+          <button class="nt-memory-danger" type="button" data-action="clear-memories">Apagar todas as memórias do Pestinha</button>
           <input type="file" id="nt-companion-backup-file" accept="application/json,.json" hidden>
         </div>
         <div class="nt-memory-create">
@@ -908,6 +1176,14 @@ function createWidget() {
           <label for="nt-companion-story-author">Quem está contando?</label>
           <select id="nt-companion-story-author"><option>Pietro e Emilly</option><option>Pietro</option><option>Emilly</option></select>
           <button class="nt-companion-primary" type="button" data-action="save-memory">Guardar lembrança</button>
+        </div>
+        <div class="nt-memory-tools">
+          <label class="nt-sr-only" for="nt-companion-memory-search">Buscar nas memórias</label>
+          <input id="nt-companion-memory-search" type="search" maxlength="100" placeholder="Buscar por palavra, história ou assunto…">
+          <label class="nt-sr-only" for="nt-companion-memory-filter">Filtrar por autor</label>
+          <select id="nt-companion-memory-filter"><option value="todos">Todos</option><option value="Pietro">Pietro</option><option value="Emilly">Emilly</option><option value="Pietro e Emilly">Nós dois</option></select>
+          <label class="nt-sr-only" for="nt-companion-memory-sort">Ordenar memórias</label>
+          <select id="nt-companion-memory-sort"><option value="recentes">Mais recentes</option><option value="antigas">Mais antigas</option><option value="titulo">Título (A–Z)</option></select>
         </div>
         <div class="nt-memory-list-heading"><strong>Memórias guardadas</strong><span id="nt-companion-memory-count">0</span></div>
         <div class="nt-companion-memory-list" id="nt-companion-memory-list"></div>
@@ -992,6 +1268,9 @@ function bindEvents() {
     else if (action === 'close') openPanel(false);
     else if (action === 'save-message-memory') saveMessageAsMemory(button.dataset.message);
     else if (action === 'export-backup') exportCompanionBackup();
+    else if (action === 'export-readable') exportReadableMemories();
+    else if (action === 'clear-memories') clearAllMemories();
+    else if (action === 'edit-memory') editMemory(button.dataset.memory);
     else if (action === 'pick-backup') document.getElementById('nt-companion-backup-file')?.click();
     else if (action === 'pet') petAction('carinho');
     else if (action === 'play') petAction('brincar');
@@ -1005,6 +1284,11 @@ function bindEvents() {
     } else if (action === 'feedback') handleFeedback(button);
     else if (action === 'clear-chat') {
       if (window.confirm('Apagar o histórico de conversa salvo neste aparelho?')) {
+        activeReplyController?.abort();
+        activeReplyController = null;
+        aiSessionMessageIds.clear();
+        const bubble = document.getElementById('nt-companion-bubble');
+        bubble?.classList.remove('is-visible', 'is-reply', 'is-thinking');
         chatMessages = [defaultWelcome()];
         state.messages = [];
         renderChat();
@@ -1074,6 +1358,18 @@ function bindEvents() {
     submitQuestion(document.getElementById('nt-companion-input')?.value || '');
   });
   document.getElementById('nt-companion-mic').addEventListener('click', startListening);
+  document.getElementById('nt-companion-memory-search')?.addEventListener('input', event => {
+    memorySearchQuery = event.target.value.slice(0, 100);
+    renderMemories();
+  });
+  document.getElementById('nt-companion-memory-filter')?.addEventListener('change', event => {
+    memoryAuthorFilter = event.target.value;
+    renderMemories();
+  });
+  document.getElementById('nt-companion-memory-sort')?.addEventListener('change', event => {
+    memorySortMode = event.target.value;
+    renderMemories();
+  });
   const speakerSelect = document.getElementById('nt-companion-speaker');
   speakerSelect.value = state.activeSpeaker;
   speakerSelect.addEventListener('change', event => {
@@ -1094,7 +1390,7 @@ function bindEvents() {
   });
   document.getElementById('nt-companion-remember').addEventListener('change', event => {
     state.rememberConversation = Boolean(event.target.checked);
-    if (state.rememberConversation) state.messages = chatMessages.filter(message => !message.welcome).slice(-MAX_SAVED_MESSAGES);
+    if (state.rememberConversation) state.messages = chatMessages.filter(message => !message.welcome && !message.pending).slice(-MAX_SAVED_MESSAGES);
     else state.messages = [];
     scheduleSave();
   });
@@ -1105,6 +1401,32 @@ function bindEvents() {
     }
     scheduleSave();
   });
+  const aiEnabled = document.getElementById('nt-companion-ai-enabled');
+  const aiMemories = document.getElementById('nt-companion-ai-memories');
+  const aiNote = document.getElementById('nt-companion-ai-note');
+  const refreshAIControls = () => {
+    if (aiEnabled) aiEnabled.checked = state.aiEnabled;
+    if (aiMemories) { aiMemories.checked = state.aiMemoryConsent; aiMemories.disabled = !state.aiEnabled; }
+    if (aiNote) aiNote.textContent = state.aiEnabled
+      ? (state.aiMemoryConsent
+        ? 'IA ativada: mensagens recentes e até cinco lembranças relacionadas podem ser enviadas ao serviço externo. Use somente com autorização do responsável.'
+        : 'IA ativada: mensagens recentes vão ao serviço externo; o caderno continua privado. Não envie senhas ou dados sensíveis.')
+      : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
+  };
+  aiEnabled?.addEventListener('change', event => {
+    state.aiEnabled = Boolean(event.target.checked);
+    aiSessionMessageIds.clear();
+    if (!state.aiEnabled) state.aiMemoryConsent = false;
+    refreshAIControls();
+    scheduleSave();
+    if (state.aiEnabled) showReplyBubble('Agora posso tentar conversar com uma IA mais natural. ✨');
+  });
+  aiMemories?.addEventListener('change', event => {
+    state.aiMemoryConsent = Boolean(event.target.checked);
+    refreshAIControls();
+    scheduleSave();
+  });
+  refreshAIControls();
 }
 
 function clampNumber(value, min, max) {
@@ -1175,6 +1497,18 @@ export async function initCompanion() {
   renderBrainStats();
   renderStatus();
   startNeedsClock();
+  document.getElementById('nt-companion-memory-search')?.addEventListener('input', event => {
+    memorySearchQuery = event.target.value.slice(0, 100);
+    renderMemories();
+  });
+  document.getElementById('nt-companion-memory-filter')?.addEventListener('change', event => {
+    memoryAuthorFilter = event.target.value;
+    renderMemories();
+  });
+  document.getElementById('nt-companion-memory-sort')?.addEventListener('change', event => {
+    memorySortMode = event.target.value;
+    renderMemories();
+  });
   const speakerSelect = document.getElementById('nt-companion-speaker');
   if (speakerSelect) speakerSelect.value = state.activeSpeaker;
   const authorSelect = document.getElementById('nt-companion-story-author');
@@ -1183,7 +1517,15 @@ export async function initCompanion() {
   if (remember) remember.checked = state.rememberConversation;
   const speakEnabled = document.getElementById('nt-companion-speak-enabled');
   if (speakEnabled) speakEnabled.checked = state.speakResponses;
+  const aiEnabled = document.getElementById('nt-companion-ai-enabled');
+  const aiMemories = document.getElementById('nt-companion-ai-memories');
+  if (aiEnabled) aiEnabled.checked = state.aiEnabled;
+  if (aiMemories) { aiMemories.checked = state.aiMemoryConsent; aiMemories.disabled = !state.aiEnabled; }
+  const aiNote = document.getElementById('nt-companion-ai-note');
+  if (aiNote) aiNote.textContent = state.aiEnabled
+    ? (state.aiMemoryConsent ? 'IA ativada: mensagens recentes e até cinco lembranças relacionadas podem ser enviadas ao serviço externo. Use somente com autorização do responsável.' : 'IA ativada: mensagens recentes vão ao serviço externo; o caderno continua privado. Não envie senhas ou dados sensíveis.')
+    : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
   setMood('curioso', 'Oi! Sou o Pestinha. 🐾');
   startIdleBehavior();
-  console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas, armazenamento local`);
+  console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas; IA natural opcional pelo backend`);
 }
