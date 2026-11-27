@@ -32,7 +32,7 @@ A chave precisa ter acesso à YouTube Data API v3 e o projeto Google Cloud pode 
 
 ## IA natural e memórias
 
-O endpoint de conversa existente continua usando `OPENAI_API_KEY` server-side. O modo de IA natural continua sendo opcional e inicia desligado, conforme os controles existentes. A autorização para usar IA externa e a autorização para enviar lembranças continuam separadas. A base de projetos é uma coleção local pesquisada por termos; ela não é um modelo de linguagem e não aprende automaticamente fatos novos.
+O endpoint de conversa existente continua usando `OPENAI_API_KEY` server-side. O modo de IA natural continua sendo opcional e inicia desligado, conforme os controles existentes. A autorização para usar IA externa e a autorização para enviar lembranças continuam separadas. A base de projetos é uma coleção local pesquisada por termos; ela não é um modelo de linguagem e não aprende automaticamente fatos novos. Quando a opção de IA natural estiver ligada, o tópico local correspondente também é enviado como contexto factual para essa conversa. Esse contexto técnico não inclui o caderno pessoal; as lembranças continuam sob autorização separada.
 
 ## Validação
 
