@@ -71,6 +71,7 @@ let recognition = null;
 let isListening = false;
 let wakeRecognition = null;
 let wakeListeningEnabled = false;
+let wakeStartInFlight = false;
 let wakeRestartTimer = null;
 let wakeConversationActive = false;
 let wakeConversationTimer = null;
@@ -854,6 +855,7 @@ function toggleWakeListening() {
 }
 
 async function enableWakeListening() {
+  if (wakeListeningEnabled || wakeStartInFlight) return;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) {
     showReplyBubble('Para falar comigo, este navegador precisa oferecer reconhecimento de voz. Enquanto isso, podes escrever no painel.');
@@ -863,23 +865,36 @@ async function enableWakeListening() {
     showReplyBubble('A chamada por voz precisa de HTTPS para pedir permissão ao microfone.');
     return;
   }
-  // SpeechRecognition pode ser bloqueado quando é iniciado no carregamento.
-  // Pedir a permissão primeiro torna o fluxo automático possível depois que a
-  // pessoa autoriza o microfone uma única vez no navegador.
+  wakeStartInFlight = true;
   if (navigator.mediaDevices?.getUserMedia) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
     } catch (_) {
+      wakeStartInFlight = false;
       showReplyBubble('Para eu ouvir “Pestinha”, permita o microfone neste site. Depois disso, a escuta inicia sozinha quando você entrar.');
       return;
     }
   }
   wakeListeningEnabled = true;
+  wakeStartInFlight = false;
   endWakeConversation();
   updateWakeButton();
   setMood('escutando', 'Estou aguardando a chamada. Depois podemos conversar normalmente, sem repetir meu nome. 🎙️');
   startWakeRecognition();
+}
+
+async function autoStartWakeListening() {
+  if (wakeListeningEnabled || wakeStartInFlight || document.hidden) return;
+  // Não abre um prompt durante o carregamento, pois alguns navegadores
+  // deixam a página parecendo travada enquanto o pedido está pendente.
+  try {
+    if (!navigator.permissions?.query) return;
+    const permission = await navigator.permissions.query({ name: 'microphone' });
+    if (permission.state === 'granted') enableWakeListening();
+  } catch (_) {
+    // Se o navegador não expõe o estado, o site continua funcionando sem voz.
+  }
 }
 
 function showReplyBubble(text, thinking = false) {
@@ -1768,11 +1783,8 @@ export async function initCompanion() {
     : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
   setMood('curioso', 'Oi! Sou o Pestinha. 🐾');
   startIdleBehavior();
-  // Tenta deixar o Pestinha pronto para ouvir “Pestinha” sem abrir o painel.
-  // O navegador pode exigir ou exibir a permissão nativa do microfone; nesse
-  // caso a escuta começa assim que a permissão for concedida.
-  window.setTimeout(() => {
-    if (!document.hidden && !wakeListeningEnabled) enableWakeListening();
-  }, 900);
+  // Com permissão previamente concedida, começa sem abrir o painel nem clicar.
+  // Sem permissão, não abre prompt no carregamento e não bloqueia o site.
+  window.setTimeout(autoStartWakeListening, 900);
   console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas; IA natural opcional pelo backend`);
 }
