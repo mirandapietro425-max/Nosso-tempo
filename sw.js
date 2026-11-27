@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v72'; // Fotos do casal e lembrança Coraline
+const CACHE_VERSION = 'v73'; // Redesign visual editorial global
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -49,6 +49,7 @@ const STATIC_ASSETS = [
   '/css/mobile.css',
   '/css/games.css',
   '/css/cinema.css',
+  '/css/redesign.css',
   '/js/app.js',
   '/js/local-db.js',
   '/js/local-media.js',

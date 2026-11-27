@@ -1,0 +1,573 @@
+/* ═══════════════════════════════════════════════════════════════
+   NOSSO TEMPO — DESIGN LAYER
+   Redesign visual global sem alterar markup, IDs ou estados de JS.
+   Direção: diário romântico editorial, papel quente, ameixa e coral.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --rose: #c65e76;
+  --rose-lt: #e5a0a9;
+  --velvet: #422b3b;
+  --cream: #faf6f2;
+  --gold: #a78055;
+  --rose-alpha-10: rgba(198, 94, 118, .10);
+  --rose-alpha-15: rgba(198, 94, 118, .15);
+  --rose-alpha-20: rgba(198, 94, 118, .20);
+  --rose-alpha-25: rgba(198, 94, 118, .25);
+  --velvet-alpha-55: rgba(66, 43, 59, .55);
+  --velvet-alpha-60: rgba(66, 43, 59, .60);
+  --surface: #fffdfa;
+  --surface-warm: #f7efeb;
+  --surface-rose: #fff3f3;
+  --ink: #352936;
+  --muted: #766773;
+  --line: rgba(91, 59, 78, .12);
+  --shadow-rose-sm: 0 5px 18px rgba(71, 43, 59, .055);
+  --shadow-rose-md: 0 12px 32px rgba(71, 43, 59, .085);
+  --shadow-rose-lg: 0 24px 60px rgba(50, 28, 43, .2);
+  --shadow-modal: 0 28px 90px rgba(38, 23, 34, .32);
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
+  --radius-2xl: 32px;
+  --transition-fast: .18s ease;
+  --transition-base: .26s ease;
+  --transition-slow: .4s ease;
+}
+
+html { scroll-padding-top: 1rem; }
+body {
+  color: var(--ink);
+  background: var(--cream);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+#page-wrap {
+  background:
+    radial-gradient(ellipse at 8% 16%, rgba(229, 160, 169, .10), transparent 36rem),
+    radial-gradient(ellipse at 92% 54%, rgba(167, 128, 85, .07), transparent 34rem),
+    var(--cream);
+  scroll-behavior: smooth;
+}
+
+/* Abertura: capa de diário com a arte existente como protagonista. */
+.hero {
+  min-height: 100svh;
+  padding: clamp(3.5rem, 8vh, 6.5rem) clamp(1rem, 4vw, 3rem);
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(35, 24, 34, .24) 0%, rgba(39, 25, 36, .53) 55%, rgba(39, 25, 36, .88) 100%),
+    url('../assets/hero-romantico.webp') center 58% / cover no-repeat,
+    #382735;
+}
+.hero::before {
+  background:
+    radial-gradient(ellipse at 50% 22%, rgba(255, 239, 225, .18), transparent 46%),
+    linear-gradient(90deg, rgba(22, 15, 24, .12), transparent 32%, transparent 68%, rgba(22, 15, 24, .12));
+}
+.hero-title {
+  max-width: 11ch;
+  color: #fffaf6;
+  font-size: clamp(3.5rem, 9vw, 7.4rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+  text-shadow: 0 8px 34px rgba(21, 13, 21, .36);
+}
+.hero-title em { color: #f0c0c2; }
+.hero-ampersand { color: #e2bd8a; }
+.greeting-pill {
+  color: #fff7f2;
+  background: rgba(255, 250, 245, .12);
+  border-color: rgba(255, 250, 245, .34);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  letter-spacing: .17em;
+}
+.hero-subtitle {
+  color: rgba(255, 244, 239, .88);
+  font-family: var(--font-italic);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+}
+.counter-hero { gap: .75rem; margin-top: 2rem; }
+.counter-unit {
+  min-width: 92px;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(255, 246, 241, .28);
+  border-radius: 20px;
+  color: white;
+  background: rgba(41, 26, 38, .47);
+  box-shadow: 0 12px 30px rgba(20, 13, 20, .18);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.counter-num { color: #fffaf6; font-size: clamp(2rem, 4vw, 2.6rem); }
+.counter-label { color: #f0c0c2; }
+.hero-nav {
+  width: min(100%, 1080px);
+  max-width: 1080px;
+  gap: .55rem;
+  margin-top: 1.7rem;
+}
+.hero-nav-btn {
+  min-height: 42px;
+  border-color: rgba(255, 246, 241, .22);
+  background: rgba(43, 28, 39, .42);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.hero-nav-btn:hover {
+  background: rgba(255, 250, 245, .95);
+  border-color: rgba(255, 250, 245, .7);
+}
+.hero-nav-label { max-width: none; color: #fffaf6; font-size: .7rem; }
+.hero-nav-btn:hover .hero-nav-label { color: var(--velvet); }
+.scroll-hint { color: #fff6f0; margin-top: 1.6rem; }
+
+/* Ritmo editorial consistente em todas as seções, sem mexer na ordem. */
+#page-wrap > section {
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  padding: clamp(3.75rem, 8vw, 6.25rem) clamp(1.1rem, 4vw, 3rem);
+  margin: 0 auto;
+  border-bottom: 1px solid rgba(91, 59, 78, .075);
+  scroll-margin-top: 1.2rem;
+}
+#page-wrap > section:last-of-type { border-bottom: 0; }
+.section-label {
+  margin-bottom: .7rem;
+  color: var(--gold);
+  font-size: .67rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+}
+.section-title {
+  max-width: 22ch;
+  margin: 0 0 1.7rem;
+  color: var(--velvet);
+  font-size: clamp(2rem, 5.2vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+.section-title em { color: var(--rose); }
+.divider {
+  max-width: 240px;
+  margin-bottom: 2rem;
+  gap: .8rem;
+}
+.divider::before,
+.divider::after {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(198, 94, 118, .48));
+}
+.divider::after { background: linear-gradient(270deg, transparent, rgba(198, 94, 118, .48)); }
+.divider-icon { filter: saturate(.78); }
+
+/* Cartões editoriais e conteúdo narrativo. */
+.anniv-card {
+  padding: clamp(1.6rem, 5vw, 3rem);
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(135deg, #493348 0%, #704152 60%, #9e596a 100%);
+  box-shadow: 0 20px 54px rgba(66, 43, 59, .2);
+}
+.anniv-days { color: #fffaf6; font-size: clamp(3.5rem, 11vw, 5.5rem); letter-spacing: -.05em; }
+.anniv-label { color: rgba(255, 249, 244, .88); }
+.anniv-card p { color: rgba(255, 249, 244, .78); }
+.progress-track { height: 9px; background: rgba(255, 255, 255, .2); }
+.progress-fill { background: linear-gradient(90deg, #f3c7bf, #e2bd8a); }
+.letter-card,
+.story-essay {
+  border: 1px solid rgba(198, 94, 118, .15);
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(145deg, #fffdfa, #fff6f4);
+  box-shadow: var(--shadow-rose-md);
+}
+.letter-card {
+  padding: clamp(2.1rem, 6vw, 3.5rem);
+  color: #51404e;
+  font-size: clamp(1.15rem, 2vw, 1.3rem);
+  line-height: 1.95;
+}
+.letter-card::before { color: var(--rose); opacity: .22; }
+.letter-sig { color: var(--rose); }
+.story-essay { overflow: hidden; }
+.story-essay summary { padding: 1.25rem clamp(1.1rem, 3vw, 1.7rem); }
+.story-essay summary strong { color: var(--velvet); }
+.story-essay summary small { display: block; margin-top: .25rem; color: var(--muted); font-family: var(--font-sans); font-size: .77rem; }
+.story-essay-body { color: #5b4b58; line-height: 1.9; }
+.story-essay-body p + p { margin-top: 1rem; }
+.story-essay-closer { color: var(--rose); font-weight: 600; }
+.story-map-item {
+  border-color: var(--line);
+  background: rgba(255, 253, 250, .92);
+  color: #655360;
+  box-shadow: var(--shadow-rose-sm);
+}
+.story-map-mark { color: var(--rose); }
+.timeline-item {
+  border-color: rgba(198, 94, 118, .13);
+  border-radius: 20px;
+  background: rgba(255, 253, 250, .96);
+  box-shadow: 0 8px 22px rgba(61, 40, 54, .045);
+}
+.timeline-item::before { background: linear-gradient(180deg, var(--rose), rgba(229, 160, 169, .3)); }
+.timeline-dot { background: var(--rose); box-shadow: 0 0 0 2px #e5a0a9; }
+.timeline-date {
+  color: #81643f;
+  background: rgba(167, 128, 85, .09);
+  border-color: rgba(167, 128, 85, .17);
+  font-size: .66rem;
+  letter-spacing: .09em;
+}
+.timeline-event { color: var(--velvet); font-size: 1.22rem; }
+.timeline-desc { color: #766773; font-size: 1.02rem; line-height: 1.75; }
+.timeline-item--today {
+  border-color: rgba(198, 94, 118, .28);
+  background: linear-gradient(135deg, #fff4f3, #fffdfa);
+  box-shadow: 0 12px 28px rgba(198, 94, 118, .09);
+}
+.timeline-item--today .timeline-event { color: #a6425c; }
+
+/* Conteúdo multimídia e galerias. */
+.story-art, .cinema-art, .fantasy-card, .memory-photo-card, .coraline-memory-art {
+  border-color: rgba(91, 59, 78, .11);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-rose-md);
+}
+.story-art figcaption, .cinema-art figcaption,
+.fantasy-card figcaption, .memory-photo-card figcaption,
+.coraline-memory-art figcaption { color: #6f5967; }
+.memory-gallery-intro, .fantasy-intro { color: var(--muted); }
+.gallery-slot {
+  border-color: rgba(198, 94, 118, .24);
+  background: linear-gradient(145deg, #fff5f3, #f4e9e4);
+}
+.gallery-slot:hover { border-color: var(--rose); box-shadow: var(--shadow-rose-sm); }
+.gallery-tip { color: var(--muted); }
+
+/* Listas, player, humor, calendário e ações. */
+.daily-card, .mood-card, .special-card, .location-card,
+.data-tools, .library-card, .museum-card {
+  border-color: var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow-rose-sm);
+}
+.daily-card {
+  background: linear-gradient(145deg, #fffdfa, #fff1f2);
+  border: 1px solid rgba(198, 94, 118, .16);
+}
+.daily-card-label, .daily-card-hint { color: var(--rose); }
+.daily-card-text { color: var(--velvet); }
+.stat-card, .dream-item, .movie-item, .mood-player-box,
+.mood-history-item, .movie-modal-comments, .cal-comment {
+  border-color: var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(61, 40, 54, .045);
+}
+.stat-icon { filter: saturate(.82); }
+.stat-num { color: var(--velvet); }
+.stat-label { color: var(--muted); }
+.music-featured {
+  border: 1px solid rgba(198, 94, 118, .16);
+  border-radius: 24px;
+  background: linear-gradient(135deg, #493348, #724354);
+  box-shadow: var(--shadow-rose-md);
+}
+.music-featured *, .music-featured .music-featured-title { color: #fffaf6; }
+.music-track, .playlist-item {
+  border-color: var(--line);
+  border-radius: 16px;
+  background: rgba(255, 253, 250, .94);
+}
+.dream-item, .movie-item { padding: 1rem 1.15rem; }
+.dream-text, .movie-name { color: #51404e; }
+.mood-card { background: rgba(255, 253, 250, .82); }
+.mood-player-box { padding: 1.25rem; }
+.mood-player-name { color: var(--velvet); }
+.mood-btn, .movies-btn, .dreams-btn, .mural-btn, .cal-save-btn,
+.loc-action-btn, .data-tools-button, .music-btn, .mural-lock-btn,
+.mood-confirm-btn, .cinema-play-btn, .game-ready-btn {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #c65e76, #a94e67);
+  color: #fffdfa;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  box-shadow: 0 7px 16px rgba(154, 66, 91, .15);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+.mood-btn:hover, .movies-btn:hover, .dreams-btn:hover, .mural-btn:hover,
+.cal-save-btn:hover, .loc-action-btn:hover, .data-tools-button:hover,
+.music-btn:hover, .mural-lock-btn:hover, .mood-confirm-btn:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 10px 22px rgba(154, 66, 91, .22);
+  transform: translateY(-1px);
+}
+.movies-input, .dreams-input, .mural-textarea, .cal-modal-textarea,
+#music-link-input, input[type="text"], textarea {
+  border-color: rgba(91, 59, 78, .17);
+  border-radius: 14px;
+  color: var(--ink);
+  background: #fffefa;
+}
+.movies-input:focus, .dreams-input:focus, .mural-textarea:focus,
+.cal-modal-textarea:focus, #music-link-input:focus, input[type="text"]:focus,
+textarea:focus {
+  border-color: rgba(198, 94, 118, .7);
+  box-shadow: 0 0 0 4px rgba(198, 94, 118, .10);
+  outline: none;
+}
+.cal-nav-btn {
+  border-color: rgba(198, 94, 118, .22);
+  color: var(--rose);
+  background: var(--surface);
+  box-shadow: var(--shadow-rose-sm);
+}
+.cal-nav-btn:hover { background: var(--rose); color: white; }
+.cal-day { border-color: rgba(91, 59, 78, .08); background: #fffdfa; }
+.cal-day.today { border-color: var(--rose); background: #fff0f1; }
+.cal-day-num { color: var(--velvet); }
+.cal-month-label { color: var(--velvet); }
+
+/* Áreas lúdicas conservam as paletas e estados próprios, com acabamento unido. */
+.cinema-tabs, .home-tabs {
+  border: 1px solid rgba(91, 59, 78, .12);
+  border-radius: 18px;
+  background: #eee5e5;
+  padding: .35rem;
+}
+.cinema-tab, .home-tab {
+  min-height: 42px;
+  border-radius: 13px;
+  color: #6a5664;
+}
+.cinema-tab.active, .home-tab.active {
+  border-color: rgba(198, 94, 118, .2);
+  background: linear-gradient(135deg, #c65e76, #a94e67);
+  color: white;
+  box-shadow: 0 5px 14px rgba(154, 66, 91, .18);
+}
+.cinema-card, .game-card {
+  border-color: rgba(91, 59, 78, .11);
+  border-radius: 21px;
+  box-shadow: var(--shadow-rose-sm);
+}
+.cinema-card:hover, .game-card:hover { box-shadow: var(--shadow-rose-md); }
+.cinema-modal, .cal-modal, .mood-picker-sheet, .senha-modal,
+.movie-modal, .book-detail-modal, .reader-modal {
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 26px 26px 0 0;
+  background: #fffaf7;
+  box-shadow: var(--shadow-modal);
+}
+.cinema-modal-header { background: linear-gradient(135deg, #493348, #704152); }
+.cinema-modal-title { color: #fffaf6; }
+.cinema-modal-back { border-radius: 50%; }
+.mural-lock-card {
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 26px;
+  background: linear-gradient(135deg, #493348, #75485a);
+  box-shadow: var(--shadow-rose-md);
+}
+.mural-lock-btn { background: rgba(255,255,255,.17); border-color: rgba(255,255,255,.35); box-shadow: none; }
+.mural-lock-sub { color: rgba(255,250,246,.82); }
+.mural-msg { border-radius: 20px; }
+.mural-msg.pietro { background: #eef5f8; border-color: #d4e4e9; }
+.mural-msg.emilly { background: #fff0f1; border-color: #f0d5dc; }
+
+/* Casinha, progresso e backup mantêm legibilidade em seus mundos próprios. */
+.house-scene-wrap { border-color: #79506a; border-radius: 24px; box-shadow: 0 14px 34px rgba(35, 24, 34, .19); }
+.home-coins-bar { border-color: rgba(229, 160, 169, .72); border-radius: 18px; }
+.shop-item { border-radius: 17px; }
+.data-tools { background: linear-gradient(145deg, #fffdfa, #f7efeb); }
+.data-tools-title { color: var(--velvet); }
+
+/* Acessibilidade de foco: não altera handlers nem estados de interação. */
+:where(a, button, summary, input, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 3px solid rgba(198, 94, 118, .78);
+  outline-offset: 3px;
+}
+button:disabled { cursor: not-allowed; }
+footer {
+  padding: 3.5rem 1.5rem calc(3.5rem + env(safe-area-inset-bottom));
+  background: linear-gradient(135deg, #382735, #523548);
+  color: rgba(255, 249, 244, .74);
+}
+.footer-names { color: #fffaf6; }
+.toast { background: #382735; box-shadow: 0 12px 34px rgba(38, 23, 34, .24); }
+
+@media (max-width: 760px) {
+  #page-wrap > section {
+    padding: 3.7rem 1.15rem;
+  }
+  .hero {
+    min-height: 100svh;
+    justify-content: center;
+    padding: max(2rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
+  }
+  .hero-title { font-size: clamp(3rem, 12vw, 5rem); }
+  .counter-hero { width: min(100%, 420px); gap: .45rem; }
+  .counter-unit {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: .75rem .35rem;
+    border-radius: 16px;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .counter-num { font-size: clamp(1.5rem, 7vw, 2.2rem); }
+  .counter-label { font-size: .56rem; letter-spacing: .06em; }
+  .hero-nav {
+    width: calc(100% + 2rem);
+    max-width: none;
+    margin: 1.1rem -1rem 0;
+    padding: .2rem 1rem .65rem;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hero-nav::-webkit-scrollbar { display: none; }
+  .hero-nav-btn { flex: 0 0 auto; scroll-snap-align: start; }
+  .hero-nav-label { max-width: none; }
+  .scroll-hint { margin-top: 1rem; }
+  .divider { margin-bottom: 1.5rem; }
+  .section-title { margin-bottom: 1.3rem; }
+  .anniv-card { border-radius: 24px; }
+  .letter-card { padding: 2.4rem 1.35rem 1.8rem; border-radius: 24px; }
+  .letter-card::before { left: .7rem; }
+  .timeline { padding-left: 1.7rem; }
+  .timeline-dot { left: -2.25rem; }
+  .timeline-item { padding: .95rem 1rem 1rem 1.1rem; }
+  .timeline-date { font-size: .6rem; letter-spacing: .065em; }
+  .timeline-event { font-size: 1.1rem; }
+  .timeline-desc { font-size: .98rem; }
+  .story-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .story-map-item { min-height: 42px; }
+  .cinema-tabs { border-radius: 15px; }
+  .cinema-tab, .home-tab { min-height: 44px; }
+  .movie-item, .dream-item { gap: .7rem; padding: .85rem; }
+  .mood-players { gap: .7rem; }
+  .mood-player-box { padding: .9rem .6rem; }
+  .cal-grid { gap: .25rem; }
+  .cal-day { border-radius: 10px; }
+}
+
+@media (max-width: 390px) {
+  #page-wrap > section { padding-inline: .9rem; }
+  .section-title { font-size: clamp(1.8rem, 9vw, 2.4rem); }
+  .hero-title { font-size: clamp(2.7rem, 11vw, 3.3rem); }
+  .hero-nav-btn { padding-inline: .75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #page-wrap { scroll-behavior: auto; }
+}
+
+
+/* Modos automáticos: mantém período e estrelas, mas une o fundo noturno à capa. */
+html body.period-noite .hero,
+html body.period-madrugada .hero {
+  background:
+    linear-gradient(180deg, rgba(35, 24, 34, .24) 0%, rgba(39, 25, 36, .53) 55%, rgba(39, 25, 36, .88) 100%),
+    url('../assets/hero-romantico.webp') center 58% / cover no-repeat,
+    #382735 !important;
+}
+
+/* Carta de boas-vindas gerada por JS: mantém o markup inline e o clique de entrada. */
+#welcome-overlay {
+  background: rgba(48, 31, 45, .72) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important;
+}
+#welcome-overlay > div:first-child {
+  width: min(100%, 460px) !important;
+  max-width: 460px !important;
+  padding: clamp(2rem, 5vw, 3rem) clamp(1.35rem, 5vw, 2.5rem) !important;
+  border: 1px solid rgba(255, 255, 255, .72) !important;
+  border-radius: 30px !important;
+  background: linear-gradient(145deg, #fffdfa, #fff1f2) !important;
+  box-shadow: var(--shadow-modal) !important;
+}
+#welcome-overlay > div:first-child > div:nth-child(2) {
+  color: var(--velvet) !important;
+  letter-spacing: -.025em;
+}
+#welcome-overlay > div:first-child > div:nth-child(3) {
+  background: var(--rose) !important;
+}
+#welcome-overlay > div:first-child > p {
+  color: #62515e !important;
+  font-size: clamp(1.05rem, 2.5vw, 1.18rem) !important;
+  line-height: 1.85 !important;
+}
+#welcome-close-btn {
+  min-height: 48px !important;
+  padding: .85rem 2rem !important;
+  border: 1px solid rgba(255, 255, 255, .35) !important;
+  background: linear-gradient(135deg, var(--rose), var(--velvet)) !important;
+  box-shadow: 0 10px 22px rgba(71, 43, 59, .22) !important;
+}
+#welcome-close-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+#welcome-overlay > div:first-child > div:last-child {
+  color: var(--muted) !important;
+  opacity: .86 !important;
+}
+
+@media (max-width: 760px) {
+  #welcome-overlay { padding: 1rem !important; }
+  #welcome-overlay > div:first-child {
+    width: min(100%, 430px) !important;
+    max-width: 430px !important;
+    padding: 2.1rem 1.4rem !important;
+    border-radius: 26px !important;
+  }
+}
+
+
+/* Manhã e tarde: mesma capa fotográfica, com véu mais leve; os acentos de cada período continuam ativos. */
+html body.period-manha .hero,
+html body.period-tarde .hero {
+  background:
+    linear-gradient(180deg, rgba(48, 34, 44, .16) 0%, rgba(48, 31, 44, .48) 55%, rgba(39, 25, 36, .82) 100%),
+    url('../assets/hero-romantico.webp') center 58% / cover no-repeat,
+    #382735 !important;
+}
+html body.period-manha .hero-title,
+html body.period-manha .hero-subtitle,
+html body.period-manha .counter-num,
+html body.period-manha .counter-label,
+html body.period-tarde .hero-title,
+html body.period-tarde .hero-subtitle,
+html body.period-tarde .counter-num,
+html body.period-tarde .counter-label,
+html body.period-noite .hero-title,
+html body.period-noite .hero-subtitle,
+html body.period-noite .counter-num,
+html body.period-noite .counter-label,
+html body.period-madrugada .hero-title,
+html body.period-madrugada .hero-subtitle,
+html body.period-madrugada .counter-num,
+html body.period-madrugada .counter-label {
+  color: #fffaf6 !important;
+}
+
+/* Conserva a área segura sob a faixa fixa de datas especiais. */
+html body.event-mode #page-wrap > section {
+  padding-block-start: calc(clamp(3.75rem, 8vw, 6.25rem) + 52px);
+}
+@media (max-width: 760px) {
+  html body.event-mode #page-wrap > section {
+    padding-block-start: calc(3.7rem + 52px);
+  }
+}
