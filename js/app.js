@@ -89,6 +89,7 @@ import { initLoveCity } from './love-city-core.js';
 
 // ── Museu de Memórias ──
 import { initMuseum } from './museum.js';
+import { initMemoryAlbum } from './memory-album.js';
 import { initRetrospectiva } from './retrospectiva.js';
 
 // ── Memória do Dia ──
@@ -190,6 +191,7 @@ try { initHome(db); } catch(e) { console.error('initHome:', e); }
 try { initGames(db); } catch(e) { console.error('initGames:', e); }
 try { initLoveCity(); } catch(e) { console.error('initLoveCity:', e); }
 try { initMuseum(); } catch(e) { console.error('initMuseum:', e); }
+try { initMemoryAlbum(); } catch(e) { console.error('initMemoryAlbum:', e); }
 try { initRetrospectiva(); } catch(e) { console.error('initRetrospectiva:', e); }
 try { initMemoryOfDay(); } catch(e) { console.error('initMemoryOfDay:', e); }
 try { initEventUnlock(); } catch(e) { console.error('initEventUnlock:', e); }
