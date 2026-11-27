@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v89'; // Memórias automáticas com IA ativa e aprendizado local reforçado
+const CACHE_VERSION = 'v90'; // Memórias com IA e Piano das Estrelas com teclado tátil no cache offline
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -42,6 +42,7 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/piano-3d.html',
+  '/css/piano-3d-touch.css',
   '/manifest.json',
   '/css/main.css',
   '/css/components.css',
