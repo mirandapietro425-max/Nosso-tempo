@@ -38,3 +38,5 @@ jobs:
         run: node --experimental-default-type=module tests/ui-wiring-smoke.mjs
       - name: Sintaxe do endpoint de busca
         run: node --check api/pestinha/music-search.mjs
+      - name: Sintaxe do endpoint de conversa
+        run: node --check api/pestinha/chat.mjs
