@@ -7,8 +7,9 @@ Esta alteração conecta o Pestinha à base local de conhecimento e ao player qu
 1. Abra o painel do Pestinha e escolha **Chamar “Pestinha”**. O navegador pedirá permissão para o microfone.
 2. Com o modo ativo, diga “Pestinha” antes do pedido: “Pestinha, toca Photograph”, “Pestinha, adiciona Photograph” ou “Pestinha, pesquisa Photograph”.
 3. Depois da primeira chamada, a conversa permanece ativa por até 45 segundos após cada fala. Durante esse período, pode continuar falando normalmente, sem repetir “Pestinha” a cada frase. Após 45 segundos de silêncio, o Pestinha volta a aguardar a palavra-chave.
-4. Diga “agora não”, “fica quietinho”, “pode parar”, “silêncio” ou “para, Pestinha” para desligar o microfone.
-5. O modo também é desligado quando a aba fica oculta ou a página é fechada.
+4. Enquanto o Pestinha fala, o reconhecimento continua preparado para uma interrupção: trechos semelhantes à resposta dele são filtrados como possível eco e uma nova fala da pessoa pode interromper o áudio atual.
+5. Diga “agora não”, “fica quietinho”, “pode parar”, “silêncio” ou “para, Pestinha” para desligar o microfone.
+6. O modo também é desligado quando a aba fica oculta ou a página é fechada.
 
 **Limitação do navegador:** o microfone não pode ser habilitado silenciosamente por um site. É necessário um gesto explícito e consentimento do usuário pelo navegador. Por isso, a primeira ativação exige o botão no painel. Enquanto a chamada estiver ligada, a API de reconhecimento pode processar áudio por um serviço do navegador; não é garantido que o processamento seja local ou offline. A palavra-chave inicia uma sessão conversacional; os turnos seguintes são aceitos sem repetir o nome por até 45 segundos após a última fala. O reconhecimento contínuo também varia entre navegadores e pode ser interrompido pelo sistema. A opção de digitar continua disponível.
 
