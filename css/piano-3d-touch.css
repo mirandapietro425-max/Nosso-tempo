@@ -61,3 +61,24 @@
   .touch-keys{height:100px}
 }
 @media(prefers-reduced-motion:reduce){.piano-key,.piano-key.is-target{transition:none!important}}
+
+/* Escuta oficial e afinador: conteúdo secundário, sem competir com o teclado. */
+.youtube-listener{margin-top:8px;padding:8px;border:1px solid #ffffff20;border-radius:14px;background:#160d22aa}
+.youtube-listener[hidden]{display:none}
+.youtube-listener-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;color:#ffe5f0;font-size:.72rem}
+.youtube-frame{aspect-ratio:16/9;overflow:hidden;border-radius:10px;background:#09060d}
+.youtube-frame iframe{display:block;width:100%;height:100%;border:0}
+.youtube-listener small{display:block;margin-top:6px;color:#beaaba;font-size:.63rem;line-height:1.3}
+.sienna-track{border:1px solid #ffffff24;border-radius:20px;padding:6px 10px;background:#ffffff0c;color:#ffd1e5;font:inherit;font-size:.71rem;cursor:pointer}
+.sienna-track span{margin-left:3px;color:#ffe5a8}
+.sienna-track.is-selected{border-color:#ffd98b;background:#ffd98b18}
+.tuner{display:grid;gap:7px;padding-top:8px;border-top:1px solid #ffffff20}
+.tuner-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tuner-head strong,.tuner-head span{display:block}
+.tuner-head strong{font-size:.76rem;color:#ffe5f0}
+.tuner-head span{margin-top:2px;font-size:.63rem;color:var(--muted)}
+.tuner-reading{display:flex;align-items:baseline;gap:9px;min-height:31px}
+.tuner-reading b{font:700 1.35rem Georgia,serif;color:#ffe09b}
+.tuner-reading span{font-size:.65rem;color:#cbb8c9}
+.tuner-privacy{margin:0;color:#bfaabd;font-size:.62rem;line-height:1.35}
+@media(max-width:520px){.youtube-listener-head{font-size:.68rem}.tuner-head{align-items:flex-start;flex-direction:column}.tuner-head .small-action{width:100%}.tuner-reading{min-height:28px}}

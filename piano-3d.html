@@ -63,16 +63,21 @@
         <p class="challenge-description" id="challenge-description"></p>
         <div class="challenge-sequence" id="challenge-sequence" aria-label="Sequência de notas"></div>
         <div class="challenge-footer"><p class="challenge-progress" id="challenge-progress" aria-live="polite">Escolha um desafio e toque as notas que acenderem.</p><span class="challenge-score" id="challenge-score">⭐ 0/4 concluídos</span></div>
-        <details class="sienna-list">
-          <summary>🎧 Ouvir músicas da Sienna Spiro</summary>
-          <p>Abra uma faixa oficial para escutar e depois volte para praticar. O jogo não reproduz nem transcreve as melodias da artista.</p>
-          <div class="sienna-links">
-            <a href="https://siennaspiro.lnk.to/MAYBEID" target="_blank" rel="noopener">MAYBE. ↗</a>
-            <a href="https://youtu.be/tbWB_aapUNo" target="_blank" rel="noopener">You Stole The Show ↗</a>
-            <a href="https://open.spotify.com/track/2gYTC8DsplN3RNdpdBcCOQ" target="_blank" rel="noopener">Die On This Hill ↗</a>
-          </div>
-        </details>
       </section>
+      <details class="sienna-list">
+        <summary>🎧 Ouvir músicas da Sienna Spiro</summary>
+        <p>O player oficial aparece só quando tu escolheres uma faixa. O treino continua independente e não analisa o áudio do YouTube.</p>
+        <div class="sienna-links">
+          <a href="https://siennaspiro.lnk.to/MAYBEID" target="_blank" rel="noopener">MAYBE. ↗</a>
+          <button class="sienna-track is-selected" type="button" data-youtube-id="tbWB_aapUNo" data-track-name="You Stole The Show">You Stole The Show <span>▶</span></button>
+          <a href="https://open.spotify.com/track/2gYTC8DsplN3RNdpdBcCOQ" target="_blank" rel="noopener">Die On This Hill ↗</a>
+        </div>
+        <div class="youtube-listener" id="youtube-listener" hidden>
+          <div class="youtube-listener-head"><strong id="youtube-track-name">You Stole The Show</strong><button class="small-action" type="button" id="close-youtube">Fechar</button></div>
+          <div class="youtube-frame"><iframe id="youtube-frame" title="Player oficial do YouTube" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+          <small>Player oficial incorporado; o treino de notas não usa este áudio.</small>
+        </div>
+      </details>
       <div class="songrow">
         <label for="song-select">Melodia:</label>
         <select id="song-select" aria-label="Escolher melodia"></select>
@@ -86,6 +91,11 @@
       <div class="side-row"><button class="action" id="sustain" aria-pressed="false">♧ Sustain: desligado</button><button class="action" id="record">⏺ Gravar</button></div>
       <div class="volume"><label for="volume">Volume</label><input id="volume" type="range" min="0" max="100" value="72"><span id="volume-value">72%</span></div>
       <div class="side-row"><label for="midi-file" class="small-action">📂 Abrir MIDI</label><input id="midi-file" type="file" accept=".mid,.midi,audio/midi" hidden><button class="small-action" id="download-record" disabled>⬇ MIDI gravado</button></div>
+      <section class="tuner" aria-labelledby="tuner-title">
+        <div class="tuner-head"><div><strong id="tuner-title">🎙 Afinador opcional</strong><span id="tuner-status" aria-live="polite">Microfone desligado</span></div><button class="small-action" id="tuner-toggle" type="button" aria-pressed="false">Ativar microfone</button></div>
+        <div class="tuner-reading"><b id="tuner-note">—</b><span id="tuner-cents">Toque ou cante uma nota isolada</span></div>
+        <p class="tuner-privacy">O som é analisado somente neste aparelho enquanto estiver ligado. Nada é gravado ou enviado.</p>
+      </section>
       <div class="tiny-note">Melodias demonstrativas são originais. Importe um MIDI próprio localmente. Se for Sienna Spiro, confira “MAYBE.”, “You Stole The Show” e “Die On This Hill” no <a href="https://siennaspiro.lnk.to/links" target="_blank" rel="noopener">canal oficial ↗</a>.</div>
     </div>
   </section>
@@ -180,6 +190,13 @@ function changeOctave(step){const previous=baseMidi;baseMidi=clamp(baseMidi+step
 document.getElementById('oct-down').addEventListener('click',()=>changeOctave(-1));document.getElementById('oct-up').addEventListener('click',()=>changeOctave(1));
 document.getElementById('sustain').addEventListener('click',e=>{sustain=!sustain;e.currentTarget.setAttribute('aria-pressed',String(sustain));e.currentTarget.textContent=sustain?'♧ Sustain: ligado':'♧ Sustain: desligado';if(!sustain)for(const m of [...activeSounds.keys()])noteOffForce(m);});
 function noteOffForce(m){const was=sustain;sustain=false;noteOff(m);sustain=was;}
+// Afinador local opcional: nunca usa o iframe nem grava o microfone.
+const tunerToggle=document.getElementById('tuner-toggle'),tunerStatus=document.getElementById('tuner-status'),tunerNote=document.getElementById('tuner-note'),tunerCents=document.getElementById('tuner-cents');
+let tunerStream=null,tunerContext=null,tunerAnalyser=null,tunerFrame=0;
+function detectPitch(buffer,sampleRate){let rms=0;for(const value of buffer)rms+=value*value;if(Math.sqrt(rms/buffer.length)<.012)return null;let bestOffset=-1,bestCorrelation=0,foundGoodCorrelation=false;for(let offset=8;offset<buffer.length/2;offset++){let correlation=0;for(let i=0;i<buffer.length/2;i++)correlation+=1-Math.abs(buffer[i]-buffer[i+offset]);correlation/=buffer.length/2;if(correlation>.9&&correlation>bestCorrelation){bestCorrelation=correlation;bestOffset=offset;foundGoodCorrelation=true;}}if(!foundGoodCorrelation||bestOffset<0)return null;return sampleRate/bestOffset;}
+function updateTuner(){if(!tunerAnalyser)return;const buffer=new Float32Array(tunerAnalyser.fftSize);tunerAnalyser.getFloatTimeDomainData(buffer);const hz=detectPitch(buffer,tunerContext.sampleRate);if(hz){const midi=69+12*Math.log2(hz/440),rounded=Math.round(midi),cents=Math.round((midi-rounded)*100);tunerNote.textContent=midiName(rounded);tunerCents.textContent=`${Math.round(hz)} Hz · ${cents>=0?'+':''}${cents} cents`;};tunerFrame=requestAnimationFrame(updateTuner);}
+async function toggleTuner(){if(tunerStream){tunerStream.getTracks().forEach(track=>track.stop());tunerStream=null;if(tunerContext)tunerContext.close().catch(()=>{});tunerContext=null;tunerAnalyser=null;cancelAnimationFrame(tunerFrame);tunerToggle.textContent='Ativar microfone';tunerToggle.setAttribute('aria-pressed','false');tunerStatus.textContent='Microfone desligado';tunerNote.textContent='—';tunerCents.textContent='Toque ou cante uma nota isolada';return;}if(!navigator.mediaDevices?.getUserMedia){tunerStatus.textContent='Microfone não disponível neste navegador';return;}try{tunerStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const AC=window.AudioContext||window.webkitAudioContext;tunerContext=new AC();const source=tunerContext.createMediaStreamSource(tunerStream);tunerAnalyser=tunerContext.createAnalyser();tunerAnalyser.fftSize=2048;source.connect(tunerAnalyser);tunerToggle.textContent='Desligar microfone';tunerToggle.setAttribute('aria-pressed','true');tunerStatus.textContent='Ouvindo localmente…';updateTuner();}catch(error){if(tunerStream)tunerStream.getTracks().forEach(track=>track.stop());tunerStream=null;tunerStatus.textContent=error.name==='NotAllowedError'?'Permissão negada — podes tentar de novo':'Não foi possível ativar o microfone';}}
+tunerToggle.addEventListener('click',toggleTuner);
 document.getElementById('volume').addEventListener('input',e=>{soundVolume=Number(e.target.value)/100;document.getElementById('volume-value').textContent=e.target.value+'%';if(master)master.gain.setTargetAtTime(soundVolume,audioCtx.currentTime,.04);});
 const tunes=[
 {id:'starlight',name:'Serenata das Estrelas · original',bpm:88,notes:[[60,0,.45],[64,.52,.45],[67,1.04,.75],[72,1.9,.48],[71,2.45,.45],[67,2.97,.65],[64,3.72,.75],[62,4.62,.45],[65,5.14,.45],[69,5.66,.75],[72,6.52,.45],[69,7.04,.45],[67,7.56,1.1]]},
@@ -216,11 +233,14 @@ let recording=false,recorded=[],recordAt=0;function recordEvent(midi,off){if(!re
 document.getElementById('record').addEventListener('click',e=>{recording=!recording;if(recording){recorded=[];recordAt=performance.now();e.currentTarget.textContent='■ Parar gravação';e.currentTarget.classList.add('primary');statusEl.textContent='Gravando sua melodia…';}else{e.currentTarget.textContent='⏺ Gravar';e.currentTarget.classList.remove('primary');statusEl.textContent=`Gravação pronta · ${recorded.length} eventos`;}});
 function makeMidi(events){const ppq=480,tempo=500000,track=[];let last=0;const vlq=v=>{let n=v&127,arr=[];while((v>>=7)){n<<=8;n|=((v&127)|128);}while(true){arr.push(n&255);if(n&128)n>>=8;else break;}return arr;};for(const e of events){const tick=Math.round(e.time*ppq*1e6/tempo),delta=Math.max(0,tick-last);last=tick;track.push(...vlq(delta),0x90,e.midi,e.off?0:95);}track.push(0,0xff,0x2f,0);const u32=n=>[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255],u16=n=>[(n>>>8)&255,n&255];return new Uint8Array([...strBytes('MThd'),...u32(6),...u16(0),...u16(1),...u16(ppq),...strBytes('MTrk'),...u32(track.length),...track]);}
 function strBytes(s){return Array.from(s,c=>c.charCodeAt(0));}
+const youtubeFrame=document.getElementById('youtube-frame'),youtubeListener=document.getElementById('youtube-listener'),youtubeTrackName=document.getElementById('youtube-track-name');
+document.querySelectorAll('[data-youtube-id]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.youtubeId;if(!/^[a-zA-Z0-9_-]{11}$/.test(id))return;youtubeTrackName.textContent=button.dataset.trackName||'Faixa oficial';youtubeFrame.src=`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;youtubeListener.hidden=false;document.querySelectorAll('[data-youtube-id]').forEach(item=>item.classList.toggle('is-selected',item===button));}));
+document.getElementById('close-youtube').addEventListener('click',()=>{youtubeFrame.src='';youtubeListener.hidden=true;});
 document.getElementById('download-record').addEventListener('click',()=>{if(!recorded.length)return;const blob=new Blob([makeMidi(recorded)],{type:'audio/midi'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='minha-melodia-nosso-tempo.mid';a.click();URL.revokeObjectURL(url);});
 function tickParticles(ts){particles=particles.filter(p=>ts-p.born<1200);particles.forEach(p=>p.y=Math.max(.75,2.8-(ts-p.born)/280));}
 const originalScene=scene;function render(ts){tickParticles(ts);originalScene(ts);}
 function loop(ts){raf=requestAnimationFrame(loop);render(ts);}resize();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);window.addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{if(document.hidden){clearSong();stopAll();}});
-window.addEventListener('pagehide',()=>{cancelAnimationFrame(raf);clearSong();if(audioCtx)audioCtx.close().catch(()=>{});});
+window.addEventListener('pagehide',()=>{cancelAnimationFrame(raf);clearSong();if(tunerStream)tunerStream.getTracks().forEach(track=>track.stop());if(audioCtx)audioCtx.close().catch(()=>{});if(tunerContext)tunerContext.close().catch(()=>{});});
 })();
 </script>
 </body>

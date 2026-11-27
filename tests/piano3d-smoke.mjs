@@ -26,6 +26,12 @@ assert.match(page, /name:'Passos leves'[\s\S]*name:'Eco ritmado'[\s\S]*name:'Pon
 assert.match(page, /piano3d:challenges/, 'O progresso dos desafios deve ser guardado localmente.');
 assert.match(page, /id:'fur-elise'[\s\S]*id:'ode-joy'/, 'O repertório deve incluir trechos de Für Elise e Ode à Alegria.');
 assert.match(page, /siennaspiro\.lnk\.to\/MAYBEID[\s\S]*tbWB_aapUNo[\s\S]*Die On This Hill/, 'A interface deve incluir links de escuta da Sienna Spiro.');
+assert.match(page, /id="youtube-frame"[\s\S]*youtube-nocookie\.com\/embed/, 'O jogo deve incorporar o player oficial do YouTube somente após ação explícita.');
+assert.match(page, /id="tuner-toggle"/, 'O afinador deve ter ativação explícita.');
+assert.match(page, /getUserMedia/, 'O afinador deve solicitar o microfone somente após ativação.');
+assert.match(page, /createMediaStreamSource/, 'O afinador deve conectar a entrada local ao analisador.');
+assert.match(page, /getFloatTimeDomainData/, 'O afinador deve analisar o sinal localmente.');
+assert.doesNotMatch(page, /MediaRecorder|fetch\([^)]*microphone|navigator\.sendBeacon/, 'O afinador não deve gravar nem enviar áudio.');
 assert.match(page, /accept="\.mid,\.midi,audio\/midi"/, 'A importação MIDI deve permanecer local.');
 assert.match(page, /assets\/piano-kittens\.png/, 'A arte dos gatinhos deve aparecer na interface do jogo.');
 assert.match(page, /piano-3d-touch\.css/, 'A folha de estilos tátil deve ser carregada pela página.');
@@ -35,7 +41,7 @@ const inlineScripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/gi)];
 assert.equal(inlineScripts.length, 1, 'A página deve ter um script inline único.');
 new vm.Script(inlineScripts[0][1], { filename: 'piano-3d.inline.js' });
 
-assert.match(serviceWorker, /CACHE_VERSION\s*=\s*'v92'/, 'O cache precisa ser invalidado na versão nova.');
+assert.match(serviceWorker, /CACHE_VERSION\s*=\s*'v93'/, 'O cache precisa ser invalidado na versão nova.');
 assert.match(serviceWorker, /'\/piano-3d\.html'/, 'A página do piano deve entrar no pré-cache offline.');
 assert.match(serviceWorker, /'\/css\/piano-3d-touch\.css'/, 'O CSS tátil deve entrar no pré-cache offline.');
 assert.match(serviceWorker, /'\/assets\/piano-kittens\.png'/, 'A arte deve entrar no pré-cache.');

@@ -41,6 +41,7 @@ export const PLAYLIST = [
   { name: "Os Anjos Cantam", artist: "Zé Ramalho",   ytId: "ICS6uKC93w0" },
   { name: "Home",            artist: "Michael Bublé", ytId: "MCFIEkz9nNQ" },
   { name: "Sailor Song",     artist: "Gigi Perez",    ytId: "1lrFsXkT_rM" },
+  { name: "You Stole The Show", artist: "Sienna Spiro", ytId: "tbWB_aapUNo" },
 ];
 
 // ── Recadinhos diários ──
