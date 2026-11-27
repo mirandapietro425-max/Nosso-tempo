@@ -169,7 +169,7 @@
 .nt-chat-feedback button { border: 1px solid #f0d4df; border-radius: 30px; padding: .2rem .48rem; color: #98516f; background: #fff8fb; font-size: .6rem; cursor: pointer; }
 .nt-chat-feedback button:disabled { opacity: .55; cursor: default; }
 .nt-feedback-note { display: block; flex-basis: 100%; margin-top: .2rem; color: #8e6174; font-size: .6rem; }
-.nt-companion-composer { display: flex; align-items: center; gap: .42rem; padding: .55rem .75rem; border-top: 1px solid var(--nt-line); background: #fff; }
+.nt-companion-composer { position: sticky; bottom: 0; z-index: 3; display: flex; align-items: center; gap: .42rem; padding: .55rem .75rem; border-top: 1px solid var(--nt-line); background: #fff; box-shadow: 0 -4px 12px rgba(96,35,61,.06); }
 .nt-companion-composer input { flex: 1; min-width: 0; height: 42px; border: 1px solid #ead0dc; border-radius: 14px; padding: 0 .8rem; outline: none; color: var(--nt-ink); background: #fffafd; font-size: .77rem; }
 .nt-companion-composer input:focus { border-color: #d77d9c; box-shadow: 0 0 0 3px rgba(215,125,156,.12); }
 .nt-companion-composer button { flex: 0 0 39px; width: 39px; height: 39px; border: 0; border-radius: 13px; color: white; background: linear-gradient(135deg,#c75d85,#9e3c66); font-size: 1rem; cursor: pointer; }

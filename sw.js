@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v85'; // Reset final do painel contra regras globais de section
+const CACHE_VERSION = 'v86'; // Compositor do Pestinha fixo e acessível ao rolar a conversa
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
