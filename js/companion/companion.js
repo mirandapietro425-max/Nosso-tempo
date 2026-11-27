@@ -9,6 +9,9 @@ import { SEEDED_MEMORIES } from '../memory-of-day.js';
 import { SpikingBrain, NEURON_COUNT, SYNAPSE_COUNT } from './neural-brain.js';
 import { searchMemories, normalizeMemoryText, selectMemoriesForSpeaker } from './memory-search.js';
 import { answerFromKnowledge, getKnowledgeStats } from './knowledge-base.js';
+import { answerFromProjectKnowledge } from './project-knowledge.js';
+import { handleMusicCommand } from './music-assistant.js';
+import { classifyWakeUtterance, VOICE_CONVERSATION_IDLE_MS } from './voice-session.js';
 
 const STORAGE_REF = doc(getFirestore(), 'companion', 'pestinha-v1');
 const MAX_MEMORIES = 240;
@@ -28,7 +31,7 @@ const DEFAULT_STATE = Object.freeze({
   memories: [],
   messages: [],
   rememberConversation: false,
-  speakResponses: false,
+  speakResponses: true,
   aiEnabled: false,
   aiMemoryConsent: false,
   brainWeights: null,
@@ -66,6 +69,14 @@ let saveTimer = null;
 let saveQueue = Promise.resolve();
 let recognition = null;
 let isListening = false;
+let wakeRecognition = null;
+let wakeListeningEnabled = false;
+let wakeRestartTimer = null;
+let wakeConversationActive = false;
+let wakeConversationTimer = null;
+let isSpeaking = false;
+let lastSpokenText = '';
+let speechSequence = 0;
 let isOpen = false;
 let currentMood = 'curioso';
 let lastQuestionSignals = null;
@@ -145,7 +156,9 @@ async function loadState() {
         ...loaded,
         version: 2,
         activeSpeaker: ['Pietro', 'Emilly', 'Pietro e Emilly'].includes(loaded.activeSpeaker) ? loaded.activeSpeaker : 'Pietro',
-        speakResponses: Boolean(loaded.speakResponses),
+        // Falar é o comportamento padrão solicitado para o Pestinha; uma
+        // preferência explicitamente salva como false continua respeitada.
+        speakResponses: loaded.speakResponses === undefined ? true : Boolean(loaded.speakResponses),
         // Cada carregamento exige uma nova ativação antes de enviar mensagens ao serviço externo.
         aiEnabled: false,
         aiMemoryConsent: false,
@@ -341,6 +354,17 @@ function answerFromMemories(question) {
   return `${prefix} Em “${title}”, vocês registraram: ${excerpt.slice(0, 380)}${excerpt.length > 380 ? '…' : ''}${dateHint}${authorHint}${other}`;
 }
 
+function isPersonalMemoryQuestion(question) {
+  const q = normalizeText(question);
+  return /\b(nossa historia|nossas memorias|nossas lembrancas|minha historia|meu namoro|minha namorada|meu namorado|nosso namoro|pedido de namoro|primeiro encontro|primeiro passeio|pietro|emilly|o que aconteceu comigo|o que eu contei|o que voce sabe de mim|o que voce lembra|lembra quando|me lembra quando|memoria|lembranca)\b/.test(q);
+}
+
+function localUnknownReply(question) {
+  const clean = String(question || '').replace(/\s+/g, ' ').trim();
+  const short = clean.length > 100 ? `“${clean.slice(0, 96)}…”` : `“${clean}”`;
+  return `Entendi o que tu está perguntando: ${short}. No meu modo local ainda não tenho informação suficiente para responder isso com segurança, e prefiro não inventar. Se tu me der um pouco mais de contexto, tento organizar a ideia contigo. Para conversar livremente sobre assuntos gerais, a opção “Respostas naturais com IA” precisa estar ativada e configurada no servidor. 💛`;
+}
+
 function responseFor(question) {
   const q = normalizeText(question);
   if (/^(oi|ola|e ai|bom dia|boa tarde|boa noite|oi pestinha)/.test(q)) {
@@ -372,9 +396,12 @@ function responseFor(question) {
     const titles = top.map(memory => `“${memory.title || memory.sourceLabel || 'uma lembrança'}”`).join(', ');
     return `Tenho ${state.memories.length} lembranças guardadas. Entre as histórias do meu caderno estão ${titles}. Perguntem por uma delas que eu procuro os detalhes. 📚`;
   }
+  const projectAnswer = answerFromProjectKnowledge(question);
+  if (projectAnswer) return projectAnswer;
   const generalAnswer = answerFromKnowledge(question);
   if (generalAnswer) return generalAnswer;
-  return answerFromMemories(question);
+  if (isPersonalMemoryQuestion(question)) return answerFromMemories(question);
+  return localUnknownReply(question);
 }
 
 function createMessage(role, text, options = {}) {
@@ -616,15 +643,38 @@ function openPanel(open = true) {
 
 function speak(text) {
   if (!('speechSynthesis' in window) || !text) return false;
+  const sequence = ++speechSequence;
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(String(text).slice(0, 900));
+  const spoken = String(text).slice(0, 900);
+  lastSpokenText = normalizeText(spoken);
+  isSpeaking = true;
+  const finishSpeaking = () => {
+    if (sequence !== speechSequence) return;
+    isSpeaking = false;
+    lastSpokenText = '';
+  };
+  const utterance = new SpeechSynthesisUtterance(spoken);
   utterance.lang = 'pt-BR';
   utterance.rate = 0.96;
   utterance.pitch = 1.08;
   const voices = window.speechSynthesis.getVoices();
   utterance.voice = voices.find(voice => /^pt-BR/i.test(voice.lang)) || voices.find(voice => /^pt/i.test(voice.lang)) || null;
+  utterance.onend = finishSpeaking;
+  utterance.onerror = finishSpeaking;
   window.speechSynthesis.speak(utterance);
   return true;
+}
+
+function isLikelySpeechEcho(transcript) {
+  if (!isSpeaking || !lastSpokenText) return false;
+  const heard = normalizeText(transcript);
+  if (heard.length < 14) return false;
+  if (lastSpokenText.includes(heard)) return true;
+  const heardWords = heard.split(/\s+/).filter(word => word.length > 2);
+  if (heardWords.length < 4) return false;
+  const spokenWords = new Set(lastSpokenText.split(/\s+/));
+  const matches = heardWords.filter(word => spokenWords.has(word)).length;
+  return matches / heardWords.length >= 0.88;
 }
 
 function stopListening() {
@@ -673,6 +723,150 @@ function startListening() {
   catch (_) { stopListening(); }
 }
 
+
+function updateWakeButton() {
+  const button = document.querySelector('#nt-companion-widget [data-action="toggle-wake-listening"]');
+  const status = document.getElementById('nt-companion-wake-status');
+  if (button) {
+    button.classList.toggle('is-listening', wakeListeningEnabled);
+    button.classList.toggle('is-conversation-active', wakeConversationActive);
+    button.setAttribute('aria-pressed', String(wakeListeningEnabled));
+    button.textContent = wakeListeningEnabled ? '🔴 Desligar chamada por voz' : '🎧 Chamar “Pestinha”';
+  }
+  if (status) {
+    if (!wakeListeningEnabled) status.textContent = 'Chamada por voz desligada. Ative aqui e depois diga “Pestinha” para começar.';
+    else if (wakeConversationActive) status.textContent = 'Conversa ativa: pode falar normalmente, sem repetir “Pestinha”. Se ficarmos 45 segundos sem conversar, volto a aguardar a chamada. “Agora não” ou “fica quietinho” desliga o microfone.';
+    else status.textContent = 'Estou aguardando “Pestinha”. Depois da chamada, podemos conversar sem repetir o nome em cada frase.';
+  }
+}
+
+function keepWakeConversationAlive() {
+  wakeConversationActive = true;
+  if (wakeConversationTimer) window.clearTimeout(wakeConversationTimer);
+  wakeConversationTimer = window.setTimeout(() => {
+    wakeConversationActive = false;
+    wakeConversationTimer = null;
+    updateWakeButton();
+  }, VOICE_CONVERSATION_IDLE_MS);
+  updateWakeButton();
+}
+
+function endWakeConversation() {
+  wakeConversationActive = false;
+  if (wakeConversationTimer) window.clearTimeout(wakeConversationTimer);
+  wakeConversationTimer = null;
+}
+
+function stopWakeListening({ announce = false } = {}) {
+  wakeListeningEnabled = false;
+  if (isSpeaking) {
+    speechSequence++;
+    isSpeaking = false;
+    lastSpokenText = '';
+    try { window.speechSynthesis?.cancel(); } catch (_) {}
+  }
+  endWakeConversation();
+  if (wakeRestartTimer) window.clearTimeout(wakeRestartTimer);
+  wakeRestartTimer = null;
+  const current = wakeRecognition;
+  wakeRecognition = null;
+  try { current?.abort(); } catch (_) {}
+  updateWakeButton();
+  if (announce) {
+    const reply = 'Combinado. Desliguei o microfone e vou ficar quietinho. 🐾';
+    createMessage('assistant', reply);
+    showReplyBubble(reply);
+  }
+}
+
+function startWakeRecognition() {
+  if (!wakeListeningEnabled) return;
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) {
+    stopWakeListening();
+    createMessage('assistant', 'Este navegador não oferece reconhecimento de fala. Podes continuar digitando normalmente.');
+    return;
+  }
+  const instance = new Recognition();
+  wakeRecognition = instance;
+  instance.lang = 'pt-BR';
+  instance.continuous = true;
+  instance.interimResults = false;
+  instance.maxAlternatives = 1;
+  instance.onresult = event => {
+    for (let index = event.resultIndex; index < event.results.length; index++) {
+      const result = event.results[index];
+      if (!result.isFinal) continue;
+      const transcript = String(result[0]?.transcript || '').trim();
+      if (!transcript) continue;
+      if (isLikelySpeechEcho(transcript)) continue;
+      const turn = classifyWakeUtterance(transcript, wakeConversationActive);
+      if (turn.type === 'stop') {
+        stopWakeListening({ announce: true });
+        return;
+      }
+      if (turn.type === 'ignore') continue;
+
+      // A primeira chamada abre uma sessão conversacional. As próximas frases
+      // são tratadas como turnos normais até 45 s de silêncio, sem repetir o nome.
+      keepWakeConversationAlive();
+      if (turn.text) {
+        submitQuestion(turn.text, true);
+      } else if (turn.type === 'wake') {
+        const reply = 'Oi! Estou aqui. Pode falar normalmente, não precisa repetir meu nome a cada frase. 🐾';
+        createMessage('assistant', reply);
+        showReplyBubble(reply);
+        if (state.speakResponses) speak(reply);
+      }
+    }
+  };
+  instance.onerror = event => {
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      stopWakeListening();
+      createMessage('assistant', 'O navegador bloqueou o microfone. Confere a permissão do site e ativa a chamada por voz novamente quando quiser.');
+    } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
+      stopWakeListening();
+      createMessage('assistant', 'A chamada por voz foi interrompida pelo navegador. Podes ativá-la novamente ou digitar.');
+    }
+  };
+  instance.onend = () => {
+    if (wakeRecognition === instance) wakeRecognition = null;
+    if (wakeListeningEnabled && !document.hidden) {
+      wakeRestartTimer = window.setTimeout(startWakeRecognition, 550);
+    }
+  };
+  try {
+    instance.start();
+  } catch (_) {
+    if (wakeRecognition === instance) wakeRecognition = null;
+    stopWakeListening();
+    createMessage('assistant', 'Não consegui iniciar o reconhecimento de fala. Tenta novamente pelo botão de chamada por voz.');
+  }
+}
+
+function toggleWakeListening() {
+  if (wakeListeningEnabled) {
+    stopWakeListening();
+    createMessage('assistant', 'Chamada por voz desligada. Não vou captar áudio até tu ativares de novo. 🐾');
+    return;
+  }
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) {
+    createMessage('assistant', 'Este navegador não oferece reconhecimento de fala. Podes conversar digitando no painel.');
+    return;
+  }
+  if (!window.isSecureContext) {
+    createMessage('assistant', 'A chamada por voz precisa de HTTPS para pedir permissão ao microfone.');
+    return;
+  }
+  // O navegador exige uma ativação explícita do usuário para liberar o microfone.
+  wakeListeningEnabled = true;
+  endWakeConversation();
+  updateWakeButton();
+  setMood('escutando', 'Estou aguardando a chamada. Depois podemos conversar normalmente, sem repetir meu nome. 🎙️');
+  startWakeRecognition();
+}
+
 function showReplyBubble(text, thinking = false) {
   const bubble = document.getElementById('nt-companion-bubble');
   if (!bubble) return;
@@ -713,13 +907,14 @@ function updatePendingReply(message, text, pending = false) {
   scheduleSave();
 }
 
-async function requestNaturalReply(messages, memoryContext = [], answerMessage = null, signal = undefined) {
+async function requestNaturalReply(messages, memoryContext = [], answerMessage = null, signal = undefined, projectContext = '') {
   const response = await fetch('/api/pestinha/chat', {
     method: 'POST',
     signal,
     headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
     body: JSON.stringify({
       profile: state.activeSpeaker,
+      projectContext: String(projectContext || '').slice(0, 4000),
       messages: messages.map(item => ({ role: item.role, content: item.text })).slice(-12),
       memories: memoryContext.map(item => ({
         title: String(item.memory.title || item.memory.sourceLabel || 'Lembrança').slice(0, 100),
@@ -783,11 +978,33 @@ async function requestNaturalReply(messages, memoryContext = [], answerMessage =
 async function submitQuestion(rawText, fromVoice = false) {
   const question = String(rawText || '').trim();
   if (!question) return;
+  // Uma fala nova interrompe a resposta de voz em andamento; ecos da própria fala
+  // já são filtrados no reconhecimento antes de chegar a esta função.
+  if (isSpeaking) {
+    speechSequence++;
+    isSpeaking = false;
+    lastSpokenText = '';
+    try { window.speechSynthesis?.cancel(); } catch (_) {}
+  }
   const signals = buildSensoryInput({ action: 'conversa', text: question, voice: fromVoice }).signals;
   recordInteraction('conversa', question, fromVoice);
   createMessage('user', question, { author: state.activeSpeaker });
   const input = document.getElementById('nt-companion-input');
   if (input) input.value = '';
+
+  try {
+    const musicResult = await handleMusicCommand(question);
+    if (musicResult?.handled) {
+      createMessage('assistant', musicResult.reply, { questionSignals: signals, questionText: question });
+      showReplyBubble(musicResult.reply);
+      if (state.speakResponses) speak(musicResult.reply);
+      renderBrainStats();
+      renderStatus();
+      return;
+    }
+  } catch (error) {
+    console.warn('[Pestinha] Falha no comando musical:', error);
+  }
 
   if (state.aiEnabled) {
     const answerMessage = createMessage('assistant', '', { questionSignals: signals, questionText: question, pending: true });
@@ -801,7 +1018,8 @@ async function submitQuestion(rawText, fromVoice = false) {
     const controller = new AbortController();
     activeReplyController = controller;
     try {
-      const reply = await requestNaturalReply(history, memories, answerMessage, controller.signal);
+      const projectContext = answerFromProjectKnowledge(question) || '';
+      const reply = await requestNaturalReply(history, memories, answerMessage, controller.signal, projectContext);
       updatePendingReply(answerMessage, reply, false);
       if (state.speakResponses) speak(reply);
     } catch (error) {
@@ -1134,7 +1352,9 @@ function createWidget() {
           <label class="nt-companion-speaker-label">Falando como <select id="nt-companion-speaker"><option value="Pietro">Pietro</option><option value="Emilly">Emilly</option><option value="Pietro e Emilly">Nós dois</option></select></label>
           <label><input type="checkbox" id="nt-companion-speak-enabled"> 🔊 Voz</label>
           <button type="button" data-action="clear-chat">Apagar conversa</button>
+          <button type="button" class="nt-companion-wake-toggle" data-action="toggle-wake-listening" aria-pressed="false">🎧 Chamar “Pestinha”</button>
         </div>
+        <small class="nt-companion-wake-status" id="nt-companion-wake-status">Chamada por voz desligada. Ative aqui e depois diga “Pestinha” para chamar.</small>
         <div class="nt-companion-ai-controls">
           <label><input type="checkbox" id="nt-companion-ai-enabled"> ✨ Respostas naturais com IA</label>
           <label><input type="checkbox" id="nt-companion-ai-memories"> Usar lembranças selecionadas</label>
@@ -1265,6 +1485,7 @@ function bindEvents() {
       setTab('conversa');
       submitQuestion(button.dataset.question || '');
     }
+    else if (action === 'toggle-wake-listening') toggleWakeListening();
     else if (action === 'close') openPanel(false);
     else if (action === 'save-message-memory') saveMessageAsMemory(button.dataset.message);
     else if (action === 'export-backup') exportCompanionBackup();
@@ -1497,6 +1718,11 @@ export async function initCompanion() {
   renderBrainStats();
   renderStatus();
   startNeedsClock();
+  updateWakeButton();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { stopWakeListening(); stopListening(); }
+  });
+  window.addEventListener('pagehide', () => { stopWakeListening(); stopListening(); }, { once: true });
   document.getElementById('nt-companion-memory-search')?.addEventListener('input', event => {
     memorySearchQuery = event.target.value.slice(0, 100);
     renderMemories();

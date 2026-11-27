@@ -417,3 +417,41 @@
 @media (prefers-reduced-motion: reduce) {
   .nt-chat-typing { animation: none; }
 }
+
+
+/* Chamada por palavra-chave do Pestinha — opt-in explícito */
+.nt-companion-wake-status {
+  display: block;
+  margin: .4rem .9rem .7rem;
+  color: #875269;
+  font-size: .72rem;
+  line-height: 1.45;
+}
+.nt-companion-wake-toggle {
+  border: 1px solid rgba(214, 111, 151, .45);
+  border-radius: 999px;
+  background: #fff3f7;
+  color: #85405d;
+  padding: .38rem .7rem;
+  font: inherit;
+  font-size: .72rem;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.nt-companion-wake-toggle.is-listening {
+  background: #ffe2ea;
+  color: #9b234f;
+  border-color: #dd7295;
+  box-shadow: 0 0 0 3px rgba(221, 114, 149, .12);
+}
+.nt-companion-wake-toggle:focus-visible {
+  outline: 3px solid rgba(221, 114, 149, .45);
+  outline-offset: 2px;
+}
+
+/* O botão distingue espera pela palavra-chave e sessão conversacional ativa. */
+.nt-companion-wake-toggle.is-conversation-active {
+  background: #fce5f0;
+  border-color: #bd6b97;
+  color: #713255;
+}

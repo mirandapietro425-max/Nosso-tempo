@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v81'; // Passaporte dos Encontros
+const CACHE_VERSION = 'v82'; // Passaporte dos Encontros + conversa do Pestinha
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -82,6 +82,10 @@ const STATIC_ASSETS = [
   '/js/time-capsule.js',
   '/js/memory-of-day.js',
   '/js/companion/companion.js',
+  '/js/companion/project-knowledge.js',
+  '/js/companion/music-intents.js',
+  '/js/companion/music-assistant.js',
+  '/js/companion/voice-session.js',
   '/js/companion/neural-brain.js',
   '/js/companion/memory-search.js',
   '/js/museum.js',
