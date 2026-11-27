@@ -976,7 +976,14 @@ async function requestNaturalReply(messages, memoryContext = [], answerMessage =
 async function submitQuestion(rawText, fromVoice = false) {
   const question = String(rawText || '').trim();
   if (!question) return;
-  // Uma fala da pessoa interrompe a resposta atual; a voz do Pestinha é filtrada no reconhecimento.
+  // Uma fala nova interrompe a resposta de voz em andamento; ecos da própria fala
+  // já são filtrados no reconhecimento antes de chegar a esta função.
+  if (isSpeaking) {
+    speechSequence++;
+    isSpeaking = false;
+    lastSpokenText = '';
+    try { window.speechSynthesis?.cancel(); } catch (_) {}
+  }
   const signals = buildSensoryInput({ action: 'conversa', text: question, voice: fromVoice }).signals;
   recordInteraction('conversa', question, fromVoice);
   createMessage('user', question, { author: state.activeSpeaker });
