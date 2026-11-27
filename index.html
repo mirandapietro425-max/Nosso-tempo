@@ -213,6 +213,10 @@
   <link rel="stylesheet" href="css/redesign.css?v=1">
 </head>
 <body>
+<aside class="local-storage-notice" role="note">
+  <span>Este aparelho salva seus dados localmente; eles não sincronizam com outros dispositivos.</span>
+  <a href="#sec-dados-locais">Backups e detalhes</a>
+</aside>
 <!-- ── MODAL FILME ── -->
 <div class="movie-modal-overlay" id="movie-modal-overlay" onclick="if(event.target===this)closeMovieModal()">
   <div class="movie-modal">
@@ -420,7 +424,6 @@
     <a class="hero-nav-btn" href="#sec-jogos">    <span class="hero-nav-icon">🎮</span><span class="hero-nav-label">Arcade</span></a>
     <a class="hero-nav-btn" href="#sec-museu">      <span class="hero-nav-icon">🏛️</span><span class="hero-nav-label">Memórias</span></a>
     <a class="hero-nav-btn" href="#sec-casinha">    <span class="hero-nav-icon">🏡</span><span class="hero-nav-label">Casinha</span></a>
-    <a class="hero-nav-btn" href="#sec-casinha">    <span class="hero-nav-icon">🐱</span><span class="hero-nav-label">Pestinha</span></a>
     <a class="hero-nav-btn" href="#sec-dados-locais"><span class="hero-nav-icon">💾</span><span class="hero-nav-label">Backup</span></a>
   </nav>
 
@@ -1118,20 +1121,20 @@
 
   <!-- Tabs -->
   <div class="home-tabs">
-    <button class="home-tab"        data-tab="rpg"  onclick="window._homeTab('rpg')">🏡 Nossa Casa</button>
-    <button class="home-tab active" data-tab="pet"  onclick="window._homeTab('pet')">🐱 Pestinha</button>
+    <button class="home-tab active" data-tab="rpg"  onclick="window._homeTab('rpg')">🏡 Nossa Casa</button>
+    <button class="home-tab"        data-tab="pet"  onclick="window._homeTab('pet')">🐱 Pet</button>
     <button class="home-tab"        data-tab="quiz" onclick="window._homeTab('quiz')">📝 Quiz</button>
   </div>
 
   <!-- PANEL: RPG -->
-  <div class="home-panel" id="home-panel-rpg">
+  <div class="home-panel active" id="home-panel-rpg">
     <div id="home-rpg-wrap">
       <!-- injected by JS -->
     </div>
   </div>
 
   <!-- PANEL: PET -->
-  <div class="home-panel active" id="home-panel-pet">
+  <div class="home-panel" id="home-panel-pet">
     <div class="pet-scene">
       <div class="pet-bg-glow"></div>
       <div class="pet-bubble" id="pet-bubble"></div>

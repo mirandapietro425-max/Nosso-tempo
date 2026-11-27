@@ -1083,6 +1083,5 @@ export function initHome(db){
   if(starsContainer){ starsContainer.style.pointerEvents="none"; }
   if(starsContainer&&!starsContainer.children.length){ for(let i=0;i<18;i++){ const star=document.createElement("div"); star.className="house-star"; star.style.left=Math.random()*100+"%"; star.style.top=Math.random()*55+"%"; star.style.animationDelay=(Math.random()*2.5)+"s"; starsContainer.appendChild(star); } }
   startPetDecayInterval();
-  // Deixa o Pestinha visível assim que a Casinha entra na tela principal.
-  window._homeTab("pet");
+  window._homeTab("rpg");
 }
