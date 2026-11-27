@@ -29,5 +29,9 @@
 - Manter o modo local como caminho durável e offline-first; a IA externa continua opcional.
 - Exigir clique no botão “Chamar Pestinha” para habilitar microfone; depois da ativação, a sessão de voz pode continuar sem repetir o nome por 45 segundos.
 - Tornar o fallback local conversacional e honesto, sem prometer conhecimento que não existe.
-- Reforçar no backend que memórias só entram no contexto quando `aiMemoryConsent === true`.
+- Reforçar no backend que memórias só entram no contexto quando a IA externa está explicitamente ativada no turno.
 - Usar resultados da playlist local para buscas musicais quando disponíveis e manter busca direta do YouTube como fallback honesto quando não há chave.
+
+## Preferência atualizada pelo responsável
+
+O responsável autorizou o Pestinha a consultar normalmente as memórias relevantes, sem pedir um segundo checkbox. A autorização que permanece separada é a ativação da IA externa: sem ela, o modo local continua privado e o endpoint não é chamado. O aprendizado também deve ser descrito com honestidade: feedback ajusta pesos e pontuações locais persistentes; não equivale a treinar permanentemente um modelo GPT.

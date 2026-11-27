@@ -138,10 +138,10 @@ export default async function handler(req, res) {
   if (!messages.length || messages[messages.length - 1].role !== 'user') return sendJson(res, 400, { error: 'Envie uma mensagem para começarmos.' });
   if (messages.some(item => item.content.length > 1200)) return sendJson(res, 413, { error: 'Uma das mensagens ficou longa demais.' });
   const profile = ['Pietro', 'Emilly', 'Pietro e Emilly'].includes(body.profile) ? body.profile : 'pessoa usuária';
-  // O navegador controla a interface, mas o endpoint também precisa aplicar
-  // a mesma regra: memória pessoal só entra no contexto com consentimento
-  // explícito neste turno.
-  const memories = body.aiMemoryConsent === true ? cleanMemories(body.memories) : [];
+  // A autorização agora é única e explícita: se a IA externa foi ativada no
+  // turno, as memórias relevantes podem acompanhar a conversa. No modo local
+  // o navegador nunca chama este endpoint.
+  const memories = body.aiEnabled === true ? cleanMemories(body.memories) : [];
   const projectContext = typeof body.projectContext === 'string' ? body.projectContext.slice(0, 4000) : '';
 
   activeRequests += 1;

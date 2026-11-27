@@ -22,8 +22,9 @@ for (const source of [chat, music]) {
 
 assert.match(chat, /MAX_CONCURRENT_REQUESTS = 3/);
 assert.match(music, /MAX_CONCURRENT_REQUESTS=2/);
-assert.match(companion, /aiMemoryConsent: Boolean\(state\.aiMemoryConsent\)/);
-assert.match(chat, /body\.aiMemoryConsent === true \? cleanMemories\(body\.memories\) : \[\]/);
+assert.match(companion, /aiEnabled: Boolean\(state\.aiEnabled\)/);
+assert.match(chat, /body\.aiEnabled === true \? cleanMemories\(body\.memories\) : \[\]/);
+assert.doesNotMatch(companion, /nt-companion-ai-memories/);
 assert.match(companion, /Ainda não tenho uma resposta confiável para esse assunto no meu caderno local/);
 assert.doesNotMatch(companion, /document\.addEventListener\('pointerdown', armVoiceOnFirstGesture/);
 assert.doesNotMatch(companion, /window\.setTimeout\(autoStartWakeListening/);

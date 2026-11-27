@@ -33,7 +33,9 @@ const DEFAULT_STATE = Object.freeze({
   rememberConversation: false,
   speakResponses: true,
   aiEnabled: false,
-  aiMemoryConsent: false,
+  // Mantido apenas para compatibilidade com estados antigos; não há mais
+  // um segundo pedido de autorização para usar memórias.
+  aiMemoryConsent: true,
   brainWeights: null,
   brainTrainingEvents: 0,
   brainSeed: null,
@@ -165,7 +167,7 @@ async function loadState() {
         speakResponses: loaded.speakResponses === undefined ? true : Boolean(loaded.speakResponses),
         // Cada carregamento exige uma nova ativação antes de enviar mensagens ao serviço externo.
         aiEnabled: false,
-        aiMemoryConsent: false,
+        aiMemoryConsent: true,
         rememberConversation: Boolean(loaded.rememberConversation),
         energy: clampNumber(loaded.energy ?? DEFAULT_STATE.energy, 24, 100),
         joy: clampNumber(loaded.joy ?? DEFAULT_STATE.joy, 30, 100),
@@ -956,7 +958,7 @@ async function requestNaturalReply(messages, memoryContext = [], answerMessage =
     headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
     body: JSON.stringify({
       profile: state.activeSpeaker,
-      aiMemoryConsent: Boolean(state.aiMemoryConsent),
+      aiEnabled: Boolean(state.aiEnabled),
       projectContext: String(projectContext || '').slice(0, 4000),
       messages: messages.map(item => ({ role: item.role, content: item.text })).slice(-12),
       memories: memoryContext.map(item => ({
@@ -1054,14 +1056,12 @@ async function submitQuestion(rawText, fromVoice = false) {
   }
 
   if (state.aiEnabled) {
-    const answerMessage = createMessage('assistant', '', { questionSignals: signals, questionText: question, pending: true });
+    const answerMessage = createMessage('assistant', '', { questionSignals: signals, questionTopics: classifyTopics(question), questionText: question, pending: true });
     showReplyBubble('Estou pensando…', true);
     const history = chatMessages
       .filter(item => aiSessionMessageIds.has(item.id) && !item.welcome && !item.pending && ['user', 'assistant'].includes(item.role))
       .slice(-12);
-    const memories = state.aiMemoryConsent
-      ? retrieveMemories(question, 5).filter(item => item.confidence >= 0.12)
-      : [];
+    const memories = retrieveMemories(question, 5).filter(item => item.confidence >= 0.12);
     const controller = new AbortController();
     const generation = replyGeneration;
     activeReplyController = controller;
@@ -1085,7 +1085,7 @@ async function submitQuestion(rawText, fromVoice = false) {
     }
   } else {
     const reply = responseFor(question);
-    createMessage('assistant', reply, { questionSignals: signals, questionText: question });
+    createMessage('assistant', reply, { questionSignals: signals, questionTopics: classifyTopics(question), questionText: question });
     showReplyBubble(reply);
     if (state.speakResponses) speak(reply);
   }
@@ -1273,6 +1273,7 @@ function handleFeedback(button) {
   message.feedbackGiven = true;
   const good = button.dataset.value === 'good';
   brain.reward(message.questionSignals, good ? 0.85 : -0.55);
+  updateLearnedTopics(message.questionTopics || [], good ? 1.5 : -0.35);
   state.bond = clampNumber(state.bond + (good ? 1 : 0), 0, 100);
   state.interactions++;
   button.parentElement.querySelectorAll('button').forEach(item => { item.disabled = true; });
@@ -1409,8 +1410,7 @@ function createWidget() {
         <small class="nt-companion-wake-status" id="nt-companion-wake-status">Chamada por voz desligada. Ative aqui e depois diga “Pestinha” para chamar.</small>
         <div class="nt-companion-ai-controls">
           <label><input type="checkbox" id="nt-companion-ai-enabled"> ✨ Respostas naturais com IA</label>
-          <label><input type="checkbox" id="nt-companion-ai-memories"> Usar lembranças selecionadas</label>
-          <small id="nt-companion-ai-note">Modo local: tenho conhecimentos básicos de vários assuntos e posso consultar as lembranças autorizadas. Minhas respostas são limitadas, mas não preciso de chave para funcionar.</small>
+          <small id="nt-companion-ai-note">Modo local: tenho conhecimentos básicos de vários assuntos e posso consultar as lembranças guardadas aqui. Minhas respostas são limitadas, mas não preciso de chave para funcionar.</small>
         </div>
         <div class="nt-companion-messages" id="nt-companion-messages" aria-live="polite" aria-relevant="additions"></div>
         <form class="nt-companion-composer" id="nt-companion-form">
@@ -1424,7 +1424,7 @@ function createWidget() {
           <button type="button" data-action="quick-question" data-question="O que temos guardado sobre música e piano?">Música e piano</button>
           <button type="button" data-action="quick-question" data-question="O que está registrado sobre taekwondo e campeonatos?">Taekwondo</button>
         </div>
-        <p class="nt-companion-privacy-note">A IA usa um serviço externo e pode errar. Não envie senhas, endereços ou dados sensíveis. Peça a um responsável para configurar e revisar a ferramenta. As lembranças só são enviadas com autorização separada.</p>
+        <p class="nt-companion-privacy-note">No modo local, mensagens e lembranças ficam neste aparelho. Ao ativar a IA externa, mensagens recentes e lembranças relacionadas podem ser enviadas ao serviço para dar contexto. Não envie senhas, endereços ou dados sensíveis.</p>
       </div>
       <div class="nt-companion-view" data-companion-view="memorias" hidden>
         <div class="nt-memory-intro">
@@ -1675,29 +1675,20 @@ function bindEvents() {
     scheduleSave();
   });
   const aiEnabled = document.getElementById('nt-companion-ai-enabled');
-  const aiMemories = document.getElementById('nt-companion-ai-memories');
   const aiNote = document.getElementById('nt-companion-ai-note');
   const refreshAIControls = () => {
     if (aiEnabled) aiEnabled.checked = state.aiEnabled;
-    if (aiMemories) { aiMemories.checked = state.aiMemoryConsent; aiMemories.disabled = !state.aiEnabled; }
     if (aiNote) aiNote.textContent = state.aiEnabled
-      ? (state.aiMemoryConsent
-        ? 'IA ativada: mensagens recentes e até cinco lembranças relacionadas podem ser enviadas ao serviço externo. Use somente com autorização do responsável.'
-        : 'IA ativada: mensagens recentes vão ao serviço externo; o caderno continua privado. Não envie senhas ou dados sensíveis.')
+      ? 'IA ativada: mensagens recentes e até cinco lembranças relacionadas podem ser enviadas ao serviço externo. Não envie senhas ou dados sensíveis.'
       : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
   };
   aiEnabled?.addEventListener('change', event => {
     state.aiEnabled = Boolean(event.target.checked);
     aiSessionMessageIds.clear();
-    if (!state.aiEnabled) state.aiMemoryConsent = false;
+    state.aiMemoryConsent = true;
     refreshAIControls();
     scheduleSave();
     if (state.aiEnabled) showReplyBubble('Agora posso tentar conversar com uma IA mais natural. ✨');
-  });
-  aiMemories?.addEventListener('change', event => {
-    state.aiMemoryConsent = Boolean(event.target.checked);
-    refreshAIControls();
-    scheduleSave();
   });
   refreshAIControls();
 }
@@ -1796,13 +1787,11 @@ export async function initCompanion() {
   const speakEnabled = document.getElementById('nt-companion-speak-enabled');
   if (speakEnabled) speakEnabled.checked = state.speakResponses;
   const aiEnabled = document.getElementById('nt-companion-ai-enabled');
-  const aiMemories = document.getElementById('nt-companion-ai-memories');
   if (aiEnabled) aiEnabled.checked = state.aiEnabled;
-  if (aiMemories) { aiMemories.checked = state.aiMemoryConsent; aiMemories.disabled = !state.aiEnabled; }
   const aiNote = document.getElementById('nt-companion-ai-note');
   if (aiNote) aiNote.textContent = state.aiEnabled
-    ? (state.aiMemoryConsent ? 'IA ativada: mensagens recentes e até cinco lembranças relacionadas podem ser enviadas ao serviço externo. Use somente com autorização do responsável.' : 'IA ativada: mensagens recentes vão ao serviço externo; o caderno continua privado. Não envie senhas ou dados sensíveis.')
-    : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
+      ? 'IA ativada: mensagens recentes e até cinco lembranças relacionadas podem ser enviadas ao serviço externo. Não envie senhas ou dados sensíveis.'
+      : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
   setMood('curioso', 'Oi! Sou o Pestinha. 🐾');
   startIdleBehavior();
   // O microfone só começa pelo botão explícito de chamada por voz. Uma
