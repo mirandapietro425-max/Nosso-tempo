@@ -349,6 +349,17 @@ function answerFromMemories(question) {
   return `${prefix} Em “${title}”, vocês registraram: ${excerpt.slice(0, 380)}${excerpt.length > 380 ? '…' : ''}${dateHint}${authorHint}${other}`;
 }
 
+function isPersonalMemoryQuestion(question) {
+  const q = normalizeText(question);
+  return /\b(nossa historia|nossas memorias|nossas lembrancas|minha historia|meu namoro|minha namorada|meu namorado|nosso namoro|pedido de namoro|primeiro encontro|primeiro passeio|pietro|emilly|o que aconteceu comigo|o que eu contei|o que voce sabe de mim|o que voce lembra|lembra quando|me lembra quando|memoria|lembranca)\b/.test(q);
+}
+
+function localUnknownReply(question) {
+  const clean = String(question || '').replace(/\s+/g, ' ').trim();
+  const short = clean.length > 100 ? `“${clean.slice(0, 96)}…”` : `“${clean}”`;
+  return `Entendi o que tu está perguntando: ${short}. No meu modo local ainda não tenho informação suficiente para responder isso com segurança, e prefiro não inventar. Se tu me der um pouco mais de contexto, tento organizar a ideia contigo. Para conversar livremente sobre assuntos gerais, a opção “Respostas naturais com IA” precisa estar ativada e configurada no servidor. 💛`;
+}
+
 function responseFor(question) {
   const q = normalizeText(question);
   if (/^(oi|ola|e ai|bom dia|boa tarde|boa noite|oi pestinha)/.test(q)) {
@@ -384,7 +395,8 @@ function responseFor(question) {
   if (projectAnswer) return projectAnswer;
   const generalAnswer = answerFromKnowledge(question);
   if (generalAnswer) return generalAnswer;
-  return answerFromMemories(question);
+  if (isPersonalMemoryQuestion(question)) return answerFromMemories(question);
+  return localUnknownReply(question);
 }
 
 function createMessage(role, text, options = {}) {
