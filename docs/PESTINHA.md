@@ -1,6 +1,6 @@
 # Pestinha — voz, música e conhecimento de projetos
 
-Esta alteração conecta o Pestinha à base local de conhecimento e ao player que já existe no Nosso-tempo. Não substitui a interface do mascote, o cérebro LIF, o caderno de memórias nem a opção de IA natural do backend.
+O Pestinha conversa localmente no navegador, usando a base de conhecimento, o cérebro LIF, o contexto curto, o caderno de memórias e o player que já existe no Nosso-tempo. Não depende de chave, crédito ou serviço de IA pago.
 
 ## Chamada por palavra-chave
 
@@ -34,13 +34,11 @@ A chave precisa ter acesso à YouTube Data API v3 e o projeto Google Cloud pode 
 
 ## Proteções dos endpoints
 
-As rotas server-side exigem uma requisição POST com `Origin` correspondente ao host servido pelo site. O corpo da conversa é limitado a 24 KB e o corpo da busca musical a 4 KB. Há limites de frequência e de concorrência por instância, além de timeout nas chamadas para OpenAI e YouTube; esses limites locais reduzem abuso e custo, mas não substituem uma cota compartilhada do provedor ou um gateway persistente em uma implantação distribuída.
+A busca musical server-side exige uma requisição POST com `Origin` correspondente ao host servido pelo site, corpo limitado, frequência limitada e timeout. A conversa não cria requisição externa: respostas antigas são invalidadas localmente quando uma nova pergunta chega.
 
-Quando uma resposta de IA é interrompida no navegador — por uma nova pergunta, pelo comando de silêncio, pelo fechamento do painel ou pela troca de sessão — a requisição pendente é abortada e sua geração é invalidada para impedir que uma resposta atrasada volte a falar.
+## Conversa local e memórias
 
-## IA natural e memórias
-
-O endpoint de conversa existente continua usando `OPENAI_API_KEY` server-side. O modo de IA natural continua sendo opcional e inicia desligado, conforme os controles existentes. A autorização para usar IA externa e a autorização para enviar lembranças continuam separadas. A base de projetos é uma coleção local pesquisada por termos; ela não é um modelo de linguagem e não aprende automaticamente fatos novos. Quando a opção de IA natural estiver ligada, o tópico local correspondente também é enviado como contexto factual para essa conversa. Esse contexto técnico não inclui o caderno pessoal; as lembranças continuam sob autorização separada.
+A conversa usa somente JavaScript local. O Pestinha combina respostas sociais, contexto curto da conversa, conhecimento geral, conhecimento do projeto e busca automática nas memórias relevantes. Quando não sabe, admite a limitação em vez de inventar. As memórias ficam no armazenamento local do navegador e podem ser consultadas normalmente; não são enviadas para uma IA externa.
 
 ## Validação
 
@@ -60,6 +58,6 @@ Os testes automatizados não substituem testes reais em Chrome/Edge/Firefox, HTT
 
 ## Conversa natural em vários turnos
 
-Quando a pessoa ativa **Respostas naturais com IA**, o Pestinha envia até 12 mensagens recentes da sessão ao endpoint server-side. O prompt de sistema orienta o modelo a acompanhar pronomes e perguntas de continuação, evitar respostas padronizadas, admitir incerteza e reconhecer correções. O tópico técnico local relacionado à pergunta pode ser enviado como contexto; as lembranças pessoais continuam separadas e dependem de autorização específica.
+A conversa local acompanha até os últimos turnos salvos quando a pessoa ativa a opção de lembrar conversa. Perguntas como “por quê?”, “explica melhor”, confirmações, correções e mudanças de assunto recebem tratamento conversacional; assuntos pessoais consultam o caderno local. A voz continua opt-in e a música continua podendo usar a busca oficial do YouTube.
 
-O modo de IA continua desligado por padrão e é ativado conscientemente pela pessoa. Sem a configuração de `OPENAI_API_KEY`, o modo local continua disponível, mas possui conhecimento limitado e não deve fingir ser uma conversa generativa ampla.
+O aprendizado continua verificável: feedback ajusta pesos e pontuações locais persistentes, e a base de conhecimento pode ser revisada com fatos novos. Isso melhora o comportamento local, mas não é treinamento permanente de um modelo GPT.

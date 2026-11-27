@@ -4,16 +4,17 @@
 
 - Repositório: `mirandapietro425-max/Nosso-tempo`.
 - Projeto Vercel: `nosso-tempo`, ligado à branch `main`.
-- Deploy de produção observado: READY, commit `dab4de6`, domínio `nosso-tempo-one.vercel.app`.
-- Variáveis de ambiente Vercel observadas: nenhuma; portanto `OPENAI_API_KEY` e `YOUTUBE_API_KEY` não estão configuradas neste projeto.
-- O site é um frontend estático com IndexedDB/local-db, módulos ES, service worker e funções server-side em `api/` que ficam indisponíveis sem configuração/servidor.
+- Deploy de produção observado antes desta rodada: READY, commit `beaab96`, domínio `nosso-tempo-one.vercel.app`.
+- O Pestinha não usa mais `OPENAI_API_KEY` nem expõe endpoint de conversa externa.
+- A busca musical continua usando `YOUTUBE_API_KEY` server-side quando disponível e fallback direto para o YouTube.
+- O site é um frontend estático com IndexedDB/local-db, módulos ES, service worker e uma função server-side apenas para pesquisa musical.
 
 ## Requisitos confirmados no chat “Boas-vindas ao ChatGPT”
 
 - O Pestinha deve conversar de forma contínua, acompanhar perguntas de continuação e não agir apenas por comandos.
 - Voz deve exigir ativação/consentimento claro; navegadores não permitem palavra-chave totalmente autônoma sem uma ativação prévia do usuário.
 - Comandos musicais precisam distinguir pergunta de ação: adicionar sem tocar, tocar sem adicionar, adicionar e tocar, pesquisar com opções, pausar, continuar, próxima/anterior e remoção com confirmação.
-- Consentimento para IA externa e para enviar memórias pessoais deve ser separado.
+- O modo local deve ser o caminho principal; não deve depender de IA externa paga.
 - Aprendizado deve ser verificável; não afirmar treinamento permanente quando só houve feedback local.
 - A publicação em produção deve ser feita somente após testar e confirmar o resultado.
 
@@ -26,12 +27,12 @@
 
 ## Estratégia aplicada
 
-- Manter o modo local como caminho durável e offline-first; a IA externa continua opcional.
+- Tornar o modo local o único caminho de conversa, durável e offline-first; remover a dependência de OpenAI.
 - Exigir clique no botão “Chamar Pestinha” para habilitar microfone; depois da ativação, a sessão de voz pode continuar sem repetir o nome por 45 segundos.
 - Tornar o fallback local conversacional e honesto, sem prometer conhecimento que não existe.
-- Reforçar no backend que memórias só entram no contexto quando a IA externa está explicitamente ativada no turno.
+- Consultar memórias relevantes diretamente no navegador, sem enviá-las para serviço externo.
 - Usar resultados da playlist local para buscas musicais quando disponíveis e manter busca direta do YouTube como fallback honesto quando não há chave.
 
 ## Preferência atualizada pelo responsável
 
-O responsável autorizou o Pestinha a consultar normalmente as memórias relevantes, sem pedir um segundo checkbox. A autorização que permanece separada é a ativação da IA externa: sem ela, o modo local continua privado e o endpoint não é chamado. O aprendizado também deve ser descrito com honestidade: feedback ajusta pesos e pontuações locais persistentes; não equivale a treinar permanentemente um modelo GPT.
+O responsável decidiu não pagar créditos nem depender de APIs de IA gigantes. O Pestinha agora conversa pelo caminho local, consulta normalmente as memórias no aparelho e mantém voz opt-in e música do YouTube. O aprendizado continua descrito com honestidade: feedback ajusta pesos e pontuações locais persistentes; não equivale a treinar permanentemente um modelo GPT.

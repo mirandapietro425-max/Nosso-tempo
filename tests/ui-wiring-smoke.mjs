@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
 const source = readFileSync(new URL('../js/companion/companion.js', import.meta.url), 'utf8');
-const chatApiSource = readFileSync(new URL('../api/pestinha/chat.mjs', import.meta.url), 'utf8');
 const appSource = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
 const indexSource = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const unlockSource = readFileSync(new URL('../js/event-unlock.js', import.meta.url), 'utf8');
@@ -24,10 +23,7 @@ assert.match(source, /if \(state\.speakResponses\) speak\(reply\)/, 'preferênci
 assert.match(source, /saveMessageAsMemory\(button\.dataset\.message\)/, 'ação de guardar mensagem não está ligada');
 assert.match(source, /exportCompanionBackup\(\)/, 'ação de exportar backup não está ligada');
 assert.match(source, /getElementById\('nt-companion-backup-file'\)\?\.click\(\)/, 'ação de escolher backup não está ligada');
-assert.match(source, /fetch\('\/api\/pestinha\/chat'/, 'a conversa natural deve usar o endpoint server-side');
 assert.match(source, /answerFromProjectKnowledge/, 'a base de projetos deve ser consultada');
-assert.match(source, /projectContext: String\(projectContext \|\| ''\)/, 'o contexto de projetos deve ser enviado com a IA natural');
-assert.match(chatApiSource, /CONTEXTO LOCAL DOS PROJETOS/, 'o backend deve incluir o contexto de projetos sem misturá-lo com memórias pessoais');
 assert.match(source, /handleMusicCommand/, 'a conversa deve encaminhar comandos musicais');
 assert.match(source, /toggleWakeListening/, 'a chamada pela palavra-chave deve ser controlável');
 assert.match(source, /stopWakeListening/, 'a escuta por palavra-chave deve poder ser desligada');
@@ -39,14 +35,12 @@ assert.match(source, /if \(isSpeaking\)[\s\S]*speechSynthesis\?\.cancel/, 'uma n
 assert.match(source, /data-action="toggle-wake-listening"/, 'o controle de chamada por voz deve estar na interface');
 assert.match(appSource, /initCompanion/, 'o módulo do Pestinha deve continuar inicializado pelo app');
 
-assert.match(source, /const memories = state\.aiMemoryConsent/, 'memórias só podem seguir com consentimento explícito');
-assert.match(source, /aiMemoryConsent: false/, 'consentimento de memórias começa desligado');
-assert.match(source, /if \(!state\.aiEnabled\) state\.aiMemoryConsent = false/, 'desligar IA também encerra o consentimento de memórias');
-assert.match(chatApiSource, /cleanMemories\(body\.memories\)/, 'o backend deve receber apenas memórias enviadas explicitamente');
 assert.match(source, /lastSpokenAt = Date\.now\(\)/, 'o filtro de eco deve manter uma janela após a síntese');
 assert.match(source, /lastSpokenText = '';[\s\S]*lastSpokenAt = 0/, 'a janela de eco deve ser limpa ao parar ou iniciar outro turno');
 
-assert.match(source, /aiEnabled: false/, 'a IA deve iniciar desligada por padrão');
+assert.match(source, /aiEnabled: false/, 'o estado antigo de compatibilidade deve permanecer desligado');
+assert.match(source, /function localConversationalReply\(question\)/, 'a conversa local deve ter continuidade e respostas sociais');
+assert.doesNotMatch(source, /nt-companion-ai-enabled/, 'não deve existir controle de API externa na interface');
 assert.match(appSource, /sessionStorage\.getItem\('pe_welcome_shown'\)/, 'a cartinha deve ser preservada por sessão');
 assert.doesNotMatch(appSource, /localStorage\.setItem\('pe_welcome_dismissed'/, 'a cartinha não deve ser escondida permanentemente');
 assert.doesNotMatch(indexSource, /id="sw-update-bar"|Atualizar<\/button>/, 'o aviso técnico de atualização não deve aparecer na entrada');

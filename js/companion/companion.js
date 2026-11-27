@@ -1,7 +1,7 @@
 /*
  * Pestinha do Nosso-tempo — companheiro virtual local.
- * O cérebro LIF e o modo local são originais. A conversa por IA é opcional;
- * só envia mensagens da sessão atual e memórias relacionadas com autorização.
+ * O cérebro LIF, a conversa e as memórias funcionam localmente no navegador.
+ * Nenhuma conversa depende de chave, cobrança ou serviço externo.
  */
 import { getFirestore, doc, getDoc, setDoc } from '../local-db.js';
 import { DIALOGOS } from '../home.js';
@@ -65,7 +65,6 @@ const STOP_WORDS = new Set([
 let state = { ...DEFAULT_STATE, memories: [], messages: [], learnedTopics: {}, importedSources: [] };
 let brain = new SpikingBrain();
 let chatMessages = [];
-let aiSessionMessageIds = new Set();
 let activeReplyController = null;
 let replyGeneration = 0;
 let saveTimer = null;
@@ -368,11 +367,49 @@ function isPersonalMemoryQuestion(question) {
 function localUnknownReply(question) {
   const clean = String(question || '').replace(/\s+/g, ' ').trim();
   const short = clean.length > 100 ? `“${clean.slice(0, 96)}…”` : `“${clean}”`;
-  return `Entendi o que tu está perguntando: ${short}. Ainda não tenho uma resposta confiável para esse assunto no meu caderno local, e prefiro não inventar. Se tu me der um pouco mais de contexto, posso organizar a ideia contigo; se for algo sobre o Nosso-tempo ou as histórias de vocês, também posso procurar nas fontes que foram guardadas aqui. 💛`;
+  return `Entendi: ${short}. Eu não tenho uma resposta confiável pronta para esse assunto no meu caderno local, então não vou inventar. Se tu me der um exemplo ou disser o que quer descobrir, eu posso organizar a ideia contigo. 💛`;
+}
+
+function previousTurn() {
+  const turns = chatMessages.filter(item => !item.welcome && !item.pending && ['user', 'assistant'].includes(item.role));
+  return turns.length >= 2 ? turns[turns.length - 2] : null;
+}
+
+function localConversationalReply(question) {
+  const q = normalizeText(question);
+  const previous = previousTurn();
+  const previousText = normalizeText(previous?.text || '');
+  if (/^(obrigad|valeu|brigad|show|perfeito|entendi|beleza|blz|ta bom)/.test(q)) {
+    return 'De nada! Estou aqui contigo. Se quiser, pode mudar de assunto sem cerimônia. 🐾';
+  }
+  if (/^(te amo|amo voce|gosto de voce|voce e legal|voce e fofo)/.test(q)) {
+    return 'Aaaah, que carinho bom! Eu também gosto muito de estar aqui com vocês. 💛';
+  }
+  if (/triste|ansios|preocupad|nervos|mal hoje|dia ruim/.test(q)) {
+    return 'Poxa, sinto que o dia esteja pesado. Quer me contar o que aconteceu, ou prefere uma distração leve com música, brincadeira ou conversa?';
+  }
+  if (/feliz|animad|comemor|consegui|deu certo/.test(q)) {
+    return 'Eba! Quero comemorar contigo. O que aconteceu? Conta a parte mais legal, que eu acompanho a história. ✨';
+  }
+  if (/^(sim|s|isso|exato|isso mesmo|nao|n|negativo)$/.test(q) && previous) {
+    return q === 'nao' || q === 'n' ? 'Tudo bem, então não era isso. Me dá uma pista e eu tento por outro caminho.' : `Boa! Então seguimos nessa linha. Tu queres que eu explique melhor ${previousText ? `“${previousText.slice(0, 100)}”` : 'essa parte'}?`;
+  }
+  if (/^(por que|porque|como assim|explica|pode explicar|e ai|e depois|e sobre isso)/.test(q) && previous) {
+    return `Boa pergunta sobre o que a gente estava falando. Em resumo: ${previous.text.slice(0, 260)}${previous.text.length > 260 ? '…' : ''} Se quiseres, eu aprofundo por um exemplo.`;
+  }
+  if (/^(e voce|e tu|o que voce acha|qual sua opiniao)/.test(q)) {
+    return 'Eu não tenho opinião pessoal como uma pessoa, mas posso comparar os lados e pensar contigo. O que pesa mais para ti nessa situação?';
+  }
+  if (/^(me ajuda|preciso de ajuda|pode me ajudar)/.test(q)) {
+    return 'Claro. Diz o que aconteceu e qual resultado tu queres alcançar. A gente pode dividir em passos pequenos.';
+  }
+  return null;
 }
 
 function responseFor(question) {
   const q = normalizeText(question);
+  const conversational = localConversationalReply(question);
+  if (conversational) return conversational;
   if (/^(oi|ola|e ai|bom dia|boa tarde|boa noite|oi pestinha)/.test(q)) {
     const who = state.activeSpeaker === 'Pietro e Emilly' ? 'vocês dois' : state.activeSpeaker;
     return `Oiii, ${who}! 🐾 Que bom ter vocês por aqui. Quer conversar sobre alguma lembrança ou me contar uma história nova?`;
@@ -413,7 +450,6 @@ function responseFor(question) {
 function createMessage(role, text, options = {}) {
   const message = { role, text: String(text), time: Date.now(), id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...options };
   chatMessages.push(message);
-  if (state.aiEnabled && !message.welcome && ['user', 'assistant'].includes(role)) aiSessionMessageIds.add(message.id);
   chatMessages = chatMessages.slice(-60);
   if (state.rememberConversation) {
     state.messages = chatMessages.filter(item => !item.welcome && !item.pending).slice(-MAX_SAVED_MESSAGES);
@@ -951,75 +987,6 @@ function updatePendingReply(message, text, pending = false) {
   scheduleSave();
 }
 
-async function requestNaturalReply(messages, memoryContext = [], answerMessage = null, signal = undefined, projectContext = '') {
-  const response = await fetch('/api/pestinha/chat', {
-    method: 'POST',
-    signal,
-    headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-    body: JSON.stringify({
-      profile: state.activeSpeaker,
-      aiEnabled: Boolean(state.aiEnabled),
-      projectContext: String(projectContext || '').slice(0, 4000),
-      messages: messages.map(item => ({ role: item.role, content: item.text })).slice(-12),
-      memories: memoryContext.map(item => ({
-        title: String(item.memory.title || item.memory.sourceLabel || 'Lembrança').slice(0, 100),
-        text: String(item.memory.text || item.memory.summary || '').slice(0, 1000),
-        author: String(item.memory.author || 'Não informado').slice(0, 60),
-        date: dateLabel(item.memory.ts || item.memory.createdAt),
-      })),
-    }),
-  });
-  if (!response.ok) {
-    let detail = 'Não consegui acessar a IA agora.';
-    try { detail = (await response.json()).error || detail; } catch (_) {}
-    throw new Error(detail);
-  }
-  if (!response.body?.getReader) throw new Error('Este navegador não oferece resposta em transmissão.');
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let answer = '';
-  const consume = block => {
-    const data = block.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5).trim()).join('\n');
-    if (!data || data === '[DONE]') return;
-    let event;
-    try { event = JSON.parse(data); } catch (_) { return; }
-    if (event.error) throw new Error(event.error);
-    if (typeof event.delta === 'string' && event.delta) {
-      answer += event.delta;
-
-    }
-  };
-  let carry = '';
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    carry += decoder.decode(value, { stream: true });
-    const blocks = carry.split(/\r?\n\r?\n/);
-    carry = blocks.pop() || '';
-    for (const block of blocks) {
-      const previousLength = answer.length;
-      consume(block);
-      if (answer.length !== previousLength) {
-        if (answerMessage) answerMessage.text = answer;
-        const list = document.getElementById('nt-companion-messages');
-        const pending = list ? Array.from(list.children).find(node => node.dataset.messageId === answerMessage?.id) : null;
-        if (pending) {
-          const paragraph = pending.querySelector('p');
-          if (paragraph) paragraph.textContent = answer;
-          else { const p = document.createElement('p'); p.textContent = answer; pending.appendChild(p); }
-          pending.querySelector('.nt-chat-typing')?.remove();
-          list.scrollTop = list.scrollHeight;
-        }
-        showReplyBubble(answer, true);
-      }
-    }
-  }
-  carry += decoder.decode();
-  if (carry.trim()) consume(carry);
-  if (!answer.trim()) throw new Error('A IA não retornou uma resposta. Tente novamente.');
-  return answer.trim();
-}
-
 async function submitQuestion(rawText, fromVoice = false) {
   const question = String(rawText || '').trim();
   if (!question) return;
@@ -1055,40 +1022,11 @@ async function submitQuestion(rawText, fromVoice = false) {
     console.warn('[Pestinha] Falha no comando musical:', error);
   }
 
-  if (state.aiEnabled) {
-    const answerMessage = createMessage('assistant', '', { questionSignals: signals, questionTopics: classifyTopics(question), questionText: question, pending: true });
-    showReplyBubble('Estou pensando…', true);
-    const history = chatMessages
-      .filter(item => aiSessionMessageIds.has(item.id) && !item.welcome && !item.pending && ['user', 'assistant'].includes(item.role))
-      .slice(-12);
-    const memories = retrieveMemories(question, 5).filter(item => item.confidence >= 0.12);
-    const controller = new AbortController();
-    const generation = replyGeneration;
-    activeReplyController = controller;
-    try {
-      const projectContext = answerFromProjectKnowledge(question) || '';
-      const reply = await requestNaturalReply(history, memories, answerMessage, controller.signal, projectContext);
-      if (controller.signal.aborted || generation !== replyGeneration) return;
-      updatePendingReply(answerMessage, reply, false);
-      if (state.speakResponses) speak(reply);
-    } catch (error) {
-      if (controller.signal.aborted || generation !== replyGeneration) {
-        updatePendingReply(answerMessage, 'Resposta interrompida.', false);
-        return;
-      }
-      const local = responseFor(question);
-      const fallback = `Não consegui conectar minha IA natural (${error.message}). Por enquanto, estou respondendo pelo meu modo local: ${local}`;
-      updatePendingReply(answerMessage, fallback, false);
-      if (state.speakResponses) speak(fallback);
-    } finally {
-      if (activeReplyController === controller) activeReplyController = null;
-    }
-  } else {
-    const reply = responseFor(question);
-    createMessage('assistant', reply, { questionSignals: signals, questionTopics: classifyTopics(question), questionText: question });
-    showReplyBubble(reply);
-    if (state.speakResponses) speak(reply);
-  }
+  const reply = responseFor(question);
+  createMessage('assistant', reply, { questionSignals: signals, questionTopics: classifyTopics(question), questionText: question });
+  showReplyBubble(reply);
+  if (state.speakResponses) speak(reply);
+
   renderBrainStats();
   renderStatus();
 }
@@ -1408,9 +1346,9 @@ function createWidget() {
           <button type="button" class="nt-companion-wake-toggle" data-action="toggle-wake-listening" aria-pressed="false">🎧 Chamar “Pestinha”</button>
         </div>
         <small class="nt-companion-wake-status" id="nt-companion-wake-status">Chamada por voz desligada. Ative aqui e depois diga “Pestinha” para chamar.</small>
-        <div class="nt-companion-ai-controls">
-          <label><input type="checkbox" id="nt-companion-ai-enabled"> ✨ Respostas naturais com IA</label>
-          <small id="nt-companion-ai-note">Modo local: tenho conhecimentos básicos de vários assuntos e posso consultar as lembranças guardadas aqui. Minhas respostas são limitadas, mas não preciso de chave para funcionar.</small>
+        <div class="nt-companion-local-note">
+          <strong>🧠 Cérebro local ativo</strong>
+          <small>Converso sem API paga, guardo o contexto neste aparelho e consulto as memórias relacionadas automaticamente.</small>
         </div>
         <div class="nt-companion-messages" id="nt-companion-messages" aria-live="polite" aria-relevant="additions"></div>
         <form class="nt-companion-composer" id="nt-companion-form">
@@ -1424,7 +1362,7 @@ function createWidget() {
           <button type="button" data-action="quick-question" data-question="O que temos guardado sobre música e piano?">Música e piano</button>
           <button type="button" data-action="quick-question" data-question="O que está registrado sobre taekwondo e campeonatos?">Taekwondo</button>
         </div>
-        <p class="nt-companion-privacy-note">No modo local, mensagens e lembranças ficam neste aparelho. Ao ativar a IA externa, mensagens recentes e lembranças relacionadas podem ser enviadas ao serviço para dar contexto. Não envie senhas, endereços ou dados sensíveis.</p>
+        <p class="nt-companion-privacy-note">Mensagens, contexto e lembranças ficam neste aparelho. O Pestinha não envia a conversa para uma IA externa. A voz só funciona quando tu ativares o microfone.</p>
       </div>
       <div class="nt-companion-view" data-companion-view="memorias" hidden>
         <div class="nt-memory-intro">
@@ -1674,19 +1612,6 @@ function bindEvents() {
     }
     scheduleSave();
   });
-  const aiEnabled = document.getElementById('nt-companion-ai-enabled');
-  const aiNote = document.getElementById('nt-companion-ai-note');
-  const refreshAIControls = () => {
-    if (aiEnabled) aiEnabled.checked = state.aiEnabled;
-    if (aiNote) aiNote.textContent = state.aiEnabled
-      ? 'IA ativada: mensagens recentes e até cinco lembranças relacionadas podem ser enviadas ao serviço externo. Não envie senhas ou dados sensíveis.'
-      : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
-  };
-  aiEnabled?.addEventListener('change', event => {
-    state.aiEnabled = Boolean(event.target.checked);
-    aiSessionMessageIds.clear();
-    state.aiMemoryConsent = true;
-    refreshAIControls();
     scheduleSave();
     if (state.aiEnabled) showReplyBubble('Agora posso tentar conversar com uma IA mais natural. ✨');
   });
@@ -1786,16 +1711,10 @@ export async function initCompanion() {
   if (remember) remember.checked = state.rememberConversation;
   const speakEnabled = document.getElementById('nt-companion-speak-enabled');
   if (speakEnabled) speakEnabled.checked = state.speakResponses;
-  const aiEnabled = document.getElementById('nt-companion-ai-enabled');
-  if (aiEnabled) aiEnabled.checked = state.aiEnabled;
-  const aiNote = document.getElementById('nt-companion-ai-note');
-  if (aiNote) aiNote.textContent = state.aiEnabled
-      ? 'IA ativada: mensagens recentes e até cinco lembranças relacionadas podem ser enviadas ao serviço externo. Não envie senhas ou dados sensíveis.'
-      : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
   setMood('curioso', 'Oi! Sou o Pestinha. 🐾');
   startIdleBehavior();
   // O microfone só começa pelo botão explícito de chamada por voz. Uma
   // permissão antiga do navegador não deve transformar uma visita silenciosa
   // em escuta automática.
-  console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas; modo local durável e IA externa opcional`);
+  console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas; conversa local sem API externa`);
 }
