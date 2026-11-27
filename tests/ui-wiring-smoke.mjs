@@ -24,6 +24,14 @@ assert.match(source, /saveMessageAsMemory\(button\.dataset\.message\)/, 'ação 
 assert.match(source, /exportCompanionBackup\(\)/, 'ação de exportar backup não está ligada');
 assert.match(source, /getElementById\('nt-companion-backup-file'\)\?\.click\(\)/, 'ação de escolher backup não está ligada');
 assert.match(source, /fetch\('\/api\/pestinha\/chat'/, 'a conversa natural deve usar o endpoint server-side');
+assert.match(source, /answerFromProjectKnowledge/, 'a base de projetos deve ser consultada');
+assert.match(source, /handleMusicCommand/, 'a conversa deve encaminhar comandos musicais');
+assert.match(source, /toggleWakeListening/, 'a chamada pela palavra-chave deve ser controlável');
+assert.match(source, /stopWakeListening/, 'a escuta por palavra-chave deve poder ser desligada');
+assert.match(source, /SpeechRecognition/, 'o modo de chamada deve usar a API de fala do navegador');
+assert.match(source, /data-action="toggle-wake-listening"/, 'o controle de chamada por voz deve estar na interface');
+assert.match(appSource, /initCompanion/, 'o módulo do Pestinha deve continuar inicializado pelo app');
+
 assert.match(source, /const memories = state\.aiMemoryConsent/, 'memórias só podem seguir com consentimento explícito');
 assert.match(source, /aiEnabled: false/, 'a IA deve iniciar desligada por padrão');
 assert.match(appSource, /sessionStorage\.getItem\('pe_welcome_shown'\)/, 'a cartinha deve ser preservada por sessão');
