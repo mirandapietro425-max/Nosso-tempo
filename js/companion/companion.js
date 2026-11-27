@@ -74,6 +74,8 @@ let wakeListeningEnabled = false;
 let wakeRestartTimer = null;
 let wakeConversationActive = false;
 let wakeConversationTimer = null;
+let wakeSpeechPaused = false;
+let speechSequence = 0;
 let isOpen = false;
 let currentMood = 'curioso';
 let lastQuestionSignals = null;
@@ -638,13 +640,31 @@ function openPanel(open = true) {
 
 function speak(text) {
   if (!('speechSynthesis' in window) || !text) return false;
+  const sequence = ++speechSequence;
   window.speechSynthesis.cancel();
+  const pauseWake = wakeListeningEnabled;
+  if (pauseWake) {
+    wakeSpeechPaused = true;
+    const current = wakeRecognition;
+    wakeRecognition = null;
+    try { current?.abort(); } catch (_) {}
+  }
+  const resumeWake = () => {
+    if (sequence !== speechSequence || !pauseWake) return;
+    wakeSpeechPaused = false;
+    if (wakeListeningEnabled && !document.hidden) {
+      if (wakeRestartTimer) window.clearTimeout(wakeRestartTimer);
+      wakeRestartTimer = window.setTimeout(startWakeRecognition, 450);
+    }
+  };
   const utterance = new SpeechSynthesisUtterance(String(text).slice(0, 900));
   utterance.lang = 'pt-BR';
   utterance.rate = 0.96;
   utterance.pitch = 1.08;
   const voices = window.speechSynthesis.getVoices();
   utterance.voice = voices.find(voice => /^pt-BR/i.test(voice.lang)) || voices.find(voice => /^pt/i.test(voice.lang)) || null;
+  utterance.onend = resumeWake;
+  utterance.onerror = resumeWake;
   window.speechSynthesis.speak(utterance);
   return true;
 }
@@ -731,6 +751,7 @@ function endWakeConversation() {
 
 function stopWakeListening({ announce = false } = {}) {
   wakeListeningEnabled = false;
+  wakeSpeechPaused = false;
   endWakeConversation();
   if (wakeRestartTimer) window.clearTimeout(wakeRestartTimer);
   wakeRestartTimer = null;
@@ -746,7 +767,7 @@ function stopWakeListening({ announce = false } = {}) {
 }
 
 function startWakeRecognition() {
-  if (!wakeListeningEnabled) return;
+  if (!wakeListeningEnabled || wakeSpeechPaused) return;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) {
     stopWakeListening();
