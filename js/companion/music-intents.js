@@ -10,7 +10,7 @@ const VERBS = /^(adiciona|adicionar|coloca|colocar|bota|botar|inclui|incluir|toc
 function extractQuery(raw) {
   let query = String(raw || '').trim().replace(/^(?:ei\s+)?pestinha\b[,: ]*/i, '');
   query = query.replace(/^(?:por favor[, ]*)?/i, '');
-  query = query.replace(/^(?:pode|poderia)\\s+/i, '');
+  query = query.replace(/^(?:pode|poderia)\s+/i, '');
   query = query.replace(/^(?:adiciona|adicionar|coloca|colocar|bota|botar|inclui|incluir|toca|tocar|reproduz|reproduzir|pesquisa|pesquisar|procura|procurar|busca|buscar|remove|remover|exclui|excluir)\b/i, '');
   query = query.replace(/^\s*(?:e\s+)?(?:adiciona|adicionar|coloca|colocar|bota|botar|inclui|incluir|toca|tocar|reproduz|reproduzir)\b/i, '');
   query = query.replace(/^\s*(?:(?:a|o|uma|um)\s+)?(?:m[uú]sica|faixa|can[cç][aã]o)\s+/i, '');
@@ -22,7 +22,7 @@ export function classifyMusicIntent(input) {
   const text = normalize(original);
   const commandText = original.replace(/^\s*(?:ei\s+)?pestinha\b[,: ]*/i, '');
   const normalizedCommand = normalize(commandText);
-  const commandLead = normalizedCommand.replace(/^(?:por favor|por gentileza|pode|poderia)\\s+/, '');
+  const commandLead = normalizedCommand.replace(/^(?:por favor|por gentileza|pode|poderia)\s+/, '');
   const questionPunctuation = /[?？]/.test(original);
   if (!text || questionPunctuation || QUESTION_START.test(normalizedCommand) || !VERBS.test(commandLead)) return null;
   const command = text.replace(/^(?:ei )?pestinha\s*/, '');
