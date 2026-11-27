@@ -5,7 +5,7 @@ function normalize(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
-const QUESTION_START = /^(como|qual|quais|o que|oq|por que|porque|quando|onde|me explica|explique|pode explicar|uma pergunta|pergunta sobre|quero saber|gostaria de saber)\b/;
+const QUESTION_START = /^(como|qual|quais|o que|oq|por que|porque|quando|onde|me explica|me diz|me conta|me fala|me ensina|me ajuda|explica|explique|conta|fala|ensina|ajuda|pode explicar|pode me explicar|sabe me dizer|quero saber|queria saber|quero entender|gostaria de saber|uma pergunta|pergunta sobre)\b/;
 const VERBS = /^(adiciona|adicionar|coloca|colocar|bota|botar|inclui|incluir|toca|tocar|reproduz|reproduzir|pesquisa|pesquisar|procura|procurar|busca|buscar|remove|remover|exclui|excluir|pausa|pausar|continua|continuar|retoma|retomar|proxima|proximo|avanca|volta|anterior)\b/;
 function extractQuery(raw) {
   let query = String(raw || '').trim().replace(/^(?:ei\s+)?pestinha\b[,: ]*/i, '');
