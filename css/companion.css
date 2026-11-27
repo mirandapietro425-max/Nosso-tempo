@@ -448,3 +448,10 @@
   outline: 3px solid rgba(221, 114, 149, .45);
   outline-offset: 2px;
 }
+
+/* O botão distingue espera pela palavra-chave e sessão conversacional ativa. */
+.nt-companion-wake-toggle.is-conversation-active {
+  background: #fce5f0;
+  border-color: #bd6b97;
+  color: #713255;
+}
