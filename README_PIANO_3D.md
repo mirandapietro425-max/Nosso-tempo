@@ -14,7 +14,7 @@ Minijogo solo do **Nosso Arcade**, aberto pelo cartão “Piano das Estrelas 3D�
 - Afinador opcional: só pede microfone após toque explícito, estima a nota localmente e encerra as faixas ao desligar; nenhum áudio é gravado, enviado ou armazenado.
 - Importação local de arquivos `.mid`/`.midi`, gravação e exportação MIDI; arquivos importados não são enviados.
 - Arte PNG transparente dos dois gatinhos em `assets/piano-kittens.png`.
-- Página, arte e folha de estilos tátil incluídas no pré-cache do Service Worker (`v93`).
+- Página, arte e folha de estilos tátil incluídas no pré-cache do Service Worker (`v98`).
 
 ## Uso e compatibilidade
 
