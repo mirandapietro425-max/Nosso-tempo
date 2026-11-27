@@ -11,7 +11,7 @@
 - [x] Consultar Claude e GPT pelo My Browser sobre melhorias revisáveis da Pestinha e do site, sem misturar o projeto NeonPlay com Nosso-tempo. Consultas consultivas feitas em chats separados; o Replit também foi consultado no chat próprio do piano.
 - [x] Melhorar a Pestinha com conhecimento local curado e testado, sem afirmar treinamento permanente dos pesos de um modelo GPT; feedback continua sendo mecanismo separado. Novos fatos têm projeto, status, fonte e data; testes cobrem separação, abstenção e feedback.
 - [x] Se o Replit solicitar uma arte específica para a melhoria, criar essa arte e integrá-la somente ao Nosso-tempo. O Replit não solicitou arte nesta rodada.
-- [ ] Usar o GitHub conectado para concluir o código; confirmar o novo deploy Vercel antes de dizer que a produção foi atualizada.
+- [x] Usar o GitHub conectado para concluir o código; confirmar o novo deploy Vercel antes de dizer que a produção foi atualizada. Evidência: `7d37a3f` em `origin/main`; deployment `dpl_J51x8Hm7iP3vCKoZFKTt8CnsKapE` ficou `READY` em produção no SHA `7d37a3fc2ece7a880473acd164c28052cf12cf27`. O alias público [nosso-tempo-one.vercel.app](https://nosso-tempo-one.vercel.app) passou por HTTP 200 em `/`, `/games/nossa-casa-3d/`, `/piano-3d.html` e `/sw.js`; marcadores da integração da casa e do cache `v95` foram conferidos.
 
 ## Navegação clara
 - [x] Manter apenas os atalhos mais importantes visíveis no primeiro viewport.
