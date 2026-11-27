@@ -1,0 +1,49 @@
+name: Pestinha and Nosso-tempo smoke checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Passaporte dos Encontros
+        run: node --experimental-default-type=module tests/date-passport-smoke.mjs
+      - name: Intenções musicais
+        run: node --experimental-default-type=module tests/pestinha-music-intents.mjs
+      - name: Integração real com music.js
+        run: node --experimental-default-type=module tests/pestinha-music-integration.mjs
+      - name: Sessão contínua de voz
+        run: node --experimental-default-type=module tests/pestinha-voice-session.mjs
+      - name: Conhecimento local dos projetos
+        run: node --experimental-default-type=module tests/pestinha-project-knowledge-smoke.mjs
+      - name: Cérebro neural
+        run: node --experimental-default-type=module tests/companion-neural-smoke.mjs
+      - name: Busca e consentimento de memórias
+        run: node --experimental-default-type=module tests/memory-search-smoke.mjs
+      - name: Integração da interface e consentimentos
+        run: node --experimental-default-type=module tests/ui-wiring-smoke.mjs
+      - name: Sintaxe das funções server-side
+        run: |
+          node --check api/pestinha/chat.mjs
+          node --check api/pestinha/music-search.mjs
+      - name: Sintaxe dos módulos do Pestinha e do player
+        run: |
+          node --experimental-default-type=module --check js/companion/companion.js
+          node --experimental-default-type=module --check js/companion/music-assistant.js
+          node --experimental-default-type=module --check js/companion/music-intents.js
+          node --experimental-default-type=module --check js/companion/project-knowledge.js
+          node --experimental-default-type=module --check js/companion/voice-session.js
+          node --experimental-default-type=module --check js/music.js
