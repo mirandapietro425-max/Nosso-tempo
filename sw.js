@@ -83,6 +83,7 @@ const STATIC_ASSETS = [
   '/js/companion/project-knowledge.js',
   '/js/companion/music-intents.js',
   '/js/companion/music-assistant.js',
+  '/js/companion/voice-session.js',
   '/js/companion/neural-brain.js',
   '/js/companion/memory-search.js',
   '/js/museum.js',
