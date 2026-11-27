@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v96
+   PIETRO & EMILLY — sw.js v97
    Service Worker · Cache · Offline Support
 
    BUGS CORRIGIDOS nesta versão (v57):
@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v96'; // Casa 3D integrada e refinamentos locais do piano/conhecimento
+const CACHE_VERSION = 'v97'; // Conversa por voz automática e saudações naturais do Pestinha
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;

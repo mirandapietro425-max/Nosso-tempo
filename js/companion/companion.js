@@ -77,6 +77,7 @@ let wakeStartInFlight = false;
 let wakeRestartTimer = null;
 let wakeConversationActive = false;
 let wakeConversationTimer = null;
+let voiceAlwaysOn = false;
 let isSpeaking = false;
 let lastSpokenText = '';
 let lastSpokenAt = 0;
@@ -379,6 +380,10 @@ function localConversationalReply(question) {
   const q = normalizeText(question);
   const previous = previousTurn();
   const previousText = normalizeText(previous?.text || '');
+  if (/^(oi|ola|e ai|bom dia|boa tarde|boa noite)(?:\s+(cara|gente|pessoal|pestinha))?(?:\s+.*)?$/.test(q)) {
+    const who = state.activeSpeaker === 'Pietro e Emilly' ? 'vocês dois' : state.activeSpeaker;
+    return `E aí, ${who}! Tudo bem por aqui. Estou pronto para conversar contigo — pode falar sem chamar meu nome de novo. 🐾`;
+  }
   if (/^(obrigad|valeu|brigad|show|perfeito|entendi|beleza|blz|ta bom)/.test(q)) {
     return 'De nada! Estou aqui contigo. Se quiser, pode mudar de assunto sem cerimônia. 🐾';
   }
@@ -767,17 +772,23 @@ function updateWakeButton() {
     button.classList.toggle('is-listening', wakeListeningEnabled);
     button.classList.toggle('is-conversation-active', wakeConversationActive);
     button.setAttribute('aria-pressed', String(wakeListeningEnabled));
-    button.textContent = wakeListeningEnabled ? '🔴 Desligar chamada por voz' : '🎧 Chamar “Pestinha”';
+    button.textContent = wakeListeningEnabled ? '🔴 Desligar conversa por voz' : '🎧 Ligar conversa por voz';
   }
   if (status) {
-    if (!wakeListeningEnabled) status.textContent = 'Chamada por voz desligada. Ative aqui e depois diga “Pestinha” para começar.';
-    else if (wakeConversationActive) status.textContent = 'Conversa ativa: pode falar normalmente, sem repetir “Pestinha”. Se ficarmos 45 segundos sem conversar, volto a aguardar a chamada. “Agora não” ou “fica quietinho” desliga o microfone.';
+    if (!wakeListeningEnabled) status.textContent = 'Conversa por voz desligada. Ao entrar, tento ligá-la automaticamente após a permissão do navegador.';
+    else if (wakeConversationActive) status.textContent = 'Conversa por voz ativa: pode falar normalmente, sem repetir “Pestinha”. “Agora não” ou “fica quietinho” desliga o microfone.';
     else status.textContent = 'Estou aguardando “Pestinha”. Depois da chamada, podemos conversar sem repetir o nome em cada frase.';
   }
 }
 
 function keepWakeConversationAlive() {
   wakeConversationActive = true;
+  if (voiceAlwaysOn) {
+    if (wakeConversationTimer) window.clearTimeout(wakeConversationTimer);
+    wakeConversationTimer = null;
+    updateWakeButton();
+    return;
+  }
   if (wakeConversationTimer) window.clearTimeout(wakeConversationTimer);
   wakeConversationTimer = window.setTimeout(() => {
     wakeConversationActive = false;
@@ -799,6 +810,7 @@ function cancelActiveReply() {
 }
 function stopWakeListening({ announce = false } = {}) {
   wakeListeningEnabled = false;
+  voiceAlwaysOn = false;
   cancelActiveReply();
   if (isSpeaking) {
     speechSequence++;
@@ -890,13 +902,13 @@ function startWakeRecognition() {
 function toggleWakeListening() {
   if (wakeListeningEnabled) {
     stopWakeListening();
-    createMessage('assistant', 'Chamada por voz desligada. Não vou captar áudio até tu ativares de novo. 🐾');
+    createMessage('assistant', 'Conversa por voz desligada. Não vou captar áudio até tu ativares de novo. 🐾');
     return;
   }
-  enableWakeListening();
+  enableWakeListening({ conversation: true });
 }
 
-async function enableWakeListening() {
+async function enableWakeListening({ conversation = false } = {}) {
   if (wakeListeningEnabled || wakeStartInFlight) return;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) {
@@ -920,31 +932,34 @@ async function enableWakeListening() {
   }
   wakeListeningEnabled = true;
   wakeStartInFlight = false;
-  endWakeConversation();
+  voiceAlwaysOn = Boolean(conversation);
+  if (conversation) keepWakeConversationAlive();
+  else endWakeConversation();
   updateWakeButton();
-  setMood('escutando', 'Estou aguardando a chamada. Depois podemos conversar normalmente, sem repetir meu nome. 🎙️');
+  setMood('escutando', conversation ? 'Estou ouvindo. Pode falar comigo normalmente. 🎙️' : 'Estou aguardando a chamada. Depois podemos conversar normalmente, sem repetir meu nome. 🎙️');
   startWakeRecognition();
 }
 
 async function autoStartWakeListening() {
   if (wakeListeningEnabled || wakeStartInFlight || document.hidden) return;
-  // Não abre um prompt durante o carregamento, pois alguns navegadores
-  // deixam a página parecendo travada enquanto o pedido está pendente.
   try {
-    if (!navigator.permissions?.query) return;
-    const permission = await navigator.permissions.query({ name: 'microphone' });
-    if (permission.state === 'granted') enableWakeListening();
+    // O navegador ainda mostra a pergunta nativa na primeira visita. Depois
+    // que a pessoa autoriza, a conversa começa sozinha nas próximas visitas.
+    if (navigator.permissions?.query) {
+      const permission = await navigator.permissions.query({ name: 'microphone' });
+      if (permission.state === 'denied') return;
+    }
+    await enableWakeListening({ conversation: true });
   } catch (_) {
-    // Se o navegador não expõe o estado, o site continua funcionando sem voz.
+    // Alguns navegadores bloqueiam o pedido automático; a primeira interação
+    // da página tenta novamente, sem exigir que a pessoa encontre o microfone.
   }
 }
 function armVoiceOnFirstGesture() {
   if (firstGestureVoiceAttempted || wakeListeningEnabled || document.hidden) return;
   firstGestureVoiceAttempted = true;
-  // getUserMedia só pode pedir permissão durante uma ação explícita do usuário.
-  // O primeiro toque de entrada já prepara a conversa sem exigir que a pessoa
-  // encontre um controle escondido dentro do painel.
-  enableWakeListening();
+  // Fallback para navegadores que só aceitam getUserMedia após interação.
+  enableWakeListening({ conversation: true });
 }
 
 function showReplyBubble(text, thinking = false) {
@@ -1345,7 +1360,7 @@ function createWidget() {
           <button type="button" data-action="clear-chat">Apagar conversa</button>
           <button type="button" class="nt-companion-wake-toggle" data-action="toggle-wake-listening" aria-pressed="false">🎧 Chamar “Pestinha”</button>
         </div>
-        <small class="nt-companion-wake-status" id="nt-companion-wake-status">Chamada por voz desligada. Ative aqui e depois diga “Pestinha” para chamar.</small>
+        <small class="nt-companion-wake-status" id="nt-companion-wake-status">Vou tentar ligar a conversa por voz ao entrar. Na primeira visita, permita o microfone no aviso do navegador.</small>
         <div class="nt-companion-local-note">
           <strong>🧠 Cérebro local ativo</strong>
           <small>Converso sem API paga, guardo o contexto neste aparelho e consulto as memórias relacionadas automaticamente.</small>
@@ -1362,7 +1377,7 @@ function createWidget() {
           <button type="button" data-action="quick-question" data-question="O que temos guardado sobre música e piano?">Música e piano</button>
           <button type="button" data-action="quick-question" data-question="O que está registrado sobre taekwondo e campeonatos?">Taekwondo</button>
         </div>
-        <p class="nt-companion-privacy-note">Mensagens, contexto e lembranças ficam neste aparelho. O Pestinha não envia a conversa para uma IA externa. A voz só funciona quando tu ativares o microfone.</p>
+        <p class="nt-companion-privacy-note">Mensagens, contexto e lembranças ficam neste aparelho. O Pestinha tenta iniciar a escuta ao entrar; o navegador sempre controla a permissão e “Agora não” desliga o microfone.</p>
       </div>
       <div class="nt-companion-view" data-companion-view="memorias" hidden>
         <div class="nt-memory-intro">
@@ -1683,8 +1698,13 @@ export async function initCompanion() {
   renderStatus();
   startNeedsClock();
   updateWakeButton();
+  // Tenta ligar a conversa ao entrar. Se o navegador exigir gesto, qualquer
+  // primeiro toque/tecla da página autoriza a tentativa — não só o botão do mic.
+  document.addEventListener('pointerdown', armVoiceOnFirstGesture, { capture: true, passive: true, once: false });
+  document.addEventListener('keydown', armVoiceOnFirstGesture, { capture: true, passive: true, once: false });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { stopWakeListening(); stopListening(); }
+    else window.setTimeout(autoStartWakeListening, 180);
   });
   window.addEventListener('pagehide', () => { stopWakeListening(); stopListening(); }, { once: true });
   document.getElementById('nt-companion-memory-search')?.addEventListener('input', event => {
@@ -1709,8 +1729,6 @@ export async function initCompanion() {
   if (speakEnabled) speakEnabled.checked = state.speakResponses;
   setMood('curioso', 'Oi! Sou o Pestinha. 🐾');
   startIdleBehavior();
-  // O microfone só começa pelo botão explícito de chamada por voz. Uma
-  // permissão antiga do navegador não deve transformar uma visita silenciosa
-  // em escuta automática.
+  window.setTimeout(autoStartWakeListening, 650);
   console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas; conversa local sem API externa`);
 }
