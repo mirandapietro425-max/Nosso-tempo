@@ -34,6 +34,8 @@ assert.match(source, /stopWakeListening/, 'a escuta por palavra-chave deve poder
 assert.match(source, /SpeechRecognition/, 'o modo de chamada deve usar a API de fala do navegador');
 assert.match(source, /classifyWakeUtterance/, 'o microfone deve encaminhar turnos sem repetir a palavra-chave');
 assert.match(source, /VOICE_CONVERSATION_IDLE_MS/, 'a conversa por voz deve ter tempo de inatividade definido');
+assert.match(source, /wakeSpeechPaused = true/, 'o reconhecimento deve pausar enquanto o Pestinha fala');
+assert.match(source, /utterance\.onend = resumeWake/, 'o reconhecimento deve voltar após a resposta falada');
 assert.match(source, /data-action="toggle-wake-listening"/, 'o controle de chamada por voz deve estar na interface');
 assert.match(appSource, /initCompanion/, 'o módulo do Pestinha deve continuar inicializado pelo app');
 
