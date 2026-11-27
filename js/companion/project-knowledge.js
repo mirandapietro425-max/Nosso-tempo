@@ -44,6 +44,20 @@ let lastEntry = null;
 export function answerFromProjectKnowledge(question) {
  const q = norm(question);
  if (!q) return null;
+ // Prioridade semântica explícita: explicar "adicionar" nunca deve confundir-se
+ // com "tocar". Esta função apenas responde; não executa comandos no player.
+ const asksAdd = /\b(adicion\w*|inclu\w*|coloc\w*)\b/.test(q) && /\b(musica|faixa|playlist)\b/.test(q);
+ const asksPlay = /\b(toc\w*|reproduz\w*)\b/.test(q) && /\b(musica|faixa|playlist)\b/.test(q);
+ const asksDifference = /\b(diferenca|diferente|compar\w*)\b/.test(q);
+ if (asksAdd && asksPlay && asksDifference) {
+  return '“Adicionar” coloca a faixa na playlist sem começar a tocar. “Tocar” reproduz a música sem adicioná-la à playlist. “Adicionar e tocar” faz as duas coisas. São ações diferentes, e uma pergunta sobre elas não executa nenhuma ação no player.';
+ }
+ if (asksAdd && /\b(como|sem tocar|so|apenas|significa|quer dizer)\b/.test(q)) {
+  return ITEMS.find(item => item[0] === 'adicionar musica')[2];
+ }
+ if (asksPlay && /\b(como|significa|quer dizer)\b/.test(q)) {
+  return ITEMS.find(item => item[0] === 'tocar musica')[2];
+ }
  if (/\b(exemplo|explica melhor|mais detalhes|aprofund|nao entendi|resumo|resume)\b/.test(q) && lastEntry) {
   if (/\b(exemplo)\b/.test(q)) return `Um exemplo: ${lastEntry[0]} aparece quando vocês estão trabalhando nessa parte do site. ${lastEntry[2]}`;
   if (/\b(resumo|resume)\b/.test(q)) return `${lastEntry[0]}: ${lastEntry[2].split('.').slice(0,2).join('.') }.`;
