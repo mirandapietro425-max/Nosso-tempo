@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v83'; // Passaporte dos Encontros + melhorias de voz do Pestinha
+const CACHE_VERSION = 'v84'; // Painel do Pestinha visível + ativação de voz na primeira interação
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;

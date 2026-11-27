@@ -83,6 +83,7 @@ let isOpen = false;
 let currentMood = 'curioso';
 let lastQuestionSignals = null;
 let sessionReady = false;
+let firstGestureVoiceAttempted = false;
 let petSvgSequence = 0;
 let petOffset = { x: 0, y: 0 };
 let wanderTimer = null;
@@ -892,6 +893,14 @@ async function autoStartWakeListening() {
   } catch (_) {
     // Se o navegador não expõe o estado, o site continua funcionando sem voz.
   }
+}
+function armVoiceOnFirstGesture() {
+  if (firstGestureVoiceAttempted || wakeListeningEnabled || document.hidden) return;
+  firstGestureVoiceAttempted = true;
+  // getUserMedia só pode pedir permissão durante uma ação explícita do usuário.
+  // O primeiro toque de entrada já prepara a conversa sem exigir que a pessoa
+  // encontre um controle escondido dentro do painel.
+  enableWakeListening();
 }
 
 function showReplyBubble(text, thinking = false) {
@@ -1782,6 +1791,7 @@ export async function initCompanion() {
     : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
   setMood('curioso', 'Oi! Sou o Pestinha. 🐾');
   startIdleBehavior();
+  document.addEventListener('pointerdown', armVoiceOnFirstGesture, { once: true, capture: true });
   // Com permissão previamente concedida, começa sem abrir o painel nem clicar.
   // Sem permissão, não abre prompt no carregamento e não bloqueia o site.
   window.setTimeout(autoStartWakeListening, 900);
