@@ -435,6 +435,8 @@ function showDialogoSequence(msgs,onDone){
 /* ════ RENDER RPG ════ */
 function renderRPG(){
   const wrap=document.getElementById("home-rpg-wrap"); if(!wrap)return;
+  const embeddedHouseFrame=wrap.querySelector(".nct3d-embed__frame");
+  if(embeddedHouseFrame)return;
   // Se nenhum jogador selecionado, mostra tela de seleção de personagem
   if(!_activePlayer){ renderPlayerSelect(wrap); return; }
   const ps=playerState();

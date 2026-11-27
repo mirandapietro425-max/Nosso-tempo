@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v92
+   PIETRO & EMILLY — sw.js v95
    Service Worker · Cache · Offline Support
 
    BUGS CORRIGIDOS nesta versão (v57):
@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v93'; // Inclui a base conversacional expandida do Pestinha
+const CACHE_VERSION = 'v95'; // Casa 3D integrada e refinamentos locais do piano/conhecimento
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -42,6 +42,7 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/piano-3d.html',
+  '/games/nossa-casa-3d/index.html',
   '/css/piano-3d-touch.css',
   '/manifest.json',
   '/css/main.css',

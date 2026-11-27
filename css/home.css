@@ -751,6 +751,35 @@
 .casinha-fase { font-size:.75rem;color:#e8536f;background:#fff0f3;padding:.3rem .8rem;border-radius:50px; }
 .casa-svg-container { background:linear-gradient(180deg,#e8f4fd 0%,#c8e6f9 100%);border-radius:20px;overflow:hidden;margin-bottom:1rem;padding:.5rem; }
 
+/* Nossa Casa 3D — iframe isolado dentro do painel existente. */
+.nct3d-embed {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.nct3d-embed__frame {
+  display: block;
+  width: 100%;
+  height: clamp(680px, 86vh, 920px);
+  border: 0;
+  border-radius: 16px;
+  background: #fff8f9;
+}
+@supports (height: 86dvh) {
+  .nct3d-embed__frame { height: clamp(680px, 86dvh, 920px); }
+}
+@media (max-width: 640px) {
+  .nct3d-embed__frame {
+    height: clamp(680px, 88vh, 900px);
+    border-radius: 12px;
+  }
+}
+@supports (height: 88dvh) {
+  @media (max-width: 640px) {
+    .nct3d-embed__frame { height: clamp(680px, 88dvh, 900px); }
+  }
+}
+
 /* Progresso de fase */
 .fase-progress { margin-bottom:1rem; }
 .fase-progress-label { font-size:.78rem;color:#c9a9b0;margin-bottom:.3rem; }

@@ -82,3 +82,17 @@
 .tuner-reading span{font-size:.65rem;color:#cbb8c9}
 .tuner-privacy{margin:0;color:#bfaabd;font-size:.62rem;line-height:1.35}
 @media(max-width:520px){.youtube-listener-head{font-size:.68rem}.tuner-head{align-items:flex-start;flex-direction:column}.tuner-head .small-action{width:100%}.tuner-reading{min-height:28px}}
+
+/* Acabamento visual: hierarquia noturna mais clara, sem pós-processamento WebGL. */
+:root{--line:rgba(255,226,242,.25);--panel:rgba(43,29,57,.94);--muted:#dfd0e2}
+.stage{border-color:rgba(255,225,243,.3);background:linear-gradient(180deg,#51396070,#130d20d9 76%);box-shadow:0 22px 56px #05020a88,inset 0 1px #ffffff20}
+.control-main,.control-side,.touch-keyboard-panel{border-color:rgba(255,226,242,.24);background:linear-gradient(145deg,rgba(58,39,72,.96),rgba(35,23,48,.96));box-shadow:0 12px 34px #08040d55,inset 0 1px #ffffff0c}
+.status{border-color:rgba(255,226,242,.3);background:#ffffff12;color:#f0e4ef}
+.tab[aria-pressed="true"]{box-shadow:0 0 0 1px #fff4 inset,0 4px 16px #c889e044}
+.action[aria-pressed="true"],.tuner-head button[aria-pressed="true"]{border-color:#a6eadb;color:#d8fff2;background:#72d6b51c;box-shadow:0 0 0 1px #a6eadb26 inset}
+.tuner{padding:9px 10px;border:1px solid #ffffff22;border-radius:14px;background:#160d2277}
+.tuner-privacy{color:#d8cbdc}
+.piano-key:focus-visible{z-index:5;outline:3px solid var(--gold);outline-offset:1px}
+button:disabled{opacity:.55;cursor:not-allowed;filter:saturate(.55);box-shadow:none}
+@media(max-width:860px){.tab,.action,.small-action,.challenge-toolbar select{min-height:40px}}
+@media(prefers-reduced-motion:no-preference){.tab,.action,.small-action,.sienna-track{transition:transform .14s ease,box-shadow .14s ease,background .14s ease,border-color .14s ease}.tab:hover,.action:hover,.small-action:hover,.sienna-track:hover{transform:translateY(-1px)}.tab:active,.action:active,.small-action:active,.sienna-track:active{transform:translateY(1px)}}

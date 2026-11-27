@@ -41,7 +41,7 @@ const inlineScripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/gi)];
 assert.equal(inlineScripts.length, 1, 'A página deve ter um script inline único.');
 new vm.Script(inlineScripts[0][1], { filename: 'piano-3d.inline.js' });
 
-assert.match(serviceWorker, /CACHE_VERSION\s*=\s*'v93'/, 'O cache precisa ser invalidado na versão nova.');
+assert.match(serviceWorker, /CACHE_VERSION\s*=\s*'v95'/, 'O cache precisa ser invalidado na versão nova.');
 assert.match(serviceWorker, /'\/piano-3d\.html'/, 'A página do piano deve entrar no pré-cache offline.');
 assert.match(serviceWorker, /'\/css\/piano-3d-touch\.css'/, 'O CSS tátil deve entrar no pré-cache offline.');
 assert.match(serviceWorker, /'\/assets\/piano-kittens\.png'/, 'A arte deve entrar no pré-cache.');

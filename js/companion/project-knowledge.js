@@ -33,8 +33,45 @@ const ITEMS = [
 ["teste de software","teste javascript syntax mock integracao navegador","Um teste de sintaxe verifica se o JavaScript pode ser interpretado, mas não prova que a interface funciona. Testes com mocks verificam contratos isolados; o teste real no navegador ainda precisa conferir layout, eventos, permissões e integração com os serviços."],
 ["api e chave secreta","api endpoint backend chave api segredo frontend","Chaves secretas não devem ficar no JavaScript entregue ao navegador nem no repositório. Guarde-as em variáveis de ambiente do servidor e faça o navegador chamar um endpoint próprio que valida a entrada e limita o uso."],
 ["acessibilidade interface","acessibilidade aria label teclado foco botao","Uma interface acessível precisa de rótulos claros, foco visível, navegação por teclado, estados anunciados por leitores de tela e botões com ações compreensíveis. O indicador do microfone deve comunicar claramente se está ouvindo ou desligado."],
-["treinamento verificavel","treinar treinamento aprender feedback ia modelo neural conhecimento","O Pestinha não recebe treinamento permanente de um GPT nem depende de API paga. Ele melhora de forma verificável em três camadas: o cérebro neural local ajusta pesos com feedback positivo ou negativo, os assuntos recebem pontuação persistente e a base de conhecimento pode ser revisada com fatos novos. Isso não autoriza inventar conhecimento nem dizer que houve treinamento externo."]
+["treinamento verificavel","treinar treinamento aprender feedback ia modelo neural conhecimento","O Pestinha não recebe treinamento permanente de um GPT nem depende de API paga. Ele melhora de forma verificável em três camadas: o cérebro neural local ajusta pesos com feedback positivo ou negativo, os assuntos recebem pontuação persistente e a base de conhecimento pode ser revisada com fatos novos. Isso não autoriza inventar conhecimento nem dizer que houve treinamento externo."],
+["casa 3d integrada","casa 3d casinha nossa casa jogo comodos iframe save salvar progresso localstorage nossotempo3d v1 pet quiz arcade","A casa 3D enviada fica dentro da aba “Nossa Casa”, no painel existente. O jogo abre em /games/nossa-casa-3d/index.html e usa a chave local nossotempo3d:v1 para seu save. Esse save não é migrado automaticamente do formato antigo; as áreas Pet, Quiz e Arcade permanecem separadas."],
+["piano das estrelas","piano piano 3d webgl modos livre aprender ouvir desafios melodias teclas midi audio web audio","O Piano das Estrelas é uma página independente em piano-3d.html. A cena 3D é renderizada com WebGL próprio e o som usa Web Audio. Os modos Livre, Aprender, Ouvir e Desafios, o teclado tátil e os recursos MIDI fazem parte da mesma página."],
+["afinador local do piano","afinador piano microfone privacidade audio local gravar enviar dispositivo","O afinador do Piano das Estrelas é opcional. O microfone só é solicitado quando a pessoa ativa o controle; enquanto ligado, o sinal é analisado localmente para estimar a nota. O afinador não grava nem envia áudio, e o controle permite desligá-lo." ]
 ];
+const ITEM_PROJECT = Object.freeze({
+  'arquitetura do nosso tempo':'nosso-tempo','pestinha e conversa direta':'pestinha','fala para texto':'pestinha','privacidade do microfone':'pestinha','respostas em texto':'pestinha','base de conhecimento local':'pestinha','aprendizado por feedback':'pestinha','memorias privadas':'pestinha','banco de dados local':'pestinha','backup do pestinha':'pestinha',
+  'service worker':'nosso-tempo','pwa e instalacao':'nosso-tempo','modulos javascript':'nosso-tempo','eventos do navegador':'geral','seguranca javascript':'geral','player de musica do site':'nosso-tempo','adicionar musica':'nosso-tempo','tocar musica':'nosso-tempo','pesquisar musica':'nosso-tempo','youtube iframe api':'nosso-tempo',
+  'neonplay zapgame':'neonplay','catalogo de jogos':'neonplay','jogos html5':'neonplay','vercel deploy':'nosso-tempo','git commit':'geral','mit app inventor':'mit-app-inventor','subway pipi':'subway-pipi','cybershield':'cybershield','teste de software':'geral','api e chave secreta':'geral','acessibilidade interface':'geral','treinamento verificavel':'pestinha'
+});
+const CURATED_METADATA = Object.freeze({
+  'casa 3d integrada':{id:'casa-3d-integrada-v1',project:'casa-3d',status:'confirmed',source:'index.html; js/home.js; games/nossa-casa-3d/index.html; sw.js',reviewedAt:'2026-11-27'},
+  'piano das estrelas':{id:'piano-das-estrelas-v1',project:'piano',status:'confirmed',source:'piano-3d.html; tests/piano3d-smoke.mjs',reviewedAt:'2026-11-27'},
+  'afinador local do piano':{id:'afinador-local-piano-v1',project:'piano',status:'confirmed',source:'piano-3d.html; tests/piano3d-smoke.mjs',reviewedAt:'2026-11-27'}
+});
+function projectOf(item) { return CURATED_METADATA[item[0]]?.project || ITEM_PROJECT[item[0]] || null; }
+function detectProject(q) {
+  const mentionsHouse=/\b(casa 3d|casinha 3d|nossa casa|casa da aba|casa do jogo)\b/.test(q)||(/\b(casa|casinha)\b/.test(q)&&/\b(progresso|save|salv\w*|jogo|comodo|movel|iframe)\b/.test(q));
+  const mentionsPiano=/\b(piano|afinador|midi)\b/.test(q);
+  if(mentionsHouse&&mentionsPiano)return 'mixed-casa-piano';
+  if(mentionsPiano)return 'piano';
+  if(mentionsHouse)return 'casa-3d';
+  if(/\b(neonplay|zapgame)\b/.test(q))return 'neonplay';
+  if(/\b(mit app inventor|app inventor)\b/.test(q))return 'mit-app-inventor';
+  if(/\b(subway pipi)\b/.test(q))return 'subway-pipi';
+  if(/\b(cybershield)\b/.test(q))return 'cybershield';
+  if(/\bpestinha\b/.test(q)||/\b(memoria pessoal|feedback local|rede neural)\b/.test(q))return 'pestinha';
+  if(/\bnosso tempo\b/.test(q))return 'nosso-tempo';
+  return null;
+}
+export function getProjectKnowledgeDiagnostics() {
+  const curated=Object.entries(CURATED_METADATA),ids=curated.map(([,meta])=>meta.id);
+  return {
+    topics:ITEMS.length,
+    unclassified:ITEMS.filter(item=>!projectOf(item)).map(item=>item[0]),
+    invalidCuratedMetadata:curated.filter(([title,meta])=>!ITEMS.some(item=>item[0]===title)||!meta.id||!meta.project||!meta.status||!meta.source||!meta.reviewedAt).map(([title])=>title),
+    duplicateIds:ids.filter((id,index)=>ids.indexOf(id)!==index)
+  };
+}
 function norm(value) {
  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
 }
@@ -42,9 +79,18 @@ function tokens(value) {
  return norm(value).split(' ').filter(word => word.length > 2 && !['para','com','que','uma','dos','das','por','como','isso','esse','essa','site'].includes(word));
 }
 let lastEntry = null;
+let lastEntryProject = null;
 export function answerFromProjectKnowledge(question) {
  const q = norm(question);
  if (!q) return null;
+ const targetProject = detectProject(q);
+ if (targetProject && targetProject !== 'mixed-casa-piano' && lastEntryProject && targetProject !== lastEntryProject) { lastEntry = null; lastEntryProject = null; }
+ if (targetProject === 'mixed-casa-piano') {
+  lastEntry = null; lastEntryProject = null;
+  if (/\b(progresso|save|salv\w*|localstorage)\b/.test(q)) return 'Não: são áreas separadas. A Casa 3D usa o save local nossotempo3d:v1; o Piano guarda o progresso dos desafios em piano3d:challenges. Um não fica dentro do save do outro.';
+  return 'Você mencionou a Casa 3D e o Piano, que são projetos separados. Quer saber de qual deles ou comparar um aspecto específico?';
+ }
+ if (!targetProject && /\b(progresso|save|salv\w*)\b/.test(q)) return 'Você quer dizer o save da Casa 3D (nossotempo3d:v1) ou o progresso dos desafios do Piano (piano3d:challenges)? São chaves locais separadas.';
  // Prioridade semântica explícita: explicar "adicionar" nunca deve confundir-se
  // com "tocar". Esta função apenas responde; não executa comandos no player.
  const asksAdd = /\b(adicion\w*|inclu\w*|coloc\w*)\b/.test(q) && /\b(musica|faixa|playlist)\b/.test(q);
@@ -69,7 +115,8 @@ export function answerFromProjectKnowledge(question) {
  }
  const queryTokens = new Set(tokens(q));
  let best = null;
- for (const item of ITEMS) {
+ const candidates = targetProject ? ITEMS.filter(item => projectOf(item) === targetProject) : ITEMS;
+ for (const item of candidates) {
   const hay = new Set(tokens(item[0] + ' ' + item[1]));
   let overlap = 0;
   for (const token of queryTokens) if (hay.has(token)) overlap++;
@@ -78,8 +125,12 @@ export function answerFromProjectKnowledge(question) {
   const score = overlap / Math.max(2, Math.min(queryTokens.size, 5)) + (titleHit ? 0.9 : 0);
   if (!best || score > best.score) best = { item, score, overlap, titleHit };
  }
- if (!best || (!best.titleHit && best.overlap < 2) || best.score < 0.38) return null;
+ if (!best || (!best.titleHit && best.overlap < 2) || best.score < 0.38) {
+  if (targetProject) { lastEntry = null; lastEntryProject = null; }
+  return null;
+ }
  lastEntry = best.item;
+ lastEntryProject = projectOf(best.item);
  return best.item[2];
 }
 export function getProjectKnowledgeStats() { return { topics: ITEMS.length }; }

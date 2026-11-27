@@ -145,8 +145,8 @@ function cat(x,z,fur,belly,eye){const bounce=performance.now()<catPetUntil?.07*M
 function scene(t){gl.clearColor(.08,.045,.12,.0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);resize();
   // floor and warm platform
   draw(box,[0,-.5,-.4],[15,.3,7.2],'#47334f');draw(box,[0,-.32,-.35],[13.6,.12,6.1],'#8d647e');
-  // distant soft stars
-  for(let i=0;i<23;i++){const x=Math.sin(i*12.31)*8.4,z=-3.7+(i%5)*.65,y=3.1+(i%4)*.55;const flick=.012*Math.sin(t*.0015+i);draw(sphere,[x,y+flick,z],[.045+(i%3)*.012,.045+(i%3)*.012,.045+(i%3)*.012],i%3===0?'#ffd98b':'#ead1ff',undefined,.35);}
+  // distant soft stars: keep the piano keys as the brightest focus.
+  for(let i=0;i<23;i++){const x=Math.sin(i*12.31)*8.4,z=-3.7+(i%5)*.65,y=3.1+(i%4)*.55;const flick=.012*Math.sin(t*.0015+i);draw(sphere,[x,y+flick,z],[.045+(i%3)*.012,.045+(i%3)*.012,.045+(i%3)*.012],i%3===0?'#e7cfae':'#c9bde0',undefined,.14);}
   // piano case and lid
   draw(box,[0,.39,-.02],[12.15,.72,3.1],'#4c304f');draw(box,[0,.77,-.1],[11.9,.16,2.9],'#7f4d72');draw(box,[0,1.02,-1.23],[11.8,.1,.25],'#d9a7c4');draw(box,[-.2,1.08,-1.02],[5.65,.12,1.98],'#57364f',[.08,0,-.13]);draw(box,[-.2,1.16,-1.02],[5.45,.045,1.78],'#a77b9f',[.08,0,-.13]);
   // legs, pedals and stool
