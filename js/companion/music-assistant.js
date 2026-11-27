@@ -78,8 +78,9 @@ export async function handleMusicCommand(input) {
       }
       return { handled: true, reply: executeTrack(selected, pending.actions) };
     }
-    // Um novo comando ou uma nova pergunta encerra a seleção anterior.
-    if (classifyMusicIntent(input)) pendingSelection = null;
+    // Qualquer outra mensagem encerra a seleção anterior; só o número seguinte
+    // pode escolher um dos resultados ainda pendentes.
+    pendingSelection = null;
   }
 
   const intent = classifyMusicIntent(input);
