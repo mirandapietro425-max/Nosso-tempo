@@ -50,7 +50,7 @@ export function answerFromProjectKnowledge(question) {
  const asksPlay = /\b(toc\w*|reproduz\w*)\b/.test(q) && /\b(musica|faixa|playlist)\b/.test(q);
  const asksDifference = /\b(diferenca|diferente|compar\w*)\b/.test(q);
  if (asksAdd && asksPlay && asksDifference) {
-  return '“Adicionar” coloca a faixa na playlist sem começar a tocar. “Tocar” reproduz a música sem adicioná-la à playlist. “Adicionar e tocar” faz as duas coisas. São ações diferentes, e uma pergunta sobre elas não executa nenhuma ação no player.';
+  return '“Adicionar” coloca a faixa na playlist sem iniciar a reprodução. “Tocar” reproduz a música sem adicioná-la à playlist. “Adicionar e tocar” faz as duas coisas. São ações diferentes, e uma pergunta sobre elas não executa nenhuma ação no player.';
  }
  if (asksAdd && /\b(como|sem tocar|so|apenas|significa|quer dizer)\b/.test(q)) {
   return ITEMS.find(item => item[0] === 'adicionar musica')[2];
