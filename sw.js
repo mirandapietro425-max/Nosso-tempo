@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v86'; // Compositor do Pestinha fixo e acessível ao rolar a conversa
+const CACHE_VERSION = 'v87'; // Piano das Estrelas 3D e arte dos gatinhos no cache offline
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -41,6 +41,7 @@ const STATIC_ASSETS = [
   '/js/retrospectiva.js',
   '/',
   '/index.html',
+  '/piano-3d.html',
   '/manifest.json',
   '/css/main.css',
   '/css/components.css',
@@ -96,6 +97,7 @@ const STATIC_ASSETS = [
   '/assets/favicon.png',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
+  '/assets/piano-kittens.png',
   '/assets/hero-romantico.webp',
   '/assets/hero-nosso-tempo.webp',
   '/assets/storybook-memories.webp',

@@ -190,24 +190,34 @@ const CATALOG = [
   { id:'cacanivel', icon:'🎰', title:'Caça-Níquel do Amor', desc:'Gire e ganhe recompensas românticas!',   fn: openCacaNivel },
   { id:'mimica',    icon:'🎭', title:'Mímica do Casal',     desc:'Faça gestos — sem falar a palavra!',      fn: openMimica    },
   { id:'karaoke',   icon:'🎤', title:'Karaokê Batalha',     desc:'Cante o trecho — o outro avalia!',         fn: openKaraoke   },
-  { id:'tiles',     icon:'🎹', title:'Tiles Piano',           desc:'Bata nas telhas no ritmo da música!',        fn: openTiles     },
+  { id:'tiles',     icon:'🎹', title:'Tiles Piano',        desc:'Bata nas telhas no ritmo da música!',        fn: openTiles     },
+  { id:'piano3d',   icon:'🌟', title:'Piano das Estrelas 3D', desc:'Toque melodias num piano encantado com gatinhos.', solo:true, href:'./piano-3d.html' },
 ];
 
 function _renderGameCards() {
   const grid = document.getElementById('games-grid');
   if (!grid) return;
-  grid.innerHTML = CATALOG.map(g => `
-    <div class="game-card" data-game-id="${g.id}" onclick="window._openGame(this.dataset.gameId)">
-      <span class="game-badge duo">👥 Dupla</span>
-      <span class="game-card-icon">${g.icon}</span>
-      <div class="game-card-title">${g.title}</div>
-      <div class="game-card-desc">${g.desc}</div>
-    </div>`).join('');
+  grid.innerHTML = CATALOG.map(g => {
+    const modeClass = g.solo ? 'solo' : 'duo';
+    const modeLabel = g.solo ? '🎹 Solo' : '👥 Dupla';
+    return `
+      <div class="game-card" data-game-id="${g.id}" onclick="window._openGame(this.dataset.gameId)">
+        <span class="game-badge ${modeClass}">${modeLabel}</span>
+        <span class="game-card-icon">${g.icon}</span>
+        <div class="game-card-title">${g.title}</div>
+        <div class="game-card-desc">${g.desc}</div>
+      </div>`;
+  }).join('');
 }
 
 window._openGame = function(id) {
   const g = CATALOG.find(x => x.id === id);
-  if (g) _showModeSelector(g);
+  if (!g) return;
+  if (g.solo && g.href) {
+    window.location.href = g.href;
+    return;
+  }
+  _showModeSelector(g);
 };
 
 /* ══════════════════════════════════════════
