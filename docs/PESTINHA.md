@@ -6,10 +6,11 @@ Esta alteração conecta o Pestinha à base local de conhecimento e ao player qu
 
 1. Abra o painel do Pestinha e escolha **Chamar “Pestinha”**. O navegador pedirá permissão para o microfone.
 2. Com o modo ativo, diga “Pestinha” antes do pedido: “Pestinha, toca Photograph”, “Pestinha, adiciona Photograph” ou “Pestinha, pesquisa Photograph”.
-3. Diga “agora não”, “fica quietinho”, “pode parar” ou “para, Pestinha” para desligar o microfone.
-4. O modo também é desligado quando a aba fica oculta ou a página é fechada.
+3. Depois da primeira chamada, a conversa permanece ativa por até 45 segundos após cada fala. Durante esse período, pode continuar falando normalmente, sem repetir “Pestinha” a cada frase. Após 45 segundos de silêncio, o Pestinha volta a aguardar a palavra-chave.
+4. Diga “agora não”, “fica quietinho”, “pode parar”, “silêncio” ou “para, Pestinha” para desligar o microfone.
+5. O modo também é desligado quando a aba fica oculta ou a página é fechada.
 
-**Limitação do navegador:** o microfone não pode ser habilitado silenciosamente por um site. É necessário um gesto explícito e consentimento do usuário pelo navegador. Por isso, a primeira ativação exige o botão no painel. Enquanto a chamada estiver ligada, a API de reconhecimento pode processar áudio por um serviço do navegador; não é garantido que o processamento seja local ou offline. O reconhecimento contínuo também varia entre navegadores e pode ser interrompido pelo sistema. A opção de digitar continua disponível.
+**Limitação do navegador:** o microfone não pode ser habilitado silenciosamente por um site. É necessário um gesto explícito e consentimento do usuário pelo navegador. Por isso, a primeira ativação exige o botão no painel. Enquanto a chamada estiver ligada, a API de reconhecimento pode processar áudio por um serviço do navegador; não é garantido que o processamento seja local ou offline. A palavra-chave inicia uma sessão conversacional; os turnos seguintes são aceitos sem repetir o nome por até 45 segundos após a última fala. O reconhecimento contínuo também varia entre navegadores e pode ser interrompido pelo sistema. A opção de digitar continua disponível.
 
 ## Comandos musicais
 
@@ -48,3 +49,9 @@ node tests/ui-wiring-smoke.mjs
 ```
 
 Os testes automatizados não substituem testes reais em Chrome/Edge/Firefox, HTTPS, celular, permissões do microfone, YouTube IFrame API, cotas da API e comportamento das bolhas. A busca do YouTube só pode ser validada end-to-end depois de configurar a chave no ambiente de teste.
+
+## Conversa natural em vários turnos
+
+Quando a pessoa ativa **Respostas naturais com IA**, o Pestinha envia até 12 mensagens recentes da sessão ao endpoint server-side. O prompt de sistema orienta o modelo a acompanhar pronomes e perguntas de continuação, evitar respostas padronizadas, admitir incerteza e reconhecer correções. O tópico técnico local relacionado à pergunta pode ser enviado como contexto; as lembranças pessoais continuam separadas e dependem de autorização específica.
+
+O modo de IA continua desligado por padrão e é ativado conscientemente pela pessoa. Sem a configuração de `OPENAI_API_KEY`, o modo local continua disponível, mas possui conhecimento limitado e não deve fingir ser uma conversa generativa ampla.
