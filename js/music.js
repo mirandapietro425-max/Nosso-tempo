@@ -17,8 +17,42 @@ let miniPlayerOpen = false;
 // ── Playlist ativa (pode ser trocada por evento) ──
 let activePlaylist = PLAYLIST;
 
+const ADDED_TRACKS_KEY = 'nt_music_added_tracks_v1';
+const REMOVED_TRACKS_KEY = 'nt_music_removed_tracks_v1';
+let pendingExternalTrack = null;
+let currentExternalTrack = null;
+let usingEventPlaylist = false;
+
+function readSavedArray(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch (_) { return []; }
+}
+function restoreUserPlaylist() {
+  const removed = new Set(readSavedArray(REMOVED_TRACKS_KEY).filter(value => typeof value === 'string'));
+  const added = readSavedArray(ADDED_TRACKS_KEY)
+    .filter(track => track && /^[a-zA-Z0-9_-]{11}$/.test(String(track.ytId || '')))
+    .map(track => ({ name: String(track.name || 'Música').slice(0, 120), artist: String(track.artist || 'Artista não informado').slice(0, 80), ytId: String(track.ytId) }));
+  return [...PLAYLIST.filter(track => !removed.has(track.ytId)), ...added.filter(track => !PLAYLIST.some(base => base.ytId === track.ytId))];
+}
+function persistUserPlaylist() {
+  if (usingEventPlaylist) return;
+  const baseIds = new Set(PLAYLIST.map(track => track.ytId));
+  const currentIds = new Set(activePlaylist.map(track => track.ytId));
+  const added = activePlaylist.filter(track => !baseIds.has(track.ytId));
+  const removed = PLAYLIST.filter(track => !currentIds.has(track.ytId)).map(track => track.ytId);
+  try {
+    localStorage.setItem(ADDED_TRACKS_KEY, JSON.stringify(added));
+    localStorage.setItem(REMOVED_TRACKS_KEY, JSON.stringify(removed));
+  } catch (_) {}
+}
+activePlaylist = restoreUserPlaylist();
+
+
 export function setEventPlaylist(playlist) {
-  activePlaylist = playlist && playlist.length ? playlist : PLAYLIST;
+  usingEventPlaylist = Boolean(playlist && playlist.length);
+  activePlaylist = usingEventPlaylist ? playlist.slice() : restoreUserPlaylist();
   renderPlaylist();
   renderMiniPlayerList();
 }
@@ -41,7 +75,11 @@ window.onYouTubeIframeAPIReady = function () {
     events: {
       onReady: () => {
         ytReady = true;
-        if (pendingIdx !== null) {
+        if (pendingExternalTrack) {
+          const track = pendingExternalTrack;
+          pendingExternalTrack = null;
+          _doPlayExternal(track);
+        } else if (pendingIdx !== null) {
           const idx = pendingIdx;
           pendingIdx = null;
           _doPlay(idx);
@@ -82,6 +120,7 @@ window.onYouTubeIframeAPIReady = function () {
 // ── Funções internas ──
 function _doPlay(idx) {
   currentIdx = idx;
+  currentExternalTrack = null;
   const track = activePlaylist[idx];
   if (!track) return;
 
@@ -121,7 +160,83 @@ function _updateActiveClass(idx) {
     el.classList.toggle('active', i === idx));
 }
 
+function _doPlayExternal(track) {
+  if (!track || !/^[a-zA-Z0-9_-]{11}$/.test(String(track.ytId || ''))) return false;
+  currentIdx = -1;
+  currentExternalTrack = track;
+  const area = document.getElementById('yt-embed-area');
+  if (area) {
+    area.style.display = 'block';
+    if (!('ontouchstart' in window)) setTimeout(() => area.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+  }
+  ytPlayer.loadVideoById({ videoId: track.ytId });
+  _updateBarUI(track);
+  document.querySelectorAll('.playlist-item,.mini-player-item').forEach(el => el.classList.remove('active'));
+  showToast(`🎵 ${track.name} — ${track.artist}`);
+  return true;
+}
+
 // ── API pública ──
+export function getMusicPlaylist() {
+  return activePlaylist.map(track => ({ ...track }));
+}
+
+export function addTrackToPlaylist(track) {
+  const ytId = String(track?.ytId || '');
+  if (!/^[a-zA-Z0-9_-]{11}$/.test(ytId)) throw new Error('ID de vídeo do YouTube inválido.');
+  const existing = activePlaylist.findIndex(item => item.ytId === ytId);
+  if (existing >= 0) return { added: false, index: existing, track: activePlaylist[existing] };
+  const normalized = {
+    name: String(track.name || 'Música').slice(0, 120),
+    artist: String(track.artist || 'Artista não informado').slice(0, 80),
+    ytId,
+  };
+  activePlaylist.push(normalized);
+  persistUserPlaylist();
+  renderPlaylist();
+  renderMiniPlayerList();
+  return { added: true, index: activePlaylist.length - 1, track: normalized };
+}
+
+export function removeTrackFromPlaylist(index) {
+  if (!Number.isInteger(index) || index < 0 || index >= activePlaylist.length) return null;
+  const [removed] = activePlaylist.splice(index, 1);
+  if (currentIdx === index) currentIdx = -1;
+  else if (currentIdx > index) currentIdx -= 1;
+  if (pendingIdx === index) pendingIdx = null;
+  persistUserPlaylist();
+  renderPlaylist();
+  renderMiniPlayerList();
+  return removed;
+}
+
+export function playExternalTrack(track) {
+  if (!track || !/^[a-zA-Z0-9_-]{11}$/.test(String(track.ytId || ''))) return false;
+  const normalized = { name: String(track.name || 'Música').slice(0, 120), artist: String(track.artist || 'YouTube').slice(0, 80), ytId: String(track.ytId) };
+  if (!ytReady || !ytPlayer) {
+    pendingExternalTrack = normalized;
+    loadYTApi();
+    showToast('⏳ Carregando o player para reproduzir a faixa escolhida...');
+    return true;
+  }
+  return _doPlayExternal(normalized);
+}
+
+export function pauseMusic() {
+  if (!ytPlayer || !ytReady) return false;
+  try { ytPlayer.pauseVideo(); return true; } catch (_) { return false; }
+}
+
+export function resumeMusic() {
+  if (!ytPlayer || !ytReady) return false;
+  try {
+    if (currentIdx >= 0 || currentExternalTrack) ytPlayer.playVideo();
+    else if (pendingExternalTrack) _doPlayExternal(pendingExternalTrack);
+    else return false;
+    return true;
+  } catch (_) { return false; }
+}
+
 export function playTrack(idx) {
   if (!ytReady || !ytPlayer) {
     pendingIdx = idx;
