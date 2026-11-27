@@ -113,6 +113,14 @@
   animation: nt-panel-in .22s cubic-bezier(.2,.8,.2,1) both;
 }
 
+/* main.css/mobile.css também estilizam qualquer <section>; a especificidade
+   do widget precisa vencer essas regras para preservar a caixa do painel. */
+#nt-companion-widget > .nt-companion-panel {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 .nt-companion-header {
   flex: 0 0 auto;
   min-height: 83px;
