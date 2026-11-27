@@ -154,6 +154,58 @@
   margin-top: 0.3rem;
 }
 
+/* ── EXPANDABLE STORY CHAPTER ── */
+.story-essay {
+  margin: 0 0 2.2rem;
+  border: 1px solid #ffd6de;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, #fff8f9 0%, #ffffff 100%);
+  box-shadow: 0 8px 32px rgba(232, 83, 111, 0.08);
+  overflow: hidden;
+}
+
+.story-essay summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+  color: var(--velvet);
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.story-essay summary::-webkit-details-marker { display: none; }
+.story-essay summary::after {
+  content: '+';
+  flex: 0 0 auto;
+  color: var(--rose);
+  font-family: var(--font-sans);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.story-essay[open] summary::after { content: '−'; }
+.story-essay summary:focus-visible {
+  outline: 3px solid var(--rose);
+  outline-offset: -4px;
+}
+
+.story-essay-body {
+  max-width: 75ch;
+  padding: 0 1.5rem 1.5rem;
+  color: #6b3040;
+  line-height: 1.85;
+}
+.story-essay-body p + p { margin-top: 0.9rem; }
+
+@media (max-width: 600px) {
+  .story-essay { margin-bottom: 1.7rem; }
+  .story-essay summary { padding: 1rem; font-size: 1.05rem; }
+  .story-essay-body { padding: 0 1rem 1.2rem; font-size: 0.97rem; }
+}
+
 /* ── STATS GRID ── */
 .stats-grid {
   display: grid;
