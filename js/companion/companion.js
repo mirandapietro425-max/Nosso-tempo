@@ -74,7 +74,8 @@ let wakeListeningEnabled = false;
 let wakeRestartTimer = null;
 let wakeConversationActive = false;
 let wakeConversationTimer = null;
-let wakeSpeechPaused = false;
+let isSpeaking = false;
+let lastSpokenText = '';
 let speechSequence = 0;
 let isOpen = false;
 let currentMood = 'curioso';
@@ -642,31 +643,36 @@ function speak(text) {
   if (!('speechSynthesis' in window) || !text) return false;
   const sequence = ++speechSequence;
   window.speechSynthesis.cancel();
-  const pauseWake = wakeListeningEnabled;
-  if (pauseWake) {
-    wakeSpeechPaused = true;
-    const current = wakeRecognition;
-    wakeRecognition = null;
-    try { current?.abort(); } catch (_) {}
-  }
-  const resumeWake = () => {
-    if (sequence !== speechSequence || !pauseWake) return;
-    wakeSpeechPaused = false;
-    if (wakeListeningEnabled && !document.hidden) {
-      if (wakeRestartTimer) window.clearTimeout(wakeRestartTimer);
-      wakeRestartTimer = window.setTimeout(startWakeRecognition, 450);
-    }
+  const spoken = String(text).slice(0, 900);
+  lastSpokenText = normalizeText(spoken);
+  isSpeaking = true;
+  const finishSpeaking = () => {
+    if (sequence !== speechSequence) return;
+    isSpeaking = false;
+    lastSpokenText = '';
   };
-  const utterance = new SpeechSynthesisUtterance(String(text).slice(0, 900));
+  const utterance = new SpeechSynthesisUtterance(spoken);
   utterance.lang = 'pt-BR';
   utterance.rate = 0.96;
   utterance.pitch = 1.08;
   const voices = window.speechSynthesis.getVoices();
   utterance.voice = voices.find(voice => /^pt-BR/i.test(voice.lang)) || voices.find(voice => /^pt/i.test(voice.lang)) || null;
-  utterance.onend = resumeWake;
-  utterance.onerror = resumeWake;
+  utterance.onend = finishSpeaking;
+  utterance.onerror = finishSpeaking;
   window.speechSynthesis.speak(utterance);
   return true;
+}
+
+function isLikelySpeechEcho(transcript) {
+  if (!isSpeaking || !lastSpokenText) return false;
+  const heard = normalizeText(transcript);
+  if (heard.length < 14) return false;
+  if (lastSpokenText.includes(heard)) return true;
+  const heardWords = heard.split(/\s+/).filter(word => word.length > 2);
+  if (heardWords.length < 4) return false;
+  const spokenWords = new Set(lastSpokenText.split(/\s+/));
+  const matches = heardWords.filter(word => spokenWords.has(word)).length;
+  return matches / heardWords.length >= 0.88;
 }
 
 function stopListening() {
@@ -751,7 +757,12 @@ function endWakeConversation() {
 
 function stopWakeListening({ announce = false } = {}) {
   wakeListeningEnabled = false;
-  wakeSpeechPaused = false;
+  if (isSpeaking) {
+    speechSequence++;
+    isSpeaking = false;
+    lastSpokenText = '';
+    try { window.speechSynthesis?.cancel(); } catch (_) {}
+  }
   endWakeConversation();
   if (wakeRestartTimer) window.clearTimeout(wakeRestartTimer);
   wakeRestartTimer = null;
@@ -767,7 +778,7 @@ function stopWakeListening({ announce = false } = {}) {
 }
 
 function startWakeRecognition() {
-  if (!wakeListeningEnabled || wakeSpeechPaused) return;
+  if (!wakeListeningEnabled) return;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) {
     stopWakeListening();
@@ -786,6 +797,7 @@ function startWakeRecognition() {
       if (!result.isFinal) continue;
       const transcript = String(result[0]?.transcript || '').trim();
       if (!transcript) continue;
+      if (isLikelySpeechEcho(transcript)) continue;
       const turn = classifyWakeUtterance(transcript, wakeConversationActive);
       if (turn.type === 'stop') {
         stopWakeListening({ announce: true });
@@ -964,6 +976,7 @@ async function requestNaturalReply(messages, memoryContext = [], answerMessage =
 async function submitQuestion(rawText, fromVoice = false) {
   const question = String(rawText || '').trim();
   if (!question) return;
+  // Uma fala da pessoa interrompe a resposta atual; a voz do Pestinha é filtrada no reconhecimento.
   const signals = buildSensoryInput({ action: 'conversa', text: question, voice: fromVoice }).signals;
   recordInteraction('conversa', question, fromVoice);
   createMessage('user', question, { author: state.activeSpeaker });
