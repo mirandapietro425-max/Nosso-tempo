@@ -2152,9 +2152,9 @@ window.shareLocation = shareLocation;
    CARTA DE BOAS-VINDAS (aparece sempre ao entrar)
    ════════════════════════════════════════════ */
 (function showWelcomeLetter() {
-  // Só mostra uma vez por sessão
-  // Mostra a carta apenas uma vez por dispositivo, não a cada nova aba/sessão.
-  if (localStorage.getItem('pe_welcome_dismissed') === '1') return;
+  // A cartinha volta a aparecer em uma nova sessão, como no comportamento original.
+  // O sessionStorage evita duplicação durante a mesma abertura/recarga controlada.
+  if (sessionStorage.getItem('pe_welcome_shown') === '1') return;
   sessionStorage.setItem('pe_welcome_shown', '1');
 
   const now     = new Date();
@@ -2216,9 +2216,7 @@ window.shareLocation = shareLocation;
       overlay.style.transition = 'opacity 0.3s ease';
       setTimeout(() => {
         overlay.remove();
-        // Registra o fechamento para não repetir a carta em novas visitas.
         window._welcomeClosed = true;
-        try { localStorage.setItem('pe_welcome_dismissed', '1'); } catch (e) {}
       }, 300);
     }
     document.getElementById('welcome-close-btn').addEventListener('click', closeWelcome);

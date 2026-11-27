@@ -194,7 +194,7 @@ function _buildContext() {
    desbloqueia se a condição for satisfeita,
    notifica apenas uma vez por evento.
    ════════════════════════════════════════════════ */
-export function autoUnlockEvents() {
+export function autoUnlockEvents({ silent = false } = {}) {
   try {
     const ctx      = _buildContext();
     const notified = _getNotified();
@@ -211,7 +211,7 @@ export function autoUnlockEvents() {
       _unlock(event.key);
 
       // Notifica apenas se ainda não notificou para este evento
-      if (!notified.has(event.key)) {
+      if (!silent && !notified.has(event.key)) {
         _markNotified(event.key);
         notifyUnlock(`${event.icon} ${event.label}`, delay);
         delay += 1200; // próximo toast aparece 1.2s depois
@@ -237,7 +237,9 @@ export function initEventUnlock() {
   } catch (_) {}
 
   // Roda imediatamente no init
-  autoUnlockEvents();
+  // A entrada deve permanecer calma; os desbloqueios ficam registrados e
+  // notificações podem aparecer apenas após uma ação real da pessoa.
+  autoUnlockEvents({ silent: true });
 
   // Escuta eventos do loveCore via event bus
   try {

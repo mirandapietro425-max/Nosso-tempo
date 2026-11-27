@@ -274,7 +274,7 @@ function _adjustMemoryWeights({ phase }) {
 function _maybeTriggerEventUnlock({ phase }) {
   try {
     if (phase === 'inicio' && typeof window.autoUnlockEvents === 'function') {
-      window.autoUnlockEvents();
+      window.autoUnlockEvents({ silent: true });
     }
   } catch (_) {}
 }
@@ -368,13 +368,7 @@ export function initEmotionalState() {
   // 1. Análise inicial
   _runLoop();
 
-  // 2. Reação à abertura (com delay para não spammar junto com outros inits)
-  try {
-    const state = analyzeRelationshipState();
-    _reactToAppOpen(state);
-  } catch (_) {}
-
-  // 3. Event bus — escuta eventos do loveCore
+  // 2. Event bus — escuta eventos do loveCore
   try {
     const bus = window._loveCity;
     if (typeof bus?.onLoveEvent !== 'function') return;

@@ -2,6 +2,9 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
 const source = readFileSync(new URL('../js/companion/companion.js', import.meta.url), 'utf8');
+const appSource = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+const indexSource = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const unlockSource = readFileSync(new URL('../js/event-unlock.js', import.meta.url), 'utf8');
 const requiredActions = [
   'close', 'save-message-memory', 'export-backup', 'pick-backup',
   'quick-question', 'pet', 'play', 'nap', 'import-memories', 'save-memory',
@@ -23,4 +26,8 @@ assert.match(source, /getElementById\('nt-companion-backup-file'\)\?\.click\(\)/
 assert.match(source, /fetch\('\/api\/pestinha\/chat'/, 'a conversa natural deve usar o endpoint server-side');
 assert.match(source, /const memories = state\.aiMemoryConsent/, 'memórias só podem seguir com consentimento explícito');
 assert.match(source, /aiEnabled: false/, 'a IA deve iniciar desligada por padrão');
-console.log('OK — botões, preferências, salvamento individual e consentimento da conversa natural verificados.');
+assert.match(appSource, /sessionStorage\.getItem\('pe_welcome_shown'\)/, 'a cartinha deve ser preservada por sessão');
+assert.doesNotMatch(appSource, /localStorage\.setItem\('pe_welcome_dismissed'/, 'a cartinha não deve ser escondida permanentemente');
+assert.doesNotMatch(indexSource, /id="sw-update-bar"|Atualizar<\/button>/, 'o aviso técnico de atualização não deve aparecer na entrada');
+assert.match(unlockSource, /autoUnlockEvents\(\{ silent: true \}\)/, 'desbloqueios automáticos devem ser silenciosos na entrada');
+console.log('OK — Pestinha, cartinha por sessão e entrada sem spam verificados.');
