@@ -850,16 +850,19 @@ function toggleWakeListening() {
     createMessage('assistant', 'Chamada por voz desligada. Não vou captar áudio até tu ativares de novo. 🐾');
     return;
   }
+  enableWakeListening();
+}
+
+function enableWakeListening() {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) {
-    createMessage('assistant', 'Este navegador não oferece reconhecimento de fala. Podes conversar digitando no painel.');
+    showReplyBubble('Para falar comigo, este navegador precisa oferecer reconhecimento de voz. Enquanto isso, podes escrever no painel.');
     return;
   }
   if (!window.isSecureContext) {
-    createMessage('assistant', 'A chamada por voz precisa de HTTPS para pedir permissão ao microfone.');
+    showReplyBubble('A chamada por voz precisa de HTTPS para pedir permissão ao microfone.');
     return;
   }
-  // O navegador exige uma ativação explícita do usuário para liberar o microfone.
   wakeListeningEnabled = true;
   endWakeConversation();
   updateWakeButton();
@@ -1753,5 +1756,11 @@ export async function initCompanion() {
     : 'Modo local: mensagens e lembranças não são enviadas para uma IA externa.';
   setMood('curioso', 'Oi! Sou o Pestinha. 🐾');
   startIdleBehavior();
+  // Tenta deixar o Pestinha pronto para ouvir “Pestinha” sem abrir o painel.
+  // O navegador pode exigir ou exibir a permissão nativa do microfone; nesse
+  // caso a escuta começa assim que a permissão for concedida.
+  window.setTimeout(() => {
+    if (!document.hidden && !wakeListeningEnabled) enableWakeListening();
+  }, 900);
   console.info(`[Pestinha] ativo: ${NEURON_COUNT} neurônios, ${SYNAPSE_COUNT} conexões esparsas; IA natural opcional pelo backend`);
 }
