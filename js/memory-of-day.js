@@ -26,58 +26,77 @@ export const SEEDED_MEMORIES = [ // RISCO-4: exportado para evitar duplicação
   {
     id      : 'seed_xadrez',
     type    : 'achievement',
-    summary : 'Ela fingia gostar de xadrez só pra ficar pertinho. E deu muito certo. 😂',
+    summary : 'Uma brincadeira sobre xadrez acabou virando um jeito de passar mais tempo juntos. 😂',
     ts      : new Date('2024-08-01').getTime(),
   },
   {
     id      : 'seed_pedido',
     type    : 'milestone',
-    summary : 'Ela perguntou: "não vai me pedir em namoro?" — e tudo começou. Bridgerton ao fundo.',
+    summary : 'Uma conversa sincera marcou o começo de um novo capítulo a dois — com uma série ao fundo.',
     ts      : new Date('2024-10-11').getTime(),
   },
   {
     id      : 'seed_taekwondo',
     type    : 'achievement',
-    summary : 'Campeonato da prof. Rejane. Os dois cansados. Pietro feliz de ver ela tão forte.',
+    summary : 'Depois de um campeonato, ficou o orgulho de ver o outro se dedicar.',
     ts      : new Date('2025-01-15').getTime(),
   },
   {
     id      : 'seed_mac',
     type    : 'event',
-    summary : 'Sorvete do Mac + shopping do centro. Ela rindo o tempo todo. O melhor passeio.',
+    summary : 'Um passeio simples, um sorvete e muitas risadas — a combinação de um dia perfeito.',
     ts      : new Date('2025-02-01').getTime(),
   },
   {
     id      : 'seed_piano',
     type    : 'special',
-    summary : 'Mimi aprendendo Hometown da Adele no piano. Pietro ouvindo do outro lado.',
+    summary : 'Uma canção ao piano e alguém por perto ouvindo com carinho.',
     ts      : new Date('2025-03-01').getTime(),
   },
   {
     id      : 'seed_academia',
     type    : 'event',
-    summary : 'Treino na Academia Dinâmica Fit lado a lado. Ao lado da catedral, como sempre.',
+    summary : 'Treinar lado a lado transformou a rotina em mais um momento compartilhado.',
     ts      : new Date('2025-03-15').getTime(),
   },
   {
     id      : 'seed_escola',
     type    : 'milestone',
-    summary : 'Escola Maria Rocha. Mesma turma de informática. O começo de tudo.',
+    summary : 'A amizade foi crescendo entre dias comuns e atividades compartilhadas.',
     ts      : new Date('2024-07-01').getTime(),
   },
   {
     id      : 'seed_bridgerton',
     type    : 'event',
-    summary : 'Noites vendo Bridgerton. A amizade virando amor sem que nenhum dos dois percebesse.',
+    summary : 'Noites de série e conversas foram aproximando os dois, pouco a pouco.',
     ts      : new Date('2024-09-15').getTime(),
+  },
+  {
+    id      : 'seed_conversa_boa_noite',
+    type    : 'memory',
+    summary : 'No fim de um dia corrido, uma mensagem de boa-noite também pode ser um abraço.',
+  },
+  {
+    id      : 'seed_conversa_rotina',
+    type    : 'memory',
+    summary : 'Perguntar como foi o dia é um jeito pequeno e bonito de dizer: estou aqui.',
+  },
+  {
+    id      : 'seed_conversa_risada',
+    type    : 'memory',
+    summary : 'Uma risada compartilhada transforma qualquer conversa simples em lembrança boa.',
+  },
+  {
+    id      : 'seed_conversa_carinho',
+    type    : 'memory',
+    summary : 'Entre recadinhos carinhosos e assuntos do cotidiano, até os dias comuns ficam especiais.',
   },
 ];
 
 /* ── Mapeamento memória → evento (substring match) ── */
 const MEMORY_EVENT_MAP = {
   'taekwondo'    : () => window.triggerTaekwondoEvent?.(),
-  'prof. Rejane' : () => window.triggerTaekwondoEvent?.(),
-  'Campeonato'   : () => window.triggerTaekwondoEvent?.(),
+  'campeonato'   : () => window.triggerTaekwondoEvent?.(),
 };
 
 /* ── Helpers ───────────────────────────────── */

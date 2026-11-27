@@ -9,16 +9,13 @@
    Funciona mesmo se o loveCore ainda não tiver memórias.
    ═══════════════════════════════════════════════ */
 
+import { SEEDED_MEMORIES } from './memory-of-day.js';
+
 /* ── Mapeamento de memórias para eventos ──────── */
 // Ao clicar em uma memória, se existir uma função associada, ela é chamada.
 // Fallback seguro: se não existir, abre o modal simples.
 const MEMORY_EVENT_MAP = {
-  'Campeonato de taekwondo juntos — prof. Rejane': () => {
-    if (typeof window.triggerTaekwondoEvent === 'function') {
-      window.triggerTaekwondoEvent();
-    }
-  },
-  'Campeonato de taekwondo juntos': () => {
+  'campeonato': () => {
     if (typeof window.triggerTaekwondoEvent === 'function') {
       window.triggerTaekwondoEvent();
     }
@@ -60,16 +57,22 @@ function _formatDate(ts) {
   } catch (_) { return ''; }
 }
 
-/* ── Pega memórias do loveCore ────────────────── */
+function _escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char]);
+}
+
+/* ── Pega memórias do loveCore e seeds anonimizadas ── */
 function _getMemories() {
+  let userMemories = [];
   try {
     const core = window._loveCity?.getLoveCore?.();
-    if (core?.memories && Array.isArray(core.memories)) {
-      // Mais recentes primeiro
-      return [...core.memories].sort((a, b) => (b.ts || 0) - (a.ts || 0));
-    }
+    if (Array.isArray(core?.memories)) userMemories = core.memories;
   } catch (_) {}
-  return [];
+  const userIds = new Set(userMemories.map(memory => memory.id));
+  return [...userMemories, ...SEEDED_MEMORIES.filter(memory => !userIds.has(memory.id))]
+    .sort((a, b) => (b.ts || 0) - (a.ts || 0));
 }
 
 /* ── Modal simples para memórias sem evento ────── */
@@ -89,7 +92,7 @@ function _showMemoryModal(memory) {
       <button class="museu-modal-close" id="museu-modal-close-btn" aria-label="Fechar">✕</button>
       <div class="museu-modal-icon">${icon}</div>
       <div class="museu-modal-type">${label}</div>
-      <div class="museu-modal-summary">${memory.summary || ''}</div>
+      <div class="museu-modal-summary">${_escapeHTML(memory.summary || '')}</div>
       ${date ? `<div class="museu-modal-date">${date}</div>` : ''}
     </div>`;
 
@@ -175,7 +178,7 @@ export function renderMuseum() {
     card.innerHTML = `
       <div class="museu-card-icon">${icon}</div>
       <div class="museu-card-body">
-        <div class="museu-card-summary">${mem.summary || ''}</div>
+        <div class="museu-card-summary">${_escapeHTML(mem.summary || '')}</div>
         <div class="museu-card-meta">
           <span class="museu-card-type">${label}</span>
           ${date ? `<span class="museu-card-date">${date}</span>` : ''}

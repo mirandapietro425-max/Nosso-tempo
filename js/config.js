@@ -3,23 +3,6 @@
    Configurações centralizadas do projeto
    ═══════════════════════════════════════════════ */
 
-// ── Firebase ──
-export const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyB-XzRDCilsgzGrVz8RDYvSsNvKgxQROUs",
-  authDomain:        "nosso-tempo-71252.firebaseapp.com",
-  projectId:         "nosso-tempo-71252",
-  storageBucket:     "nosso-tempo-71252.firebasestorage.app",
-  messagingSenderId: "963553550690",
-  appId:             "1:963553550690:web:5680d9317172289f988c3b"
-};
-
-// ── Cloudinary ──
-export const CLOUDINARY_CLOUD  = 'dqy0l7fh6';
-export const CLOUDINARY_PRESET = 'nosso_tempo_cal';
-
-// ── ImgBB ──
-export const IMGBB_KEY = 'fd49cf34ebd541510c6f4b64abc3f4f8';
-
 // ── TMDB (mantido para referência — player agora usa PlayLT) ──
 export const TMDB_KEY = '8265bd1679663a7ea12ac168da84d2e8';
 
@@ -91,6 +74,10 @@ export const RECADINHOS = [
   "Que hoje você sinta, de algum jeito, o quanto é amada.",
   "Você veio pra ficar. E eu fico feliz todo dia com isso.",
   "Meu amor eterno, que o nosso amor seja sempre verdadeiro e livre — como você merece.",
+  "No fim de um dia corrido, uma mensagem de boa-noite também pode ser um abraço.",
+  "Perguntar como foi o dia é um jeito pequeno e bonito de dizer: estou aqui.",
+  "Uma risada compartilhada transforma qualquer conversa simples em lembrança boa.",
+  "Entre recadinhos carinhosos e assuntos do cotidiano, até os dias comuns ficam especiais.",
 ];
 
 // ── Mood options ──

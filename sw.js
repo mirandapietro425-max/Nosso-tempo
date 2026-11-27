@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   PIETRO & EMILLY — sw.js v58
+   PIETRO & EMILLY — sw.js v59
    Service Worker · Cache · Offline Support
 
    BUGS CORRIGIDOS nesta versão (v57):
@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v64'; // BUG-SW6: adicionados 7 JS faltantes + corrigido cinema-tmdb→cinema-playlt
+const CACHE_VERSION = 'v65'; // Banco local e módulos de backup/mídia adicionados
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -49,6 +49,9 @@ const STATIC_ASSETS = [
   '/css/games.css',
   '/css/cinema.css',
   '/js/app.js',
+  '/js/local-db.js',
+  '/js/local-media.js',
+  '/js/data-manager.js',
   '/js/config.js',
   '/js/ui.js',
   '/js/music.js',
@@ -187,8 +190,8 @@ self.addEventListener('message', (event) => {
 
 // ── Domínios externos (SW não intercepta) ──
 const EXTERNAL_HOSTS = [
-  'gstatic.com', 'firestore.googleapis.com', 'googleapis.com',
-  'cloudinary.com', 'imgbb.com', 'cdnjs.cloudflare.com',
+  'gstatic.com', 'googleapis.com',
+  'cdnjs.cloudflare.com',
   'fonts.googleapis.com', 'fonts.gstatic.com',
   'themoviedb.org', 'image.tmdb.org',
   'youtube.com', 'youtu.be', 'ytimg.com',

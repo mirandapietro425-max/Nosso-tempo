@@ -24,13 +24,12 @@
    [S10] IntersectionObserver para pré-carregar thumb ao entrar na viewport
    [S11] _renderEpisodeList atualiza só o item ativo sem full-rerender do modal
    [S12] _renderCatalog usa DocumentFragment — único reflow
-   [S13] _saveWatched com debounce mantido; Firestore merge mantido
+   [S13] _saveWatched com debounce mantido; estado salvo localmente
    [S14] Watch Party hooks mantidos
-   [S15] Firebase sync mantido
+   [S15] Progresso local neste navegador
    ═══════════════════════════════════════════════ */
 
-import { doc, getDoc, setDoc }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc } from './local-db.js';
 
 import {
   startTracking, stopTracking,
@@ -83,7 +82,7 @@ function makeWatchedCallback(watchKey) {
 }
 
 /* ══════════════════════════════════════════════
-   FIREBASE
+   PROGRESSO LOCAL
    ══════════════════════════════════════════════ */
 
 async function _loadWatched() {

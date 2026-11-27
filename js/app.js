@@ -3,15 +3,13 @@
    Módulo principal: orquestra todos os módulos
    ═══════════════════════════════════════════════ */
 
-// ── Firebase SDK ──
-import { initializeApp }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+// ── Persistência local ──
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from './local-db.js';
+import { optimizeImageFile, fileToDataURL } from './local-media.js';
+import { initDataManager } from './data-manager.js';
 
 // ── Config ──
 import {
-  FIREBASE_CONFIG, CLOUDINARY_CLOUD, CLOUDINARY_PRESET, IMGBB_KEY,
   TMDB_KEY, SENHA_MURAL, GALLERY_SLOTS, LS_DAILY_POPUP,
   PLAYLIST, RECADINHOS, MOOD_OPTIONS, EVENTOS,
   START_DATE, ANNIVERSARY_DAY, BDAY_MONTH, BDAY_DAY, EMILLY_BDAY_MONTH, EMILLY_BDAY_DAY,
@@ -25,6 +23,13 @@ function sanitizeHTML(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function localMediaDataURL(value, expectedKind = '') {
+  const url = String(value ?? '').trim();
+  const match = /^data:(image\/(?:jpeg|png|gif|webp)|audio\/[a-z0-9.+-]+|video\/[a-z0-9.+-]+);base64,[a-z0-9+/=]*$/i.exec(url);
+  if (!match || (expectedKind && !match[1].toLowerCase().startsWith(`${expectedKind}/`))) return '';
+  return url;
 }
 
 // ── UI utilities ──
@@ -94,22 +99,12 @@ import { initMemoryAnniversaries } from './memory-anniversaries.js';
 window.awardCoins = _awardCoins;
 
 /* ════════════════════════════════════════════
-   FIREBASE INIT
+   BANCO LOCAL — IndexedDB, sem serviço externo
    ════════════════════════════════════════════ */
-let app, db = null;
-try {
-  app = initializeApp(FIREBASE_CONFIG);
-  db  = getFirestore(app);
-} catch (e) {
-  console.error('[Firebase] Falha ao inicializar:', e);
-  db = null; // explícito — garante que todos os módulos recebem null e caem no caminho offline
-  const warn = document.createElement('div');
-  warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;font-size:12px;padding:6px 12px;z-index:99999;text-align:center;';
-  warn.textContent = '⚠️ Erro de conexão com o banco de dados. Algumas funções podem não funcionar.';
-  document.body?.appendChild(warn);
-}
+const db = getFirestore();
+initDataManager();
 
-/* ── Document refs (só criados se db foi inicializado com sucesso) ── */
+/* ── Referências aos documentos locais ── */
 const GALLERY_DOC      = db ? doc(db, 'gallery',       'shared') : null;
 const MOVIES_DOC       = db ? doc(db, 'movies',        'shared') : null;
 const DREAMS_DOC       = db ? doc(db, 'dreams',        'shared') : null;
@@ -279,7 +274,8 @@ async function renderGallery() {
   if (banner) banner.style.display = 'none';
 
   for (let i = 0; i < GALLERY_SLOTS; i++) {
-    const url  = photos[i];
+    const storedUrl = photos[i];
+    const url  = localMediaDataURL(storedUrl, 'image');
     const slot = document.createElement('div');
     slot.className = 'gallery-slot';
 
@@ -293,7 +289,7 @@ async function renderGallery() {
     } else {
       slot.innerHTML = `
         <div class="slot-empty-icon">📷</div>
-        <div class="slot-empty-text">Adicionar foto</div>
+        <div class="slot-empty-text">${storedUrl ? 'Arquivo externo indisponível — adicione novamente' : 'Adicionar foto'}</div>
         <div class="slot-overlay">
           <button class="slot-btn" onclick="startUpload(${i},event)">📷 Adicionar</button>
         </div>`;
@@ -326,28 +322,6 @@ async function deletePhoto(i, e) {
   }
 }
 
-// ── Compressão de imagem para upload mobile ──
-// Reduz fotos de câmera (até 12MP) para no máximo 1200px — evita erro de memória no celular
-async function compressImage(file, maxSize = 1200, quality = 0.82) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let { width, height } = img;
-      if (width <= maxSize && height <= maxSize) { resolve(file); return; }
-      if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
-      else                { width  = Math.round(width  * maxSize / height); height = maxSize; }
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', quality);
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-    img.src = url;
-  });
-}
-
 document.getElementById('file-input')?.addEventListener('change', async function () {
   const file = this.files[0];
   if (!file || uploadSlot === null) return;
@@ -369,25 +343,15 @@ document.getElementById('file-input')?.addEventListener('change', async function
   }
 
   try {
-    const compressed = await compressImage(file);
-    const form = new FormData();
-    form.append('image', compressed);
-    form.append('key', IMGBB_KEY);
-    const res  = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
-    const data = await res.json();
-
-    if (data.success) {
-      const p = await getPhotos();
-      p[localSlot] = data.data.url;
-      await setPhotos(p);
-      showToast('📸 Foto adicionada! 🥰');
-    } else {
-      if (slotEl) slotEl.querySelector('.upload-spinner')?.remove();
-      showToast('❌ Erro ao fazer upload.', 4000);
-    }
+    const compressed = await optimizeImageFile(file);
+    const localUrl = await fileToDataURL(compressed, { maxBytes: 10 * 1024 * 1024 });
+    const p = await getPhotos();
+    p[localSlot] = localUrl;
+    await setPhotos(p);
+    showToast('📸 Foto salva neste aparelho! 🥰');
   } catch (err) {
     if (slotEl) slotEl.querySelector('.upload-spinner')?.remove();
-    showToast('❌ Erro de rede. Tente novamente.', 4000);
+    showToast(`❌ ${err?.message || 'Não foi possível salvar a foto.'}`, 4000);
   }
 
   renderGallery();
@@ -772,10 +736,11 @@ async function renderMural() {
     const div = document.createElement('div');
     div.className = 'mural-msg ' + m.author.toLowerCase();
     let mediaHTML = '';
-    if (m.photo) {
+    const localPhoto = localMediaDataURL(m.photo, 'image');
+    if (localPhoto) {
       // BUG-H1: sanitizeHTML escapa & em URLs → window.open receberia &amp; literal
       // Usar sanitizeHTML só no atributo src (contexto HTML); onclick usa a URL bruta via dataset
-      const safePhotoSrc = sanitizeHTML(m.photo);
+      const safePhotoSrc = sanitizeHTML(localPhoto);
       mediaHTML = `<img src="${safePhotoSrc}" alt="foto" data-photourl="${safePhotoSrc}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin:0.6rem 0;cursor:pointer;" onclick="window.open(this.dataset.photourl,'_blank')" onerror="this.style.display='none'">`;
     }
     div.innerHTML = `
@@ -783,39 +748,29 @@ async function renderMural() {
       <div class="mural-msg-author">${sanitizeHTML(m.author)} ${m.author === 'Pietro' ? '💙' : '💗'}</div>
       ${mediaHTML}
       <div class="mural-msg-text">${sanitizeHTML(m.text)}</div>
-      <div class="mural-msg-date">${m.date || ''}</div>`;
+      <div class="mural-msg-date">${sanitizeHTML(m.date || '')}</div>`;
     list.appendChild(div);
   });
 }
 
-// Upload de foto para o mural via ImgBB
+// Prepara foto para o armazenamento local do mural
 async function uploadMuralPhoto(file) {
   if (_uploadingMuralPhoto) return;
   _uploadingMuralPhoto = true;
   const statusEl = document.getElementById('mural-photo-status');
   const previewEl = document.getElementById('mural-photo-preview');
-  if (statusEl) statusEl.textContent = '⏳ Enviando foto...';
+  if (statusEl) statusEl.textContent = '⏳ Preparando para salvar neste aparelho...';
   try {
-    const compressed = await compressImage(file);
-    const form = new FormData();
-    form.append('image', compressed);
-    form.append('key', IMGBB_KEY);
-    const res  = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
-    const data = await res.json();
-    if (data.success) {
-      _muralPhotoUrl = data.data.url;
-      if (statusEl) statusEl.textContent = '✅ Foto pronta!';
-      if (previewEl) {
-        previewEl.innerHTML = `<img src="${_muralPhotoUrl}" style="width:100%;max-height:160px;object-fit:cover;border-radius:12px;margin-top:0.5rem;">
-          <button onclick="removeMuralPhoto()" style="background:none;border:none;color:#e8536f;cursor:pointer;font-size:0.8rem;margin-top:0.3rem;">✕ Remover foto</button>`;
-      }
-    } else {
-      _muralPhotoUrl = null; // BUG-L1: limpa URL antiga para não enviar foto de tentativa anterior
-      if (statusEl) statusEl.textContent = '❌ Erro no upload';
+    const compressed = await optimizeImageFile(file);
+    _muralPhotoUrl = await fileToDataURL(compressed, { maxBytes: 10 * 1024 * 1024 });
+    if (statusEl) statusEl.textContent = '✅ Foto pronta para salvar!';
+    if (previewEl) {
+      previewEl.innerHTML = `<img src="${_muralPhotoUrl}" style="width:100%;max-height:160px;object-fit:cover;border-radius:12px;margin-top:0.5rem;">
+        <button onclick="removeMuralPhoto()" style="background:none;border:none;color:#e8536f;cursor:pointer;font-size:0.8rem;margin-top:0.3rem;">✕ Remover foto</button>`;
     }
   } catch(e) {
-    _muralPhotoUrl = null; // BUG-L1: limpa na exceção de rede também
-    if (statusEl) statusEl.textContent = '❌ Erro no upload';
+    _muralPhotoUrl = null;
+    if (statusEl) statusEl.textContent = `❌ ${e?.message || 'Não foi possível preparar a foto.'}`;
   } finally {
     _uploadingMuralPhoto = false;
   }
@@ -1300,10 +1255,12 @@ async function initSpecial(type) {
   if (isOpen && hasData) {
     const content = document.getElementById(`special-${type}-content`);
     if (content) {
+      const localPhoto = localMediaDataURL(data.photoUrl, 'image');
+      const localAudio = localMediaDataURL(data.audioUrl, 'audio');
       content.innerHTML = '';
       if (data.text)     content.innerHTML += `<div class="special-content-text">${sanitizeHTML(data.text)}</div>`;
-      if (data.photoUrl) content.innerHTML += `<img src="${data.photoUrl}" alt="Foto especial" onerror="this.style.display='none'" style="max-width:100%;border-radius:12px;">`;
-      if (data.audioUrl) content.innerHTML += `<audio controls src="${data.audioUrl}"></audio>`;
+      if (localPhoto) content.innerHTML += `<img src="${localPhoto}" alt="Foto especial" onerror="this.style.display='none'" style="max-width:100%;border-radius:12px;">`;
+      if (localAudio) content.innerHTML += `<audio controls src="${localAudio}"></audio>`;
     }
   }
 
@@ -1324,26 +1281,19 @@ function toggleSpecialSend(type) {
 
 async function uploadSpecialFile(file, type) {
   const status = document.getElementById(`special-${type}-status`);
-  if (status) status.textContent = '⏳ Enviando...';
+  if (status) status.textContent = '⏳ Preparando arquivo local...';
   try {
-    const form = new FormData();
-    form.append('file', file);
-    form.append('upload_preset', CLOUDINARY_PRESET);
-    const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method: 'POST', body: form });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const isImage = file.type.startsWith('image/');
+    const prepared = isImage ? await optimizeImageFile(file) : file;
+    const localUrl = await fileToDataURL(prepared, { maxBytes: isImage ? 10 * 1024 * 1024 : 16 * 1024 * 1024 });
     if (status) {
-      status.textContent = data.secure_url ? '✅ Enviado!' : '❌ Erro no upload';
+      status.textContent = '✅ Pronto para salvar neste aparelho';
       setTimeout(() => { status.textContent = ''; }, 2500);
     }
-    return data.secure_url || null;
+    return localUrl;
   } catch (err) {
-    console.warn('[uploadSpecialFile] Erro:', err.message);
-    if (status) {
-      status.textContent = '❌ Falha no envio. Tente novamente.';
-      setTimeout(() => { status.textContent = ''; }, 3000);
-    }
-    return null;
+    if (status) status.textContent = `❌ ${err?.message || 'Falha ao preparar arquivo.'}`;
+    throw err;
   }
 }
 
@@ -1377,6 +1327,8 @@ async function saveSpecial(type) {
     prevElSave.querySelectorAll('img[src^="blob:"], audio[src^="blob:"]').forEach(el => URL.revokeObjectURL(el.src));
   }
   initSpecial(type);
+  } catch (err) {
+    showToast(`❌ Não foi possível salvar: ${err?.message || 'verifique o espaço local.'}`, 4500);
   } finally {
     _savingSpecial[type] = false;
   }
@@ -1563,7 +1515,8 @@ function renderCalMedia() {
     const div = document.createElement('div');
     div.className = 'cal-media-item';
     // BUG-5 FIX: sanitiza m.url antes de inserir no src (XSS via URL maliciosa)
-    const safeUrl = sanitizeHTML(m.url || '');
+    const safeUrl = localMediaDataURL(m.url, m.type === 'video' ? 'video' : 'image');
+    if (!safeUrl) return;
     div.innerHTML = m.type === 'video'
       ? `<video src="${safeUrl}" controls playsinline style="max-width:100%;border-radius:8px;"></video>`
       : `<img src="${safeUrl}" loading="lazy" style="max-width:100%;border-radius:8px;">`;
@@ -1638,28 +1591,22 @@ if (_calFileInput && !_calFileInput.dataset.listenerAttached) {
   if (!files.length) return;
   this.value = '';
   const status = document.getElementById('cal-upload-status');
-  if (status) status.textContent = '⏳ Enviando...';
+  if (status) status.textContent = '⏳ Salvando mídia neste aparelho...';
 
   for (const file of files) {
     try {
-      const form = new FormData();
-      form.append('file', file);
-      form.append('upload_preset', CLOUDINARY_PRESET);
-      const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, { method: 'POST', body: form });
-      const data = await res.json();
-      if (data.secure_url) {
-        if (!calModalData.media) calModalData.media = [];
-        calModalData.media.push({ url: data.secure_url, type: file.type.startsWith('video') ? 'video' : 'image' });
-        renderCalMedia();
-      } else {
-        showToast('❌ Erro no upload. Configure o preset no Cloudinary.', 4000);
-      }
+      const isVideo = file.type.startsWith('video/');
+      const prepared = isVideo ? file : await optimizeImageFile(file);
+      const url = await fileToDataURL(prepared, { maxBytes: isVideo ? 16 * 1024 * 1024 : 10 * 1024 * 1024 });
+      if (!calModalData.media) calModalData.media = [];
+      calModalData.media.push({ url, type: isVideo ? 'video' : 'image' });
+      renderCalMedia();
     } catch (e) {
-      showToast('❌ Erro de rede.', 3000);
+      showToast(`❌ ${e?.message || 'Não foi possível salvar a mídia.'}`, 4000);
     }
   }
   if (status) {
-    status.textContent = '✅ Enviado!';
+    status.textContent = '✅ Mídia preparada. Toque em “Salvar dia” para gravar.';
     setTimeout(() => { status.textContent = ''; }, 2500);
   }
   });

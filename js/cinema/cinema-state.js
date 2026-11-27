@@ -30,7 +30,7 @@ export const cinemaState = {
   episodeFetchCtrl : null,        // AbortController do fetch de episódios
   metaFetchCtrl    : null,        // AbortController do fetch de metadados
 
-  /* ── firebase / persistência ── */
+  /* ── persistência local ── */
   db               : null,
   cinemaDoc        : null,
   watched          : {},

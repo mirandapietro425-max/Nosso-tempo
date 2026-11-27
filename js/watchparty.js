@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    PIETRO & EMILLY — watchparty.js
    Cinema em Dupla 🎬💕
-   · Convite com notificação em tempo real (Firebase)
+   · UI mantida; convites entre aparelhos ficam pausados no armazenamento local
    · Chat com emojis, fotos e reações
    · Vídeo/áudio via WebRTC (câmera/mic opcionais)
    · Painel flutuante sobre o player existente
@@ -10,9 +10,9 @@
 
 import {
   doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc, arrayUnion,
-} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+} from './local-db.js';
 
-import { IMGBB_KEY } from './config.js';
+import { optimizeImageFile, fileToDataURL } from './local-media.js';
 
 /* ────────────────────────────────────────────
    ESTADO GLOBAL
@@ -50,11 +50,21 @@ export function initWatchParty(db, myName) {
   _db       = db;
   _myName   = myName;        // 'pietro' ou 'emilly'
 
-  // FIX WP2: injeta HTML/CSS sempre — o botão "Duo" deve aparecer mesmo se Firebase estiver lento
+  // Mantém o botão como aviso honesto; sem servidor, sessões não atravessam dispositivos.
   _injectStyles();
   _injectHTML();
 
-  // FIX Bug C5: guard — se Firebase falhou, db é null; não cria refs nem listeners de Firebase
+  const explainLocalOnly = () => window.showToast?.('Cinema em Dupla entre aparelhos está pausado: os dados agora ficam apenas neste navegador.');
+  window._wpOpen = explainLocalOnly;
+  window._wpClose = () => {};
+  window._wpInvite = window._wpAccept = window._wpDecline = explainLocalOnly;
+  window._wpSendMsg = window._wpSendReaction = window._wpToggleCam = explainLocalOnly;
+  window._wpToggleMic = window._wpToggleEmoji = window._wpSendPhoto = explainLocalOnly;
+  window._wpEndSession = explainLocalOnly;
+  window._wpIsInSession = () => false;
+  return;
+
+  // Implementação anterior abaixo fica inativa no modo de armazenamento local.
   if (!db) {
     console.warn('[WatchParty] Firebase indisponível — Watch Party desativado.');
     // Mesmo sem Firebase, expõe globais para que os botões injetados não quebrem
@@ -911,31 +921,22 @@ async function _handlePhotoUpload(input) {
   chat?.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
 
   try {
-    const form = new FormData();
-    form.append('image', file);
-    form.append('key', IMGBB_KEY);
-    const res  = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
-    const data = await res.json();
-    loading.remove(); // BUG-WP-1 FIX: removido ANTES do if/else — sem isso, loading ficava
-                      // visível para sempre quando data.success === false (sem throw de rede)
-
-    if (data.success) {
-      const msg = {
-        id   : Date.now().toString(36),
-        from : _myName,
-        text : data.data.url,
-        type : 'photo',
-        ts   : Date.now(),
-      };
-      await updateDoc(_wpDoc, { messages: arrayUnion(msg) }).catch(() =>
-        setDoc(_wpDoc, { messages: [msg] }, { merge: true })
-      );
-    } else {
-      window.showToast?.('❌ Erro ao enviar foto.');
-    }
+    const compressed = await optimizeImageFile(file);
+    const localUrl = await fileToDataURL(compressed, { maxBytes: 8 * 1024 * 1024 });
+    loading.remove();
+    const msg = {
+      id   : Date.now().toString(36),
+      from : _myName,
+      text : localUrl,
+      type : 'photo',
+      ts   : Date.now(),
+    };
+    await updateDoc(_wpDoc, { messages: arrayUnion(msg) }).catch(() =>
+      setDoc(_wpDoc, { messages: [msg] }, { merge: true })
+    );
   } catch(e) {
     loading.remove();
-    window.showToast?.('❌ Erro de rede.');
+    window.showToast?.(`❌ ${e?.message || 'Não foi possível salvar a foto.'}`);
   }
 }
 

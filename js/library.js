@@ -3,11 +3,10 @@
    Nossa Biblioteca 📚
    · Catálogo de livros (hard-coded)
    · Leitor inline por capítulos
-   · Favoritos e progresso no Firebase
+   · Favoritos e progresso no armazenamento local
    ═══════════════════════════════════════════════ */
 
-import { doc, getDoc, setDoc, onSnapshot }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, onSnapshot } from './local-db.js';
 
 /* ══════════════════════════════════════════════
    CATÁLOGO DE LIVROS

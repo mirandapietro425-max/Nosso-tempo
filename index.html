@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Pietro & Emilly 💕</title>
   <meta name="description" content="Nosso cantinho especial de amor — Pietro & Emilly">
+  <meta name="robots" content="noindex,nofollow">
 
   <!-- PWA -->
   <link rel="icon" type="image/png" href="assets/favicon.png" id="favicon-link">
@@ -23,7 +24,7 @@
 
   <!-- CSS Modular -->
   <link rel="stylesheet" href="css/main.css?v=63">
-  <link rel="stylesheet" href="css/components.css?v=63">
+  <link rel="stylesheet" href="css/components.css?v=65">
   <link rel="stylesheet" href="css/modals.css?v=63">
   <link rel="stylesheet" href="css/animations.css?v=63">
   <link rel="stylesheet" href="css/stickers.css?v=63">
@@ -209,7 +210,10 @@
   </style>
 </head>
 <body>
-
+<aside class="local-storage-notice" role="note">
+  <span>Este aparelho salva seus dados localmente; eles não sincronizam com outros dispositivos.</span>
+  <a href="#sec-dados-locais">Backups e detalhes</a>
+</aside>
 <!-- ── MODAL FILME ── -->
 <div class="movie-modal-overlay" id="movie-modal-overlay" onclick="if(event.target===this)closeMovieModal()">
   <div class="movie-modal">
@@ -293,8 +297,8 @@
 <div class="senha-overlay" id="senha-overlay" onclick="fecharSenhaMural(event)">
   <div class="senha-modal" id="senha-modal">
     <div class="senha-icon">🔐</div>
-    <div class="senha-title">Área privada</div>
-    <div class="senha-sub">Digite a senha para ler os recados</div>
+    <div class="senha-title">Mural com cadeado visual</div>
+    <div class="senha-sub">A senha só oculta a tela; não protege os dados contra inspeção.</div>
     <input class="senha-input" id="senha-input" type="password"
            placeholder="••••••••••"
            onkeydown="if(event.key==='Enter') verificarSenha()"
@@ -415,6 +419,7 @@
     <a class="hero-nav-btn" href="#sec-jogos">    <span class="hero-nav-icon">🎮</span><span class="hero-nav-label">Arcade</span></a>
     <a class="hero-nav-btn" href="#sec-museu">      <span class="hero-nav-icon">🏛️</span><span class="hero-nav-label">Memórias</span></a>
     <a class="hero-nav-btn" href="#sec-casinha">    <span class="hero-nav-icon">🏡</span><span class="hero-nav-label">Casinha</span></a>
+    <a class="hero-nav-btn" href="#sec-dados-locais"><span class="hero-nav-icon">💾</span><span class="hero-nav-label">Backup</span></a>
   </nav>
 
   <div class="scroll-hint" aria-hidden="true">↓</div>
@@ -1042,6 +1047,20 @@
   <h2 class="section-title" id="sec-museu-title">Museu de <em>Memórias</em> 🏛️</h2>
   <div id="museu-wrap">
     <!-- injetado por museum.js -->
+  </div>
+</section>
+
+<!-- ── DADOS LOCAIS E BACKUP ── -->
+<section id="sec-dados-locais" class="data-tools" aria-labelledby="data-tools-title">
+  <div class="data-tools-card">
+    <h2 class="data-tools-title" id="data-tools-title">Seus dados ficam neste aparelho</h2>
+    <p class="data-tools-status" id="data-storage-status" role="status" aria-live="polite">Inicializando armazenamento local…</p>
+    <div class="data-tools-actions">
+      <button class="data-tools-button" id="data-export-button" type="button">Baixar backup</button>
+      <button class="data-tools-button" id="data-import-button" type="button">Restaurar backup</button>
+      <input id="data-import-file" type="file" accept="application/json,.json" hidden>
+    </div>
+    <small class="data-tools-note">O salvamento é automático neste navegador e não sincroniza outros aparelhos. Apagar os dados do navegador pode removê-los; faça backups para transferir ou proteger suas lembranças. Os arquivos de backup contêm seus dados; guarde-os com cuidado. O cadeado do mural é apenas visual, e os dados locais não são criptografados.</small>
   </div>
 </section>
 

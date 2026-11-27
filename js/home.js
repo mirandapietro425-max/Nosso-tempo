@@ -3,8 +3,7 @@
    Santa Maria Casinha RPG + Pet Virtual + Quiz
    ═══════════════════════════════════════════════ */
 
-import { doc, setDoc, onSnapshot }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, setDoc, onSnapshot } from './local-db.js';
 
 // Escapa HTML para evitar XSS ao inserir dados do usuário/Firebase via innerHTML
 function sanitizeHTML(str) {

@@ -1,13 +1,12 @@
 /* ═══════════════════════════════════════════════
    PIETRO & EMILLY — games.js v43
    Arcade do Casal 🎮
-   ✦ Modo Online  — Firebase, jogar com Emilly de longe
+   ✦ Modo entre aparelhos indisponível — os dados agora ficam locais
    ✦ Modo Tela Dividida — Emilly em cima, Pietro em baixo
    ✦ Bug fixes: Velha turnos, cleanup de animações, Quiz turnos
    ═══════════════════════════════════════════════ */
 
-import { doc, setDoc, onSnapshot, deleteDoc, getDoc }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, setDoc, onSnapshot, deleteDoc, getDoc } from './local-db.js';
 
 let _db = null;
 export function initGames(db) {
@@ -183,7 +182,7 @@ const CATALOG = [
   { id:'velha',     icon:'❌', title:'Jogo da Velha',       desc:'Clássico X e O em dupla!',             fn: openVelha     },
   { id:'caraacara', icon:'🤔', title:'Cara a Cara',         desc:'Adivinhe o personagem do outro!',      fn: openCaraACara },
   { id:'desenho',   icon:'🎨', title:'Adivinhe o Desenho',  desc:'Desenhe e o outro tenta adivinhar!',   fn: openDesenho   },
-  { id:'uno',       icon:'🃏', title:'Uno do Casal',        desc:'Cartas especiais de amor — só online!', fn: openUno       },
+  { id:'uno',       icon:'🃏', title:'Uno do Casal',        desc:'Cartas especiais de amor — modo entre aparelhos pausado.', fn: openUno       },
   { id:'vdd',       icon:'🔥', title:'Verdade ou Desafio',  desc:'Revelações e desafios a dois!',         fn: openVDD       },
   { id:'roleta',    icon:'🎲', title:'Roleta do Casal',     desc:'Gire e cumpra o destino juntos!',       fn: openRoleta    },
   { id:'musica',    icon:'🎵', title:'Adivinhe a Música',   desc:'Ouça o trecho e adivinhe a música!',    fn: openMusica    },
@@ -223,11 +222,11 @@ function _showModeSelector(game) {
       <button class="gm-x" onclick="window._closeModeOverlay()">✕</button>
       <div class="gm-icon-big">${game.icon}</div>
       <div class="gm-modal-title">${game.title}</div>
-      <button class="gm-choice-btn" id="gmo-online">
+      <button class="gm-choice-btn" id="gmo-online" disabled aria-label="Modo entre aparelhos indisponível" style="opacity:.48;cursor:not-allowed">
         <span class="gm-choice-icon">🌐</span>
         <div>
-          <div class="gm-choice-label">Online</div>
-          <div class="gm-choice-sub">Jogar com a Emilly de longe</div>
+          <div class="gm-choice-label">Entre aparelhos — pausado</div>
+          <div class="gm-choice-sub">O armazenamento local não sincroniza dispositivos.</div>
         </div>
       </button>
       <button class="gm-choice-btn" id="gmo-split">
@@ -241,17 +240,12 @@ function _showModeSelector(game) {
   document.body.appendChild(mo);
   requestAnimationFrame(() => mo.classList.add('show'));
 
-  document.getElementById('gmo-online').addEventListener('click', () => {
-    _closeModeOverlay();
-    if (!_db) {
-      _showGmInfo('😕', 'Firebase desconectado',
-        'O modo online precisa do Firebase. Verifique a conexão.');
-      return;
-    }
-    _showOnlineLobby(game);
-  });
   document.getElementById('gmo-split').addEventListener('click', () => {
     _closeModeOverlay();
+    if (game.id === 'uno') {
+      _showGmInfo('📵', 'Uno em pausa', 'O Uno deste app dependia de sincronização entre aparelhos. Os outros jogos continuam disponíveis na mesma tela.');
+      return;
+    }
     game.fn('split', null);
   });
 }
