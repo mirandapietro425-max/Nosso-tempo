@@ -91,6 +91,41 @@ export const SEEDED_MEMORIES = [ // RISCO-4: exportado para evitar duplicação
     type    : 'memory',
     summary : 'Entre recadinhos carinhosos e assuntos do cotidiano, até os dias comuns ficam especiais.',
   },
+  {
+    id      : 'seed_story_amizade',
+    type    : 'milestone',
+    summary : 'Antes de o carinho ganhar nome, a amizade cresceu entre jogos em grupo, conversas e vontade de continuar por perto.',
+  },
+  {
+    id      : 'seed_story_serie',
+    type    : 'event',
+    summary : 'Bridgerton virou assunto compartilhado; episódio após episódio, as conversas passaram a durar mais que a tela.',
+  },
+  {
+    id      : 'seed_story_filme',
+    type    : 'movie',
+    summary : 'A primeira sessão de A Fantástica Fábrica de Chocolate trouxe risadas espontâneas e fez um encontro simples ficar inesquecível.',
+  },
+  {
+    id      : 'seed_story_bolo',
+    type    : 'special',
+    summary : 'Um bolo de chocolate preparado pensando no doce favorito dela virou um carinho que dava para dividir.',
+  },
+  {
+    id      : 'seed_story_taekwondo',
+    type    : 'achievement',
+    summary : 'Nos treinos e nos campeonatos, aprenderam a torcer e sentir orgulho da dedicação um do outro.',
+  },
+  {
+    id      : 'seed_story_recomeco',
+    type    : 'milestone',
+    summary : 'Depois de uma fase difícil, reconhecer os próprios erros, conversar e escolher tentar de novo abriu espaço para um novo capítulo.',
+  },
+  {
+    id      : 'seed_story_rotina',
+    type    : 'memory',
+    summary : 'Filmes, domingos e conversas sem pressa lembram que o amor também mora na rotina simples.',
+  },
 ];
 
 /* ── Mapeamento memória → evento (substring match) ── */
