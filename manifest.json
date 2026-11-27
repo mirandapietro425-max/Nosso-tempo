@@ -33,6 +33,11 @@
       "name": "Calendário",
       "url": "/#sec-calendario",
       "description": "Ver o calendário"
+    },
+    {
+      "name": "Passaporte dos Encontros",
+      "url": "/#sec-encontros",
+      "description": "Planejar e guardar um encontro"
     }
   ]
 }

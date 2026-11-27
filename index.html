@@ -216,6 +216,7 @@
   </style>
   <link rel="stylesheet" href="css/redesign.css?v=1">
   <link rel="stylesheet" href="css/visual-refresh.css?v=1">
+  <link rel="stylesheet" href="css/date-passport.css?v=1">
 </head>
 <body>
 <!-- ── MODAL FILME ── -->
@@ -385,7 +386,7 @@
   <p class="hero-subtitle">Uma história de amor que cresce a cada segundo ✨</p>
   <nav class="hero-actions" aria-label="Acessos rápidos">
     <a class="hero-cta hero-cta-primary" href="#sec-carta"><span aria-hidden="true">💌</span> Ler nossa cartinha</a>
-    <a class="hero-cta hero-cta-secondary" href="#sec-museu"><span aria-hidden="true">📖</span> Revisitar memórias</a>
+    <a class="hero-cta hero-cta-secondary" href="#sec-encontros"><span aria-hidden="true">✦</span> Planejar um encontro</a>
   </nav>
 
   <div class="counter-hero">
@@ -425,7 +426,7 @@
     <nav class="hero-nav-secondary" aria-label="Todas as áreas">
       <a href="#sec-galeria">📸 Galeria</a><a href="#sec-filmes">🎬 Filmes</a><a href="#sec-cinema">🍿 Cinema</a>
       <a href="#sec-fantasia">🌙 Fantasia</a><a href="#sec-calendario">📅 Calendário</a><a href="#sec-humor">😊 Humor</a>
-      <a href="#sec-sonhos">🌟 Sonhos</a><a href="#sec-mural">💬 Recados</a><a href="#sec-localizacao">📍 Localização</a>
+      <a href="#sec-sonhos">🌟 Sonhos</a><a href="#sec-encontros">💌 Encontros</a><a href="#sec-mural">💬 Recados</a><a href="#sec-localizacao">📍 Localização</a>
       <a href="#sec-biblioteca">📚 Biblioteca</a><a href="#sec-jogos">🎮 Arcade</a><a href="#sec-album-memorias">📷 Álbum</a>
       <a href="#sec-dados-locais">💾 Backup</a>
     </nav>
@@ -740,6 +741,82 @@
   <div class="dreams-add">
     <input class="dreams-input" id="dream-input" type="text" placeholder="Escreva um sonho nosso...">
     <button class="dreams-btn" onclick="addDream()">Adicionar 🌟</button>
+  </div>
+</section>
+
+<!-- ── PASSAPORTE DOS ENCONTROS ── -->
+<section id="sec-encontros" aria-labelledby="sec-encontros-title">
+  <div class="divider"><span class="divider-icon" aria-hidden="true">♡</span></div>
+  <div class="section-label">Uma ideia vira história</div>
+  <h2 class="section-title" id="sec-encontros-title">Passaporte dos <em>Encontros</em></h2>
+  <p class="passport-lede">Escolham uma ideia simples, guardem para depois ou registrem um momento que já viveram juntos.</p>
+
+  <div class="passport-frame">
+    <aside class="passport-cover" aria-label="Passaporte dos Encontros">
+      <div class="passport-cover-top">
+        <span class="passport-cover-label">Nosso tempo</span>
+        <span class="passport-cover-stamp" aria-hidden="true">P&amp;E</span>
+      </div>
+      <div class="passport-cover-copy">
+        <small>Passaporte afetivo</small>
+        <h3>O próximo<br><em>capítulo</em><br>é de vocês.</h3>
+        <p>Pequenas aventuras também merecem uma página no álbum.</p>
+      </div>
+      <div class="passport-cover-bottom">
+        <div class="passport-stat"><strong id="passport-saved-count">0</strong><span>ideias guardadas</span></div>
+        <div class="passport-stat"><strong id="passport-completed-count">0</strong><span>encontros vividos</span></div>
+      </div>
+    </aside>
+
+    <div class="passport-workspace">
+      <div class="passport-toolbar">
+        <div class="passport-filters" role="group" aria-label="Filtrar ideias de encontro">
+          <button class="passport-filter-button is-active" type="button" data-passport-filter="all" aria-pressed="true">Todas</button>
+          <button class="passport-filter-button" type="button" data-passport-filter="home" aria-pressed="false">Em casa</button>
+          <button class="passport-filter-button" type="button" data-passport-filter="outside" aria-pressed="false">Lá fora</button>
+        </div>
+        <button class="passport-button passport-button-primary" type="button" data-passport-action="surprise">Sortear uma ideia <span aria-hidden="true">✦</span></button>
+      </div>
+      <p class="passport-feedback" id="passport-feedback" role="status" aria-live="polite">Escolham uma ideia para começar uma nova página.</p>
+      <div class="passport-ideas" id="passport-ideas" aria-live="polite"></div>
+
+      <form class="passport-note-form" id="passport-note-form" hidden>
+        <div class="passport-form-heading">
+          <small>Guardar uma lembrança</small>
+          <button class="passport-form-close" type="button" data-passport-action="close-form" aria-label="Fechar formulário">×</button>
+        </div>
+        <p class="passport-form-idea" id="passport-form-idea"></p>
+        <div class="passport-form-fields">
+          <label for="passport-date">Quando aconteceu?
+            <input id="passport-date" type="date" required>
+          </label>
+          <label for="passport-memory">Uma frase para lembrar desse dia
+            <textarea id="passport-memory" maxlength="280" rows="3" placeholder="O que fez esse momento ser de vocês?"></textarea>
+          </label>
+        </div>
+        <div class="passport-form-actions">
+          <button class="passport-button passport-button-soft" type="button" data-passport-action="close-form">Agora não</button>
+          <button class="passport-button passport-button-primary" type="submit">Carimbar no passaporte</button>
+        </div>
+      </form>
+
+      <div class="passport-lists">
+        <section class="passport-list-panel" aria-labelledby="passport-saved-heading">
+          <div class="passport-list-heading">
+            <small>Para o próximo tempo livre</small>
+            <h3 id="passport-saved-heading">Ideias guardadas <span id="passport-saved-total">0</span></h3>
+          </div>
+          <div id="passport-saved-list"></div>
+        </section>
+        <section class="passport-list-panel" aria-labelledby="passport-completed-heading">
+          <div class="passport-list-heading">
+            <small>Uma página de cada vez</small>
+            <h3 id="passport-completed-heading">Encontros vividos <span id="passport-completed-total">0</span></h3>
+          </div>
+          <div id="passport-completed-list"></div>
+        </section>
+      </div>
+    </div>
   </div>
 </section>
 
