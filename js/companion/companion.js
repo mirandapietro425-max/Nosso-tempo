@@ -834,13 +834,14 @@ function updatePendingReply(message, text, pending = false) {
   scheduleSave();
 }
 
-async function requestNaturalReply(messages, memoryContext = [], answerMessage = null, signal = undefined) {
+async function requestNaturalReply(messages, memoryContext = [], answerMessage = null, signal = undefined, projectContext = '') {
   const response = await fetch('/api/pestinha/chat', {
     method: 'POST',
     signal,
     headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
     body: JSON.stringify({
       profile: state.activeSpeaker,
+      projectContext: String(projectContext || '').slice(0, 4000),
       messages: messages.map(item => ({ role: item.role, content: item.text })).slice(-12),
       memories: memoryContext.map(item => ({
         title: String(item.memory.title || item.memory.sourceLabel || 'Lembrança').slice(0, 100),
@@ -936,7 +937,8 @@ async function submitQuestion(rawText, fromVoice = false) {
     const controller = new AbortController();
     activeReplyController = controller;
     try {
-      const reply = await requestNaturalReply(history, memories, answerMessage, controller.signal);
+      const projectContext = answerFromProjectKnowledge(question) || '';
+      const reply = await requestNaturalReply(history, memories, answerMessage, controller.signal, projectContext);
       updatePendingReply(answerMessage, reply, false);
       if (state.speakResponses) speak(reply);
     } catch (error) {
