@@ -31,7 +31,7 @@ const DEFAULT_STATE = Object.freeze({
   memories: [],
   messages: [],
   rememberConversation: false,
-  speakResponses: false,
+  speakResponses: true,
   aiEnabled: false,
   aiMemoryConsent: false,
   brainWeights: null,
@@ -156,7 +156,9 @@ async function loadState() {
         ...loaded,
         version: 2,
         activeSpeaker: ['Pietro', 'Emilly', 'Pietro e Emilly'].includes(loaded.activeSpeaker) ? loaded.activeSpeaker : 'Pietro',
-        speakResponses: Boolean(loaded.speakResponses),
+        // Falar é o comportamento padrão solicitado para o Pestinha; uma
+        // preferência explicitamente salva como false continua respeitada.
+        speakResponses: loaded.speakResponses === undefined ? true : Boolean(loaded.speakResponses),
         // Cada carregamento exige uma nova ativação antes de enviar mensagens ao serviço externo.
         aiEnabled: false,
         aiMemoryConsent: false,

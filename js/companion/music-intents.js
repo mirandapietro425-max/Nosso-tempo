@@ -27,7 +27,7 @@ export function classifyMusicIntent(input) {
   if (/^(pausa|pausar)( a)?( musica)?$/.test(command)) return { type: 'pause' };
   if (/^(continua|continuar|retoma|retomar)( a)?( musica)?$/.test(command)) return { type: 'resume' };
   if (/^(proxima|proximo|avanca)( musica)?$/.test(command)) return { type: 'next' };
-  if (/^(anterior|volta)( musica)?$/.test(command)) return { type: 'previous' };
+  if (/^(anterior|volta)( a)?( musica)?$/.test(command)) return { type: 'previous' };
   const hasAdd = /\b(adiciona|adicionar|coloca|colocar|bota|botar|inclui|incluir)\b/.test(text);
   const hasPlay = /\b(toca|tocar|reproduz|reproduzir)\b/.test(text);
   const hasSearch = /\b(pesquisa|pesquisar|procura|procurar|busca|buscar)\b/.test(text);
