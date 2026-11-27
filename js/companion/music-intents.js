@@ -19,7 +19,9 @@ function extractQuery(raw) {
 export function classifyMusicIntent(input) {
   const original = String(input || '').trim();
   const text = normalize(original);
-  if (!text || QUESTION_START.test(text) || (!VERBS.test(text) && !/^(?:ei )?pestinha\b/.test(text))) return null;
+  const commandText = original.replace(/^\s*(?:ei\s+)?pestinha\b[,: ]*/i, '');
+  const infinitiveQuestion = /\?/.test(original) && /^(?:adicionar|colocar|incluir|tocar|reproduzir|pesquisar|procurar|buscar|remover|excluir)\b/i.test(commandText);
+  if (!text || QUESTION_START.test(text) || infinitiveQuestion || (!VERBS.test(text) && !/^(?:ei )?pestinha\b/.test(text))) return null;
   const command = text.replace(/^(?:ei )?pestinha\s*/, '');
   if (/^(pausa|pausar)( a)?( musica)?$/.test(command)) return { type: 'pause' };
   if (/^(continua|continuar|retoma|retomar)( a)?( musica)?$/.test(command)) return { type: 'resume' };
