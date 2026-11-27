@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="css/home.css?v=63">
   <link rel="stylesheet" href="css/games.css?v=48">
   <link rel="stylesheet" href="css/cinema.css?v=63">
-  <link rel="stylesheet" href="css/mobile.css?v=1">
+  <link rel="stylesheet" href="css/mobile.css?v=2">
   <link rel="preload" as="image" href="assets/hero-romantico.webp" type="image/webp" fetchpriority="high">
 
   <!-- CSS crítico inline (garante render mesmo com service worker antigo) -->
@@ -412,6 +412,7 @@
     <a class="hero-nav-btn" href="#sec-musica">     <span class="hero-nav-icon">🎵</span><span class="hero-nav-label">Música</span></a>
     <a class="hero-nav-btn" href="#sec-filmes">     <span class="hero-nav-icon">🎬</span><span class="hero-nav-label">Filmes</span></a>
     <a class="hero-nav-btn" href="#sec-cinema">     <span class="hero-nav-icon">🍿</span><span class="hero-nav-label">Cinema</span></a>
+    <a class="hero-nav-btn" href="#sec-fantasia">  <span class="hero-nav-icon">🌙</span><span class="hero-nav-label">Fantasia</span></a>
     <a class="hero-nav-btn" href="#sec-calendario"> <span class="hero-nav-icon">📅</span><span class="hero-nav-label">Calendário</span></a>
     <a class="hero-nav-btn" href="#sec-humor">      <span class="hero-nav-icon">😊</span><span class="hero-nav-label">Humor</span></a>
     <a class="hero-nav-btn" href="#sec-sonhos">     <span class="hero-nav-icon">🌟</span><span class="hero-nav-label">Sonhos</span></a>
@@ -716,6 +717,11 @@
   <div class="section-label">Séries e filmes pra assistir juntos</div>
   <h2 class="section-title" id="sec-cinema-title">Nosso <em>Cinema</em> 🍿</h2>
 
+  <figure class="cinema-art">
+    <img src="assets/cinema-noite.webp" alt="Ilustração de duas poltronas diante de uma tela iluminada, com projetor e pipoca para uma noite de cinema a dois." width="1600" height="900" loading="lazy" decoding="async">
+    <figcaption>Uma sessão juntos, e mais uma lembrança pra guardar.</figcaption>
+  </figure>
+
   <div class="cinema-tabs">
     <button class="cinema-tab active" data-tab="series"    onclick="window._cinemaSwitchTab('series')">📺 Séries</button>
     <button class="cinema-tab"        data-tab="filmes"    onclick="window._cinemaSwitchTab('filmes')">🎬 Filmes</button>
@@ -726,6 +732,24 @@
 
   <div class="cinema-catalog" id="cinema-catalog">
     <div style="text-align:center;padding:2rem;color:#c9a9b0;font-style:italic;grid-column:1/-1;">⏳ Carregando catálogo...</div>
+  </div>
+</section>
+
+<!-- ── NOSSO MUNDO ENCANTADO ── -->
+<section id="sec-fantasia" aria-labelledby="sec-fantasia-title">
+  <div class="divider"><span class="divider-icon">🌙</span></div>
+  <div class="section-label">Um conto só nosso</div>
+  <h2 class="section-title" id="sec-fantasia-title">Nosso mundo <em>encantado</em></h2>
+  <p class="fantasy-intro">Um pouquinho de mistério, imaginação e carinho — como entrar juntos numa história feita só para nós.</p>
+  <div class="fantasy-gallery">
+    <figure class="fantasy-card">
+      <img src="assets/fantasia-luar-1.webp" alt="Casal de personagens artesanais caminhando de mãos dadas por um jardim noturno iluminado por um lampião." width="1600" height="900" loading="lazy" decoding="async">
+      <figcaption>Quando a gente caminha junto, até a noite fica mais bonita.</figcaption>
+    </figure>
+    <figure class="fantasy-card">
+      <img src="assets/fantasia-luar-2.webp" alt="Casal de personagens artesanais sentado em um sótão, observando a lua crescente por uma janela redonda." width="1600" height="900" loading="lazy" decoding="async">
+      <figcaption>De mãos dadas, a gente inventa o próprio céu.</figcaption>
+    </figure>
   </div>
 </section>
 

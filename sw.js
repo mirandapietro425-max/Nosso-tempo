@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v69'; // Arte original, navegação mobile e partículas mais leves
+const CACHE_VERSION = 'v71'; // Novas artes de fantasia e ajustes mobile
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -80,6 +80,9 @@ const STATIC_ASSETS = [
   '/assets/icon-512.png',
   '/assets/hero-romantico.webp',
   '/assets/storybook-memories.webp',
+  '/assets/cinema-noite.webp',
+  '/assets/fantasia-luar-1.webp',
+  '/assets/fantasia-luar-2.webp',
   '/emojis/Ariel/Ariel_Happy.png',
   '/emojis/Ariel/Ariel_Sad.png',
   '/emojis/Ariel/Ariel_Scared.png',
