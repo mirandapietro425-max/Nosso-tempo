@@ -96,6 +96,7 @@ import { initEventUnlock } from './event-unlock.js';
 import { initEmotionalState } from './emotional-state.js';
 import { initLivingMoments } from './living-moments.js';
 import { initMemoryAnniversaries } from './memory-anniversaries.js';
+import { initTimeCapsule } from './time-capsule.js';
 window.awardCoins = _awardCoins;
 
 /* ════════════════════════════════════════════
@@ -193,6 +194,7 @@ try { initEventUnlock(); } catch(e) { console.error('initEventUnlock:', e); }
 try { initEmotionalState(); } catch(e) { console.error('initEmotionalState:', e); }
 try { initLivingMoments(); } catch(e) { console.error('initLivingMoments:', e); }
 try { initMemoryAnniversaries(); } catch(e) { console.error('initMemoryAnniversaries:', e); }
+try { initTimeCapsule(); } catch(e) { console.error('initTimeCapsule:', e); }
 try { initLibrary(db, () => { try { return localStorage.getItem('pe_active_player'); } catch { return null; } }); } catch(e) { console.error('initLibrary:', e); }
 try { initCinema(db); } catch(e) { console.error('initCinema:', e); }
 try {
