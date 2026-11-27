@@ -359,7 +359,7 @@ export function answerFromKnowledge(question) {
     if (/\b(exemplo|por exemplo)\b/.test(q)) return lastKnowledgeEntry.example || EXAMPLES[key] || `Um exemplo relacionado a ${lastKnowledgeEntry.title}: pense em uma situação cotidiana em que esse conceito aparece. ${lastKnowledgeEntry.answer}`;
     if (/\b(resume|resuma|resumo)\b/.test(q)) return `${lastKnowledgeEntry.title}: ${lastKnowledgeEntry.answer.split(/[.!?]/).slice(0, 2).join('. ').trim()}.`;
     if (/\b(mais detalhes|aprofund|continua)\b/.test(q)) return `${lastKnowledgeEntry.answer}${DETAILS[key] ? `\n\nUm pouco mais a fundo: ${DETAILS[key]}` : '\n\nA ideia central é observar a definição, as condições em que ela vale e como se aplica a situações concretas.'}`;
-    if (/\b(nao entendi|mais simples|de um jeito simples|explica como se eu fosse crianca|explica melhor|explica de novo|explica de um jeito simples|me explica (mais detalhes|melhor|de novo|de um jeito simples))\b/.test(q)) return `Vamos por partes. ${EXAMPLES[key] || lastKnowledgeEntry.answer} O ponto principal é: ${lastKnowledgeEntry.answer.split(/[.!?]/)[0]}.`;
+    if (/\b(nao entendi|mais simples|de um jeito simples|explica como se eu fosse crianca|explica melhor|explica de novo|explica de um jeito simples|me explica (mais detalhes|melhor|de novo|de um jeito simples))\b/.test(q)) return `Vamos por partes. ${lastKnowledgeEntry.example || EXAMPLES[key] || lastKnowledgeEntry.answer} O ponto principal é: ${lastKnowledgeEntry.answer.split(/[.!?]/)[0]}.`;
   }
 
   const qWords = words(q);

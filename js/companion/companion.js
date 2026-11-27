@@ -400,7 +400,7 @@ function localConversationalReply(question) {
   if (/^(e voce|e tu|o que voce acha|qual sua opiniao)/.test(q)) {
     return 'Eu não tenho opinião pessoal como uma pessoa, mas posso comparar os lados e pensar contigo. O que pesa mais para ti nessa situação?';
   }
-  if (/^(me ajuda|preciso de ajuda|pode me ajudar)/.test(q)) {
+  if (/^(me ajuda|preciso de ajuda|pode me ajudar)$/.test(q)) {
     return 'Claro. Diz o que aconteceu e qual resultado tu queres alcançar. A gente pode dividir em passos pequenos.';
   }
   return null;
