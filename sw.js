@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v74'; // Redesign visual editorial global
+const CACHE_VERSION = 'v75'; // Redesign visual editorial global
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -37,6 +37,8 @@ const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
 const MAX_IMAGE_CACHE = 120;
 
 const STATIC_ASSETS = [
+  '/css/retrospectiva.css',
+  '/js/retrospectiva.js',
   '/',
   '/index.html',
   '/manifest.json',
