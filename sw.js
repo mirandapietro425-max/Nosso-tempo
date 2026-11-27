@@ -29,7 +29,7 @@
    BUG-R:  todos os domínios de streaming PT-BR em externalHosts.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v68'; // Nova continuação da história e visual renovado da linha do tempo
+const CACHE_VERSION = 'v69'; // Arte original, navegação mobile e partículas mais leves
 const CACHE_STATIC  = `pe-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `pe-dynamic-${CACHE_VERSION}`;
 const CACHE_IMAGES  = `pe-images-${CACHE_VERSION}`;
@@ -46,6 +46,7 @@ const STATIC_ASSETS = [
   '/css/animations.css',
   '/css/stickers.css',
   '/css/home.css',
+  '/css/mobile.css',
   '/css/games.css',
   '/css/cinema.css',
   '/js/app.js',
@@ -77,6 +78,8 @@ const STATIC_ASSETS = [
   '/assets/favicon.png',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
+  '/assets/hero-romantico.webp',
+  '/assets/storybook-memories.webp',
   '/emojis/Ariel/Ariel_Happy.png',
   '/emojis/Ariel/Ariel_Sad.png',
   '/emojis/Ariel/Ariel_Scared.png',

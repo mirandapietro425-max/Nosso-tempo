@@ -93,7 +93,10 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
-  background: radial-gradient(ellipse at 50% 60%, #ffe0e8 0%, #fff0f3 55%, #fce4ec 100%);
+  background:
+    linear-gradient(180deg, rgba(255,250,249,0.93) 0%, rgba(255,240,243,0.82) 48%, rgba(252,228,236,0.66) 100%) center / cover no-repeat,
+    url('../assets/hero-romantico.webp') center 58% / cover no-repeat,
+    #fff0f3;
   padding: 2rem;
   text-align: center;
   z-index: 1;
@@ -340,7 +343,10 @@ footer {
 /* ── MODO EVENTO ── */
 body.event-mode { --cream: #fff5f8; }
 body.event-mode .hero {
-  background: radial-gradient(ellipse at 50% 60%, #ffd6e7 0%, #ffe8f0 45%, #fff0f7 100%);
+  background:
+    linear-gradient(180deg, rgba(255,245,249,0.91) 0%, rgba(255,232,240,0.79) 48%, rgba(255,240,247,0.65) 100%) center / cover no-repeat,
+    url('../assets/hero-romantico.webp') center 58% / cover no-repeat,
+    #fff0f7;
 }
 
 .event-banner {

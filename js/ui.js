@@ -209,6 +209,10 @@ export function initDaily() {
 export function initParticles() {
   const canvas = document.getElementById('particles');
   if (!canvas) return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    canvas.hidden = true;
+    return;
+  }
   const ctx = canvas.getContext('2d');
   let W, H;
 
@@ -315,7 +319,8 @@ export function initParticles() {
     ctx.restore();
   }
 
-  const PARTICLES = Array.from({ length: 28 }, () => ({
+  const particleCount = window.matchMedia?.('(max-width: 600px)').matches ? 12 : 28;
+  const PARTICLES = Array.from({ length: particleCount }, () => ({
     ...mkParticle(),
     y: Math.random() * H,
   }));

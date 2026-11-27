@@ -1,0 +1,167 @@
+/* ═══════════════════════════════════════════════
+   PIETRO & EMILLY — mobile.css
+   Navegação confortável · fluidez · safe areas
+   ═══════════════════════════════════════════════ */
+
+#page-wrap {
+  height: 100dvh;
+  scroll-padding-block: 1rem;
+}
+
+.story-art {
+  max-width: 780px;
+  margin: 0.25rem 0 1.4rem;
+  overflow: hidden;
+  border: 1px solid rgba(232, 83, 111, 0.16);
+  border-radius: 22px;
+  background: #fff8f9;
+  box-shadow: 0 12px 32px rgba(89, 13, 34, 0.08);
+}
+
+.story-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.story-art figcaption {
+  padding: 0.65rem 1rem 0.75rem;
+  color: #8a4057;
+  font-family: var(--font-italic);
+  font-size: 1.02rem;
+  font-style: italic;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  #page-wrap {
+    min-height: 100svh;
+    min-height: 100dvh;
+    overscroll-behavior-y: contain;
+  }
+
+  .hero {
+    min-height: 100svh;
+    min-height: 100dvh;
+    padding: calc(1rem + env(safe-area-inset-top)) 1rem calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  .greeting-pill {
+    margin-bottom: 0.8rem;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.68rem;
+  }
+
+  .hero-title { font-size: clamp(2.7rem, 11.8vw, 4.1rem); }
+  .hero-subtitle { max-width: 29ch; margin-top: 0.65rem; font-size: 1rem; }
+
+  .counter-hero {
+    width: min(100%, 380px);
+    margin-top: 1.25rem;
+    gap: 0.45rem;
+    flex-wrap: nowrap;
+  }
+
+  .counter-unit {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.75rem 0.3rem;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.88);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 4px 14px rgba(89, 13, 34, 0.07);
+  }
+
+  .counter-num { font-size: clamp(1.45rem, 6vw, 2rem); }
+  .counter-label { font-size: 0.56rem; letter-spacing: 0.06em; }
+
+  .hero-nav {
+    width: calc(100% + 2rem);
+    max-width: none;
+    margin: 1.3rem -1rem 0;
+    padding: 0.2rem 1rem 0.65rem;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1rem, #000 calc(100% - 1rem), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 1rem, #000 calc(100% - 1rem), transparent 100%);
+  }
+
+  .hero-nav::-webkit-scrollbar { display: none; }
+
+  .hero-nav-btn {
+    min-height: 44px;
+    flex: 0 0 auto;
+    padding: 0.62rem 0.9rem;
+    scroll-snap-align: start;
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 4px 12px rgba(89, 13, 34, 0.07);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .hero-nav-label { max-width: none; font-size: 0.7rem; }
+  .scroll-hint { margin-top: 1.15rem; font-size: 1.25rem; }
+  section { padding: 3.2rem 1rem; }
+  .divider { margin-bottom: 1.8rem; }
+  .section-title { margin-bottom: 1.35rem; }
+
+  .story-art {
+    margin: 0.2rem 0 1.1rem;
+    border-radius: 18px;
+  }
+
+  .story-art img { border-radius: 17px 17px 0 0; }
+  .story-art figcaption { padding: 0.55rem 0.8rem 0.65rem; font-size: 0.94rem; }
+
+  .mini-player {
+    left: 0.85rem;
+    bottom: calc(4.3rem + env(safe-area-inset-bottom));
+  }
+
+  .mini-player-bar {
+    height: calc(60px + env(safe-area-inset-bottom));
+    padding: 0.25rem 0.8rem env(safe-area-inset-bottom);
+  }
+
+  .mini-bar-controls { gap: 0.3rem; }
+  .mini-bar-btn { width: 40px; height: 40px; }
+  .mini-bar-btn.main { width: 44px; height: 44px; }
+  #page-wrap.music-bar-open { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 380px) {
+  .hero-title { font-size: clamp(2.55rem, 11.4vw, 3.2rem); }
+  .counter-unit { padding-inline: 0.2rem; }
+  .counter-label { font-size: 0.52rem; }
+  .mini-bar-artist { display: none; }
+  .mini-bar-info { gap: 0.45rem; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .hero-nav-btn:hover { transform: none; box-shadow: 0 4px 12px rgba(89, 13, 34, 0.07); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html, #page-wrap { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .pe-reveal, .pe-reveal-left, .pe-reveal-scale {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
